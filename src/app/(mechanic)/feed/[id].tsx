@@ -4,10 +4,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import {
+  acceptAnnouncement,
   fetchOpenAnnouncementById,
   type AnnouncementWithDriver,
 } from '@/hooks/use-announcements';
@@ -25,6 +27,8 @@ export default function MechanicAnnouncementDetailScreen() {
   const insets = useSafeAreaInsets();
   const [announcement, setAnnouncement] = useState<AnnouncementWithDriver | null>(null);
   const [loading, setLoading] = useState(true);
+  const [accepting, setAccepting] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -34,6 +38,19 @@ export default function MechanicAnnouncementDetailScreen() {
       setLoading(false);
     })();
   }, [id]);
+
+  async function handleAccept() {
+    setAccepting(true);
+    setError('');
+    const err = await acceptAnnouncement(id);
+    if (err) {
+      setError('Anunțul a fost deja acceptat de un alt mecanic.');
+      setAccepting(false);
+      return;
+    }
+    // RPC a creat conversația — navigăm la tab-ul Conversații
+    router.replace('/(mechanic)/conversations');
+  }
 
   if (loading) {
     return (
@@ -45,14 +62,22 @@ export default function MechanicAnnouncementDetailScreen() {
 
   if (!announcement) {
     return (
-      <ThemedView style={styles.centered}>
-        <ThemedText themeColor="textSecondary">Anunțul nu mai este disponibil.</ThemedText>
-        <Pressable onPress={() => router.back()} style={styles.backLink}>
+      <ThemedView style={[styles.centered, { paddingTop: insets.top }]}>
+        <MaterialIcons name="check-circle" size={52} color="#22c55e" />
+        <ThemedText type="subtitle" style={styles.takenTitle}>
+          Anunț indisponibil
+        </ThemedText>
+        <ThemedText themeColor="textSecondary" style={styles.takenDesc}>
+          Anunțul a fost deja acceptat de un alt mecanic.
+        </ThemedText>
+        <Pressable onPress={() => router.back()} hitSlop={12}>
           <ThemedText themeColor="textSecondary" type="small">← Înapoi la feed</ThemedText>
         </Pressable>
       </ThemedView>
     );
   }
+
+  const alreadyTaken = announcement.status !== 'open';
 
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
@@ -95,11 +120,23 @@ export default function MechanicAnnouncementDetailScreen() {
           <ThemedText style={styles.descriptionText}>{announcement.description}</ThemedText>
         </ThemedView>
 
-        <View style={styles.acceptPlaceholder}>
-          <ThemedText themeColor="textSecondary" type="small" style={styles.hint}>
-            Butonul de acceptare va fi disponibil în Etapa 5
+        {alreadyTaken ? (
+          <ThemedText themeColor="textSecondary" style={styles.hint}>
+            Acest anunț a fost deja acceptat de un alt mecanic.
           </ThemedText>
-        </View>
+        ) : (
+          <>
+            {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
+            <Button
+              title="Acceptă anunțul"
+              onPress={handleAccept}
+              loading={accepting}
+            />
+            <ThemedText themeColor="textSecondary" style={styles.hint}>
+              Acceptând, ești singurul mecanic asignat acestui șofer.
+            </ThemedText>
+          </>
+        )}
       </ScrollView>
     </ThemedView>
   );
@@ -107,7 +144,15 @@ export default function MechanicAnnouncementDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.two },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.two,
+    padding: Spacing.four,
+  },
+  takenTitle: { fontSize: 22, lineHeight: 30, textAlign: 'center' },
+  takenDesc: { textAlign: 'center', lineHeight: 22 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -132,10 +177,6 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
   },
   descriptionText: { lineHeight: 24 },
-  acceptPlaceholder: {
-    marginTop: Spacing.two,
-    alignItems: 'center',
-  },
-  hint: { textAlign: 'center', lineHeight: 20 },
-  backLink: { marginTop: Spacing.two },
+  error: { color: '#ef4444', fontSize: 14 },
+  hint: { textAlign: 'center', fontSize: 14, lineHeight: 20 },
 });

@@ -81,6 +81,13 @@ export async function fetchAnnouncementById(
   return (data as unknown as AnnouncementWithMechanic) ?? null;
 }
 
+export async function acceptAnnouncement(announcementId: string): Promise<string | null> {
+  const { error } = await supabase.rpc('accept_announcement', {
+    p_announcement_id: announcementId,
+  } as never);
+  return error?.message ?? null;
+}
+
 export async function fetchOpenAnnouncementById(
   id: string
 ): Promise<AnnouncementWithDriver | null> {
