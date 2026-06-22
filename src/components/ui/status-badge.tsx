@@ -1,18 +1,20 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import type { AnnouncementStatus } from '@/types/database';
 
-const CONFIG: Record<AnnouncementStatus, { label: string; color: string; bg: string }> = {
-  open:     { label: 'Deschis',  color: '#208AEF', bg: '#208AEF1A' },
-  accepted: { label: 'Acceptat', color: '#f59e0b', bg: '#f59e0b1A' },
-  resolved: { label: 'Rezolvat', color: '#22c55e', bg: '#22c55e1A' },
+const COLORS: Record<AnnouncementStatus, { color: string; bg: string }> = {
+  open:     { color: '#208AEF', bg: '#208AEF1A' },
+  accepted: { color: '#f59e0b', bg: '#f59e0b1A' },
+  resolved: { color: '#22c55e', bg: '#22c55e1A' },
 };
 
 export function StatusBadge({ status }: { status: AnnouncementStatus }) {
-  const { label, color, bg } = CONFIG[status];
+  const { t } = useTranslation();
+  const { color, bg } = COLORS[status];
   return (
     <View style={[styles.badge, { backgroundColor: bg }]}>
-      <Text style={[styles.label, { color }]}>{label}</Text>
+      <Text style={[styles.label, { color }]}>{t(`status.${status}`)}</Text>
     </View>
   );
 }

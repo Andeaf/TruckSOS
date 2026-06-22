@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { Link } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ import { useAuth } from '@/hooks/use-auth';
 
 export default function RegisterScreen() {
   const { signUp } = useAuth();
+  const { t } = useTranslation();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,11 +29,11 @@ export default function RegisterScreen() {
 
   async function handleSignUp() {
     if (!fullName.trim() || !email.trim() || !password) {
-      setError('Completează toate câmpurile.');
+      setError(t('auth.register.errorEmpty'));
       return;
     }
     if (password.length < 6) {
-      setError('Parola trebuie să aibă cel puțin 6 caractere.');
+      setError(t('auth.register.errorPasswordLength'));
       return;
     }
     setLoading(true);
@@ -41,7 +43,6 @@ export default function RegisterScreen() {
     if (err) {
       setError(err);
     } else {
-      // Dacă sesiunea nu apare în 2s, înseamnă că e nevoie de confirmare email
       setTimeout(() => setEmailSent(true), 2000);
     }
   }
@@ -55,21 +56,21 @@ export default function RegisterScreen() {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
-            <ThemedText type="title">TruckSOS</ThemedText>
-            <ThemedText themeColor="textSecondary">Creează-ți contul</ThemedText>
+            <ThemedText type="title">{t('auth.appName')}</ThemedText>
+            <ThemedText themeColor="textSecondary">{t('auth.register.subtitle')}</ThemedText>
           </View>
 
           {emailSent ? (
             <View style={styles.emailSentBox}>
-              <ThemedText type="subtitle" style={styles.emailSentTitle}>Verifică email-ul</ThemedText>
+              <ThemedText type="subtitle" style={styles.emailSentTitle}>
+                {t('auth.register.verifyEmailTitle')}
+              </ThemedText>
               <ThemedText themeColor="textSecondary" style={styles.emailSentDesc}>
-                Am trimis un link de confirmare la{'\n'}
-                <ThemedText style={styles.emailBold}>{email}</ThemedText>
-                {'\n\n'}Apasă linkul din email, apoi întoarce-te și autentifică-te.
+                {t('auth.register.verifyEmailMessage', { email })}
               </ThemedText>
               <Link href="/(auth)/login" asChild>
                 <Pressable>
-                  <ThemedText style={styles.link}>Mergi la autentificare</ThemedText>
+                  <ThemedText style={styles.link}>{t('auth.register.goToLogin')}</ThemedText>
                 </Pressable>
               </Link>
             </View>
@@ -77,27 +78,27 @@ export default function RegisterScreen() {
 
           <View style={[styles.form, emailSent && styles.hidden]}>
             <Input
-              label="Nume complet"
+              label={t('auth.register.nameLabel')}
               value={fullName}
               onChangeText={setFullName}
-              placeholder="Ion Popescu"
+              placeholder={t('auth.register.namePlaceholder')}
               autoCapitalize="words"
               autoComplete="name"
             />
             <Input
-              label="Email"
+              label={t('auth.register.emailLabel')}
               value={email}
               onChangeText={setEmail}
-              placeholder="email@exemplu.com"
+              placeholder={t('auth.register.emailPlaceholder')}
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
             />
             <Input
-              label="Parolă"
+              label={t('auth.register.passwordLabel')}
               value={password}
               onChangeText={setPassword}
-              placeholder="Minim 6 caractere"
+              placeholder={t('auth.register.passwordPlaceholder')}
               secureTextEntry
             />
 
@@ -105,14 +106,14 @@ export default function RegisterScreen() {
               <ThemedText style={styles.error}>{error}</ThemedText>
             ) : null}
 
-            <Button title="Înregistrează-te" onPress={handleSignUp} loading={loading} />
+            <Button title={t('auth.register.button')} onPress={handleSignUp} loading={loading} />
           </View>
 
           <View style={styles.footer}>
-            <ThemedText themeColor="textSecondary">Ai deja cont?</ThemedText>
+            <ThemedText themeColor="textSecondary">{t('auth.register.hasAccount')}</ThemedText>
             <Link href="/(auth)/login" asChild>
               <Pressable>
-                <ThemedText style={styles.link}>Autentifică-te</ThemedText>
+                <ThemedText style={styles.link}>{t('auth.register.loginLink')}</ThemedText>
               </Pressable>
             </Link>
           </View>

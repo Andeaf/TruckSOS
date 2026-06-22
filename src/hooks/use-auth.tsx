@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/types/database';
+import i18n from '@/i18n';
 
 interface AuthContextValue {
   session: Session | null;
@@ -22,25 +23,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   async function fetchProfile(userId: string) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    setProfile(data ?? null);
-    setLoading(false);
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      setProfile(data ?? null);
+    } catch {
+      setProfile(null);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
+    const safetyTimer = setTimeout(() => setLoading(false), 8000);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(safetyTimer);
       setSession(session);
       if (session) fetchProfile(session.user.id);
       else setLoading(false);
+    }).catch(() => {
+      clearTimeout(safetyTimer);
+      setLoading(false);
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') return;
       setSession(session);
       if (session) fetchProfile(session.user.id);
       else {
@@ -49,7 +62,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(safetyTimer);
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function signIn(email: string, password: string): Promise<string | null> {
@@ -76,8 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function createProfile(role: 'driver' | 'mechanic'): Promise<string | null> {
     const userId = session?.user.id;
-    const fullName = (session?.user.user_metadata?.full_name as string) ?? 'Utilizator';
-    if (!userId) return 'Sesiune inexistentă';
+    const fullName = (session?.user.user_metadata?.full_name as string) ?? i18n.t('common.defaultUser');
+    if (!userId) return i18n.t('common.noSession');
 
     const { error } = await supabase
       .from('profiles')

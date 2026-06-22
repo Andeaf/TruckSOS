@@ -1,0 +1,120 @@
+{
+  "auth": {
+    "appName": "TruckSOS",
+    "login": {
+      "subtitle": "Autentifică-te în cont",
+      "emailLabel": "Email",
+      "emailPlaceholder": "email@exemplu.com",
+      "passwordLabel": "Parolă",
+      "passwordPlaceholder": "••••••••",
+      "button": "Autentifică-te",
+      "noAccount": "Nu ai cont?",
+      "registerLink": "Înregistrează-te",
+      "errorEmpty": "Completează email-ul și parola."
+    },
+    "register": {
+      "subtitle": "Creează-ți contul",
+      "nameLabel": "Nume complet",
+      "namePlaceholder": "Ion Popescu",
+      "emailLabel": "Email",
+      "emailPlaceholder": "email@exemplu.com",
+      "passwordLabel": "Parolă",
+      "passwordPlaceholder": "Minim 6 caractere",
+      "button": "Înregistrează-te",
+      "errorEmpty": "Completează toate câmpurile.",
+      "errorPasswordLength": "Parola trebuie să aibă cel puțin 6 caractere.",
+      "verifyEmailTitle": "Verifică email-ul",
+      "verifyEmailMessage": "Am trimis un link de confirmare la\n{{email}}\n\nApasă linkul din email, apoi întoarce-te și autentifică-te.",
+      "goToLogin": "Mergi la autentificare",
+      "hasAccount": "Ai deja cont?",
+      "loginLink": "Autentifică-te"
+    },
+    "roleSelect": {
+      "title": "Bun venit,",
+      "subtitle": "Care este rolul tău în aplicație?",
+      "driverTitle": "Sofer",
+      "driverDescription": "Raportezi defectiuni si gasesti mecanici disponibili rapid",
+      "mechanicTitle": "Mecanic",
+      "mechanicDescription": "Vezi anunturi de la soferi si ofera ajutor tehnic",
+      "loading": "Se incarca..."
+    }
+  },
+  "driver": {
+    "tabs": {
+      "announcements": "Anunturile mele",
+      "conversations": "Conversatii"
+    },
+    "announcements": {
+      "listTitle": "Anunțurile mele",
+      "emptyTitle": "Niciun anunț încă",
+      "emptyDescription": "Apasă + pentru a raporta o defecțiune",
+      "newTitle": "Anunț nou",
+      "locationLabel": "Locația actuală",
+      "locationPlaceholder": "ex: DN1, km 45, lângã Ploiești",
+      "descriptionLabel": "Descrierea problemei",
+      "descriptionPlaceholder": "ex: Motor nu pornește, fum din motor, roatã spartã...",
+      "submitButton": "Trimite anunțul",
+      "errorDescription": "Descrie problema tehnicã.",
+      "errorLocation": "Introdu locația.",
+      "detailTitle": "Detalii anunț",
+      "notFound": "Anunțul nu a fost găsit.",
+      "sectionLocation": "Locație",
+      "sectionDescription": "Descrierea problemei",
+      "sectionMechanic": "Mecanic asignat",
+      "resolveButton": "Marchează ca rezolvat",
+      "hintOpen": "Anunțul este vizibil mecanicilor disponibili.",
+      "hintResolved": "Problemă rezolvată. Poți vedea istoricul conversației în tab-ul Conversații."
+    },
+    "conversations": {
+      "title": "Conversații",
+      "emptyTitle": "Nicio conversație",
+      "emptyDescription": "Conversațiile apar după ce un mecanic acceptă anunțul tău"
+    }
+  },
+  "mechanic": {
+    "tabs": {
+      "feed": "Anunturi",
+      "conversations": "Conversatii"
+    },
+    "feed": {
+      "title": "Anunțuri deschise",
+      "emptyTitle": "Niciun anunț deschis",
+      "emptyDescription": "Nu există șoferi care au nevoie de ajutor în acest moment",
+      "detailTitle": "Detalii anunț",
+      "sectionDriver": "Șofer",
+      "sectionLocation": "Locație",
+      "sectionDescription": "Descrierea problemei",
+      "unavailableTitle": "Anunț indisponibil",
+      "unavailableDescription": "Anunțul a fost deja acceptat de un alt mecanic.",
+      "backToFeed": "← Înapoi la feed",
+      "acceptButton": "Acceptă anunțul",
+      "acceptHint": "Acceptând, ești singurul mecanic asignat acestui șofer.",
+      "alreadyTakenHint": "Acest anunț a fost deja acceptat de un alt mecanic.",
+      "errorAlreadyAccepted": "Anunțul a fost deja acceptat de un alt mecanic."
+    },
+    "conversations": {
+      "title": "Conversații",
+      "emptyTitle": "Nicio conversație",
+      "emptyDescription": "Acceptă un anunț din feed pentru a începe o conversație"
+    }
+  },
+  "chat": {
+    "emptyMessages": "Niciun mesaj. Scrie primul!",
+    "inputPlaceholder": "Scrie un mesaj...",
+    "resolvedBanner": "Anunțul a fost marcat ca rezolvat."
+  },
+  "common": {
+    "loading": "Se încarcă...",
+    "timeNow": "acum",
+    "timeMinsAgo": "{{count}} min. în urmă",
+    "timeHoursAgo": "{{count}}h în urmă",
+    "timeDaysAgo": "{{count}} zile în urmă",
+    "defaultUser": "Utilizator",
+    "noSession": "Sesiune inexistentă"
+  },
+  "status": {
+    "open": "Deschis",
+    "accepted": "Acceptat",
+    "resolved": "Rezolvat"
+  }
+}

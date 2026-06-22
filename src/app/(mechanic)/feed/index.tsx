@@ -3,6 +3,7 @@ import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { AnnouncementCard } from '@/components/announcement-card';
 import { EmptyState } from '@/components/empty-state';
@@ -14,6 +15,7 @@ import { useOpenAnnouncements } from '@/hooks/use-announcements';
 
 export default function MechanicFeedScreen() {
   const { profile, signOut } = useAuth();
+  const { t } = useTranslation();
   const { announcements, loading, refresh } = useOpenAnnouncements();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -28,7 +30,7 @@ export default function MechanicFeedScreen() {
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <View>
-          <ThemedText type="subtitle">Anunțuri deschise</ThemedText>
+          <ThemedText type="subtitle">{t('mechanic.feed.title')}</ThemedText>
           <ThemedText themeColor="textSecondary" type="small">
             {profile?.full_name}
           </ThemedText>
@@ -61,8 +63,8 @@ export default function MechanicFeedScreen() {
           !loading ? (
             <EmptyState
               icon="directions-car"
-              title="Niciun anunț deschis"
-              description="Nu există șoferi care au nevoie de ajutor în acest moment"
+              title={t('mechanic.feed.emptyTitle')}
+              description={t('mechanic.feed.emptyDescription')}
             />
           ) : null
         }

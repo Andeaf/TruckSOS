@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -10,11 +11,12 @@ import { useTheme } from '@/hooks/use-theme';
 
 export default function RoleSelectScreen() {
   const { createProfile, session } = useAuth();
+  const { t } = useTranslation();
   const theme = useTheme();
   const [loading, setLoading] = useState<'driver' | 'mechanic' | null>(null);
   const [error, setError] = useState('');
 
-  const name = (session?.user.user_metadata?.full_name as string)?.split(' ')[0] ?? 'utilizator';
+  const name = (session?.user.user_metadata?.full_name as string)?.split(' ')[0] ?? t('common.defaultUser');
 
   async function handleSelectRole(role: 'driver' | 'mechanic') {
     setLoading(role);
@@ -30,10 +32,10 @@ export default function RoleSelectScreen() {
   return (
     <ThemedView style={styles.container}>
       <View style={styles.header}>
-        <ThemedText type="title">Bun venit,</ThemedText>
+        <ThemedText type="title">{t('auth.roleSelect.title')}</ThemedText>
         <ThemedText type="title">{name}!</ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.subtitle}>
-          Care este rolul tău în aplicație?
+          {t('auth.roleSelect.subtitle')}
         </ThemedText>
       </View>
 
@@ -48,14 +50,14 @@ export default function RoleSelectScreen() {
           disabled={loading !== null}>
           <MaterialIcons name="local-shipping" size={48} color="#208AEF" />
           <ThemedText type="subtitle" style={styles.cardTitle}>
-            Sofer
+            {t('auth.roleSelect.driverTitle')}
           </ThemedText>
           <ThemedText themeColor="textSecondary" style={styles.cardDesc}>
-            Raportezi defectiuni si gasesti mecanici disponibili rapid
+            {t('auth.roleSelect.driverDescription')}
           </ThemedText>
           {loading === 'driver' ? (
             <ThemedText themeColor="textSecondary" type="small">
-              Se incarca...
+              {t('auth.roleSelect.loading')}
             </ThemedText>
           ) : null}
         </Pressable>
@@ -70,14 +72,14 @@ export default function RoleSelectScreen() {
           disabled={loading !== null}>
           <MaterialIcons name="build" size={48} color="#22c55e" />
           <ThemedText type="subtitle" style={styles.cardTitle}>
-            Mecanic
+            {t('auth.roleSelect.mechanicTitle')}
           </ThemedText>
           <ThemedText themeColor="textSecondary" style={styles.cardDesc}>
-            Vezi anunturi de la soferi si ofera ajutor tehnic
+            {t('auth.roleSelect.mechanicDescription')}
           </ThemedText>
           {loading === 'mechanic' ? (
             <ThemedText themeColor="textSecondary" type="small">
-              Se incarca...
+              {t('auth.roleSelect.loading')}
             </ThemedText>
           ) : null}
         </Pressable>

@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ThemedText } from '@/components/themed-text';
@@ -7,16 +8,6 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Announcement } from '@/types/database';
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'acum';
-  if (mins < 60) return `${mins} min. în urmă`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h în urmă`;
-  return `${Math.floor(hrs / 24)} zile în urmă`;
-}
 
 interface AnnouncementCardProps {
   announcement: Announcement;
@@ -26,6 +17,17 @@ interface AnnouncementCardProps {
 
 export function AnnouncementCard({ announcement, onPress, driverName }: AnnouncementCardProps) {
   const theme = useTheme();
+  const { t } = useTranslation();
+
+  function timeAgo(dateStr: string): string {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return t('common.timeNow');
+    if (mins < 60) return t('common.timeMinsAgo', { count: mins });
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return t('common.timeHoursAgo', { count: hrs });
+    return t('common.timeDaysAgo', { count: Math.floor(hrs / 24) });
+  }
 
   return (
     <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>

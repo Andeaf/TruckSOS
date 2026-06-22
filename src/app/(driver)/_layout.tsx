@@ -1,10 +1,12 @@
 import { Tabs } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/hooks/use-theme';
 
 export default function DriverLayout() {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Tabs
@@ -17,7 +19,7 @@ export default function DriverLayout() {
       <Tabs.Screen
         name="announcements"
         options={{
-          title: 'Anunturile mele',
+          title: t('driver.tabs.announcements'),
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="list-alt" size={size} color={color} />
           ),
@@ -26,7 +28,7 @@ export default function DriverLayout() {
       <Tabs.Screen
         name="conversations"
         options={{
-          title: 'Conversatii',
+          title: t('driver.tabs.conversations'),
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="chat" size={size} color={color} />
           ),

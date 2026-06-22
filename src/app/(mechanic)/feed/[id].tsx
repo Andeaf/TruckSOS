@@ -3,6 +3,9 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'reac
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+
+import { useBack } from '@/hooks/use-back';
 
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/themed-text';
@@ -13,6 +16,7 @@ import {
   fetchOpenAnnouncementById,
   type AnnouncementWithDriver,
 } from '@/hooks/use-announcements';
+import { supabase } from '@/lib/supabase';
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleString('ro-RO', {
@@ -23,7 +27,9 @@ function formatDate(dateStr: string) {
 
 export default function MechanicAnnouncementDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { t } = useTranslation();
   const router = useRouter();
+  const goBack = useBack('/(mechanic)/feed');
   const insets = useSafeAreaInsets();
   const [announcement, setAnnouncement] = useState<AnnouncementWithDriver | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,9 +39,14 @@ export default function MechanicAnnouncementDetailScreen() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const data = await fetchOpenAnnouncementById(id);
-      setAnnouncement(data);
-      setLoading(false);
+      try {
+        const data = await fetchOpenAnnouncementById(id);
+        setAnnouncement(data);
+      } catch {
+        setAnnouncement(null);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [id]);
 
@@ -44,12 +55,24 @@ export default function MechanicAnnouncementDetailScreen() {
     setError('');
     const err = await acceptAnnouncement(id);
     if (err) {
-      setError('Anunțul a fost deja acceptat de un alt mecanic.');
+      setError(t('mechanic.feed.errorAlreadyAccepted'));
       setAccepting(false);
       return;
     }
-    // RPC a creat conversația — navigăm la tab-ul Conversații
-    router.replace('/(mechanic)/conversations');
+    // Găsim conversația creată de RPC și navigăm direct în chat
+    const { data } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq('announcement_id', id)
+      .single();
+    if (data?.id) {
+      router.replace({
+        pathname: '/(mechanic)/conversations/[id]' as never,
+        params: { id: data.id },
+      });
+    } else {
+      router.replace('/(mechanic)/conversations');
+    }
   }
 
   if (loading) {
@@ -65,13 +88,13 @@ export default function MechanicAnnouncementDetailScreen() {
       <ThemedView style={[styles.centered, { paddingTop: insets.top }]}>
         <MaterialIcons name="check-circle" size={52} color="#22c55e" />
         <ThemedText type="subtitle" style={styles.takenTitle}>
-          Anunț indisponibil
+          {t('mechanic.feed.unavailableTitle')}
         </ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.takenDesc}>
-          Anunțul a fost deja acceptat de un alt mecanic.
+          {t('mechanic.feed.unavailableDescription')}
         </ThemedText>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <ThemedText themeColor="textSecondary" type="small">← Înapoi la feed</ThemedText>
+        <Pressable onPress={goBack} hitSlop={12}>
+          <ThemedText themeColor="textSecondary" type="small">{t('mechanic.feed.backToFeed')}</ThemedText>
         </Pressable>
       </ThemedView>
     );
@@ -82,10 +105,10 @@ export default function MechanicAnnouncementDetailScreen() {
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={goBack} hitSlop={12}>
           <MaterialIcons name="arrow-back" size={24} color="#60646C" />
         </Pressable>
-        <ThemedText type="subtitle" style={styles.title}>Detalii anunț</ThemedText>
+        <ThemedText type="subtitle" style={styles.title}>{t('mechanic.feed.detailTitle')}</ThemedText>
         <View style={{ width: 24 }} />
       </View>
 
@@ -98,7 +121,7 @@ export default function MechanicAnnouncementDetailScreen() {
           <ThemedView type="backgroundElement" style={styles.section}>
             <View style={styles.sectionHeader}>
               <MaterialIcons name="person" size={16} color="#22c55e" />
-              <ThemedText type="smallBold">Șofer</ThemedText>
+              <ThemedText type="smallBold">{t('mechanic.feed.sectionDriver')}</ThemedText>
             </View>
             <ThemedText>{announcement.driver.full_name}</ThemedText>
           </ThemedView>
@@ -107,7 +130,7 @@ export default function MechanicAnnouncementDetailScreen() {
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialIcons name="location-on" size={16} color="#22c55e" />
-            <ThemedText type="smallBold">Locație</ThemedText>
+            <ThemedText type="smallBold">{t('mechanic.feed.sectionLocation')}</ThemedText>
           </View>
           <ThemedText>{announcement.location}</ThemedText>
         </ThemedView>
@@ -115,25 +138,25 @@ export default function MechanicAnnouncementDetailScreen() {
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialIcons name="build" size={16} color="#22c55e" />
-            <ThemedText type="smallBold">Descrierea problemei</ThemedText>
+            <ThemedText type="smallBold">{t('mechanic.feed.sectionDescription')}</ThemedText>
           </View>
           <ThemedText style={styles.descriptionText}>{announcement.description}</ThemedText>
         </ThemedView>
 
         {alreadyTaken ? (
           <ThemedText themeColor="textSecondary" style={styles.hint}>
-            Acest anunț a fost deja acceptat de un alt mecanic.
+            {t('mechanic.feed.alreadyTakenHint')}
           </ThemedText>
         ) : (
           <>
             {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
             <Button
-              title="Acceptă anunțul"
+              title={t('mechanic.feed.acceptButton')}
               onPress={handleAccept}
               loading={accepting}
             />
             <ThemedText themeColor="textSecondary" style={styles.hint}>
-              Acceptând, ești singurul mecanic asignat acestui șofer.
+              {t('mechanic.feed.acceptHint')}
             </ThemedText>
           </>
         )}

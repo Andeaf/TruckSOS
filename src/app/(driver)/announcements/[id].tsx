@@ -3,6 +3,9 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'reac
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+
+import { useBack } from '@/hooks/use-back';
 
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
@@ -24,7 +27,9 @@ function formatDate(dateStr: string) {
 
 export default function AnnouncementDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { t } = useTranslation();
   const router = useRouter();
+  const goBack = useBack('/(driver)/announcements');
   const insets = useSafeAreaInsets();
   const [announcement, setAnnouncement] = useState<AnnouncementWithMechanic | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,9 +38,14 @@ export default function AnnouncementDetailScreen() {
 
   async function load() {
     setLoading(true);
-    const data = await fetchAnnouncementById(id);
-    setAnnouncement(data);
-    setLoading(false);
+    try {
+      const data = await fetchAnnouncementById(id);
+      setAnnouncement(data);
+    } catch {
+      setAnnouncement(null);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => { load(); }, [id]);
@@ -59,7 +69,7 @@ export default function AnnouncementDetailScreen() {
   if (!announcement) {
     return (
       <ThemedView style={styles.centered}>
-        <ThemedText themeColor="textSecondary">Anunțul nu a fost găsit.</ThemedText>
+        <ThemedText themeColor="textSecondary">{t('driver.announcements.notFound')}</ThemedText>
       </ThemedView>
     );
   }
@@ -67,10 +77,10 @@ export default function AnnouncementDetailScreen() {
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={goBack} hitSlop={12}>
           <MaterialIcons name="arrow-back" size={24} color="#60646C" />
         </Pressable>
-        <ThemedText type="subtitle" style={styles.title}>Detalii anunț</ThemedText>
+        <ThemedText type="subtitle" style={styles.title}>{t('driver.announcements.detailTitle')}</ThemedText>
         <View style={{ width: 24 }} />
       </View>
 
@@ -85,7 +95,7 @@ export default function AnnouncementDetailScreen() {
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialIcons name="location-on" size={16} color="#208AEF" />
-            <ThemedText type="smallBold">Locație</ThemedText>
+            <ThemedText type="smallBold">{t('driver.announcements.sectionLocation')}</ThemedText>
           </View>
           <ThemedText>{announcement.location}</ThemedText>
         </ThemedView>
@@ -93,7 +103,7 @@ export default function AnnouncementDetailScreen() {
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialIcons name="build" size={16} color="#208AEF" />
-            <ThemedText type="smallBold">Descrierea problemei</ThemedText>
+            <ThemedText type="smallBold">{t('driver.announcements.sectionDescription')}</ThemedText>
           </View>
           <ThemedText style={styles.descriptionText}>{announcement.description}</ThemedText>
         </ThemedView>
@@ -102,7 +112,7 @@ export default function AnnouncementDetailScreen() {
           <ThemedView type="backgroundElement" style={styles.section}>
             <View style={styles.sectionHeader}>
               <MaterialIcons name="person" size={16} color="#f59e0b" />
-              <ThemedText type="smallBold">Mecanic asignat</ThemedText>
+              <ThemedText type="smallBold">{t('driver.announcements.sectionMechanic')}</ThemedText>
             </View>
             <ThemedText>{announcement.mechanic.full_name}</ThemedText>
           </ThemedView>
@@ -112,7 +122,7 @@ export default function AnnouncementDetailScreen() {
 
         {announcement.status === 'accepted' ? (
           <Button
-            title="Marchează ca rezolvat"
+            title={t('driver.announcements.resolveButton')}
             onPress={handleResolve}
             loading={resolving}
           />
@@ -120,13 +130,13 @@ export default function AnnouncementDetailScreen() {
 
         {announcement.status === 'open' ? (
           <ThemedText themeColor="textSecondary" style={styles.hint}>
-            Anunțul este vizibil mecanicilor disponibili.
+            {t('driver.announcements.hintOpen')}
           </ThemedText>
         ) : null}
 
         {announcement.status === 'resolved' ? (
           <ThemedText themeColor="textSecondary" style={styles.hint}>
-            Problemă rezolvată. Poți vedea istoricul conversației în tab-ul Conversații.
+            {t('driver.announcements.hintResolved')}
           </ThemedText>
         ) : null}
       </ScrollView>

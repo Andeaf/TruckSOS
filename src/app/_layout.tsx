@@ -3,8 +3,10 @@ import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { useColorScheme } from 'react-native';
+import { I18nextProvider } from 'react-i18next';
 
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
+import i18n from '@/i18n';
 
 function RootLayoutNav() {
   const { session, profile, loading } = useAuth();
@@ -17,12 +19,13 @@ function RootLayoutNav() {
 
     const inAuth = segments[0] === '(auth)';
     const onRoleSelect = inAuth && segments[1] === 'role-select';
+    const noRoute = segments.length === 0;
 
     if (!session) {
       if (!inAuth) router.replace('/(auth)/login');
     } else if (!profile) {
       if (!onRoleSelect) router.replace('/(auth)/role-select');
-    } else if (inAuth) {
+    } else if (inAuth || noRoute) {
       router.replace(
         profile.role === 'driver' ? '/(driver)/announcements' : '/(mechanic)/feed'
       );
@@ -46,8 +49,10 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
+    <I18nextProvider i18n={i18n}>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </I18nextProvider>
   );
 }

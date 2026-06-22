@@ -1,0 +1,42 @@
+import { useEffect, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
+
+import { ChatScreen } from '@/components/chat-screen';
+import { ThemedView } from '@/components/themed-view';
+import { useAuth } from '@/hooks/use-auth';
+import { useBack } from '@/hooks/use-back';
+import {
+  fetchConversationDetails,
+  useAnnouncementStatus,
+  type ConversationWithDetails,
+} from '@/hooks/use-chat';
+
+export default function DriverChatScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { session } = useAuth();
+  const goBack = useBack('/(driver)/conversations');
+  const [conv, setConv] = useState<ConversationWithDetails | null>(null);
+
+  useEffect(() => {
+    fetchConversationDetails(id).then(setConv);
+  }, [id]);
+
+  const announcementStatus = useAnnouncementStatus(
+    conv?.announcement_id ?? '',
+    conv?.announcement.status ?? 'open'
+  );
+
+  if (!conv || !session) return <ThemedView style={{ flex: 1 }} />;
+
+  return (
+    <ChatScreen
+      conversationId={id}
+      currentUserId={session.user.id}
+      accentColor="#208AEF"
+      otherPersonName={conv.mechanic.full_name}
+      announcementLocation={conv.announcement.location}
+      announcementStatus={announcementStatus}
+      onBack={goBack}
+    />
+  );
+}

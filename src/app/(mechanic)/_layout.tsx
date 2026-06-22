@@ -1,10 +1,12 @@
 import { Tabs } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/hooks/use-theme';
 
 export default function MechanicLayout() {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Tabs
@@ -17,7 +19,7 @@ export default function MechanicLayout() {
       <Tabs.Screen
         name="feed"
         options={{
-          title: 'Anunturi',
+          title: t('mechanic.tabs.feed'),
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="directions-car" size={size} color={color} />
           ),
@@ -26,7 +28,7 @@ export default function MechanicLayout() {
       <Tabs.Screen
         name="conversations"
         options={{
-          title: 'Conversatii',
+          title: t('mechanic.tabs.conversations'),
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="chat" size={size} color={color} />
           ),

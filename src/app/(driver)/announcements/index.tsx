@@ -3,6 +3,7 @@ import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { AnnouncementCard } from '@/components/announcement-card';
 import { EmptyState } from '@/components/empty-state';
@@ -14,6 +15,7 @@ import { useMyAnnouncements } from '@/hooks/use-announcements';
 
 export default function DriverAnnouncementsScreen() {
   const { profile, signOut } = useAuth();
+  const { t } = useTranslation();
   const { announcements, loading, refresh } = useMyAnnouncements();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -28,7 +30,7 @@ export default function DriverAnnouncementsScreen() {
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <View>
-          <ThemedText type="subtitle">Anunțurile mele</ThemedText>
+          <ThemedText type="subtitle">{t('driver.announcements.listTitle')}</ThemedText>
           <ThemedText themeColor="textSecondary" type="small">
             {profile?.full_name}
           </ThemedText>
@@ -60,8 +62,8 @@ export default function DriverAnnouncementsScreen() {
           !loading ? (
             <EmptyState
               icon="list-alt"
-              title="Niciun anunț încă"
-              description="Apasă + pentru a raporta o defecțiune"
+              title={t('driver.announcements.emptyTitle')}
+              description={t('driver.announcements.emptyDescription')}
             />
           ) : null
         }

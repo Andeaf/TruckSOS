@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { Link } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ import { useAuth } from '@/hooks/use-auth';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -25,7 +27,7 @@ export default function LoginScreen() {
 
   async function handleSignIn() {
     if (!email.trim() || !password) {
-      setError('Completează email-ul și parola.');
+      setError(t('auth.login.errorEmpty'));
       return;
     }
     setLoading(true);
@@ -33,7 +35,6 @@ export default function LoginScreen() {
     const err = await signIn(email.trim(), password);
     if (err) setError(err);
     setLoading(false);
-    // Redirecționarea e gestionată de _layout.tsx pe baza sesiunii
   }
 
   return (
@@ -45,25 +46,25 @@ export default function LoginScreen() {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
-            <ThemedText type="title">TruckSOS</ThemedText>
-            <ThemedText themeColor="textSecondary">Autentifică-te în cont</ThemedText>
+            <ThemedText type="title">{t('auth.appName')}</ThemedText>
+            <ThemedText themeColor="textSecondary">{t('auth.login.subtitle')}</ThemedText>
           </View>
 
           <View style={styles.form}>
             <Input
-              label="Email"
+              label={t('auth.login.emailLabel')}
               value={email}
               onChangeText={setEmail}
-              placeholder="email@exemplu.com"
+              placeholder={t('auth.login.emailPlaceholder')}
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
             />
             <Input
-              label="Parolă"
+              label={t('auth.login.passwordLabel')}
               value={password}
               onChangeText={setPassword}
-              placeholder="••••••••"
+              placeholder={t('auth.login.passwordPlaceholder')}
               secureTextEntry
             />
 
@@ -71,14 +72,14 @@ export default function LoginScreen() {
               <ThemedText style={styles.error}>{error}</ThemedText>
             ) : null}
 
-            <Button title="Autentifică-te" onPress={handleSignIn} loading={loading} />
+            <Button title={t('auth.login.button')} onPress={handleSignIn} loading={loading} />
           </View>
 
           <View style={styles.footer}>
-            <ThemedText themeColor="textSecondary">Nu ai cont?</ThemedText>
+            <ThemedText themeColor="textSecondary">{t('auth.login.noAccount')}</ThemedText>
             <Link href="/(auth)/register" asChild>
               <Pressable>
-                <ThemedText style={styles.link}>Înregistrează-te</ThemedText>
+                <ThemedText style={styles.link}>{t('auth.login.registerLink')}</ThemedText>
               </Pressable>
             </Link>
           </View>

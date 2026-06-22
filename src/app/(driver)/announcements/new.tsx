@@ -3,6 +3,9 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+
+import { useBack } from '@/hooks/use-back';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +17,9 @@ import { createAnnouncement } from '@/hooks/use-announcements';
 
 export default function NewAnnouncementScreen() {
   const { session } = useAuth();
+  const { t } = useTranslation();
   const router = useRouter();
+  const goBack = useBack('/(driver)/announcements');
   const insets = useSafeAreaInsets();
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
@@ -22,8 +27,8 @@ export default function NewAnnouncementScreen() {
   const [error, setError] = useState('');
 
   async function handleSubmit() {
-    if (!description.trim()) { setError('Descrie problema tehnicã.'); return; }
-    if (!location.trim()) { setError('Introdu locația.'); return; }
+    if (!description.trim()) { setError(t('driver.announcements.errorDescription')); return; }
+    if (!location.trim()) { setError(t('driver.announcements.errorLocation')); return; }
     if (!session) return;
 
     setLoading(true);
@@ -32,16 +37,16 @@ export default function NewAnnouncementScreen() {
     setLoading(false);
 
     if (err) { setError(err); return; }
-    router.back();
+    goBack();
   }
 
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={goBack} hitSlop={12}>
           <MaterialIcons name="arrow-back" size={24} color="#60646C" />
         </Pressable>
-        <ThemedText type="subtitle" style={styles.title}>Anunț nou</ThemedText>
+        <ThemedText type="subtitle" style={styles.title}>{t('driver.announcements.newTitle')}</ThemedText>
         <View style={{ width: 24 }} />
       </View>
 
@@ -53,18 +58,18 @@ export default function NewAnnouncementScreen() {
           keyboardShouldPersistTaps="handled">
 
           <Input
-            label="Locația actuală"
+            label={t('driver.announcements.locationLabel')}
             value={location}
             onChangeText={setLocation}
-            placeholder="ex: DN1, km 45, lângã Ploiești"
+            placeholder={t('driver.announcements.locationPlaceholder')}
             autoCapitalize="sentences"
           />
 
           <Input
-            label="Descrierea problemei"
+            label={t('driver.announcements.descriptionLabel')}
             value={description}
             onChangeText={setDescription}
-            placeholder="ex: Motor nu pornește, fum din motor, roatã spartã..."
+            placeholder={t('driver.announcements.descriptionPlaceholder')}
             autoCapitalize="sentences"
             multiline
             numberOfLines={5}
@@ -73,7 +78,7 @@ export default function NewAnnouncementScreen() {
 
           {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
 
-          <Button title="Trimite anunțul" onPress={handleSubmit} loading={loading} />
+          <Button title={t('driver.announcements.submitButton')} onPress={handleSubmit} loading={loading} />
         </ScrollView>
       </KeyboardAvoidingView>
     </ThemedView>
