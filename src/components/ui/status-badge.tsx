@@ -4,9 +4,10 @@ import { useTranslation } from 'react-i18next';
 import type { AnnouncementStatus } from '@/types/database';
 
 const COLORS: Record<AnnouncementStatus, { color: string; bg: string }> = {
-  open:     { color: '#208AEF', bg: '#208AEF1A' },
-  accepted: { color: '#f59e0b', bg: '#f59e0b1A' },
-  resolved: { color: '#22c55e', bg: '#22c55e1A' },
+  open:      { color: '#208AEF', bg: '#208AEF1A' },
+  accepted:  { color: '#f59e0b', bg: '#f59e0b1A' },
+  resolved:  { color: '#22c55e', bg: '#22c55e1A' },
+  cancelled: { color: '#6b7280', bg: '#6b72801A' },
 };
 
 export function StatusBadge({ status }: { status: AnnouncementStatus }) {

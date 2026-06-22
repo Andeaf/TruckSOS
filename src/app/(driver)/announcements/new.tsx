@@ -15,14 +15,21 @@ import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { createAnnouncement } from '@/hooks/use-announcements';
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export default function NewAnnouncementScreen() {
   const { session } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
   const goBack = useBack('/(driver)/announcements');
   const insets = useSafeAreaInsets();
+
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [truckSectionOpen, setTruckSectionOpen] = useState(false);
+  const [truckMake, setTruckMake] = useState('');
+  const [truckModel, setTruckModel] = useState('');
+  const [truckYearStr, setTruckYearStr] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -31,9 +38,26 @@ export default function NewAnnouncementScreen() {
     if (!location.trim()) { setError(t('driver.announcements.errorLocation')); return; }
     if (!session) return;
 
+    let truckYear: number | null = null;
+    if (truckYearStr.trim()) {
+      const parsed = parseInt(truckYearStr.trim(), 10);
+      if (isNaN(parsed) || parsed < 1950 || parsed > CURRENT_YEAR) {
+        setError(t('truck.yearError', { maxYear: CURRENT_YEAR }));
+        return;
+      }
+      truckYear = parsed;
+    }
+
     setLoading(true);
     setError('');
-    const err = await createAnnouncement(session.user.id, description.trim(), location.trim());
+    const err = await createAnnouncement(
+      session.user.id,
+      description.trim(),
+      location.trim(),
+      truckMake.trim() || undefined,
+      truckModel.trim() || undefined,
+      truckYear,
+    );
     setLoading(false);
 
     if (err) { setError(err); return; }
@@ -76,6 +100,49 @@ export default function NewAnnouncementScreen() {
             style={styles.textarea}
           />
 
+          <Pressable
+            onPress={() => setTruckSectionOpen((v) => !v)}
+            style={styles.truckToggle}
+            hitSlop={8}>
+            <ThemedText themeColor="textSecondary" type="small">
+              {truckSectionOpen
+                ? t('truck.sectionToggleHide')
+                : t('truck.sectionToggleAdd')}
+            </ThemedText>
+            <MaterialIcons
+              name={truckSectionOpen ? 'expand-less' : 'expand-more'}
+              size={18}
+              color="#60646C"
+            />
+          </Pressable>
+
+          {truckSectionOpen ? (
+            <View style={styles.truckSection}>
+              <Input
+                label={t('truck.makeLabel')}
+                value={truckMake}
+                onChangeText={setTruckMake}
+                placeholder={t('truck.makePlaceholder')}
+                autoCapitalize="words"
+              />
+              <Input
+                label={t('truck.modelLabel')}
+                value={truckModel}
+                onChangeText={setTruckModel}
+                placeholder={t('truck.modelPlaceholder')}
+                autoCapitalize="characters"
+              />
+              <Input
+                label={t('truck.yearLabel')}
+                value={truckYearStr}
+                onChangeText={setTruckYearStr}
+                placeholder={t('truck.yearPlaceholder')}
+                keyboardType="number-pad"
+                maxLength={4}
+              />
+            </View>
+          ) : null}
+
           {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
 
           <Button title={t('driver.announcements.submitButton')} onPress={handleSubmit} loading={loading} />
@@ -104,6 +171,15 @@ const styles = StyleSheet.create({
     height: 120,
     textAlignVertical: 'top',
     paddingTop: Spacing.two,
+  },
+  truckToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    alignSelf: 'flex-start',
+  },
+  truckSection: {
+    gap: Spacing.three,
   },
   error: { color: '#ef4444', fontSize: 14 },
 });

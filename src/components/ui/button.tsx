@@ -7,7 +7,7 @@ interface ButtonProps {
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'danger';
 }
 
 export function Button({
@@ -17,8 +17,23 @@ export function Button({
   disabled = false,
   variant = 'primary',
 }: ButtonProps) {
-  const isPrimary = variant === 'primary';
   const isDisabled = disabled || loading;
+
+  function variantStyle() {
+    if (variant === 'danger') return styles.danger;
+    if (variant === 'secondary') return styles.secondary;
+    return styles.primary;
+  }
+
+  function indicatorColor() {
+    if (variant === 'secondary') return '#208AEF';
+    return '#fff';
+  }
+
+  function labelStyle() {
+    if (variant === 'secondary') return styles.labelSecondary;
+    return undefined;
+  }
 
   return (
     <Pressable
@@ -26,13 +41,13 @@ export function Button({
       disabled={isDisabled}
       style={({ pressed }) => [
         styles.base,
-        isPrimary ? styles.primary : styles.secondary,
+        variantStyle(),
         (pressed || isDisabled) && styles.dimmed,
       ]}>
       {loading ? (
-        <ActivityIndicator color={isPrimary ? '#fff' : '#208AEF'} />
+        <ActivityIndicator color={indicatorColor()} />
       ) : (
-        <Text style={[styles.label, !isPrimary && styles.labelSecondary]}>{title}</Text>
+        <Text style={[styles.label, labelStyle()]}>{title}</Text>
       )}
     </Pressable>
   );
@@ -53,6 +68,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 1.5,
     borderColor: '#208AEF',
+  },
+  danger: {
+    backgroundColor: '#ef4444',
   },
   dimmed: {
     opacity: 0.55,

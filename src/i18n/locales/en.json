@@ -1,0 +1,182 @@
+{
+  "auth": {
+    "appName": "TruckSOS",
+    "login": {
+      "subtitle": "Sign in to your account",
+      "emailLabel": "Email",
+      "emailPlaceholder": "email@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "button": "Sign in",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Sign up",
+      "errorEmpty": "Please enter your email and password."
+    },
+    "register": {
+      "subtitle": "Create your account",
+      "nameLabel": "Full name",
+      "namePlaceholder": "John Doe",
+      "emailLabel": "Email",
+      "emailPlaceholder": "email@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Minimum 6 characters",
+      "button": "Sign up",
+      "errorEmpty": "Please fill in all fields.",
+      "errorPasswordLength": "Password must be at least 6 characters.",
+      "verifyEmailTitle": "Verify your email",
+      "verifyEmailMessage": "We sent a confirmation link to\n{{email}}\n\nClick the link in the email, then come back and sign in.",
+      "goToLogin": "Go to sign in",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Sign in"
+    },
+    "roleSelect": {
+      "title": "Welcome,",
+      "subtitle": "What is your role in the app?",
+      "driverTitle": "Driver",
+      "driverDescription": "Report breakdowns and find available mechanics quickly",
+      "mechanicTitle": "Mechanic",
+      "mechanicDescription": "View announcements from drivers and offer technical assistance",
+      "loading": "Loading..."
+    }
+  },
+  "driver": {
+    "tabs": {
+      "announcements": "My announcements",
+      "conversations": "Conversations"
+    },
+    "announcements": {
+      "listTitle": "My announcements",
+      "emptyTitle": "No announcements yet",
+      "emptyDescription": "Tap + to report a breakdown",
+      "newTitle": "New announcement",
+      "locationLabel": "Current location",
+      "locationPlaceholder": "e.g.: Highway A1, km 45, near Bucharest",
+      "descriptionLabel": "Problem description",
+      "descriptionPlaceholder": "e.g.: Engine won't start, smoke from engine, flat tyre...",
+      "submitButton": "Post announcement",
+      "errorDescription": "Please describe the problem.",
+      "errorLocation": "Please enter your location.",
+      "detailTitle": "Announcement details",
+      "notFound": "Announcement not found.",
+      "sectionLocation": "Location",
+      "sectionDescription": "Problem description",
+      "sectionMechanic": "Assigned mechanic",
+      "resolveButton": "Mark as resolved",
+      "hintOpen": "Your announcement is visible to available mechanics.",
+      "hintResolved": "Problem resolved. You can view the conversation history in the Conversations tab.",
+      "hintCancelled": "The announcement has been cancelled and is no longer visible to mechanics.",
+      "cancelButton": "Cancel announcement",
+      "cancelConfirmTitle": "Cancel announcement?",
+      "cancelConfirmMessage": "The announcement will be removed from the mechanics' feed. This action cannot be undone.",
+      "cancelConfirmOk": "Yes, cancel",
+      "cancelConfirmCancel": "Go back",
+      "errorCancel": "Error cancelling the announcement."
+    },
+    "conversations": {
+      "title": "Conversations",
+      "emptyTitle": "No conversations",
+      "emptyDescription": "Conversations appear after a mechanic accepts your announcement"
+    }
+  },
+  "mechanic": {
+    "tabs": {
+      "feed": "Announcements",
+      "conversations": "Conversations"
+    },
+    "feed": {
+      "title": "Open announcements",
+      "emptyTitle": "No open announcements",
+      "emptyDescription": "No drivers currently need help",
+      "detailTitle": "Announcement details",
+      "sectionDriver": "Driver",
+      "sectionLocation": "Location",
+      "sectionDescription": "Problem description",
+      "unavailableTitle": "Announcement unavailable",
+      "unavailableDescription": "This announcement has already been accepted by another mechanic.",
+      "backToFeed": "← Back to feed",
+      "acceptButton": "Accept announcement",
+      "acceptHint": "By accepting, you are the only mechanic assigned to this driver.",
+      "alreadyTakenHint": "This announcement has already been accepted by another mechanic.",
+      "errorAlreadyAccepted": "This announcement has already been accepted by another mechanic.",
+      "toggleView": "Toggle view"
+    },
+    "conversations": {
+      "title": "Conversations",
+      "emptyTitle": "No conversations",
+      "emptyDescription": "Accept an announcement from the feed to start a conversation"
+    },
+    "apply": {
+      "buttonInterested": "I'm interested",
+      "interestedHint": "Send a price offer to the driver. They will choose the right mechanic.",
+      "sheetTitle": "Submit application",
+      "priceTypeLabel": "Price type",
+      "priceTypeFixed": "Fixed price",
+      "priceTypeHourly": "Hourly rate",
+      "priceAmountLabel": "Amount",
+      "priceAmountPlaceholder": "e.g.: 150",
+      "currencyLabel": "Currency",
+      "messageLabel": "Optional message",
+      "messagePlaceholder": "e.g.: I can arrive in 30 minutes...",
+      "submitButton": "Submit application",
+      "statusPending": "Application sent — Pending",
+      "statusAccepted": "Application accepted",
+      "statusRejected": "Application rejected",
+      "errorAmountRequired": "Please enter a valid amount.",
+      "errorSubmit": "Error submitting application.",
+      "errorAlreadyApplied": "You have already applied to this announcement."
+    }
+  },
+  "chat": {
+    "emptyMessages": "No messages. Be the first to write!",
+    "inputPlaceholder": "Write a message...",
+    "resolvedBanner": "The announcement has been marked as resolved."
+  },
+  "profile": {
+    "tabTitle": "Profile",
+    "myProfileTitle": "My profile",
+    "editTitle": "Edit profile",
+    "editButton": "Edit",
+    "saveButton": "Save",
+    "nameLabel": "Name",
+    "namePlaceholder": "e.g.: John Doe",
+    "specializationLabel": "Specialisation",
+    "specializationPlaceholder": "e.g.: Diesel engine, transmission, electrical...",
+    "activityZoneLabel": "Activity zone",
+    "activityZonePlaceholder": "e.g.: Bavaria, North Rhine-Westphalia...",
+    "phoneLabel": "Phone number (optional)",
+    "phonePlaceholder": "e.g.: +49 170 123 4567",
+    "phoneHint": "Visible to the driver only after they choose you.",
+    "emptyField": "Not set",
+    "savedSuccess": "Profile saved.",
+    "errorSave": "Error saving profile.",
+    "errorNameRequired": "Name cannot be empty."
+  },
+  "truck": {
+    "sectionToggleAdd": "+ Add truck details (optional)",
+    "sectionToggleHide": "- Hide truck details",
+    "makeLabel": "Make",
+    "makePlaceholder": "e.g.: Volvo, DAF, MAN...",
+    "modelLabel": "Model",
+    "modelPlaceholder": "e.g.: FH16, XF105...",
+    "yearLabel": "Year of manufacture",
+    "yearPlaceholder": "e.g.: 2018",
+    "yearError": "Year must be between 1950 and {{maxYear}}.",
+    "sectionTitle": "Truck"
+  },
+  "common": {
+    "loading": "Loading...",
+    "timeNow": "just now",
+    "timeMinsAgo": "{{count}} min ago",
+    "timeHoursAgo": "{{count}}h ago",
+    "timeDaysAgo": "{{count}} days ago",
+    "defaultUser": "User",
+    "noSession": "No active session",
+    "signOut": "Sign out"
+  },
+  "status": {
+    "open": "Open",
+    "accepted": "Accepted",
+    "resolved": "Resolved",
+    "cancelled": "Cancelled"
+  }
+}

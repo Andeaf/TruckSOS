@@ -13,6 +13,7 @@ interface AuthContextValue {
   signUp: (email: string, password: string, fullName: string) => Promise<string | null>;
   signOut: () => Promise<void>;
   createProfile: (role: 'driver' | 'mechanic') => Promise<string | null>;
+  updateProfile: (updates: { full_name?: string; specialization?: string | null; activity_zone?: string | null; phone?: string | null }) => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -90,6 +91,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   }
 
+  async function updateProfile(updates: {
+    full_name?: string;
+    specialization?: string | null;
+    activity_zone?: string | null;
+    phone?: string | null;
+  }): Promise<string | null> {
+    const userId = session?.user.id;
+    if (!userId) return i18n.t('common.noSession');
+    const { error } = await supabase
+      .from('profiles')
+      .update(updates as never)
+      .eq('id', userId);
+    if (!error) await fetchProfile(userId);
+    return error?.message ?? null;
+  }
+
   async function createProfile(role: 'driver' | 'mechanic'): Promise<string | null> {
     const userId = session?.user.id;
     const fullName = (session?.user.user_metadata?.full_name as string) ?? i18n.t('common.defaultUser');
@@ -104,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ session, profile, loading, signIn, signUp, signOut, createProfile }}>
+    <AuthContext.Provider value={{ session, profile, loading, signIn, signUp, signOut, createProfile, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,10 +1,15 @@
 export type Role = 'driver' | 'mechanic';
-export type AnnouncementStatus = 'open' | 'accepted' | 'resolved';
+export type AnnouncementStatus = 'open' | 'accepted' | 'resolved' | 'cancelled';
+export type ApplicationStatus = 'pending' | 'accepted' | 'rejected';
+export type PriceType = 'fixed' | 'hourly';
 
 export interface Profile {
   id: string;
   full_name: string;
   role: Role;
+  specialization: string | null;
+  activity_zone: string | null;
+  phone: string | null;
   created_at: string;
 }
 
@@ -15,6 +20,9 @@ export interface Announcement {
   location: string;
   status: AnnouncementStatus;
   mechanic_id: string | null;
+  truck_make: string | null;
+  truck_model: string | null;
+  truck_year: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -35,19 +43,34 @@ export interface Message {
   created_at: string;
 }
 
+export interface Application {
+  id: string;
+  announcement_id: string;
+  mechanic_id: string;
+  price_type: PriceType;
+  price_amount: number;
+  currency: string;
+  message: string | null;
+  status: ApplicationStatus;
+  created_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
       profiles: {
         Row: Profile;
         Insert: Omit<Profile, 'created_at'>;
-        Update: Partial<Omit<Profile, 'id' | 'created_at'>>;
+        Update: Partial<Omit<Profile, 'id' | 'created_at' | 'role'>>;
       };
       announcements: {
         Row: Announcement;
         Insert: Omit<Announcement, 'id' | 'created_at' | 'updated_at'> & {
           status?: AnnouncementStatus;
           mechanic_id?: string | null;
+          truck_make?: string | null;
+          truck_model?: string | null;
+          truck_year?: number | null;
         };
         Update: Partial<Omit<Announcement, 'id' | 'driver_id' | 'created_at'>>;
       };
@@ -61,10 +84,37 @@ export interface Database {
         Insert: Omit<Message, 'id' | 'created_at'>;
         Update: never;
       };
+      applications: {
+        Row: Application;
+        Insert: Omit<Application, 'id' | 'created_at' | 'status'> & { status?: ApplicationStatus };
+        Update: never;
+      };
     };
     Functions: {
       accept_announcement: {
         Args: { p_announcement_id: string };
+        Returns: void;
+      };
+      get_mechanic_phone: {
+        Args: { p_mechanic_id: string };
+        Returns: string | null;
+      };
+      apply_to_announcement: {
+        Args: {
+          p_announcement_id: string;
+          p_price_type: PriceType;
+          p_price_amount: number;
+          p_currency?: string;
+          p_message?: string | null;
+        };
+        Returns: void;
+      };
+      accept_application: {
+        Args: { p_application_id: string };
+        Returns: string;
+      };
+      reject_application: {
+        Args: { p_application_id: string };
         Returns: void;
       };
     };

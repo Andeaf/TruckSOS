@@ -63,7 +63,14 @@
       "sectionMechanic": "Mecanic asignat",
       "resolveButton": "Marchează ca rezolvat",
       "hintOpen": "Anunțul este vizibil mecanicilor disponibili.",
-      "hintResolved": "Problemă rezolvată. Poți vedea istoricul conversației în tab-ul Conversații."
+      "hintResolved": "Problemă rezolvată. Poți vedea istoricul conversației în tab-ul Conversații.",
+      "hintCancelled": "Anunțul a fost anulat și nu mai este vizibil mecanicilor.",
+      "cancelButton": "Anulează anunțul",
+      "cancelConfirmTitle": "Anulezi anunțul?",
+      "cancelConfirmMessage": "Anunțul va dispărea din feed-ul mecanicilor. Acțiunea nu poate fi anulată.",
+      "cancelConfirmOk": "Da, anulează",
+      "cancelConfirmCancel": "Înapoi",
+      "errorCancel": "Eroare la anularea anunțului."
     },
     "conversations": {
       "title": "Conversații",
@@ -90,12 +97,33 @@
       "acceptButton": "Acceptă anunțul",
       "acceptHint": "Acceptând, ești singurul mecanic asignat acestui șofer.",
       "alreadyTakenHint": "Acest anunț a fost deja acceptat de un alt mecanic.",
-      "errorAlreadyAccepted": "Anunțul a fost deja acceptat de un alt mecanic."
+      "errorAlreadyAccepted": "Anunțul a fost deja acceptat de un alt mecanic.",
+      "toggleView": "Schimbă vizualizarea"
     },
     "conversations": {
       "title": "Conversații",
       "emptyTitle": "Nicio conversație",
       "emptyDescription": "Acceptă un anunț din feed pentru a începe o conversație"
+    },
+    "apply": {
+      "buttonInterested": "Sunt interesat",
+      "interestedHint": "Trimite o ofertă de preț șoferului. El va alege mecanicul potrivit.",
+      "sheetTitle": "Trimite candidatura",
+      "priceTypeLabel": "Tip preț",
+      "priceTypeFixed": "Preț fix",
+      "priceTypeHourly": "Tarif orar",
+      "priceAmountLabel": "Suma",
+      "priceAmountPlaceholder": "ex: 150",
+      "currencyLabel": "Monedă",
+      "messageLabel": "Mesaj opțional",
+      "messagePlaceholder": "ex: Pot ajunge în 30 de minute...",
+      "submitButton": "Trimite candidatura",
+      "statusPending": "Candidatură trimisă — În așteptare",
+      "statusAccepted": "Candidatură acceptată",
+      "statusRejected": "Candidatură respinsă",
+      "errorAmountRequired": "Introdu o sumă validă.",
+      "errorSubmit": "Eroare la trimiterea candidaturii.",
+      "errorAlreadyApplied": "Ai candidat deja la acest anunț."
     }
   },
   "chat": {
@@ -110,11 +138,45 @@
     "timeHoursAgo": "{{count}}h în urmă",
     "timeDaysAgo": "{{count}} zile în urmă",
     "defaultUser": "Utilizator",
-    "noSession": "Sesiune inexistentă"
+    "noSession": "Sesiune inexistentă",
+    "signOut": "Deconectare"
+  },
+  "profile": {
+    "tabTitle": "Profil",
+    "myProfileTitle": "Profilul meu",
+    "editTitle": "Editează profilul",
+    "editButton": "Editează",
+    "saveButton": "Salvează",
+    "nameLabel": "Nume",
+    "namePlaceholder": "ex: Ion Popescu",
+    "specializationLabel": "Specializare",
+    "specializationPlaceholder": "ex: Motor diesel, transmisie, electrică...",
+    "activityZoneLabel": "Zonă de activitate",
+    "activityZonePlaceholder": "ex: Moldova, Muntenia...",
+    "phoneLabel": "Număr de telefon (opțional)",
+    "phonePlaceholder": "ex: 0722 123 456",
+    "phoneHint": "Vizibil șoferului doar după ce te-a ales.",
+    "emptyField": "Necompletat",
+    "savedSuccess": "Profilul a fost salvat.",
+    "errorSave": "Eroare la salvarea profilului.",
+    "errorNameRequired": "Numele nu poate fi gol."
+  },
+  "truck": {
+    "sectionToggleAdd": "+ Adaugă detalii camion (opțional)",
+    "sectionToggleHide": "- Ascunde detalii camion",
+    "makeLabel": "Marcă",
+    "makePlaceholder": "ex: Volvo, DAF, MAN...",
+    "modelLabel": "Model",
+    "modelPlaceholder": "ex: FH16, XF105...",
+    "yearLabel": "An fabricație",
+    "yearPlaceholder": "ex: 2018",
+    "yearError": "Anul trebuie să fie între 1950 și {{maxYear}}.",
+    "sectionTitle": "Camion"
   },
   "status": {
     "open": "Deschis",
     "accepted": "Acceptat",
-    "resolved": "Rezolvat"
+    "resolved": "Rezolvat",
+    "cancelled": "Anulat"
   }
 }

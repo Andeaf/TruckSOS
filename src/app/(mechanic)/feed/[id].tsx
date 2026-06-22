@@ -1,22 +1,22 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { useBack } from '@/hooks/use-back';
-
+import { ApplyBottomSheet } from '@/components/apply-bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import {
-  acceptAnnouncement,
   fetchOpenAnnouncementById,
+  fetchMyApplicationForAnnouncement,
   type AnnouncementWithDriver,
 } from '@/hooks/use-announcements';
-import { supabase } from '@/lib/supabase';
+import type { Application } from '@/types/database';
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleString('ro-RO', {
@@ -25,55 +25,85 @@ function formatDate(dateStr: string) {
   });
 }
 
+function formatTruck(a: AnnouncementWithDriver): string | null {
+  const parts = [
+    a.truck_make,
+    a.truck_model,
+    a.truck_year != null ? String(a.truck_year) : null,
+  ].filter(Boolean) as string[];
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
+
+function ApplicationStatusCard({ application, t }: { application: Application; t: (k: string) => string }) {
+  const statusKey =
+    application.status === 'accepted' ? 'mechanic.apply.statusAccepted'
+    : application.status === 'rejected' ? 'mechanic.apply.statusRejected'
+    : 'mechanic.apply.statusPending';
+
+  const statusColor =
+    application.status === 'accepted' ? '#22c55e'
+    : application.status === 'rejected' ? '#ef4444'
+    : '#f59e0b';
+
+  const priceLabel =
+    application.price_type === 'fixed'
+      ? t('mechanic.apply.priceTypeFixed')
+      : t('mechanic.apply.priceTypeHourly');
+
+  return (
+    <ThemedView type="backgroundElement" style={styles.statusCard}>
+      <View style={styles.statusRow}>
+        <MaterialIcons
+          name={
+            application.status === 'accepted' ? 'check-circle'
+            : application.status === 'rejected' ? 'cancel'
+            : 'hourglass-empty'
+          }
+          size={20}
+          color={statusColor}
+        />
+        <ThemedText style={[styles.statusText, { color: statusColor }]}>
+          {t(statusKey)}
+        </ThemedText>
+      </View>
+      <ThemedText themeColor="textSecondary" type="small">
+        {priceLabel}: {application.price_amount} {application.currency}
+      </ThemedText>
+      {application.message ? (
+        <ThemedText themeColor="textSecondary" type="small">
+          "{application.message}"
+        </ThemedText>
+      ) : null}
+    </ThemedView>
+  );
+}
+
 export default function MechanicAnnouncementDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
-  const router = useRouter();
   const goBack = useBack('/(mechanic)/feed');
   const insets = useSafeAreaInsets();
+
   const [announcement, setAnnouncement] = useState<AnnouncementWithDriver | null>(null);
+  const [myApplication, setMyApplication] = useState<Application | null>(null);
   const [loading, setLoading] = useState(true);
-  const [accepting, setAccepting] = useState(false);
-  const [error, setError] = useState('');
+  const [sheetVisible, setSheetVisible] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const data = await fetchOpenAnnouncementById(id);
-        setAnnouncement(data);
-      } catch {
-        setAnnouncement(null);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [id]);
-
-  async function handleAccept() {
-    setAccepting(true);
-    setError('');
-    const err = await acceptAnnouncement(id);
-    if (err) {
-      setError(t('mechanic.feed.errorAlreadyAccepted'));
-      setAccepting(false);
-      return;
-    }
-    // Găsim conversația creată de RPC și navigăm direct în chat
-    const { data } = await supabase
-      .from('conversations')
-      .select('id')
-      .eq('announcement_id', id)
-      .single();
-    if (data?.id) {
-      router.replace({
-        pathname: '/(mechanic)/conversations/[id]' as never,
-        params: { id: data.id },
-      });
-    } else {
-      router.replace('/(mechanic)/conversations');
+  async function load() {
+    setLoading(true);
+    try {
+      const [ann, app] = await Promise.all([
+        fetchOpenAnnouncementById(id),
+        fetchMyApplicationForAnnouncement(id),
+      ]);
+      setAnnouncement(ann);
+      setMyApplication(app);
+    } finally {
+      setLoading(false);
     }
   }
+
+  useEffect(() => { load(); }, [id]);
 
   if (loading) {
     return (
@@ -94,13 +124,16 @@ export default function MechanicAnnouncementDetailScreen() {
           {t('mechanic.feed.unavailableDescription')}
         </ThemedText>
         <Pressable onPress={goBack} hitSlop={12}>
-          <ThemedText themeColor="textSecondary" type="small">{t('mechanic.feed.backToFeed')}</ThemedText>
+          <ThemedText themeColor="textSecondary" type="small">
+            {t('mechanic.feed.backToFeed')}
+          </ThemedText>
         </Pressable>
       </ThemedView>
     );
   }
 
-  const alreadyTaken = announcement.status !== 'open';
+  const announcementTaken = announcement.status !== 'open';
+  const truckInfo = formatTruck(announcement);
 
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
@@ -108,7 +141,9 @@ export default function MechanicAnnouncementDetailScreen() {
         <Pressable onPress={goBack} hitSlop={12}>
           <MaterialIcons name="arrow-back" size={24} color="#60646C" />
         </Pressable>
-        <ThemedText type="subtitle" style={styles.title}>{t('mechanic.feed.detailTitle')}</ThemedText>
+        <ThemedText type="subtitle" style={styles.title}>
+          {t('mechanic.feed.detailTitle')}
+        </ThemedText>
         <View style={{ width: 24 }} />
       </View>
 
@@ -135,6 +170,16 @@ export default function MechanicAnnouncementDetailScreen() {
           <ThemedText>{announcement.location}</ThemedText>
         </ThemedView>
 
+        {truckInfo ? (
+          <ThemedView type="backgroundElement" style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons name="local-shipping" size={16} color="#22c55e" />
+              <ThemedText type="smallBold">{t('truck.sectionTitle')}</ThemedText>
+            </View>
+            <ThemedText>{truckInfo}</ThemedText>
+          </ThemedView>
+        ) : null}
+
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialIcons name="build" size={16} color="#22c55e" />
@@ -143,24 +188,35 @@ export default function MechanicAnnouncementDetailScreen() {
           <ThemedText style={styles.descriptionText}>{announcement.description}</ThemedText>
         </ThemedView>
 
-        {alreadyTaken ? (
+        {/* Acțiune de jos */}
+        {myApplication ? (
+          <ApplicationStatusCard application={myApplication} t={t} />
+        ) : announcementTaken ? (
           <ThemedText themeColor="textSecondary" style={styles.hint}>
             {t('mechanic.feed.alreadyTakenHint')}
           </ThemedText>
         ) : (
           <>
-            {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
             <Button
-              title={t('mechanic.feed.acceptButton')}
-              onPress={handleAccept}
-              loading={accepting}
+              title={t('mechanic.apply.buttonInterested')}
+              onPress={() => setSheetVisible(true)}
             />
             <ThemedText themeColor="textSecondary" style={styles.hint}>
-              {t('mechanic.feed.acceptHint')}
+              {t('mechanic.apply.interestedHint')}
             </ThemedText>
           </>
         )}
       </ScrollView>
+
+      <ApplyBottomSheet
+        visible={sheetVisible}
+        announcementId={id}
+        onClose={() => setSheetVisible(false)}
+        onSuccess={() => {
+          setSheetVisible(false);
+          load();
+        }}
+      />
     </ThemedView>
   );
 }
@@ -200,6 +256,19 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
   },
   descriptionText: { lineHeight: 24 },
-  error: { color: '#ef4444', fontSize: 14 },
   hint: { textAlign: 'center', fontSize: 14, lineHeight: 20 },
+  statusCard: {
+    borderRadius: Spacing.three,
+    padding: Spacing.three,
+    gap: Spacing.two,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+  },
+  statusText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
 });

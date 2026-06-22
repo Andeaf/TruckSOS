@@ -13,9 +13,10 @@ interface AnnouncementCardProps {
   announcement: Announcement;
   onPress: () => void;
   driverName?: string;
+  compact?: boolean;
 }
 
-export function AnnouncementCard({ announcement, onPress, driverName }: AnnouncementCardProps) {
+export function AnnouncementCard({ announcement, onPress, driverName, compact = false }: AnnouncementCardProps) {
   const theme = useTheme();
   const { t } = useTranslation();
 
@@ -27,6 +28,34 @@ export function AnnouncementCard({ announcement, onPress, driverName }: Announce
     const hrs = Math.floor(mins / 60);
     if (hrs < 24) return t('common.timeHoursAgo', { count: hrs });
     return t('common.timeDaysAgo', { count: Math.floor(hrs / 24) });
+  }
+
+  if (compact) {
+    return (
+      <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
+        <ThemedView type="backgroundElement" style={styles.compactCard}>
+          <View style={styles.compactMain}>
+            <MaterialIcons name="location-on" size={13} color={theme.textSecondary} />
+            <ThemedText type="small" numberOfLines={1} style={styles.compactLocation}>
+              {announcement.location}
+            </ThemedText>
+          </View>
+          <View style={styles.compactRight}>
+            {announcement.truck_make ? (
+              <View style={styles.compactTruck}>
+                <MaterialIcons name="local-shipping" size={12} color={theme.textSecondary} />
+                <ThemedText themeColor="textSecondary" type="small" numberOfLines={1} style={styles.compactTruckText}>
+                  {announcement.truck_make}
+                </ThemedText>
+              </View>
+            ) : null}
+            <ThemedText themeColor="textSecondary" type="small" style={styles.compactTime}>
+              {timeAgo(announcement.created_at)}
+            </ThemedText>
+          </View>
+        </ThemedView>
+      </Pressable>
+    );
   }
 
   return (
@@ -65,6 +94,7 @@ export function AnnouncementCard({ announcement, onPress, driverName }: Announce
 }
 
 const styles = StyleSheet.create({
+  // Extended card (unchanged)
   card: {
     borderRadius: Spacing.three,
     padding: Spacing.three,
@@ -82,12 +112,8 @@ const styles = StyleSheet.create({
     gap: 4,
     flex: 1,
   },
-  location: {
-    flex: 1,
-  },
-  description: {
-    lineHeight: 20,
-  },
+  location: { flex: 1 },
+  description: { lineHeight: 20 },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -98,10 +124,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 3,
   },
-  driverName: {
-    fontSize: 12,
+  driverName: { fontSize: 12 },
+
+  // Compact card
+  compactCard: {
+    borderRadius: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
   },
-  pressed: {
-    opacity: 0.7,
+  compactMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flex: 1,
   },
+  compactLocation: { flex: 1 },
+  compactRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    flexShrink: 0,
+  },
+  compactTruck: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  compactTruckText: { maxWidth: 80 },
+  compactTime: { flexShrink: 0 },
+
+  pressed: { opacity: 0.7 },
 });

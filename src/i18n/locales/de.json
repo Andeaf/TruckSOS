@@ -1,0 +1,182 @@
+{
+  "auth": {
+    "appName": "TruckSOS",
+    "login": {
+      "subtitle": "Melde dich in deinem Konto an",
+      "emailLabel": "E-Mail",
+      "emailPlaceholder": "email@beispiel.com",
+      "passwordLabel": "Passwort",
+      "passwordPlaceholder": "••••••••",
+      "button": "Anmelden",
+      "noAccount": "Noch kein Konto?",
+      "registerLink": "Registrieren",
+      "errorEmpty": "Bitte E-Mail und Passwort eingeben."
+    },
+    "register": {
+      "subtitle": "Erstelle dein Konto",
+      "nameLabel": "Vollständiger Name",
+      "namePlaceholder": "Max Mustermann",
+      "emailLabel": "E-Mail",
+      "emailPlaceholder": "email@beispiel.com",
+      "passwordLabel": "Passwort",
+      "passwordPlaceholder": "Mindestens 6 Zeichen",
+      "button": "Registrieren",
+      "errorEmpty": "Bitte alle Felder ausfüllen.",
+      "errorPasswordLength": "Das Passwort muss mindestens 6 Zeichen lang sein.",
+      "verifyEmailTitle": "E-Mail bestätigen",
+      "verifyEmailMessage": "Wir haben einen Bestätigungslink an\n{{email}}\ngesendet.\n\nKlicke auf den Link in der E-Mail und melde dich dann an.",
+      "goToLogin": "Zur Anmeldung",
+      "hasAccount": "Schon ein Konto?",
+      "loginLink": "Anmelden"
+    },
+    "roleSelect": {
+      "title": "Willkommen,",
+      "subtitle": "Was ist deine Rolle in der App?",
+      "driverTitle": "Fahrer",
+      "driverDescription": "Pannen melden und verfügbare Mechaniker schnell finden",
+      "mechanicTitle": "Mechaniker",
+      "mechanicDescription": "Anzeigen von Fahrern sehen und technische Hilfe anbieten",
+      "loading": "Lädt..."
+    }
+  },
+  "driver": {
+    "tabs": {
+      "announcements": "Meine Anzeigen",
+      "conversations": "Gespräche"
+    },
+    "announcements": {
+      "listTitle": "Meine Anzeigen",
+      "emptyTitle": "Noch keine Anzeigen",
+      "emptyDescription": "Tippe + um eine Panne zu melden",
+      "newTitle": "Neue Anzeige",
+      "locationLabel": "Aktueller Standort",
+      "locationPlaceholder": "z.B.: Autobahn A1, km 45, bei München",
+      "descriptionLabel": "Problembeschreibung",
+      "descriptionPlaceholder": "z.B.: Motor startet nicht, Rauch aus dem Motor, Reifenpanne...",
+      "submitButton": "Anzeige veröffentlichen",
+      "errorDescription": "Bitte das Problem beschreiben.",
+      "errorLocation": "Bitte Standort eingeben.",
+      "detailTitle": "Anzeigendetails",
+      "notFound": "Anzeige nicht gefunden.",
+      "sectionLocation": "Standort",
+      "sectionDescription": "Problembeschreibung",
+      "sectionMechanic": "Zugewiesener Mechaniker",
+      "resolveButton": "Als gelöst markieren",
+      "hintOpen": "Deine Anzeige ist für verfügbare Mechaniker sichtbar.",
+      "hintResolved": "Problem gelöst. Den Gesprächsverlauf findest du im Tab Gespräche.",
+      "hintCancelled": "Die Anzeige wurde storniert und ist für Mechaniker nicht mehr sichtbar.",
+      "cancelButton": "Anzeige stornieren",
+      "cancelConfirmTitle": "Anzeige stornieren?",
+      "cancelConfirmMessage": "Die Anzeige wird aus dem Feed der Mechaniker entfernt. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "cancelConfirmOk": "Ja, stornieren",
+      "cancelConfirmCancel": "Zurück",
+      "errorCancel": "Fehler beim Stornieren der Anzeige."
+    },
+    "conversations": {
+      "title": "Gespräche",
+      "emptyTitle": "Keine Gespräche",
+      "emptyDescription": "Gespräche erscheinen, nachdem ein Mechaniker deine Anzeige angenommen hat"
+    }
+  },
+  "mechanic": {
+    "tabs": {
+      "feed": "Anzeigen",
+      "conversations": "Gespräche"
+    },
+    "feed": {
+      "title": "Offene Anzeigen",
+      "emptyTitle": "Keine offenen Anzeigen",
+      "emptyDescription": "Zurzeit benötigt kein Fahrer Hilfe",
+      "detailTitle": "Anzeigendetails",
+      "sectionDriver": "Fahrer",
+      "sectionLocation": "Standort",
+      "sectionDescription": "Problembeschreibung",
+      "unavailableTitle": "Anzeige nicht verfügbar",
+      "unavailableDescription": "Diese Anzeige wurde bereits von einem anderen Mechaniker angenommen.",
+      "backToFeed": "← Zurück zum Feed",
+      "acceptButton": "Anzeige annehmen",
+      "acceptHint": "Mit der Annahme bist du der einzige Mechaniker, der diesem Fahrer zugewiesen ist.",
+      "alreadyTakenHint": "Diese Anzeige wurde bereits von einem anderen Mechaniker angenommen.",
+      "errorAlreadyAccepted": "Diese Anzeige wurde bereits von einem anderen Mechaniker angenommen.",
+      "toggleView": "Ansicht wechseln"
+    },
+    "conversations": {
+      "title": "Gespräche",
+      "emptyTitle": "Keine Gespräche",
+      "emptyDescription": "Nimm eine Anzeige aus dem Feed an, um ein Gespräch zu beginnen"
+    },
+    "apply": {
+      "buttonInterested": "Ich bin interessiert",
+      "interestedHint": "Sende dem Fahrer ein Preisangebot. Er wählt den passenden Mechaniker aus.",
+      "sheetTitle": "Bewerbung einreichen",
+      "priceTypeLabel": "Preisart",
+      "priceTypeFixed": "Festpreis",
+      "priceTypeHourly": "Stundensatz",
+      "priceAmountLabel": "Betrag",
+      "priceAmountPlaceholder": "z. B.: 150",
+      "currencyLabel": "Währung",
+      "messageLabel": "Optionale Nachricht",
+      "messagePlaceholder": "z. B.: Ich kann in 30 Minuten da sein...",
+      "submitButton": "Bewerbung einreichen",
+      "statusPending": "Bewerbung gesendet — Ausstehend",
+      "statusAccepted": "Bewerbung angenommen",
+      "statusRejected": "Bewerbung abgelehnt",
+      "errorAmountRequired": "Bitte gib einen gültigen Betrag ein.",
+      "errorSubmit": "Fehler beim Einreichen der Bewerbung.",
+      "errorAlreadyApplied": "Du hast dich bereits für diese Anzeige beworben."
+    }
+  },
+  "chat": {
+    "emptyMessages": "Keine Nachrichten. Schreibe als Erster!",
+    "inputPlaceholder": "Nachricht schreiben...",
+    "resolvedBanner": "Die Anzeige wurde als gelöst markiert."
+  },
+  "profile": {
+    "tabTitle": "Profil",
+    "myProfileTitle": "Mein Profil",
+    "editTitle": "Profil bearbeiten",
+    "editButton": "Bearbeiten",
+    "saveButton": "Speichern",
+    "nameLabel": "Name",
+    "namePlaceholder": "z.B.: Max Mustermann",
+    "specializationLabel": "Spezialisierung",
+    "specializationPlaceholder": "z.B.: Dieselmotor, Getriebe, Elektrik...",
+    "activityZoneLabel": "Tätigkeitsgebiet",
+    "activityZonePlaceholder": "z.B.: Bayern, Nordrhein-Westfalen...",
+    "phoneLabel": "Telefonnummer (optional)",
+    "phonePlaceholder": "z.B.: 0170 123 4567",
+    "phoneHint": "Für den Fahrer nur sichtbar, nachdem er dich ausgewählt hat.",
+    "emptyField": "Nicht angegeben",
+    "savedSuccess": "Profil gespeichert.",
+    "errorSave": "Fehler beim Speichern des Profils.",
+    "errorNameRequired": "Der Name darf nicht leer sein."
+  },
+  "truck": {
+    "sectionToggleAdd": "+ LKW-Details hinzufügen (optional)",
+    "sectionToggleHide": "- LKW-Details ausblenden",
+    "makeLabel": "Marke",
+    "makePlaceholder": "z.B.: Volvo, DAF, MAN...",
+    "modelLabel": "Modell",
+    "modelPlaceholder": "z.B.: FH16, XF105...",
+    "yearLabel": "Baujahr",
+    "yearPlaceholder": "z.B.: 2018",
+    "yearError": "Das Jahr muss zwischen 1950 und {{maxYear}} liegen.",
+    "sectionTitle": "LKW"
+  },
+  "common": {
+    "loading": "Lädt...",
+    "timeNow": "gerade eben",
+    "timeMinsAgo": "vor {{count}} Min.",
+    "timeHoursAgo": "vor {{count}} Std.",
+    "timeDaysAgo": "vor {{count}} Tagen",
+    "defaultUser": "Benutzer",
+    "noSession": "Keine aktive Sitzung",
+    "signOut": "Abmelden"
+  },
+  "status": {
+    "open": "Offen",
+    "accepted": "Angenommen",
+    "resolved": "Gelöst",
+    "cancelled": "Storniert"
+  }
+}

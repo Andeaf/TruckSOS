@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
-import type { Announcement } from '@/types/database';
+import type { Announcement, Application, PriceType } from '@/types/database';
 import { useAuth } from '@/hooks/use-auth';
 
 export type AnnouncementWithMechanic = Announcement & {
@@ -54,11 +54,22 @@ export function useOpenAnnouncements() {
 export async function createAnnouncement(
   driverId: string,
   description: string,
-  location: string
+  location: string,
+  truckMake?: string,
+  truckModel?: string,
+  truckYear?: number | null,
 ): Promise<string | null> {
   const { error } = await supabase
     .from('announcements')
-    .insert({ driver_id: driverId, description, location, status: 'open' } as never);
+    .insert({
+      driver_id: driverId,
+      description,
+      location,
+      status: 'open',
+      truck_make: truckMake || null,
+      truck_model: truckModel || null,
+      truck_year: truckYear ?? null,
+    } as never);
   return error?.message ?? null;
 }
 
@@ -66,6 +77,14 @@ export async function resolveAnnouncement(id: string): Promise<string | null> {
   const { error } = await supabase
     .from('announcements')
     .update({ status: 'resolved' } as never)
+    .eq('id', id);
+  return error?.message ?? null;
+}
+
+export async function cancelAnnouncement(id: string): Promise<string | null> {
+  const { error } = await supabase
+    .from('announcements')
+    .update({ status: 'cancelled' } as never)
     .eq('id', id);
   return error?.message ?? null;
 }
@@ -97,4 +116,32 @@ export async function fetchOpenAnnouncementById(
     .eq('id', id)
     .single();
   return (data as unknown as AnnouncementWithDriver) ?? null;
+}
+
+export async function applyToAnnouncement(
+  announcementId: string,
+  priceType: PriceType,
+  priceAmount: number,
+  currency: string,
+  message: string | null,
+): Promise<string | null> {
+  const { error } = await supabase.rpc('apply_to_announcement', {
+    p_announcement_id: announcementId,
+    p_price_type: priceType,
+    p_price_amount: priceAmount,
+    p_currency: currency,
+    p_message: message || null,
+  } as never);
+  return error?.message ?? null;
+}
+
+export async function fetchMyApplicationForAnnouncement(
+  announcementId: string,
+): Promise<Application | null> {
+  const { data } = await supabase
+    .from('applications')
+    .select('*')
+    .eq('announcement_id', announcementId)
+    .maybeSingle();
+  return (data as Application) ?? null;
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,6 +15,7 @@ import { Spacing } from '@/constants/theme';
 import {
   fetchAnnouncementById,
   resolveAnnouncement,
+  cancelAnnouncement,
   type AnnouncementWithMechanic,
 } from '@/hooks/use-announcements';
 
@@ -23,6 +24,15 @@ function formatDate(dateStr: string) {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
+}
+
+function formatTruck(a: AnnouncementWithMechanic): string | null {
+  const parts = [
+    a.truck_make,
+    a.truck_model,
+    a.truck_year != null ? String(a.truck_year) : null,
+  ].filter(Boolean) as string[];
+  return parts.length > 0 ? parts.join(' · ') : null;
 }
 
 export default function AnnouncementDetailScreen() {
@@ -34,6 +44,7 @@ export default function AnnouncementDetailScreen() {
   const [announcement, setAnnouncement] = useState<AnnouncementWithMechanic | null>(null);
   const [loading, setLoading] = useState(true);
   const [resolving, setResolving] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState('');
 
   async function load() {
@@ -58,6 +69,27 @@ export default function AnnouncementDetailScreen() {
     setResolving(false);
   }
 
+  function handleCancelPress() {
+    Alert.alert(
+      t('driver.announcements.cancelConfirmTitle'),
+      t('driver.announcements.cancelConfirmMessage'),
+      [
+        { text: t('driver.announcements.cancelConfirmCancel'), style: 'cancel' },
+        {
+          text: t('driver.announcements.cancelConfirmOk'),
+          style: 'destructive',
+          onPress: async () => {
+            setCancelling(true);
+            const err = await cancelAnnouncement(id);
+            setCancelling(false);
+            if (err) { setError(t('driver.announcements.errorCancel')); return; }
+            goBack();
+          },
+        },
+      ]
+    );
+  }
+
   if (loading) {
     return (
       <ThemedView style={styles.centered}>
@@ -73,6 +105,8 @@ export default function AnnouncementDetailScreen() {
       </ThemedView>
     );
   }
+
+  const truckInfo = formatTruck(announcement);
 
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
@@ -99,6 +133,16 @@ export default function AnnouncementDetailScreen() {
           </View>
           <ThemedText>{announcement.location}</ThemedText>
         </ThemedView>
+
+        {truckInfo ? (
+          <ThemedView type="backgroundElement" style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons name="local-shipping" size={16} color="#208AEF" />
+              <ThemedText type="smallBold">{t('truck.sectionTitle')}</ThemedText>
+            </View>
+            <ThemedText>{truckInfo}</ThemedText>
+          </ThemedView>
+        ) : null}
 
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -129,14 +173,28 @@ export default function AnnouncementDetailScreen() {
         ) : null}
 
         {announcement.status === 'open' ? (
-          <ThemedText themeColor="textSecondary" style={styles.hint}>
-            {t('driver.announcements.hintOpen')}
-          </ThemedText>
+          <>
+            <ThemedText themeColor="textSecondary" style={styles.hint}>
+              {t('driver.announcements.hintOpen')}
+            </ThemedText>
+            <Button
+              title={t('driver.announcements.cancelButton')}
+              onPress={handleCancelPress}
+              loading={cancelling}
+              variant="danger"
+            />
+          </>
         ) : null}
 
         {announcement.status === 'resolved' ? (
           <ThemedText themeColor="textSecondary" style={styles.hint}>
             {t('driver.announcements.hintResolved')}
+          </ThemedText>
+        ) : null}
+
+        {announcement.status === 'cancelled' ? (
+          <ThemedText themeColor="textSecondary" style={styles.hint}>
+            {t('driver.announcements.hintCancelled')}
           </ThemedText>
         ) : null}
       </ScrollView>
