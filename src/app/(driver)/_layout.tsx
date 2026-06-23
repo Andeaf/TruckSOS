@@ -34,6 +34,7 @@ export default function DriverLayout() {
           ),
         }}
       />
+      <Tabs.Screen name="mechanic-profile" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -70,7 +70,19 @@
       "cancelConfirmMessage": "Die Anzeige wird aus dem Feed der Mechaniker entfernt. Diese Aktion kann nicht rückgängig gemacht werden.",
       "cancelConfirmOk": "Ja, stornieren",
       "cancelConfirmCancel": "Zurück",
-      "errorCancel": "Fehler beim Stornieren der Anzeige."
+      "errorCancel": "Fehler beim Stornieren der Anzeige.",
+      "sectionApplicants": "Interessierte Mechaniker",
+      "emptyApplicants": "Noch kein Mechaniker hat sich beworben.",
+      "chooseApplicant": "Auswählen",
+      "rejectApplicant": "Ablehnen",
+      "errorAccept": "Fehler beim Annehmen des Mechanikers.",
+      "errorReject": "Fehler beim Ablehnen des Mechanikers.",
+      "viewProfile": "Vollständiges Profil anzeigen"
+    },
+    "mechanicProfile": {
+      "title": "Mechanikerprofil",
+      "notFound": "Profil nicht gefunden.",
+      "phoneHint": "Die Telefonnummer wird sichtbar, nachdem du diesen Mechaniker ausgewählt hast."
     },
     "conversations": {
       "title": "Gespräche",
@@ -81,6 +93,7 @@
   "mechanic": {
     "tabs": {
       "feed": "Anzeigen",
+      "applications": "Bewerbungen",
       "conversations": "Gespräche"
     },
     "feed": {
@@ -99,6 +112,15 @@
       "alreadyTakenHint": "Diese Anzeige wurde bereits von einem anderen Mechaniker angenommen.",
       "errorAlreadyAccepted": "Diese Anzeige wurde bereits von einem anderen Mechaniker angenommen.",
       "toggleView": "Ansicht wechseln"
+    },
+    "applications": {
+      "title": "Meine Bewerbungen",
+      "emptyTitle": "Noch keine Bewerbungen",
+      "emptyDescription": "Du hast dich noch für keine Anzeige beworben. Gehe zum Feed, um Anzeigen zu finden.",
+      "status_pending": "Ausstehend",
+      "status_accepted": "Angenommen",
+      "status_rejected": "Abgelehnt",
+      "goToChat": "Zum Gespräch"
     },
     "conversations": {
       "title": "Gespräche",

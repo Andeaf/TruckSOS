@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
-import type { Announcement, Application, PriceType } from '@/types/database';
+import type { Announcement, Application, Profile, PriceType } from '@/types/database';
 import { useAuth } from '@/hooks/use-auth';
 
 export type AnnouncementWithMechanic = Announcement & {
@@ -144,4 +144,73 @@ export async function fetchMyApplicationForAnnouncement(
     .eq('announcement_id', announcementId)
     .maybeSingle();
   return (data as Application) ?? null;
+}
+
+export type ApplicationWithMechanic = Application & {
+  mechanic: Pick<Profile, 'id' | 'full_name' | 'specialization' | 'activity_zone'>;
+};
+
+export async function acceptApplication(
+  applicationId: string
+): Promise<{ conversationId: string | null; error: string | null }> {
+  const { data, error } = await supabase.rpc('accept_application', {
+    p_application_id: applicationId,
+  } as never);
+  return { conversationId: (data as string) ?? null, error: error?.message ?? null };
+}
+
+export async function rejectApplication(applicationId: string): Promise<string | null> {
+  const { error } = await supabase.rpc('reject_application', {
+    p_application_id: applicationId,
+  } as never);
+  return error?.message ?? null;
+}
+
+export async function fetchApplicationsForAnnouncement(
+  announcementId: string
+): Promise<ApplicationWithMechanic[]> {
+  const { data } = await supabase
+    .from('applications')
+    .select('*, mechanic:profiles!mechanic_id(id, full_name, specialization, activity_zone)')
+    .eq('announcement_id', announcementId)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: true });
+  return (data as unknown as ApplicationWithMechanic[]) ?? [];
+}
+
+export type ApplicationWithDetails = Application & {
+  announcement: Pick<
+    Announcement,
+    'id' | 'location' | 'description' | 'status' | 'truck_make' | 'truck_model' | 'truck_year'
+  > & {
+    driver: { full_name: string } | null;
+    conversations: { id: string }[];
+  };
+};
+
+export function useMyApplications() {
+  const { session } = useAuth();
+  const [applications, setApplications] = useState<ApplicationWithDetails[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    if (!session) return;
+    setLoading(true);
+    const { data } = await supabase
+      .from('applications')
+      .select(
+        `*, announcement:announcements!announcement_id(
+          id, location, description, status, truck_make, truck_model, truck_year,
+          driver:profiles!driver_id(full_name),
+          conversations(id)
+        )`
+      )
+      .eq('mechanic_id', session.user.id)
+      .order('created_at', { ascending: false });
+    const all = (data as unknown as ApplicationWithDetails[]) ?? [];
+    setApplications(all.filter((a) => a.announcement != null));
+    setLoading(false);
+  }, [session]);
+
+  return { applications, loading, refresh };
 }

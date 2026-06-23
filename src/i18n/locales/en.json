@@ -70,7 +70,19 @@
       "cancelConfirmMessage": "The announcement will be removed from the mechanics' feed. This action cannot be undone.",
       "cancelConfirmOk": "Yes, cancel",
       "cancelConfirmCancel": "Go back",
-      "errorCancel": "Error cancelling the announcement."
+      "errorCancel": "Error cancelling the announcement.",
+      "sectionApplicants": "Interested mechanics",
+      "emptyApplicants": "No mechanics have applied yet.",
+      "chooseApplicant": "Choose",
+      "rejectApplicant": "Reject",
+      "errorAccept": "Error accepting the mechanic.",
+      "errorReject": "Error rejecting the mechanic.",
+      "viewProfile": "View full profile"
+    },
+    "mechanicProfile": {
+      "title": "Mechanic profile",
+      "notFound": "Profile not found.",
+      "phoneHint": "The phone number becomes visible after you choose this mechanic."
     },
     "conversations": {
       "title": "Conversations",
@@ -81,6 +93,7 @@
   "mechanic": {
     "tabs": {
       "feed": "Announcements",
+      "applications": "Applications",
       "conversations": "Conversations"
     },
     "feed": {
@@ -99,6 +112,15 @@
       "alreadyTakenHint": "This announcement has already been accepted by another mechanic.",
       "errorAlreadyAccepted": "This announcement has already been accepted by another mechanic.",
       "toggleView": "Toggle view"
+    },
+    "applications": {
+      "title": "My applications",
+      "emptyTitle": "No applications yet",
+      "emptyDescription": "You haven't applied to any announcements yet. Go to Feed to find announcements.",
+      "status_pending": "Pending",
+      "status_accepted": "Accepted",
+      "status_rejected": "Rejected",
+      "goToChat": "Go to conversation"
     },
     "conversations": {
       "title": "Conversations",

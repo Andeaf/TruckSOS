@@ -70,7 +70,19 @@
       "cancelConfirmMessage": "Anunțul va dispărea din feed-ul mecanicilor. Acțiunea nu poate fi anulată.",
       "cancelConfirmOk": "Da, anulează",
       "cancelConfirmCancel": "Înapoi",
-      "errorCancel": "Eroare la anularea anunțului."
+      "errorCancel": "Eroare la anularea anunțului.",
+      "sectionApplicants": "Mecanici interesați",
+      "emptyApplicants": "Niciun mecanic nu a candidat încă.",
+      "chooseApplicant": "Alege",
+      "rejectApplicant": "Respinge",
+      "errorAccept": "Eroare la acceptarea mecanicului.",
+      "errorReject": "Eroare la respingerea mecanicului.",
+      "viewProfile": "Vezi profil complet"
+    },
+    "mechanicProfile": {
+      "title": "Profil mecanic",
+      "notFound": "Profilul nu a fost găsit.",
+      "phoneHint": "Numărul de telefon devine vizibil după ce alegi acest mecanic."
     },
     "conversations": {
       "title": "Conversații",
@@ -81,6 +93,7 @@
   "mechanic": {
     "tabs": {
       "feed": "Anunturi",
+      "applications": "Candidaturi",
       "conversations": "Conversatii"
     },
     "feed": {
@@ -99,6 +112,15 @@
       "alreadyTakenHint": "Acest anunț a fost deja acceptat de un alt mecanic.",
       "errorAlreadyAccepted": "Anunțul a fost deja acceptat de un alt mecanic.",
       "toggleView": "Schimbă vizualizarea"
+    },
+    "applications": {
+      "title": "Candidaturile mele",
+      "emptyTitle": "Nicio candidatură",
+      "emptyDescription": "Nu ai candidat la niciun anunț încă. Mergi la Feed pentru a găsi anunțuri.",
+      "status_pending": "În așteptare",
+      "status_accepted": "Acceptat",
+      "status_rejected": "Respins",
+      "goToChat": "Mergi la conversație"
     },
     "conversations": {
       "title": "Conversații",

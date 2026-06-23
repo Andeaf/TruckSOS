@@ -14,16 +14,118 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import {
   fetchAnnouncementById,
+  fetchApplicationsForAnnouncement,
+  acceptApplication,
+  rejectApplication,
   resolveAnnouncement,
   cancelAnnouncement,
   type AnnouncementWithMechanic,
+  type ApplicationWithMechanic,
 } from '@/hooks/use-announcements';
+import type { PriceType } from '@/types/database';
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleString('ro-RO', {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
+}
+
+function priceLabel(
+  priceType: PriceType,
+  amount: number,
+  currency: string,
+  t: (k: string) => string
+) {
+  const typeLabel =
+    priceType === 'fixed'
+      ? t('mechanic.apply.priceTypeFixed')
+      : t('mechanic.apply.priceTypeHourly');
+  return `${amount} ${currency} · ${typeLabel}`;
+}
+
+function ApplicantCard({
+  app,
+  onAccept,
+  onReject,
+}: {
+  app: ApplicationWithMechanic;
+  onAccept: (appId: string) => Promise<void>;
+  onReject: (appId: string) => Promise<void>;
+}) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const [accepting, setAccepting] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const busy = accepting || rejecting;
+
+  async function handleAccept() {
+    setAccepting(true);
+    await onAccept(app.id);
+    setAccepting(false);
+  }
+
+  async function handleReject() {
+    setRejecting(true);
+    await onReject(app.id);
+    setRejecting(false);
+  }
+
+  return (
+    <ThemedView type="background" style={styles.applicantCard}>
+      <View style={styles.applicantHeader}>
+        <MaterialIcons name="person" size={16} color="#208AEF" />
+        <ThemedText type="smallBold" style={styles.applicantName}>
+          {app.mechanic.full_name}
+        </ThemedText>
+      </View>
+      {app.mechanic.specialization ? (
+        <ThemedText themeColor="textSecondary" type="small">
+          {app.mechanic.specialization}
+        </ThemedText>
+      ) : null}
+      <ThemedText type="smallBold" style={styles.applicantPrice}>
+        {priceLabel(app.price_type, app.price_amount, app.currency, t)}
+      </ThemedText>
+      {app.message ? (
+        <ThemedText themeColor="textSecondary" type="small" style={styles.applicantMessage}>
+          "{app.message}"
+        </ThemedText>
+      ) : null}
+      <Pressable
+        onPress={() =>
+          router.push({
+            pathname: '/(driver)/mechanic-profile/[id]' as never,
+            params: { id: app.mechanic.id },
+          })
+        }
+        style={styles.profileLink}>
+        <MaterialIcons name="open-in-new" size={13} color="#208AEF" />
+        <ThemedText type="small" style={styles.profileLinkText}>
+          {t('driver.announcements.viewProfile')}
+        </ThemedText>
+      </Pressable>
+      <View style={styles.applicantActions}>
+        <View style={styles.actionBtn}>
+          <Button
+            title={t('driver.announcements.rejectApplicant')}
+            onPress={handleReject}
+            loading={rejecting}
+            disabled={busy}
+            variant="secondary"
+          />
+        </View>
+        <View style={styles.actionBtn}>
+          <Button
+            title={t('driver.announcements.chooseApplicant')}
+            onPress={handleAccept}
+            loading={accepting}
+            disabled={busy}
+          />
+        </View>
+      </View>
+    </ThemedView>
+  );
 }
 
 function formatTruck(a: AnnouncementWithMechanic): string | null {
@@ -46,6 +148,7 @@ export default function AnnouncementDetailScreen() {
   const [resolving, setResolving] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState('');
+  const [applications, setApplications] = useState<ApplicationWithMechanic[]>([]);
 
   async function load() {
     setLoading(true);
@@ -60,6 +163,32 @@ export default function AnnouncementDetailScreen() {
   }
 
   useEffect(() => { load(); }, [id]);
+
+  useEffect(() => {
+    if (announcement?.status === 'open') {
+      fetchApplicationsForAnnouncement(id).then(setApplications);
+    } else {
+      setApplications([]);
+    }
+  }, [announcement?.status, id]);
+
+  async function handleAcceptApplicant(appId: string) {
+    const { conversationId, error: err } = await acceptApplication(appId);
+    if (err) { setError(t('driver.announcements.errorAccept')); return; }
+    await load();
+    if (conversationId) {
+      router.push({
+        pathname: '/(driver)/conversations/[id]' as never,
+        params: { id: conversationId },
+      });
+    }
+  }
+
+  async function handleRejectApplicant(appId: string) {
+    const err = await rejectApplication(appId);
+    if (err) { setError(t('driver.announcements.errorReject')); return; }
+    setApplications((prev) => prev.filter((a) => a.id !== appId));
+  }
 
   async function handleResolve() {
     setResolving(true);
@@ -162,6 +291,36 @@ export default function AnnouncementDetailScreen() {
           </ThemedView>
         ) : null}
 
+        {announcement.status === 'open' ? (
+          <ThemedView type="backgroundElement" style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons name="people" size={16} color="#208AEF" />
+              <ThemedText type="smallBold">
+                {t('driver.announcements.sectionApplicants')}
+              </ThemedText>
+              {applications.length > 0 ? (
+                <ThemedText themeColor="textSecondary" type="small">
+                  ({applications.length})
+                </ThemedText>
+              ) : null}
+            </View>
+            {applications.length === 0 ? (
+              <ThemedText themeColor="textSecondary" type="small">
+                {t('driver.announcements.emptyApplicants')}
+              </ThemedText>
+            ) : (
+              applications.map((app) => (
+                <ApplicantCard
+                  key={app.id}
+                  app={app}
+                  onAccept={handleAcceptApplicant}
+                  onReject={handleRejectApplicant}
+                />
+              ))
+            )}
+          </ThemedView>
+        ) : null}
+
         {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
 
         {announcement.status === 'accepted' ? (
@@ -237,4 +396,34 @@ const styles = StyleSheet.create({
   },
   error: { color: '#ef4444', fontSize: 14 },
   hint: { textAlign: 'center', fontSize: 14, lineHeight: 20 },
+  profileLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    alignSelf: 'flex-start',
+  },
+  profileLinkText: {
+    color: '#208AEF',
+  },
+  applicantActions: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+    marginTop: Spacing.one,
+  },
+  actionBtn: { flex: 1 },
+  applicantCard: {
+    borderRadius: Spacing.two,
+    padding: Spacing.three,
+    gap: Spacing.one,
+    borderWidth: 1,
+    borderColor: '#208AEF22',
+  },
+  applicantHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+  },
+  applicantName: { flex: 1 },
+  applicantPrice: { color: '#22c55e' },
+  applicantMessage: { fontStyle: 'italic' },
 });

@@ -26,6 +26,15 @@ export default function MechanicLayout() {
         }}
       />
       <Tabs.Screen
+        name="applications"
+        options={{
+          title: t('mechanic.tabs.applications'),
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="assignment" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="conversations"
         options={{
           title: t('mechanic.tabs.conversations'),
