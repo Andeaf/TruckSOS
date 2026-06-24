@@ -9,11 +9,13 @@ import { Input } from '@/components/ui/input';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 
 export default function MechanicProfileScreen() {
   const { profile, signOut, updateProfile } = useAuth();
   const { t } = useTranslation();
+  const theme = useTheme();
   const insets = useSafeAreaInsets();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -71,11 +73,11 @@ export default function MechanicProfileScreen() {
         </ThemedText>
         {!isEditing ? (
           <Pressable onPress={handleEdit} hitSlop={12}>
-            <MaterialIcons name="edit" size={22} color="#60646C" />
+            <MaterialIcons name="edit" size={22} color={theme.textSecondary} />
           </Pressable>
         ) : (
           <Pressable onPress={handleCancel} hitSlop={12}>
-            <MaterialIcons name="close" size={22} color="#60646C" />
+            <MaterialIcons name="close" size={22} color={theme.textSecondary} />
           </Pressable>
         )}
       </View>

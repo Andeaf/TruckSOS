@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/empty-state';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useOpenAnnouncements } from '@/hooks/use-announcements';
 
@@ -20,6 +21,7 @@ type ViewMode = 'compact' | 'extended';
 export default function MechanicFeedScreen() {
   const { profile, signOut } = useAuth();
   const { t } = useTranslation();
+  const theme = useTheme();
   const { announcements, loading, refresh } = useOpenAnnouncements();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -59,11 +61,11 @@ export default function MechanicFeedScreen() {
             <MaterialIcons
               name={viewMode === 'extended' ? 'view-list' : 'view-agenda'}
               size={22}
-              color="#60646C"
+              color={theme.textSecondary}
             />
           </Pressable>
           <Pressable onPress={signOut} hitSlop={12}>
-            <MaterialIcons name="logout" size={22} color="#60646C" />
+            <MaterialIcons name="logout" size={22} color={theme.textSecondary} />
           </Pressable>
         </View>
       </View>

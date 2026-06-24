@@ -55,6 +55,16 @@ export interface Application {
   created_at: string;
 }
 
+export interface Truck {
+  id: string;
+  driver_id: string;
+  make: string;
+  model: string;
+  year: number;
+  nickname: string | null;
+  created_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -89,6 +99,11 @@ export interface Database {
         Insert: Omit<Application, 'id' | 'created_at' | 'status'> & { status?: ApplicationStatus };
         Update: never;
       };
+      trucks: {
+        Row: Truck;
+        Insert: Omit<Truck, 'id' | 'created_at'>;
+        Update: Partial<Pick<Truck, 'make' | 'model' | 'year' | 'nickname'>>;
+      };
     };
     Functions: {
       accept_announcement: {
@@ -97,6 +112,10 @@ export interface Database {
       };
       get_mechanic_phone: {
         Args: { p_mechanic_id: string };
+        Returns: string | null;
+      };
+      get_driver_phone: {
+        Args: { p_driver_id: string };
         Returns: string | null;
       };
       apply_to_announcement: {

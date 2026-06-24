@@ -34,6 +34,15 @@ export default function DriverLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: t('profile.tabTitle'),
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="person" size={size} color={color} />
+          ),
+        }}
+      />
       <Tabs.Screen name="mechanic-profile" options={{ href: null }} />
     </Tabs>
   );

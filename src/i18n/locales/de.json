@@ -71,6 +71,11 @@
       "cancelConfirmOk": "Ja, stornieren",
       "cancelConfirmCancel": "Zurück",
       "errorCancel": "Fehler beim Stornieren der Anzeige.",
+      "deleteConfirmTitle": "Anzeige löschen?",
+      "deleteConfirmMessageOpen": "Mechaniker, die sich beworben haben, werden automatisch abgelehnt. Die Anzeige wird endgültig gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "deleteConfirmMessage": "Möchtest du diese Anzeige wirklich endgültig löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "deleteConfirmOk": "Ja, löschen",
+      "errorDelete": "Fehler beim Löschen der Anzeige.",
       "sectionApplicants": "Interessierte Mechaniker",
       "emptyApplicants": "Noch kein Mechaniker hat sich beworben.",
       "chooseApplicant": "Auswählen",
@@ -78,6 +83,9 @@
       "errorAccept": "Fehler beim Annehmen des Mechanikers.",
       "errorReject": "Fehler beim Ablehnen des Mechanikers.",
       "viewProfile": "Vollständiges Profil anzeigen"
+    },
+    "profile": {
+      "phoneHint": "Für den Mechaniker nur sichtbar, wenn ihr ein aktives Gespräch habt."
     },
     "mechanicProfile": {
       "title": "Mechanikerprofil",
@@ -183,7 +191,24 @@
     "yearLabel": "Baujahr",
     "yearPlaceholder": "z.B.: 2018",
     "yearError": "Das Jahr muss zwischen 1950 und {{maxYear}} liegen.",
-    "sectionTitle": "LKW"
+    "sectionTitle": "LKW",
+    "savedTitle": "Meine Fahrzeuge",
+    "addButton": "+ Fahrzeug hinzufügen",
+    "emptyTrucks": "Noch keine Fahrzeuge gespeichert.",
+    "nicknameLabel": "Spitzname (optional)",
+    "nicknamePlaceholder": "z.B.: Mein Arbeitspferd",
+    "addSheetTitle": "Fahrzeug hinzufügen",
+    "editSheetTitle": "Fahrzeug bearbeiten",
+    "deleteConfirmTitle": "Fahrzeug löschen?",
+    "deleteConfirmMessage": "Diese Aktion kann nicht rückgängig gemacht werden.",
+    "deleteConfirmOk": "Ja, löschen",
+    "deleteConfirmCancel": "Abbrechen",
+    "errorSave": "Fehler beim Speichern des Fahrzeugs.",
+    "errorDelete": "Fehler beim Löschen des Fahrzeugs.",
+    "errorMakeRequired": "Bitte Marke eingeben.",
+    "errorModelRequired": "Bitte Modell eingeben.",
+    "selectSaved": "Gespeichertes Fahrzeug auswählen",
+    "addNewInPicker": "Neues Fahrzeug hinzufügen"
   },
   "common": {
     "loading": "Lädt...",

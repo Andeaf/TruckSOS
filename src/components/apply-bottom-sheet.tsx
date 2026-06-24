@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { SUPPORTED_CURRENCIES, DEFAULT_CURRENCY } from '@/constants/currencies';
+import { useTheme } from '@/hooks/use-theme';
 import { applyToAnnouncement } from '@/hooks/use-announcements';
 import type { PriceType } from '@/types/database';
 
@@ -32,6 +33,7 @@ export function ApplyBottomSheet({
   onSuccess,
 }: ApplyBottomSheetProps) {
   const { t } = useTranslation();
+  const theme = useTheme();
   const [priceType, setPriceType] = useState<PriceType>('fixed');
   const [priceAmount, setPriceAmount] = useState('');
   const [currency, setCurrency] = useState(DEFAULT_CURRENCY.code);
@@ -94,9 +96,9 @@ export function ApplyBottomSheet({
         style={styles.wrapper}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <Pressable style={styles.backdrop} onPress={handleClose} />
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}>
           {/* Handle */}
-          <View style={styles.handle} />
+          <View style={[styles.handle, { backgroundColor: theme.backgroundSelected }]} />
 
           <ScrollView
             keyboardShouldPersistTaps="handled"
@@ -137,11 +139,18 @@ export function ApplyBottomSheet({
               </ThemedText>
               <View style={styles.amountRow}>
                 <TextInput
-                  style={styles.amountInput}
+                  style={[
+                    styles.amountInput,
+                    {
+                      color: theme.text,
+                      backgroundColor: theme.background,
+                      borderColor: theme.backgroundSelected,
+                    },
+                  ]}
                   value={priceAmount}
                   onChangeText={setPriceAmount}
                   placeholder={t('mechanic.apply.priceAmountPlaceholder')}
-                  placeholderTextColor="#9ca3af"
+                  placeholderTextColor={theme.textSecondary}
                   keyboardType="decimal-pad"
                 />
                 {/* Selector monedă */}
@@ -151,13 +160,14 @@ export function ApplyBottomSheet({
                       key={c.code}
                       style={[
                         styles.currencyChip,
+                        { borderColor: currency === c.code ? '#22c55e' : theme.backgroundSelected },
                         currency === c.code && styles.currencyChipActive,
                       ]}
                       onPress={() => setCurrency(c.code)}>
                       <ThemedText
                         style={[
                           styles.currencyLabel,
-                          currency === c.code && styles.currencyLabelActive,
+                          { color: currency === c.code ? '#22c55e' : theme.textSecondary },
                         ]}>
                         {c.symbol} {c.code}
                       </ThemedText>
@@ -173,11 +183,19 @@ export function ApplyBottomSheet({
                 {t('mechanic.apply.messageLabel')}
               </ThemedText>
               <TextInput
-                style={[styles.amountInput, styles.messageInput]}
+                style={[
+                  styles.amountInput,
+                  styles.messageInput,
+                  {
+                    color: theme.text,
+                    backgroundColor: theme.background,
+                    borderColor: theme.backgroundSelected,
+                  },
+                ]}
                 value={message}
                 onChangeText={setMessage}
                 placeholder={t('mechanic.apply.messagePlaceholder')}
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={theme.textSecondary}
                 multiline
                 numberOfLines={3}
                 textAlignVertical="top"
@@ -210,7 +228,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.45)',
   },
   sheet: {
-    backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingBottom: Spacing.six,
@@ -219,7 +236,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#d1d5db',
     alignSelf: 'center',
     marginTop: Spacing.two,
     marginBottom: Spacing.one,
@@ -269,12 +285,10 @@ const styles = StyleSheet.create({
   amountInput: {
     flex: 1,
     borderWidth: 1.5,
-    borderColor: '#d1d5db',
     borderRadius: Spacing.two,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     fontSize: 16,
-    color: '#000',
   },
   currencyRow: {
     flexDirection: 'row',
@@ -285,19 +299,13 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     borderRadius: Spacing.two,
     borderWidth: 1.5,
-    borderColor: '#d1d5db',
   },
   currencyChipActive: {
-    borderColor: '#22c55e',
     backgroundColor: '#f0fdf4',
   },
   currencyLabel: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#6b7280',
-  },
-  currencyLabelActive: {
-    color: '#22c55e',
   },
   messageInput: {
     height: 80,

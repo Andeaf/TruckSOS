@@ -10,12 +10,14 @@ import { EmptyState } from '@/components/empty-state';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useMyAnnouncements } from '@/hooks/use-announcements';
 
 export default function DriverAnnouncementsScreen() {
   const { profile, signOut } = useAuth();
   const { t } = useTranslation();
+  const theme = useTheme();
   const { announcements, loading, refresh } = useMyAnnouncements();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -36,7 +38,7 @@ export default function DriverAnnouncementsScreen() {
           </ThemedText>
         </View>
         <Pressable onPress={signOut} hitSlop={12}>
-          <MaterialIcons name="logout" size={22} color="#60646C" />
+          <MaterialIcons name="logout" size={22} color={theme.textSecondary} />
         </Pressable>
       </View>
 

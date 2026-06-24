@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { useBack } from '@/hooks/use-back';
+import { useTheme } from '@/hooks/use-theme';
 
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ import {
   rejectApplication,
   resolveAnnouncement,
   cancelAnnouncement,
+  deleteAnnouncement,
   type AnnouncementWithMechanic,
   type ApplicationWithMechanic,
 } from '@/hooks/use-announcements';
@@ -140,6 +142,7 @@ function formatTruck(a: AnnouncementWithMechanic): string | null {
 export default function AnnouncementDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
+  const theme = useTheme();
   const router = useRouter();
   const goBack = useBack('/(driver)/announcements');
   const insets = useSafeAreaInsets();
@@ -147,6 +150,7 @@ export default function AnnouncementDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [resolving, setResolving] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   const [applications, setApplications] = useState<ApplicationWithMechanic[]>([]);
 
@@ -198,6 +202,30 @@ export default function AnnouncementDetailScreen() {
     setResolving(false);
   }
 
+  function handleDeletePress() {
+    const isOpen = announcement?.status === 'open';
+    Alert.alert(
+      t('driver.announcements.deleteConfirmTitle'),
+      isOpen
+        ? t('driver.announcements.deleteConfirmMessageOpen')
+        : t('driver.announcements.deleteConfirmMessage'),
+      [
+        { text: t('driver.announcements.cancelConfirmCancel'), style: 'cancel' },
+        {
+          text: t('driver.announcements.deleteConfirmOk'),
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            const err = await deleteAnnouncement(id);
+            setDeleting(false);
+            if (err) { setError(t('driver.announcements.errorDelete')); return; }
+            goBack();
+          },
+        },
+      ]
+    );
+  }
+
   function handleCancelPress() {
     Alert.alert(
       t('driver.announcements.cancelConfirmTitle'),
@@ -241,10 +269,16 @@ export default function AnnouncementDetailScreen() {
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Pressable onPress={goBack} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={24} color="#60646C" />
+          <MaterialIcons name="arrow-back" size={24} color={theme.textSecondary} />
         </Pressable>
         <ThemedText type="subtitle" style={styles.title}>{t('driver.announcements.detailTitle')}</ThemedText>
-        <View style={{ width: 24 }} />
+        {announcement.status !== 'accepted' ? (
+          <Pressable onPress={handleDeletePress} hitSlop={12} disabled={deleting}>
+            <MaterialIcons name="delete" size={22} color={theme.textSecondary} />
+          </Pressable>
+        ) : (
+          <View style={{ width: 22 }} />
+        )}
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>

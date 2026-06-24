@@ -89,6 +89,22 @@ export async function cancelAnnouncement(id: string): Promise<string | null> {
   return error?.message ?? null;
 }
 
+export async function deleteAnnouncement(id: string): Promise<string | null> {
+  // Reject pending applications so mechanics see "Respins" instead of a disappeared entry
+  await supabase
+    .from('applications')
+    .update({ status: 'rejected' } as never)
+    .eq('announcement_id', id)
+    .eq('status', 'pending');
+
+  const { error } = await supabase
+    .from('announcements')
+    .delete()
+    .eq('id', id);
+
+  return error?.message ?? null;
+}
+
 export async function fetchAnnouncementById(
   id: string
 ): Promise<AnnouncementWithMechanic | null> {

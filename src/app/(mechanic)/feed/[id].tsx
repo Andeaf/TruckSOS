@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { useBack } from '@/hooks/use-back';
+import { useTheme } from '@/hooks/use-theme';
 import { ApplyBottomSheet } from '@/components/apply-bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/themed-text';
@@ -81,6 +82,7 @@ function ApplicationStatusCard({ application, t }: { application: Application; t
 export default function MechanicAnnouncementDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
+  const theme = useTheme();
   const goBack = useBack('/(mechanic)/feed');
   const insets = useSafeAreaInsets();
 
@@ -139,7 +141,7 @@ export default function MechanicAnnouncementDetailScreen() {
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Pressable onPress={goBack} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={24} color="#60646C" />
+          <MaterialIcons name="arrow-back" size={24} color={theme.textSecondary} />
         </Pressable>
         <ThemedText type="subtitle" style={styles.title}>
           {t('mechanic.feed.detailTitle')}

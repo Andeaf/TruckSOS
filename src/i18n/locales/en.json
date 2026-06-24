@@ -71,6 +71,11 @@
       "cancelConfirmOk": "Yes, cancel",
       "cancelConfirmCancel": "Go back",
       "errorCancel": "Error cancelling the announcement.",
+      "deleteConfirmTitle": "Delete announcement?",
+      "deleteConfirmMessageOpen": "Mechanics who applied will be automatically rejected. The announcement will be permanently deleted. This action cannot be undone.",
+      "deleteConfirmMessage": "Are you sure you want to permanently delete this announcement? This action cannot be undone.",
+      "deleteConfirmOk": "Yes, delete",
+      "errorDelete": "Error deleting the announcement.",
       "sectionApplicants": "Interested mechanics",
       "emptyApplicants": "No mechanics have applied yet.",
       "chooseApplicant": "Choose",
@@ -78,6 +83,9 @@
       "errorAccept": "Error accepting the mechanic.",
       "errorReject": "Error rejecting the mechanic.",
       "viewProfile": "View full profile"
+    },
+    "profile": {
+      "phoneHint": "Visible to the mechanic only if you have an active conversation."
     },
     "mechanicProfile": {
       "title": "Mechanic profile",
@@ -183,7 +191,24 @@
     "yearLabel": "Year of manufacture",
     "yearPlaceholder": "e.g.: 2018",
     "yearError": "Year must be between 1950 and {{maxYear}}.",
-    "sectionTitle": "Truck"
+    "sectionTitle": "Truck",
+    "savedTitle": "My trucks",
+    "addButton": "+ Add truck",
+    "emptyTrucks": "No saved trucks yet.",
+    "nicknameLabel": "Nickname (optional)",
+    "nicknamePlaceholder": "e.g.: My workhorse",
+    "addSheetTitle": "Add truck",
+    "editSheetTitle": "Edit truck",
+    "deleteConfirmTitle": "Delete truck?",
+    "deleteConfirmMessage": "This action cannot be undone.",
+    "deleteConfirmOk": "Yes, delete",
+    "deleteConfirmCancel": "Cancel",
+    "errorSave": "Error saving truck.",
+    "errorDelete": "Error deleting truck.",
+    "errorMakeRequired": "Please enter the make.",
+    "errorModelRequired": "Please enter the model.",
+    "selectSaved": "Select saved truck",
+    "addNewInPicker": "Add new truck"
   },
   "common": {
     "loading": "Loading...",

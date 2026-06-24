@@ -71,6 +71,11 @@
       "cancelConfirmOk": "Da, anulează",
       "cancelConfirmCancel": "Înapoi",
       "errorCancel": "Eroare la anularea anunțului.",
+      "deleteConfirmTitle": "Ștergi anunțul?",
+      "deleteConfirmMessageOpen": "Mecanicii care au candidat vor fi respinși automat. Anunțul va fi șters definitiv. Acțiunea nu poate fi anulată.",
+      "deleteConfirmMessage": "Ești sigur că vrei să ștergi definitiv acest anunț? Acțiunea nu poate fi anulată.",
+      "deleteConfirmOk": "Da, șterge",
+      "errorDelete": "Eroare la ștergerea anunțului.",
       "sectionApplicants": "Mecanici interesați",
       "emptyApplicants": "Niciun mecanic nu a candidat încă.",
       "chooseApplicant": "Alege",
@@ -78,6 +83,9 @@
       "errorAccept": "Eroare la acceptarea mecanicului.",
       "errorReject": "Eroare la respingerea mecanicului.",
       "viewProfile": "Vezi profil complet"
+    },
+    "profile": {
+      "phoneHint": "Vizibil mecanicului doar dacă aveți o conversație activă."
     },
     "mechanicProfile": {
       "title": "Profil mecanic",
@@ -193,7 +201,24 @@
     "yearLabel": "An fabricație",
     "yearPlaceholder": "ex: 2018",
     "yearError": "Anul trebuie să fie între 1950 și {{maxYear}}.",
-    "sectionTitle": "Camion"
+    "sectionTitle": "Camion",
+    "savedTitle": "Camioanele mele",
+    "addButton": "+ Adaugă camion",
+    "emptyTrucks": "Nu ai niciun camion salvat.",
+    "nicknameLabel": "Poreclă (opțional)",
+    "nicknamePlaceholder": "ex: Capul meu de pod",
+    "addSheetTitle": "Adaugă camion",
+    "editSheetTitle": "Editează camion",
+    "deleteConfirmTitle": "Ștergi camionul?",
+    "deleteConfirmMessage": "Acțiunea nu poate fi anulată.",
+    "deleteConfirmOk": "Da, șterge",
+    "deleteConfirmCancel": "Anulează",
+    "errorSave": "Eroare la salvarea camionului.",
+    "errorDelete": "Eroare la ștergerea camionului.",
+    "errorMakeRequired": "Introduceți marca.",
+    "errorModelRequired": "Introduceți modelul.",
+    "selectSaved": "Selectează camion salvat",
+    "addNewInPicker": "Adaugă camion nou"
   },
   "status": {
     "open": "Deschis",

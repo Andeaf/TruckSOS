@@ -10,6 +10,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useConversations, type ConversationWithDetails } from '@/hooks/use-chat';
 
@@ -33,6 +34,7 @@ function ConversationCard({
   item: ConversationWithDetails;
   onPress: () => void;
 }) {
+  const theme = useTheme();
   const timeAgo = useTimeAgo();
   return (
     <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
@@ -47,7 +49,7 @@ function ConversationCard({
         </View>
         <View style={styles.cardBottom}>
           <View style={styles.locationRow}>
-            <MaterialIcons name="location-on" size={12} color="#60646C" />
+            <MaterialIcons name="location-on" size={12} color={theme.textSecondary} />
             <ThemedText
               themeColor="textSecondary"
               type="small"

@@ -6,23 +6,28 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { useBack } from '@/hooks/use-back';
+import { useTheme } from '@/hooks/use-theme';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { TruckPickerSheet } from '@/components/truck-picker-sheet';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { createAnnouncement } from '@/hooks/use-announcements';
+import { useSavedTrucks } from '@/hooks/use-trucks';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
 export default function NewAnnouncementScreen() {
   const { session } = useAuth();
   const { t } = useTranslation();
+  const theme = useTheme();
   const router = useRouter();
   const goBack = useBack('/(driver)/announcements');
   const insets = useSafeAreaInsets();
+  const { trucks, refresh: refreshTrucks } = useSavedTrucks();
 
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
@@ -32,6 +37,14 @@ export default function NewAnnouncementScreen() {
   const [truckYearStr, setTruckYearStr] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPicker, setShowPicker] = useState(false);
+
+  function handlePickerSelect(data: { make: string; model: string; year: number }) {
+    setTruckMake(data.make);
+    setTruckModel(data.model);
+    setTruckYearStr(String(data.year));
+    setTruckSectionOpen(true);
+  }
 
   async function handleSubmit() {
     if (!description.trim()) { setError(t('driver.announcements.errorDescription')); return; }
@@ -68,7 +81,7 @@ export default function NewAnnouncementScreen() {
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Pressable onPress={goBack} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={24} color="#60646C" />
+          <MaterialIcons name="arrow-back" size={24} color={theme.textSecondary} />
         </Pressable>
         <ThemedText type="subtitle" style={styles.title}>{t('driver.announcements.newTitle')}</ThemedText>
         <View style={{ width: 24 }} />
@@ -100,6 +113,13 @@ export default function NewAnnouncementScreen() {
             style={styles.textarea}
           />
 
+          {trucks.length > 0 ? (
+            <Pressable onPress={() => setShowPicker(true)} style={styles.selectSavedButton} hitSlop={8}>
+              <MaterialIcons name="local-shipping" size={16} color="#208AEF" />
+              <ThemedText style={styles.selectSavedText}>{t('truck.selectSaved')}</ThemedText>
+            </Pressable>
+          ) : null}
+
           <Pressable
             onPress={() => setTruckSectionOpen((v) => !v)}
             style={styles.truckToggle}
@@ -112,7 +132,7 @@ export default function NewAnnouncementScreen() {
             <MaterialIcons
               name={truckSectionOpen ? 'expand-less' : 'expand-more'}
               size={18}
-              color="#60646C"
+              color={theme.textSecondary}
             />
           </Pressable>
 
@@ -148,6 +168,15 @@ export default function NewAnnouncementScreen() {
           <Button title={t('driver.announcements.submitButton')} onPress={handleSubmit} loading={loading} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <TruckPickerSheet
+        visible={showPicker}
+        trucks={trucks}
+        driverId={session?.user.id ?? ''}
+        onSelect={handlePickerSelect}
+        onRefresh={refreshTrucks}
+        onClose={() => setShowPicker(false)}
+      />
     </ThemedView>
   );
 }
@@ -172,6 +201,14 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     paddingTop: Spacing.two,
   },
+  selectSavedButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    alignSelf: 'flex-start',
+    paddingVertical: Spacing.one,
+  },
+  selectSavedText: { color: '#208AEF', fontSize: 14, fontWeight: '500' },
   truckToggle: {
     flexDirection: 'row',
     alignItems: 'center',

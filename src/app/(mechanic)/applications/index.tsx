@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/empty-state';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { useMyApplications, type ApplicationWithDetails } from '@/hooks/use-announcements';
 import type { ApplicationStatus, PriceType } from '@/types/database';
 
@@ -59,6 +60,7 @@ function ApplicationCard({
   onChatPress: (conversationId: string) => void;
 }) {
   const { t } = useTranslation();
+  const theme = useTheme();
   const timeAgo = useTimeAgo();
   const { announcement } = item;
   if (!announcement) return null;
@@ -83,7 +85,7 @@ function ApplicationCard({
       </View>
 
       <View style={styles.locationRow}>
-        <MaterialIcons name="location-on" size={12} color="#60646C" />
+        <MaterialIcons name="location-on" size={12} color={theme.textSecondary} />
         <ThemedText themeColor="textSecondary" type="small" numberOfLines={1} style={styles.locationText}>
           {announcement.location}
         </ThemedText>
@@ -91,7 +93,7 @@ function ApplicationCard({
 
       {truckLine ? (
         <View style={styles.truckRow}>
-          <MaterialIcons name="local-shipping" size={12} color="#60646C" />
+          <MaterialIcons name="local-shipping" size={12} color={theme.textSecondary} />
           <ThemedText themeColor="textSecondary" type="small" numberOfLines={1} style={styles.locationText}>
             {truckLine}
           </ThemedText>
