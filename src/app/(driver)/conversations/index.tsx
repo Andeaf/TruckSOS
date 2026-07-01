@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,53 +12,70 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
-import { useConversations, type ConversationWithDetails } from '@/hooks/use-chat';
-
-function useTimeAgo() {
-  const { t } = useTranslation();
-  return (dateStr: string): string => {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return t('common.timeNow');
-    if (mins < 60) return `${mins}m`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h`;
-    return `${Math.floor(hrs / 24)}z`;
-  };
-}
+import { useConversations, deleteConversations, useUnreadCounts, type ConversationWithDetails } from '@/hooks/use-chat';
+import { useTimeAgo } from '@/hooks/use-time-ago';
 
 function ConversationCard({
   item,
   onPress,
+  onLongPress,
+  selectionMode,
+  selected,
+  onToggleSelect,
+  unreadCount,
 }: {
   item: ConversationWithDetails;
   onPress: () => void;
+  onLongPress: () => void;
+  selectionMode: boolean;
+  selected: boolean;
+  onToggleSelect: () => void;
+  unreadCount: number;
 }) {
   const theme = useTheme();
   const timeAgo = useTimeAgo();
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView type="backgroundElement" style={styles.card}>
-        <View style={styles.cardTop}>
-          <ThemedText type="smallBold" numberOfLines={1} style={styles.name}>
-            {item.mechanic.full_name}
-          </ThemedText>
-          <ThemedText themeColor="textSecondary" type="small">
-            {timeAgo(item.created_at)}
-          </ThemedText>
-        </View>
-        <View style={styles.cardBottom}>
-          <View style={styles.locationRow}>
-            <MaterialIcons name="location-on" size={12} color={theme.textSecondary} />
-            <ThemedText
-              themeColor="textSecondary"
-              type="small"
-              numberOfLines={1}
-              style={styles.location}>
-              {item.announcement.location}
-            </ThemedText>
+    <Pressable
+      onPress={selectionMode ? onToggleSelect : onPress}
+      onLongPress={onLongPress}
+      style={({ pressed }) => pressed && styles.pressed}>
+      <ThemedView type="backgroundElement" style={[styles.card, selected && styles.cardSelected]}>
+        <View style={styles.cardRow}>
+          {selectionMode ? (
+            <MaterialIcons
+              name={selected ? 'check-box' : 'check-box-outline-blank'}
+              size={20}
+              color={selected ? '#22c55e' : theme.textSecondary}
+            />
+          ) : null}
+          <View style={styles.cardContent}>
+            <View style={styles.cardTop}>
+              <ThemedText type="smallBold" numberOfLines={1} style={styles.name}>
+                {item.mechanic.full_name}
+              </ThemedText>
+              <View style={styles.timeRow}>
+                {unreadCount > 0 && !selectionMode ? (
+                  <View style={styles.unreadBadge}>
+                    <ThemedText style={styles.unreadText}>
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </ThemedText>
+                  </View>
+                ) : null}
+                <ThemedText themeColor="textSecondary" type="small" style={styles.time}>
+                  {timeAgo(item.created_at)}
+                </ThemedText>
+              </View>
+            </View>
+            <View style={styles.cardBottom}>
+              <View style={styles.locationRow}>
+                <MaterialIcons name="location-on" size={12} color={theme.textSecondary} />
+                <ThemedText themeColor="textSecondary" type="small" numberOfLines={1} style={styles.location}>
+                  {item.announcement.location}
+                </ThemedText>
+              </View>
+              <StatusBadge status={item.announcement.status} />
+            </View>
           </View>
-          <StatusBadge status={item.announcement.status} />
         </View>
       </ThemedView>
     </Pressable>
@@ -68,20 +85,78 @@ function ConversationCard({
 export default function DriverConversationsScreen() {
   const { session } = useAuth();
   const { t } = useTranslation();
+  const theme = useTheme();
   const { conversations, loading, refresh } = useConversations(session?.user.id);
+  const { counts: unreadCounts, refresh: refreshCounts } = useUnreadCounts(session?.user.id);
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   useFocusEffect(
     useCallback(() => {
       refresh();
-    }, [refresh])
+      refreshCounts();
+    }, [refresh, refreshCounts])
   );
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function enterSelection(id: string) {
+    setSelectionMode(true);
+    setSelectedIds(new Set([id]));
+  }
+
+  function exitSelection() {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  }
+
+  const handleDeleteSelected = useCallback(() => {
+    Alert.alert(
+      t('conversations.deleteConfirmTitle'),
+      t('conversations.deleteConfirmMessage'),
+      [
+        { text: t('conversations.cancelSelection'), style: 'cancel' },
+        {
+          text: t('conversations.deleteConfirmOk'),
+          style: 'destructive',
+          onPress: async () => {
+            await deleteConversations([...selectedIds], session!.user.id);
+            exitSelection();
+            refresh();
+          },
+        },
+      ]
+    );
+  }, [t, selectedIds, session, refresh]);
 
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <ThemedText type="subtitle">{t('driver.conversations.title')}</ThemedText>
+        {selectionMode ? (
+          <View style={styles.selectionHeader}>
+            <Pressable onPress={exitSelection} hitSlop={8}>
+              <MaterialIcons name="close" size={24} color={theme.textSecondary} />
+            </Pressable>
+            <ThemedText type="smallBold">
+              {t('conversations.selectedCount', { count: selectedIds.size })}
+            </ThemedText>
+            <Pressable onPress={handleDeleteSelected} disabled={selectedIds.size === 0} hitSlop={8}>
+              <ThemedText style={[styles.deleteText, selectedIds.size === 0 && styles.deleteTextDisabled]}>
+                {t('conversations.deleteButton')}
+              </ThemedText>
+            </Pressable>
+          </View>
+        ) : (
+          <ThemedText type="subtitle">{t('driver.conversations.title')}</ThemedText>
+        )}
       </View>
 
       <FlatList
@@ -94,12 +169,17 @@ export default function DriverConversationsScreen() {
         renderItem={({ item }) => (
           <ConversationCard
             item={item}
+            selectionMode={selectionMode}
+            selected={selectedIds.has(item.id)}
             onPress={() =>
               router.push({
                 pathname: '/(driver)/conversations/[id]' as never,
                 params: { id: item.id },
               })
             }
+            onLongPress={() => enterSelection(item.id)}
+            onToggleSelect={() => toggleSelect(item.id)}
+            unreadCount={unreadCounts[item.id] ?? 0}
           />
         )}
         ListEmptyComponent={
@@ -122,6 +202,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.three,
   },
+  selectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  deleteText: {
+    color: '#ef4444',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  deleteTextDisabled: { opacity: 0.4 },
   list: {
     flexGrow: 1,
     paddingHorizontal: Spacing.four,
@@ -133,6 +224,9 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     gap: Spacing.one,
   },
+  cardSelected: { borderWidth: 1.5, borderColor: '#22c55e' },
+  cardRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  cardContent: { flex: 1 },
   cardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -146,7 +240,19 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   name: { flex: 1 },
+  timeRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 0 },
+  unreadBadge: {
+    backgroundColor: '#ef4444',
+    borderRadius: 9,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  unreadText: { color: '#fff', fontSize: 11, fontWeight: '700', lineHeight: 16, includeFontPadding: false },
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 3, flex: 1 },
   location: { flex: 1 },
+  time: { flexShrink: 0 },
   pressed: { opacity: 0.7 },
 });

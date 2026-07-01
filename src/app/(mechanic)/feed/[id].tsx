@@ -19,8 +19,10 @@ import {
 } from '@/hooks/use-announcements';
 import type { Application } from '@/types/database';
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleString('ro-RO', {
+const LOCALE_MAP: Record<string, string> = { ro: 'ro-RO', en: 'en-GB', de: 'de-DE' };
+
+function formatDate(dateStr: string, language: string) {
+  return new Date(dateStr).toLocaleString(LOCALE_MAP[language] ?? 'ro-RO', {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
@@ -35,7 +37,15 @@ function formatTruck(a: AnnouncementWithDriver): string | null {
   return parts.length > 0 ? parts.join(' · ') : null;
 }
 
-function ApplicationStatusCard({ application, t }: { application: Application; t: (k: string) => string }) {
+function ApplicationStatusCard({
+  application,
+  t,
+  onResubmit,
+}: {
+  application: Application;
+  t: (k: string) => string;
+  onResubmit?: () => void;
+}) {
   const statusKey =
     application.status === 'accepted' ? 'mechanic.apply.statusAccepted'
     : application.status === 'rejected' ? 'mechanic.apply.statusRejected'
@@ -75,13 +85,22 @@ function ApplicationStatusCard({ application, t }: { application: Application; t
           "{application.message}"
         </ThemedText>
       ) : null}
+      {onResubmit ? (
+        <Pressable
+          onPress={onResubmit}
+          style={({ pressed }) => [styles.resubmitButton, pressed && styles.pressed]}>
+          <ThemedText style={styles.resubmitButtonText}>
+            {t('mechanic.apply.resubmitSheetTitle')}
+          </ThemedText>
+        </Pressable>
+      ) : null}
     </ThemedView>
   );
 }
 
 export default function MechanicAnnouncementDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
   const goBack = useBack('/(mechanic)/feed');
   const insets = useSafeAreaInsets();
@@ -90,6 +109,7 @@ export default function MechanicAnnouncementDetailScreen() {
   const [myApplication, setMyApplication] = useState<Application | null>(null);
   const [loading, setLoading] = useState(true);
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [resubmitMode, setResubmitMode] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -135,6 +155,7 @@ export default function MechanicAnnouncementDetailScreen() {
   }
 
   const announcementTaken = announcement.status !== 'open';
+  const isResubmittable = myApplication?.status === 'rejected' && !announcementTaken;
   const truckInfo = formatTruck(announcement);
 
   return (
@@ -151,7 +172,7 @@ export default function MechanicAnnouncementDetailScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedText themeColor="textSecondary" type="small" style={styles.date}>
-          {formatDate(announcement.created_at)}
+          {formatDate(announcement.created_at, i18n.language)}
         </ThemedText>
 
         {announcement.driver ? (
@@ -192,7 +213,11 @@ export default function MechanicAnnouncementDetailScreen() {
 
         {/* Acțiune de jos */}
         {myApplication ? (
-          <ApplicationStatusCard application={myApplication} t={t} />
+          <ApplicationStatusCard
+            application={myApplication}
+            t={t}
+            onResubmit={isResubmittable ? () => { setResubmitMode(true); setSheetVisible(true); } : undefined}
+          />
         ) : announcementTaken ? (
           <ThemedText themeColor="textSecondary" style={styles.hint}>
             {t('mechanic.feed.alreadyTakenHint')}
@@ -201,7 +226,7 @@ export default function MechanicAnnouncementDetailScreen() {
           <>
             <Button
               title={t('mechanic.apply.buttonInterested')}
-              onPress={() => setSheetVisible(true)}
+              onPress={() => { setResubmitMode(false); setSheetVisible(true); }}
             />
             <ThemedText themeColor="textSecondary" style={styles.hint}>
               {t('mechanic.apply.interestedHint')}
@@ -213,11 +238,15 @@ export default function MechanicAnnouncementDetailScreen() {
       <ApplyBottomSheet
         visible={sheetVisible}
         announcementId={id}
-        onClose={() => setSheetVisible(false)}
-        onSuccess={() => {
-          setSheetVisible(false);
-          load();
-        }}
+        onClose={() => { setSheetVisible(false); setResubmitMode(false); }}
+        onSuccess={() => { setSheetVisible(false); setResubmitMode(false); load(); }}
+        applicationId={resubmitMode && myApplication ? myApplication.id : undefined}
+        initialData={resubmitMode && myApplication ? {
+          priceType: myApplication.price_type,
+          priceAmount: myApplication.price_amount,
+          currency: myApplication.currency,
+          message: myApplication.message || '',
+        } : undefined}
       />
     </ThemedView>
   );
@@ -273,4 +302,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
+  resubmitButton: {
+    marginTop: Spacing.one,
+    paddingVertical: Spacing.two,
+    borderRadius: Spacing.two,
+    backgroundColor: '#22c55e1A',
+    borderWidth: 1,
+    borderColor: '#22c55e',
+    alignItems: 'center',
+  },
+  resubmitButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#22c55e',
+  },
+  pressed: { opacity: 0.7 },
 });

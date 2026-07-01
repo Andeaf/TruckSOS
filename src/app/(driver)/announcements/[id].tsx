@@ -26,8 +26,10 @@ import {
 } from '@/hooks/use-announcements';
 import type { PriceType } from '@/types/database';
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleString('ro-RO', {
+const LOCALE_MAP: Record<string, string> = { ro: 'ro-RO', en: 'en-GB', de: 'de-DE' };
+
+function formatDate(dateStr: string, language: string) {
+  return new Date(dateStr).toLocaleString(LOCALE_MAP[language] ?? 'ro-RO', {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
@@ -141,7 +143,7 @@ function formatTruck(a: AnnouncementWithMechanic): string | null {
 
 export default function AnnouncementDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
   const router = useRouter();
   const goBack = useBack('/(driver)/announcements');
@@ -285,7 +287,7 @@ export default function AnnouncementDetailScreen() {
         <View style={styles.statusRow}>
           <StatusBadge status={announcement.status} />
           <ThemedText themeColor="textSecondary" type="small">
-            {formatDate(announcement.created_at)}
+            {formatDate(announcement.created_at, i18n.language)}
           </ThemedText>
         </View>
 

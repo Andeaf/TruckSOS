@@ -13,19 +13,20 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
-import { useOpenAnnouncements } from '@/hooks/use-announcements';
+import { useOpenAnnouncements, fetchRejectedAnnouncementIds } from '@/hooks/use-announcements';
 
 const VIEW_MODE_KEY = 'mechanic_feed_view_mode';
 type ViewMode = 'compact' | 'extended';
 
 export default function MechanicFeedScreen() {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, session } = useAuth();
   const { t } = useTranslation();
   const theme = useTheme();
   const { announcements, loading, refresh } = useOpenAnnouncements();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [viewMode, setViewMode] = useState<ViewMode>('extended');
+  const [rejectedIds, setRejectedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     AsyncStorage.getItem(VIEW_MODE_KEY).then((stored) => {
@@ -44,7 +45,10 @@ export default function MechanicFeedScreen() {
   useFocusEffect(
     useCallback(() => {
       refresh();
-    }, [refresh])
+      if (session?.user.id) {
+        fetchRejectedAnnouncementIds(session.user.id).then(setRejectedIds);
+      }
+    }, [refresh, session?.user.id])
   );
 
   return (
@@ -82,6 +86,7 @@ export default function MechanicFeedScreen() {
             announcement={item}
             driverName={item.driver?.full_name}
             compact={viewMode === 'compact'}
+            rejectedByUser={rejectedIds.has(item.id)}
             onPress={() =>
               router.push({
                 pathname: '/(mechanic)/feed/[id]',

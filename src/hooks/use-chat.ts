@@ -17,7 +17,14 @@ export function useConversations(userId: string | undefined) {
   const refresh = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
-    const { data } = await supabase
+
+    const { data: deletions } = await supabase
+      .from('conversation_deletions')
+      .select('conversation_id')
+      .eq('user_id', userId);
+    const deletedIds = (deletions ?? []).map((d) => d.conversation_id);
+
+    let query = supabase
       .from('conversations')
       .select(
         '*, announcement:announcements!announcement_id(location,status,description), driver:profiles!driver_id(full_name), mechanic:profiles!mechanic_id(full_name)'
@@ -25,6 +32,13 @@ export function useConversations(userId: string | undefined) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .or(`driver_id.eq.${userId},mechanic_id.eq.${userId}` as any)
       .order('created_at', { ascending: false });
+
+    if (deletedIds.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      query = query.not('id', 'in', `(${deletedIds.join(',')})`) as any;
+    }
+
+    const { data } = await query;
     setConversations((data as unknown as ConversationWithDetails[]) ?? []);
     setLoading(false);
   }, [userId]);
@@ -87,6 +101,15 @@ export function useMessages(conversationId: string) {
   return { messages, loading, addMessage };
 }
 
+export async function deleteConversations(
+  conversationIds: string[],
+  userId: string
+): Promise<string | null> {
+  const rows = conversationIds.map((id) => ({ conversation_id: id, user_id: userId }));
+  const { error } = await supabase.from('conversation_deletions').insert(rows as never);
+  return error?.message ?? null;
+}
+
 export async function sendMessage(
   conversationId: string,
   senderId: string,
@@ -131,6 +154,74 @@ export function useAnnouncementStatus(
   }, [announcementId]);
 
   return status;
+}
+
+export async function markConversationRead(conversationId: string): Promise<void> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) return;
+  await supabase
+    .from('message_reads')
+    .upsert(
+      { conversation_id: conversationId, user_id: session.user.id, last_read_at: new Date().toISOString() } as never,
+      { onConflict: 'conversation_id,user_id' }
+    );
+}
+
+export function useUnreadCounts(userId: string | undefined): { counts: Record<string, number>; refresh: () => Promise<void> } {
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const channelName = useState(() => `unread-counts-${Math.random()}`)[0];
+
+  const fetchCounts = useCallback(async () => {
+    if (!userId) return;
+
+    const { data: convs } = await supabase
+      .from('conversations')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .select('id').or(`driver_id.eq.${userId},mechanic_id.eq.${userId}` as any);
+    if (!convs || convs.length === 0) { setCounts({}); return; }
+
+    const { data: reads } = await supabase
+      .from('message_reads')
+      .select('conversation_id,last_read_at')
+      .eq('user_id', userId);
+    const readMap: Record<string, string> = {};
+    (reads ?? []).forEach((r) => { readMap[r.conversation_id] = r.last_read_at; });
+
+    const result: Record<string, number> = {};
+    await Promise.all(
+      convs.map(async ({ id }) => {
+        const lastRead = readMap[id];
+        if (!lastRead) { result[id] = 0; return; }
+        const { count } = await supabase
+          .from('messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('conversation_id', id)
+          .neq('sender_id', userId)
+          .gt('created_at', lastRead);
+        result[id] = count ?? 0;
+      })
+    );
+    setCounts(result);
+  }, [userId]);
+
+  useEffect(() => { fetchCounts(); }, [fetchCounts]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(channelName)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => {
+        fetchCounts();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'message_reads' }, () => {
+        fetchCounts();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [userId, fetchCounts, channelName]);
+
+  return { counts, refresh: fetchCounts };
 }
 
 export async function fetchConversationDetails(

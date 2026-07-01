@@ -104,6 +104,16 @@ export interface Database {
         Insert: Omit<Truck, 'id' | 'created_at'>;
         Update: Partial<Pick<Truck, 'make' | 'model' | 'year' | 'nickname'>>;
       };
+      conversation_deletions: {
+        Row: { conversation_id: string; user_id: string; deleted_at: string };
+        Insert: { conversation_id: string; user_id: string };
+        Update: never;
+      };
+      message_reads: {
+        Row: { conversation_id: string; user_id: string; last_read_at: string };
+        Insert: { conversation_id: string; user_id: string; last_read_at?: string };
+        Update: { last_read_at: string };
+      };
     };
     Functions: {
       accept_announcement: {
@@ -134,6 +144,24 @@ export interface Database {
       };
       reject_application: {
         Args: { p_application_id: string };
+        Returns: void;
+      };
+      withdraw_application: {
+        Args: { p_application_id: string };
+        Returns: void;
+      };
+      dismiss_application: {
+        Args: { p_application_id: string };
+        Returns: void;
+      };
+      resubmit_application: {
+        Args: {
+          p_application_id: string;
+          p_price_type: PriceType;
+          p_price_amount: number;
+          p_currency?: string;
+          p_message?: string | null;
+        };
         Returns: void;
       };
     };

@@ -42,7 +42,7 @@
   "driver": {
     "tabs": {
       "announcements": "My announcements",
-      "conversations": "Conversations"
+      "conversations": "Chat"
     },
     "announcements": {
       "listTitle": "My announcements",
@@ -82,7 +82,13 @@
       "rejectApplicant": "Reject",
       "errorAccept": "Error accepting the mechanic.",
       "errorReject": "Error rejecting the mechanic.",
-      "viewProfile": "View full profile"
+      "viewProfile": "View full profile",
+      "selectedCount": "{{count}} selected",
+      "deleteSelectedButton": "Delete selected",
+      "deleteSelectedConfirmTitle": "Delete selected announcements?",
+      "deleteSelectedConfirmMessage": "This action cannot be undone.",
+      "deleteSelectedConfirmMessageWithOpen": "Mechanics who applied will be automatically rejected. This action cannot be undone.",
+      "deleteSelectedConfirmOk": "Yes, delete"
     },
     "profile": {
       "phoneHint": "Visible to the mechanic only if you have an active conversation."
@@ -93,16 +99,16 @@
       "phoneHint": "The phone number becomes visible after you choose this mechanic."
     },
     "conversations": {
-      "title": "Conversations",
-      "emptyTitle": "No conversations",
-      "emptyDescription": "Conversations appear after a mechanic accepts your announcement"
+      "title": "Chats",
+      "emptyTitle": "No chats",
+      "emptyDescription": "Chats appear after a mechanic accepts your announcement"
     }
   },
   "mechanic": {
     "tabs": {
       "feed": "Announcements",
       "applications": "Applications",
-      "conversations": "Conversations"
+      "conversations": "Chat"
     },
     "feed": {
       "title": "Open announcements",
@@ -128,12 +134,22 @@
       "status_pending": "Pending",
       "status_accepted": "Accepted",
       "status_rejected": "Rejected",
-      "goToChat": "Go to conversation"
+      "goToChat": "Go to conversation",
+      "withdrawButton": "Withdraw offer",
+      "withdrawConfirmTitle": "Withdraw offer?",
+      "withdrawConfirmMessage": "Your application will be permanently deleted.",
+      "withdrawConfirmOk": "Yes, withdraw",
+      "dismissConfirmTitle": "Remove application?",
+      "dismissConfirmOk": "Yes, remove",
+      "dismissButton": "Remove application",
+      "detailTitle": "Application details",
+      "sectionAnnouncement": "Announcement",
+      "sectionOffer": "My offer"
     },
     "conversations": {
-      "title": "Conversations",
-      "emptyTitle": "No conversations",
-      "emptyDescription": "Accept an announcement from the feed to start a conversation"
+      "title": "Chats",
+      "emptyTitle": "No chats",
+      "emptyDescription": "Accept an announcement from the feed to start a chat"
     },
     "apply": {
       "buttonInterested": "I'm interested",
@@ -148,6 +164,8 @@
       "messageLabel": "Optional message",
       "messagePlaceholder": "e.g.: I can arrive in 30 minutes...",
       "submitButton": "Submit application",
+      "resubmitSheetTitle": "Modify offer",
+      "resubmitButton": "Submit modified offer",
       "statusPending": "Application sent — Pending",
       "statusAccepted": "Application accepted",
       "statusRejected": "Application rejected",
@@ -218,7 +236,16 @@
     "timeDaysAgo": "{{count}} days ago",
     "defaultUser": "User",
     "noSession": "No active session",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "error": "Error"
+  },
+  "conversations": {
+    "selectedCount": "{{count}} selected",
+    "deleteButton": "Delete",
+    "deleteConfirmTitle": "Delete selected chats?",
+    "deleteConfirmMessage": "They will only disappear from your list.",
+    "deleteConfirmOk": "Yes, delete",
+    "cancelSelection": "Cancel"
   },
   "status": {
     "open": "Open",

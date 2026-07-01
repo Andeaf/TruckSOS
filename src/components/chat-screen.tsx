@@ -18,7 +18,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { useMessages, sendMessage } from '@/hooks/use-chat';
+import { useMessages, sendMessage, markConversationRead } from '@/hooks/use-chat';
 import type { AnnouncementStatus, Message } from '@/types/database';
 
 function formatTime(dateStr: string) {
@@ -79,6 +79,10 @@ export function ChatScreen({
   const insets = useSafeAreaInsets();
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    if (!loading) markConversationRead(conversationId);
+  }, [messages.length, loading, conversationId]);
 
   // Inverted FlatList needs data in descending order (newest first = shown at bottom)
   const reversedMessages = useMemo(() => [...messages].reverse(), [messages]);

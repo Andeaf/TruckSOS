@@ -82,7 +82,13 @@
       "rejectApplicant": "Ablehnen",
       "errorAccept": "Fehler beim Annehmen des Mechanikers.",
       "errorReject": "Fehler beim Ablehnen des Mechanikers.",
-      "viewProfile": "Vollständiges Profil anzeigen"
+      "viewProfile": "Vollständiges Profil anzeigen",
+      "selectedCount": "{{count}} ausgewählt",
+      "deleteSelectedButton": "Ausgewählte löschen",
+      "deleteSelectedConfirmTitle": "Ausgewählte Anzeigen löschen?",
+      "deleteSelectedConfirmMessage": "Diese Aktion kann nicht rückgängig gemacht werden.",
+      "deleteSelectedConfirmMessageWithOpen": "Mechaniker, die sich beworben haben, werden automatisch abgelehnt. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "deleteSelectedConfirmOk": "Ja, löschen"
     },
     "profile": {
       "phoneHint": "Für den Mechaniker nur sichtbar, wenn ihr ein aktives Gespräch habt."
@@ -128,7 +134,17 @@
       "status_pending": "Ausstehend",
       "status_accepted": "Angenommen",
       "status_rejected": "Abgelehnt",
-      "goToChat": "Zum Gespräch"
+      "goToChat": "Zum Gespräch",
+      "withdrawButton": "Angebot zurückziehen",
+      "withdrawConfirmTitle": "Angebot zurückziehen?",
+      "withdrawConfirmMessage": "Deine Bewerbung wird endgültig gelöscht.",
+      "withdrawConfirmOk": "Ja, zurückziehen",
+      "dismissConfirmTitle": "Bewerbung entfernen?",
+      "dismissConfirmOk": "Ja, entfernen",
+      "dismissButton": "Bewerbung entfernen",
+      "detailTitle": "Bewerbungsdetails",
+      "sectionAnnouncement": "Anzeige",
+      "sectionOffer": "Mein Angebot"
     },
     "conversations": {
       "title": "Gespräche",
@@ -148,6 +164,8 @@
       "messageLabel": "Optionale Nachricht",
       "messagePlaceholder": "z. B.: Ich kann in 30 Minuten da sein...",
       "submitButton": "Bewerbung einreichen",
+      "resubmitSheetTitle": "Angebot ändern",
+      "resubmitButton": "Geändertes Angebot einreichen",
       "statusPending": "Bewerbung gesendet — Ausstehend",
       "statusAccepted": "Bewerbung angenommen",
       "statusRejected": "Bewerbung abgelehnt",
@@ -210,6 +228,14 @@
     "selectSaved": "Gespeichertes Fahrzeug auswählen",
     "addNewInPicker": "Neues Fahrzeug hinzufügen"
   },
+  "conversations": {
+    "selectedCount": "{{count}} ausgewählt",
+    "deleteButton": "Löschen",
+    "deleteConfirmTitle": "Ausgewählte Gespräche löschen?",
+    "deleteConfirmMessage": "Sie verschwinden nur aus deiner Liste.",
+    "deleteConfirmOk": "Ja, löschen",
+    "cancelSelection": "Abbrechen"
+  },
   "common": {
     "loading": "Lädt...",
     "timeNow": "gerade eben",
@@ -218,7 +244,8 @@
     "timeDaysAgo": "vor {{count}} Tagen",
     "defaultUser": "Benutzer",
     "noSession": "Keine aktive Sitzung",
-    "signOut": "Abmelden"
+    "signOut": "Abmelden",
+    "error": "Fehler"
   },
   "status": {
     "open": "Offen",

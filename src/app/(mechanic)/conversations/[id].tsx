@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
 import {
   fetchConversationDetails,
+  markConversationRead,
   useAnnouncementStatus,
   type ConversationWithDetails,
 } from '@/hooks/use-chat';
@@ -19,6 +20,7 @@ export default function MechanicChatScreen() {
 
   useEffect(() => {
     fetchConversationDetails(id).then(setConv);
+    markConversationRead(id);
   }, [id]);
 
   const announcementStatus = useAnnouncementStatus(

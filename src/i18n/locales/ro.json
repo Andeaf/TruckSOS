@@ -82,7 +82,13 @@
       "rejectApplicant": "Respinge",
       "errorAccept": "Eroare la acceptarea mecanicului.",
       "errorReject": "Eroare la respingerea mecanicului.",
-      "viewProfile": "Vezi profil complet"
+      "viewProfile": "Vezi profil complet",
+      "selectedCount": "{{count}} selectate",
+      "deleteSelectedButton": "Șterge selectate",
+      "deleteSelectedConfirmTitle": "Ștergi anunțurile selectate?",
+      "deleteSelectedConfirmMessage": "Acțiunea nu poate fi anulată.",
+      "deleteSelectedConfirmMessageWithOpen": "Mecanicii care au candidat vor fi respinși automat. Acțiunea nu poate fi anulată.",
+      "deleteSelectedConfirmOk": "Da, șterge"
     },
     "profile": {
       "phoneHint": "Vizibil mecanicului doar dacă aveți o conversație activă."
@@ -128,7 +134,17 @@
       "status_pending": "În așteptare",
       "status_accepted": "Acceptat",
       "status_rejected": "Respins",
-      "goToChat": "Mergi la conversație"
+      "goToChat": "Mergi la conversație",
+      "withdrawButton": "Retrage oferta",
+      "withdrawConfirmTitle": "Retragi oferta?",
+      "withdrawConfirmMessage": "Candidatura ta va fi ștearsă definitiv.",
+      "withdrawConfirmOk": "Da, retrage",
+      "dismissConfirmTitle": "Ștergi candidatura?",
+      "dismissConfirmOk": "Da, șterge",
+      "dismissButton": "Șterge candidatura",
+      "detailTitle": "Detalii candidatură",
+      "sectionAnnouncement": "Anunț",
+      "sectionOffer": "Oferta mea"
     },
     "conversations": {
       "title": "Conversații",
@@ -148,6 +164,8 @@
       "messageLabel": "Mesaj opțional",
       "messagePlaceholder": "ex: Pot ajunge în 30 de minute...",
       "submitButton": "Trimite candidatura",
+      "resubmitSheetTitle": "Modifică oferta",
+      "resubmitButton": "Trimite oferta modificată",
       "statusPending": "Candidatură trimisă — În așteptare",
       "statusAccepted": "Candidatură acceptată",
       "statusRejected": "Candidatură respinsă",
@@ -169,7 +187,8 @@
     "timeDaysAgo": "{{count}} zile în urmă",
     "defaultUser": "Utilizator",
     "noSession": "Sesiune inexistentă",
-    "signOut": "Deconectare"
+    "signOut": "Deconectare",
+    "error": "Eroare"
   },
   "profile": {
     "tabTitle": "Profil",
@@ -219,6 +238,14 @@
     "errorModelRequired": "Introduceți modelul.",
     "selectSaved": "Selectează camion salvat",
     "addNewInPicker": "Adaugă camion nou"
+  },
+  "conversations": {
+    "selectedCount": "{{count}} selectate",
+    "deleteButton": "Șterge",
+    "deleteConfirmTitle": "Ștergi conversațiile selectate?",
+    "deleteConfirmMessage": "Vor dispărea doar din lista ta.",
+    "deleteConfirmOk": "Da, șterge",
+    "cancelSelection": "Anulează"
   },
   "status": {
     "open": "Deschis",

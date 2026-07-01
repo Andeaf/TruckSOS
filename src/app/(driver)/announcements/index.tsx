@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,7 +12,8 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
-import { useMyAnnouncements } from '@/hooks/use-announcements';
+import { useMyAnnouncements, deleteAnnouncement } from '@/hooks/use-announcements';
+import type { Announcement } from '@/types/database';
 
 export default function DriverAnnouncementsScreen() {
   const { profile, signOut } = useAuth();
@@ -21,6 +22,8 @@ export default function DriverAnnouncementsScreen() {
   const { announcements, loading, refresh } = useMyAnnouncements();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   useFocusEffect(
     useCallback(() => {
@@ -28,18 +31,85 @@ export default function DriverAnnouncementsScreen() {
     }, [refresh])
   );
 
+  function isSelectable(a: Announcement) {
+    return a.status === 'open' || a.status === 'cancelled' || a.status === 'resolved';
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function enterSelection(id: string) {
+    setSelectionMode(true);
+    setSelectedIds(new Set([id]));
+  }
+
+  function exitSelection() {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  }
+
+  const handleDeleteSelected = useCallback(() => {
+    const selected = announcements.filter((a) => selectedIds.has(a.id));
+    const hasOpen = selected.some((a) => a.status === 'open');
+    const message = hasOpen
+      ? t('driver.announcements.deleteSelectedConfirmMessageWithOpen')
+      : t('driver.announcements.deleteSelectedConfirmMessage');
+
+    Alert.alert(
+      t('driver.announcements.deleteSelectedConfirmTitle'),
+      message,
+      [
+        { text: t('conversations.cancelSelection'), style: 'cancel' },
+        {
+          text: t('driver.announcements.deleteSelectedConfirmOk'),
+          style: 'destructive',
+          onPress: async () => {
+            for (const id of selectedIds) {
+              await deleteAnnouncement(id);
+            }
+            exitSelection();
+            refresh();
+          },
+        },
+      ]
+    );
+  }, [t, selectedIds, announcements, refresh]);
+
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <View>
-          <ThemedText type="subtitle">{t('driver.announcements.listTitle')}</ThemedText>
-          <ThemedText themeColor="textSecondary" type="small">
-            {profile?.full_name}
-          </ThemedText>
-        </View>
-        <Pressable onPress={signOut} hitSlop={12}>
-          <MaterialIcons name="logout" size={22} color={theme.textSecondary} />
-        </Pressable>
+        {selectionMode ? (
+          <View style={styles.selectionHeader}>
+            <Pressable onPress={exitSelection} hitSlop={8}>
+              <MaterialIcons name="close" size={24} color={theme.textSecondary} />
+            </Pressable>
+            <ThemedText type="smallBold">
+              {t('driver.announcements.selectedCount', { count: selectedIds.size })}
+            </ThemedText>
+            <Pressable onPress={handleDeleteSelected} disabled={selectedIds.size === 0} hitSlop={8}>
+              <ThemedText style={[styles.deleteText, selectedIds.size === 0 && styles.deleteTextDisabled]}>
+                {t('driver.announcements.deleteSelectedButton')}
+              </ThemedText>
+            </Pressable>
+          </View>
+        ) : (
+          <>
+            <View>
+              <ThemedText type="subtitle">{t('driver.announcements.listTitle')}</ThemedText>
+              <ThemedText themeColor="textSecondary" type="small">
+                {profile?.full_name}
+              </ThemedText>
+            </View>
+            <Pressable onPress={signOut} hitSlop={12}>
+              <MaterialIcons name="logout" size={22} color={theme.textSecondary} />
+            </Pressable>
+          </>
+        )}
       </View>
 
       <FlatList
@@ -49,17 +119,25 @@ export default function DriverAnnouncementsScreen() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         refreshing={loading}
         onRefresh={refresh}
-        renderItem={({ item }) => (
-          <AnnouncementCard
-            announcement={item}
-            onPress={() =>
-              router.push({
-                pathname: '/(driver)/announcements/[id]',
-                params: { id: item.id },
-              })
-            }
-          />
-        )}
+        renderItem={({ item }) => {
+          const selectable = isSelectable(item);
+          return (
+            <AnnouncementCard
+              announcement={item}
+              selectionMode={selectionMode}
+              selected={selectedIds.has(item.id)}
+              selectable={selectable}
+              onPress={() =>
+                router.push({
+                  pathname: '/(driver)/announcements/[id]',
+                  params: { id: item.id },
+                })
+              }
+              onLongPress={() => { if (selectable) enterSelection(item.id); }}
+              onToggleSelect={() => toggleSelect(item.id)}
+            />
+          );
+        }}
         ListEmptyComponent={
           !loading ? (
             <EmptyState
@@ -71,11 +149,13 @@ export default function DriverAnnouncementsScreen() {
         }
       />
 
-      <Pressable
-        style={[styles.fab, { bottom: insets.bottom + Spacing.three }]}
-        onPress={() => router.push('/(driver)/announcements/new')}>
-        <MaterialIcons name="add" size={28} color="#fff" />
-      </Pressable>
+      {!selectionMode ? (
+        <Pressable
+          style={[styles.fab, { bottom: insets.bottom + Spacing.three }]}
+          onPress={() => router.push('/(driver)/announcements/new')}>
+          <MaterialIcons name="add" size={28} color="#fff" />
+        </Pressable>
+      ) : null}
     </ThemedView>
   );
 }
@@ -89,6 +169,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.three,
   },
+  selectionHeader: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  deleteText: {
+    color: '#ef4444',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  deleteTextDisabled: { opacity: 0.4 },
   list: {
     flexGrow: 1,
     paddingHorizontal: Spacing.four,

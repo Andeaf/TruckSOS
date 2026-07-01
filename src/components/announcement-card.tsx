@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
@@ -14,9 +14,15 @@ interface AnnouncementCardProps {
   onPress: () => void;
   driverName?: string;
   compact?: boolean;
+  rejectedByUser?: boolean;
+  selectionMode?: boolean;
+  selected?: boolean;
+  selectable?: boolean;
+  onLongPress?: () => void;
+  onToggleSelect?: () => void;
 }
 
-export function AnnouncementCard({ announcement, onPress, driverName, compact = false }: AnnouncementCardProps) {
+export function AnnouncementCard({ announcement, onPress, driverName, compact = false, rejectedByUser = false, selectionMode, selected, selectable = true, onLongPress, onToggleSelect }: AnnouncementCardProps) {
   const theme = useTheme();
   const { t } = useTranslation();
 
@@ -49,7 +55,7 @@ export function AnnouncementCard({ announcement, onPress, driverName, compact = 
                 </ThemedText>
               </View>
             ) : null}
-            <ThemedText themeColor="textSecondary" type="small" style={styles.compactTime}>
+            <ThemedText themeColor="textSecondary" type="small" numberOfLines={1} style={styles.compactTime}>
               {timeAgo(announcement.created_at)}
             </ThemedText>
           </View>
@@ -59,34 +65,59 @@ export function AnnouncementCard({ announcement, onPress, driverName, compact = 
   }
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView type="backgroundElement" style={styles.card}>
-        <View style={styles.header}>
-          <View style={styles.locationRow}>
-            <MaterialIcons name="location-on" size={14} color={theme.textSecondary} />
-            <ThemedText type="smallBold" style={styles.location} numberOfLines={1}>
-              {announcement.location}
+    <Pressable
+      onPress={selectionMode ? (selectable ? onToggleSelect : undefined) : onPress}
+      onLongPress={selectionMode ? undefined : onLongPress}
+      style={({ pressed }) => [
+        pressed && !selectionMode && styles.pressed,
+        selectionMode && !selectable && styles.dimmed,
+      ]}>
+      <ThemedView type="backgroundElement" style={[styles.card, selected && styles.cardSelected]}>
+        <View style={styles.cardRow}>
+          {selectionMode && selectable ? (
+            <MaterialIcons
+              name={selected ? 'check-box' : 'check-box-outline-blank'}
+              size={20}
+              color={selected ? '#22c55e' : theme.textSecondary}
+            />
+          ) : null}
+          <View style={styles.cardContent}>
+            <View style={styles.header}>
+              <View style={styles.locationRow}>
+                <MaterialIcons name="location-on" size={14} color={theme.textSecondary} />
+                <ThemedText type="smallBold" style={styles.location} numberOfLines={1}>
+                  {announcement.location}
+                </ThemedText>
+              </View>
+              {rejectedByUser ? (
+                <View style={styles.rejectedBadge}>
+                  <Text style={styles.rejectedBadgeText}>
+                    {t('mechanic.applications.status_rejected')}
+                  </Text>
+                </View>
+              ) : (
+                <StatusBadge status={announcement.status} />
+              )}
+            </View>
+
+            <ThemedText themeColor="textSecondary" numberOfLines={2} style={styles.description}>
+              {announcement.description}
             </ThemedText>
-          </View>
-          <StatusBadge status={announcement.status} />
-        </View>
 
-        <ThemedText themeColor="textSecondary" numberOfLines={2} style={styles.description}>
-          {announcement.description}
-        </ThemedText>
-
-        <View style={styles.footer}>
-          {driverName ? (
-            <View style={styles.driverRow}>
-              <MaterialIcons name="person" size={12} color={theme.textSecondary} />
-              <ThemedText themeColor="textSecondary" type="small" style={styles.driverName}>
-                {driverName}
+            <View style={styles.footer}>
+              {driverName ? (
+                <View style={styles.driverRow}>
+                  <MaterialIcons name="person" size={12} color={theme.textSecondary} />
+                  <ThemedText themeColor="textSecondary" type="small" style={styles.driverName}>
+                    {driverName}
+                  </ThemedText>
+                </View>
+              ) : null}
+              <ThemedText themeColor="textSecondary" type="small" numberOfLines={1} style={styles.time}>
+                {timeAgo(announcement.created_at)}
               </ThemedText>
             </View>
-          ) : null}
-          <ThemedText themeColor="textSecondary" type="small">
-            {timeAgo(announcement.created_at)}
-          </ThemedText>
+          </View>
         </View>
       </ThemedView>
     </Pressable>
@@ -94,12 +125,15 @@ export function AnnouncementCard({ announcement, onPress, driverName, compact = 
 }
 
 const styles = StyleSheet.create({
-  // Extended card (unchanged)
   card: {
     borderRadius: Spacing.three,
     padding: Spacing.three,
     gap: Spacing.two,
   },
+  cardSelected: { borderWidth: 1.5, borderColor: '#22c55e' },
+  cardRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  cardContent: { flex: 1 },
+  dimmed: { opacity: 0.4 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -125,6 +159,7 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   driverName: { fontSize: 12 },
+  time: { flexShrink: 0 },
 
   // Compact card
   compactCard: {
@@ -157,5 +192,16 @@ const styles = StyleSheet.create({
   compactTruckText: { maxWidth: 80 },
   compactTime: { flexShrink: 0 },
 
+  rejectedBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    backgroundColor: '#ef44441A',
+  },
+  rejectedBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#ef4444',
+  },
   pressed: { opacity: 0.7 },
 });

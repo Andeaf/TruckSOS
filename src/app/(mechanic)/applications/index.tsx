@@ -1,36 +1,25 @@
-import { useCallback } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
+import { ApplyBottomSheet } from '@/components/apply-bottom-sheet';
 import { EmptyState } from '@/components/empty-state';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { useMyApplications, type ApplicationWithDetails } from '@/hooks/use-announcements';
+import { useMyApplications, withdrawApplication, dismissApplication, resubmitApplication, type ApplicationWithDetails } from '@/hooks/use-announcements';
+import { useTimeAgo } from '@/hooks/use-time-ago';
 import type { ApplicationStatus, PriceType } from '@/types/database';
 
 const STATUS_COLORS: Record<ApplicationStatus, { color: string; bg: string }> = {
   pending:  { color: '#f59e0b', bg: '#f59e0b1A' },
   accepted: { color: '#22c55e', bg: '#22c55e1A' },
-  rejected: { color: '#6b7280', bg: '#6b72801A' },
+  rejected: { color: '#ef4444', bg: '#ef44441A' },
 };
-
-function useTimeAgo() {
-  const { t } = useTranslation();
-  return (dateStr: string): string => {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return t('common.timeNow');
-    if (mins < 60) return `${mins}m`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h`;
-    return `${Math.floor(hrs / 24)}z`;
-  };
-}
 
 function ApplicationStatusBadge({ status }: { status: ApplicationStatus }) {
   const { t } = useTranslation();
@@ -54,10 +43,18 @@ function priceLabel(priceType: PriceType, amount: number, currency: string, t: (
 
 function ApplicationCard({
   item,
+  onPress,
   onChatPress,
+  onWithdraw,
+  onDismiss,
+  onResubmit,
 }: {
   item: ApplicationWithDetails;
+  onPress: () => void;
   onChatPress: (conversationId: string) => void;
+  onWithdraw: (id: string) => void;
+  onDismiss: (id: string) => void;
+  onResubmit: (item: ApplicationWithDetails) => void;
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -65,6 +62,8 @@ function ApplicationCard({
   const { announcement } = item;
   if (!announcement) return null;
   const conversationId = announcement.conversations?.[0]?.id ?? null;
+  const isResubmittable = item.status === 'rejected' && announcement.status === 'open';
+  const isDismissable = !isResubmittable && (item.status === 'rejected' || announcement.status === 'cancelled');
 
   const truckLine =
     announcement.truck_make || announcement.truck_model
@@ -74,54 +73,79 @@ function ApplicationCard({
       : null;
 
   return (
-    <ThemedView type="backgroundElement" style={styles.card}>
-      <View style={styles.cardHeader}>
-        <ThemedText type="smallBold" numberOfLines={1} style={styles.driverName}>
-          {announcement.driver?.full_name ?? t('common.defaultUser')}
-        </ThemedText>
-        <ThemedText themeColor="textSecondary" type="small">
-          {timeAgo(item.created_at)}
-        </ThemedText>
-      </View>
+    <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
+      <ThemedView type="backgroundElement" style={styles.card}>
+        <View style={styles.cardHeader}>
+          <ThemedText type="smallBold" numberOfLines={1} style={styles.driverName}>
+            {announcement.driver?.full_name ?? t('common.defaultUser')}
+          </ThemedText>
+          <View style={styles.headerRight}>
+            <ApplicationStatusBadge status={item.status} />
+            {isDismissable ? (
+              <Pressable onPress={() => onDismiss(item.id)} hitSlop={8}>
+                <MaterialIcons name="close" size={18} color={theme.textSecondary} />
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
 
-      <View style={styles.locationRow}>
-        <MaterialIcons name="location-on" size={12} color={theme.textSecondary} />
-        <ThemedText themeColor="textSecondary" type="small" numberOfLines={1} style={styles.locationText}>
-          {announcement.location}
-        </ThemedText>
-      </View>
-
-      {truckLine ? (
-        <View style={styles.truckRow}>
-          <MaterialIcons name="local-shipping" size={12} color={theme.textSecondary} />
+        <View style={styles.locationRow}>
+          <MaterialIcons name="location-on" size={12} color={theme.textSecondary} />
           <ThemedText themeColor="textSecondary" type="small" numberOfLines={1} style={styles.locationText}>
-            {truckLine}
+            {announcement.location}
           </ThemedText>
         </View>
-      ) : null}
 
-      <ThemedText type="smallBold" style={styles.price}>
-        {priceLabel(item.price_type, item.price_amount, item.currency, t)}
-      </ThemedText>
-
-      {item.message ? (
-        <ThemedText themeColor="textSecondary" type="small" numberOfLines={2} style={styles.message}>
-          "{item.message}"
-        </ThemedText>
-      ) : null}
-
-      <View style={styles.cardFooter}>
-        <ApplicationStatusBadge status={item.status} />
-        {item.status === 'accepted' && conversationId ? (
-          <Pressable
-            onPress={() => onChatPress(conversationId)}
-            style={({ pressed }) => [styles.chatButton, pressed && styles.pressed]}>
-            <MaterialIcons name="chat" size={14} color="#22c55e" />
-            <Text style={styles.chatButtonText}>{t('mechanic.applications.goToChat')}</Text>
-          </Pressable>
+        {truckLine ? (
+          <View style={styles.truckRow}>
+            <MaterialIcons name="local-shipping" size={12} color={theme.textSecondary} />
+            <ThemedText themeColor="textSecondary" type="small" numberOfLines={1} style={styles.locationText}>
+              {truckLine}
+            </ThemedText>
+          </View>
         ) : null}
-      </View>
-    </ThemedView>
+
+        <ThemedText type="smallBold" style={styles.price}>
+          {priceLabel(item.price_type, item.price_amount, item.currency, t)}
+        </ThemedText>
+
+        {item.message ? (
+          <ThemedText themeColor="textSecondary" type="small" numberOfLines={2} style={styles.message}>
+            "{item.message}"
+          </ThemedText>
+        ) : null}
+
+        <View style={styles.cardFooter}>
+          <View style={styles.footerLeft}>
+            {item.status === 'accepted' && conversationId ? (
+              <Pressable
+                onPress={() => onChatPress(conversationId)}
+                style={({ pressed }) => [styles.chatButton, pressed && styles.pressed]}>
+                <MaterialIcons name="chat" size={14} color="#22c55e" />
+                <Text style={styles.chatButtonText}>{t('mechanic.applications.goToChat')}</Text>
+              </Pressable>
+            ) : null}
+            {item.status === 'pending' ? (
+              <Pressable
+                onPress={() => onWithdraw(item.id)}
+                style={({ pressed }) => [styles.withdrawButton, pressed && styles.pressed]}>
+                <Text style={styles.withdrawButtonText}>{t('mechanic.applications.withdrawButton')}</Text>
+              </Pressable>
+            ) : null}
+            {isResubmittable ? (
+              <Pressable
+                onPress={() => onResubmit(item)}
+                style={({ pressed }) => [styles.resubmitButton, pressed && styles.pressed]}>
+                <Text style={styles.resubmitButtonText}>{t('mechanic.apply.resubmitSheetTitle')}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+          <ThemedText themeColor="textSecondary" type="small" numberOfLines={1} style={styles.time}>
+            {timeAgo(item.created_at)}
+          </ThemedText>
+        </View>
+      </ThemedView>
+    </Pressable>
   );
 }
 
@@ -130,6 +154,53 @@ export default function ApplicationsScreen() {
   const { applications, loading, refresh } = useMyApplications();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const [sheetItem, setSheetItem] = useState<ApplicationWithDetails | null>(null);
+
+  function handleResubmit(item: ApplicationWithDetails) {
+    setSheetItem(item);
+    setSheetVisible(true);
+  }
+
+  const handleWithdraw = useCallback((id: string) => {
+    Alert.alert(
+      t('mechanic.applications.withdrawConfirmTitle'),
+      t('mechanic.applications.withdrawConfirmMessage'),
+      [
+        { text: t('driver.announcements.cancelConfirmCancel'), style: 'cancel' },
+        {
+          text: t('mechanic.applications.withdrawConfirmOk'),
+          style: 'destructive',
+          onPress: async () => {
+            await withdrawApplication(id);
+            refresh();
+          },
+        },
+      ]
+    );
+  }, [t, refresh]);
+
+  const handleDismiss = useCallback((id: string) => {
+    Alert.alert(
+      t('mechanic.applications.dismissConfirmTitle'),
+      undefined,
+      [
+        { text: t('driver.announcements.cancelConfirmCancel'), style: 'cancel' },
+        {
+          text: t('mechanic.applications.dismissConfirmOk'),
+          style: 'destructive',
+          onPress: async () => {
+            const err = await dismissApplication(id);
+            if (err) {
+              Alert.alert(t('common.error'), err);
+            } else {
+              refresh();
+            }
+          },
+        },
+      ]
+    );
+  }, [t, refresh]);
 
   useFocusEffect(
     useCallback(() => {
@@ -153,12 +224,21 @@ export default function ApplicationsScreen() {
         renderItem={({ item }) => (
           <ApplicationCard
             item={item}
+            onPress={() =>
+              router.push({
+                pathname: '/(mechanic)/applications/[id]' as never,
+                params: { id: item.id },
+              })
+            }
             onChatPress={(conversationId) =>
               router.push({
                 pathname: '/(mechanic)/conversations/[id]' as never,
                 params: { id: conversationId },
               })
             }
+            onWithdraw={handleWithdraw}
+            onDismiss={handleDismiss}
+            onResubmit={handleResubmit}
           />
         )}
         ListEmptyComponent={
@@ -170,6 +250,20 @@ export default function ApplicationsScreen() {
             />
           ) : null
         }
+      />
+
+      <ApplyBottomSheet
+        visible={sheetVisible}
+        announcementId={sheetItem?.announcement.id ?? ''}
+        onClose={() => { setSheetVisible(false); setSheetItem(null); }}
+        onSuccess={() => { setSheetVisible(false); setSheetItem(null); refresh(); }}
+        applicationId={sheetItem?.id}
+        initialData={sheetItem ? {
+          priceType: sheetItem.price_type,
+          priceAmount: sheetItem.price_amount,
+          currency: sheetItem.currency,
+          message: sheetItem.message || '',
+        } : undefined}
       />
     </ThemedView>
   );
@@ -198,7 +292,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
   },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, flexShrink: 0 },
   driverName: { flex: 1 },
+  footerLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, flexShrink: 1 },
+  time: { flexShrink: 0 },
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   truckRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   locationText: { flex: 1 },
@@ -231,6 +328,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#22c55e1A',
   },
   chatButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#22c55e',
+  },
+  withdrawButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    backgroundColor: '#ef44441A',
+  },
+  withdrawButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#ef4444',
+  },
+  resubmitButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    backgroundColor: '#22c55e1A',
+    borderWidth: 1,
+    borderColor: '#22c55e',
+  },
+  resubmitButtonText: {
     fontSize: 12,
     fontWeight: '600',
     color: '#22c55e',

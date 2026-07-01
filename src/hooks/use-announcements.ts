@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
 import type { Announcement, Application, Profile, PriceType } from '@/types/database';
@@ -151,6 +151,15 @@ export async function applyToAnnouncement(
   return error?.message ?? null;
 }
 
+export async function fetchRejectedAnnouncementIds(mechanicId: string): Promise<Set<string>> {
+  const { data } = await supabase
+    .from('applications')
+    .select('announcement_id')
+    .eq('mechanic_id', mechanicId)
+    .eq('status', 'rejected');
+  return new Set((data ?? []).map((r) => r.announcement_id));
+}
+
 export async function fetchMyApplicationForAnnouncement(
   announcementId: string,
 ): Promise<Application | null> {
@@ -178,6 +187,37 @@ export async function acceptApplication(
 export async function rejectApplication(applicationId: string): Promise<string | null> {
   const { error } = await supabase.rpc('reject_application', {
     p_application_id: applicationId,
+  } as never);
+  return error?.message ?? null;
+}
+
+export async function withdrawApplication(applicationId: string): Promise<string | null> {
+  const { error } = await supabase.rpc('withdraw_application', {
+    p_application_id: applicationId,
+  } as never);
+  return error?.message ?? null;
+}
+
+export async function dismissApplication(applicationId: string): Promise<string | null> {
+  const { error } = await supabase.rpc('dismiss_application', {
+    p_application_id: applicationId,
+  } as never);
+  return error?.message ?? null;
+}
+
+export async function resubmitApplication(
+  applicationId: string,
+  priceType: PriceType,
+  priceAmount: number,
+  currency: string,
+  message: string | null,
+): Promise<string | null> {
+  const { error } = await supabase.rpc('resubmit_application', {
+    p_application_id: applicationId,
+    p_price_type: priceType,
+    p_price_amount: priceAmount,
+    p_currency: currency,
+    p_message: message || null,
   } as never);
   return error?.message ?? null;
 }
@@ -229,4 +269,30 @@ export function useMyApplications() {
   }, [session]);
 
   return { applications, loading, refresh };
+}
+
+export function useApplication(id: string) {
+  const [application, setApplication] = useState<ApplicationWithDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('applications')
+      .select(
+        `*, announcement:announcements!announcement_id(
+          id, location, description, status, truck_make, truck_model, truck_year,
+          driver:profiles!driver_id(full_name),
+          conversations(id)
+        )`
+      )
+      .eq('id', id)
+      .single();
+    setApplication((data as unknown as ApplicationWithDetails) ?? null);
+    setLoading(false);
+  }, [id]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  return { application, loading, refresh };
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -16,7 +16,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { SUPPORTED_CURRENCIES, DEFAULT_CURRENCY } from '@/constants/currencies';
 import { useTheme } from '@/hooks/use-theme';
-import { applyToAnnouncement } from '@/hooks/use-announcements';
+import { applyToAnnouncement, resubmitApplication } from '@/hooks/use-announcements';
 import type { PriceType } from '@/types/database';
 
 interface ApplyBottomSheetProps {
@@ -24,6 +24,13 @@ interface ApplyBottomSheetProps {
   announcementId: string;
   onClose: () => void;
   onSuccess: () => void;
+  applicationId?: string;
+  initialData?: {
+    priceType: PriceType;
+    priceAmount: number;
+    currency: string;
+    message: string;
+  };
 }
 
 export function ApplyBottomSheet({
@@ -31,6 +38,8 @@ export function ApplyBottomSheet({
   announcementId,
   onClose,
   onSuccess,
+  applicationId,
+  initialData,
 }: ApplyBottomSheetProps) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -40,6 +49,15 @@ export function ApplyBottomSheet({
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (visible && initialData) {
+      setPriceType(initialData.priceType);
+      setPriceAmount(String(initialData.priceAmount));
+      setCurrency(initialData.currency);
+      setMessage(initialData.message || '');
+    }
+  }, [visible]);
 
   function reset() {
     setPriceType('fixed');
@@ -63,13 +81,9 @@ export function ApplyBottomSheet({
 
     setLoading(true);
     setError('');
-    const err = await applyToAnnouncement(
-      announcementId,
-      priceType,
-      amount,
-      currency,
-      message.trim() || null,
-    );
+    const err = applicationId
+      ? await resubmitApplication(applicationId, priceType, amount, currency, message.trim() || null)
+      : await applyToAnnouncement(announcementId, priceType, amount, currency, message.trim() || null);
     setLoading(false);
 
     if (err) {
@@ -104,7 +118,7 @@ export function ApplyBottomSheet({
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.content}>
             <ThemedText type="subtitle" style={styles.sheetTitle}>
-              {t('mechanic.apply.sheetTitle')}
+              {applicationId ? t('mechanic.apply.resubmitSheetTitle') : t('mechanic.apply.sheetTitle')}
             </ThemedText>
 
             {/* Tip preț */}
@@ -207,7 +221,7 @@ export function ApplyBottomSheet({
             ) : null}
 
             <Button
-              title={t('mechanic.apply.submitButton')}
+              title={applicationId ? t('mechanic.apply.resubmitButton') : t('mechanic.apply.submitButton')}
               onPress={handleSubmit}
               loading={loading}
             />
