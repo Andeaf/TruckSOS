@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "expo-init",
-    "slug": "expo-init",
+    "name": "TruckSOS",
+    "slug": "trucksos",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -17,7 +17,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.andeaf.trucksos"
     },
     "web": {
       "output": "static",
@@ -40,6 +41,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "dc737a62-2ec0-458e-b216-8248cd4b745e"
+      }
     }
   }
 }
