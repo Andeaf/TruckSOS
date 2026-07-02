@@ -5,13 +5,17 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useUnreadCounts } from '@/hooks/use-chat';
+import { useChannels, useChannelUnreadCount } from '@/hooks/use-channel-chat';
 
 export default function MechanicLayout() {
   const theme = useTheme();
   const { t } = useTranslation();
   const { session } = useAuth();
   const { counts: unreadCounts } = useUnreadCounts(session?.user.id);
-  const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
+  const { channels } = useChannels();
+  const globalChannel = channels.find((c) => c.type === 'global');
+  const { count: channelUnread } = useChannelUnreadCount(session?.user.id, globalChannel?.id);
+  const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0) + channelUnread;
 
   return (
     <Tabs

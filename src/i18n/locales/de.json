@@ -179,6 +179,12 @@
     "inputPlaceholder": "Nachricht schreiben...",
     "resolvedBanner": "Die Anzeige wurde als gelöst markiert."
   },
+  "channel": {
+    "name": {
+      "global": "TruckSOS Gemeinschaft"
+    },
+    "subtitle": "Öffentliche Diskussionen"
+  },
   "profile": {
     "tabTitle": "Profil",
     "myProfileTitle": "Mein Profil",

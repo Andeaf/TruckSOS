@@ -13,7 +13,50 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useConversations, deleteConversations, useUnreadCounts, type ConversationWithDetails } from '@/hooks/use-chat';
+import { useChannels, useChannelUnreadCount } from '@/hooks/use-channel-chat';
 import { useTimeAgo } from '@/hooks/use-time-ago';
+import type { Channel } from '@/types/database';
+
+function ChannelCard({
+  channel,
+  userId,
+  onPress,
+}: {
+  channel: Channel;
+  userId: string | undefined;
+  onPress: () => void;
+}) {
+  const { t } = useTranslation();
+  const { count: unreadCount } = useChannelUnreadCount(userId, channel.id);
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
+      <ThemedView type="backgroundElement" style={[styles.card, styles.channelCard]}>
+        <View style={styles.cardRow}>
+          <View style={styles.channelIcon}>
+            <MaterialIcons name="groups" size={20} color="#fff" />
+          </View>
+          <View style={[styles.cardContent, styles.channelCardContent]}>
+            <View style={styles.cardTop}>
+              <ThemedText type="smallBold" numberOfLines={1} style={styles.name}>
+                {t(`channel.name.${channel.type}`)}
+              </ThemedText>
+              {unreadCount > 0 ? (
+                <View style={styles.unreadBadge}>
+                  <ThemedText style={styles.unreadText}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </ThemedText>
+                </View>
+              ) : null}
+            </View>
+            <ThemedText themeColor="textSecondary" type="small" numberOfLines={1}>
+              {t('channel.subtitle')}
+            </ThemedText>
+          </View>
+        </View>
+      </ThemedView>
+    </Pressable>
+  );
+}
 
 function ConversationCard({
   item,
@@ -88,6 +131,7 @@ export default function DriverConversationsScreen() {
   const theme = useTheme();
   const { conversations, loading, refresh } = useConversations(session?.user.id);
   const { counts: unreadCounts, refresh: refreshCounts } = useUnreadCounts(session?.user.id);
+  const { channels, refresh: refreshChannels } = useChannels();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [selectionMode, setSelectionMode] = useState(false);
@@ -97,7 +141,8 @@ export default function DriverConversationsScreen() {
     useCallback(() => {
       refresh();
       refreshCounts();
-    }, [refresh, refreshCounts])
+      refreshChannels();
+    }, [refresh, refreshCounts, refreshChannels])
   );
 
   function toggleSelect(id: string) {
@@ -166,6 +211,25 @@ export default function DriverConversationsScreen() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         refreshing={loading}
         onRefresh={refresh}
+        ListHeaderComponent={
+          channels.length > 0 ? (
+            <View style={styles.channelSection}>
+              {channels.map((channel) => (
+                <ChannelCard
+                  key={channel.id}
+                  channel={channel}
+                  userId={session?.user.id}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/(driver)/conversations/channel/[id]' as never,
+                      params: { id: channel.id },
+                    })
+                  }
+                />
+              ))}
+            </View>
+          ) : null
+        }
         renderItem={({ item }) => (
           <ConversationCard
             item={item}
@@ -219,10 +283,21 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.four,
   },
   separator: { height: Spacing.two },
+  channelSection: { marginBottom: Spacing.two },
   card: {
     borderRadius: Spacing.three,
     padding: Spacing.three,
     gap: Spacing.one,
+  },
+  channelCard: { borderWidth: 1, borderColor: '#8B5CF633' },
+  channelCardContent: { gap: 2 },
+  channelIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#8B5CF6',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cardSelected: { borderWidth: 1.5, borderColor: '#22c55e' },
   cardRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },

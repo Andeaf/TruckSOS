@@ -179,6 +179,12 @@
     "inputPlaceholder": "Write a message...",
     "resolvedBanner": "The announcement has been marked as resolved."
   },
+  "channel": {
+    "name": {
+      "global": "TruckSOS Community"
+    },
+    "subtitle": "Public discussions"
+  },
   "profile": {
     "tabTitle": "Profile",
     "myProfileTitle": "My profile",

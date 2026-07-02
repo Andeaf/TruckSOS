@@ -179,6 +179,12 @@
     "inputPlaceholder": "Scrie un mesaj...",
     "resolvedBanner": "Anunțul a fost marcat ca rezolvat."
   },
+  "channel": {
+    "name": {
+      "global": "Comunitate TruckSOS"
+    },
+    "subtitle": "Discuții publice"
+  },
   "common": {
     "loading": "Se încarcă...",
     "timeNow": "acum",

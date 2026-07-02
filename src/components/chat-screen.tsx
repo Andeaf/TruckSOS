@@ -18,8 +18,13 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { useMessages, sendMessage, markConversationRead } from '@/hooks/use-chat';
-import type { AnnouncementStatus, Message } from '@/types/database';
+
+export interface ChatMessageBase {
+  id: string;
+  content: string;
+  sender_id: string;
+  created_at: string;
+}
 
 function formatTime(dateStr: string) {
   return new Date(dateStr).toLocaleTimeString('ro-RO', {
@@ -28,61 +33,81 @@ function formatTime(dateStr: string) {
   });
 }
 
-interface MessageBubbleProps {
-  message: Message;
+interface MessageBubbleProps<M extends ChatMessageBase> {
+  message: M;
   isMe: boolean;
   accentColor: string;
+  senderLabel?: string | null;
 }
 
-function MessageBubble({ message, isMe, accentColor }: MessageBubbleProps) {
+function MessageBubble<M extends ChatMessageBase>({
+  message,
+  isMe,
+  accentColor,
+  senderLabel,
+}: MessageBubbleProps<M>) {
   const theme = useTheme();
   return (
     <View style={[styles.bubbleRow, isMe ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
-      <View
-        style={[
-          styles.bubble,
-          { backgroundColor: isMe ? accentColor : theme.backgroundElement },
-        ]}>
-        <Text style={[styles.bubbleText, { color: isMe ? '#ffffff' : theme.text }]}>
-          {message.content}
-        </Text>
-        <Text style={[styles.bubbleTime, { color: isMe ? 'rgba(255,255,255,0.7)' : theme.textSecondary }]}>
-          {formatTime(message.created_at)}
-        </Text>
+      <View style={styles.bubbleColumn}>
+        {senderLabel ? (
+          <ThemedText themeColor="textSecondary" type="small" style={styles.senderLabel}>
+            {senderLabel}
+          </ThemedText>
+        ) : null}
+        <View
+          style={[
+            styles.bubble,
+            { backgroundColor: isMe ? accentColor : theme.backgroundElement },
+          ]}>
+          <Text style={[styles.bubbleText, { color: isMe ? '#ffffff' : theme.text }]}>
+            {message.content}
+          </Text>
+          <Text style={[styles.bubbleTime, { color: isMe ? 'rgba(255,255,255,0.7)' : theme.textSecondary }]}>
+            {formatTime(message.created_at)}
+          </Text>
+        </View>
       </View>
     </View>
   );
 }
 
-interface ChatScreenProps {
-  conversationId: string;
+interface ChatScreenProps<M extends ChatMessageBase> {
   currentUserId: string;
   accentColor: string;
-  otherPersonName: string;
-  announcementLocation: string;
-  announcementStatus: AnnouncementStatus;
+  title: string;
+  subtitle: string;
+  subtitleIcon?: keyof typeof MaterialIcons.glyphMap;
+  bannerText?: string;
+  messages: M[];
+  loading: boolean;
+  loadingMore?: boolean;
+  onLoadOlder?: () => void;
+  onSend: (content: string) => Promise<void>;
+  renderSenderLabel?: (message: M) => string | null;
   onBack: () => void;
 }
 
-export function ChatScreen({
-  conversationId,
+export function ChatScreen<M extends ChatMessageBase>({
   currentUserId,
   accentColor,
-  otherPersonName,
-  announcementLocation,
-  announcementStatus,
+  title,
+  subtitle,
+  subtitleIcon,
+  bannerText,
+  messages,
+  loading,
+  loadingMore,
+  onLoadOlder,
+  onSend,
+  renderSenderLabel,
   onBack,
-}: ChatScreenProps) {
-  const { messages, loading, addMessage } = useMessages(conversationId);
+}: ChatScreenProps<M>) {
   const { t } = useTranslation();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
-
-  useEffect(() => {
-    if (!loading) markConversationRead(conversationId);
-  }, [messages.length, loading, conversationId]);
 
   // Inverted FlatList needs data in descending order (newest first = shown at bottom)
   const reversedMessages = useMemo(() => [...messages].reverse(), [messages]);
@@ -92,9 +117,7 @@ export function ChatScreen({
     if (!trimmed || sending) return;
     setSending(true);
     setText('');
-    const { message } = await sendMessage(conversationId, currentUserId, trimmed);
-    // Adăugăm imediat în UI fără să așteptăm Realtime (Realtime va deduplica)
-    if (message) addMessage(message);
+    await onSend(trimmed);
     setSending(false);
   }
 
@@ -106,21 +129,23 @@ export function ChatScreen({
         </Pressable>
         <View style={styles.headerInfo}>
           <ThemedText type="smallBold" numberOfLines={1}>
-            {otherPersonName}
+            {title}
           </ThemedText>
           <View style={styles.locationRow}>
-            <MaterialIcons name="location-on" size={11} color={theme.textSecondary} />
+            {subtitleIcon ? (
+              <MaterialIcons name={subtitleIcon} size={11} color={theme.textSecondary} />
+            ) : null}
             <ThemedText themeColor="textSecondary" type="small" numberOfLines={1}>
-              {announcementLocation}
+              {subtitle}
             </ThemedText>
           </View>
         </View>
       </View>
 
-      {announcementStatus === 'resolved' ? (
+      {bannerText ? (
         <View style={styles.resolvedBanner}>
           <MaterialIcons name="check-circle" size={14} color="#22c55e" />
-          <Text style={styles.resolvedText}>{t('chat.resolvedBanner')}</Text>
+          <Text style={styles.resolvedText}>{bannerText}</Text>
         </View>
       ) : null}
 
@@ -145,11 +170,25 @@ export function ChatScreen({
             keyExtractor={(item) => item.id}
             inverted
             contentContainerStyle={styles.messageList}
+            onEndReached={onLoadOlder}
+            onEndReachedThreshold={0.3}
+            ListFooterComponent={
+              loadingMore ? (
+                <View style={styles.loadingMore}>
+                  <ActivityIndicator size="small" color={theme.textSecondary} />
+                </View>
+              ) : null
+            }
             renderItem={({ item }) => (
               <MessageBubble
                 message={item}
                 isMe={item.sender_id === currentUserId}
                 accentColor={accentColor}
+                senderLabel={
+                  item.sender_id !== currentUserId && renderSenderLabel
+                    ? renderSenderLabel(item)
+                    : null
+                }
               />
             )}
           />
@@ -218,11 +257,13 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     gap: Spacing.one,
   },
+  loadingMore: { paddingVertical: Spacing.two, alignItems: 'center' },
   bubbleRow: { flexDirection: 'row', marginVertical: 2 },
   bubbleRowRight: { justifyContent: 'flex-end' },
   bubbleRowLeft: { justifyContent: 'flex-start' },
+  bubbleColumn: { maxWidth: '78%' },
+  senderLabel: { marginBottom: 2, marginLeft: 4, fontSize: 11 },
   bubble: {
-    maxWidth: '78%',
     borderRadius: Spacing.two,
     paddingHorizontal: Spacing.two + 2,
     paddingVertical: Spacing.one + 2,

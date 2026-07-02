@@ -2,6 +2,7 @@ export type Role = 'driver' | 'mechanic';
 export type AnnouncementStatus = 'open' | 'accepted' | 'resolved' | 'cancelled';
 export type ApplicationStatus = 'pending' | 'accepted' | 'rejected';
 export type PriceType = 'fixed' | 'hourly';
+export type ChannelType = 'global' | 'regional';
 
 export interface Profile {
   id: string;
@@ -65,6 +66,21 @@ export interface Truck {
   created_at: string;
 }
 
+export interface Channel {
+  id: string;
+  name: string;
+  type: ChannelType;
+  created_at: string;
+}
+
+export interface ChannelMessage {
+  id: string;
+  channel_id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -112,6 +128,21 @@ export interface Database {
       message_reads: {
         Row: { conversation_id: string; user_id: string; last_read_at: string };
         Insert: { conversation_id: string; user_id: string; last_read_at?: string };
+        Update: { last_read_at: string };
+      };
+      channels: {
+        Row: Channel;
+        Insert: Omit<Channel, 'id' | 'created_at'>;
+        Update: never;
+      };
+      channel_messages: {
+        Row: ChannelMessage;
+        Insert: Omit<ChannelMessage, 'id' | 'created_at'>;
+        Update: never;
+      };
+      channel_reads: {
+        Row: { channel_id: string; user_id: string; last_read_at: string };
+        Insert: { channel_id: string; user_id: string; last_read_at?: string };
         Update: { last_read_at: string };
       };
     };
