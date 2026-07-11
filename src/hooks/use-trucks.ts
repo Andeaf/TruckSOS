@@ -31,7 +31,7 @@ export async function addTruck(
 
 export async function updateTruck(
   id: string,
-  data: Partial<Pick<Truck, 'make' | 'model' | 'year' | 'nickname'>>
+  data: Partial<Pick<Truck, 'make' | 'model' | 'year' | 'nickname' | 'plate_number'>>
 ): Promise<string | null> {
   const { error } = await supabase.from('trucks').update(data).eq('id', id);
   return error?.message ?? null;

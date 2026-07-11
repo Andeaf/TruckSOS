@@ -5,7 +5,8 @@ import type { Announcement, Conversation, Message } from '@/types/database';
 import type { AnnouncementStatus } from '@/types/database';
 
 export type ConversationWithDetails = Conversation & {
-  announcement: { location: string; status: AnnouncementStatus; description: string };
+  // null pentru conversații directe (fără anunț)
+  announcement: { location: string; status: AnnouncementStatus; description: string } | null;
   driver: { full_name: string };
   mechanic: { full_name: string };
 };
@@ -99,6 +100,16 @@ export function useMessages(conversationId: string) {
   }, [conversationId]);
 
   return { messages, loading, addMessage };
+}
+
+// Întoarce conversația directă existentă cu mecanicul sau creează una nouă (RPC atomic)
+export async function startDirectConversation(
+  mechanicId: string
+): Promise<{ conversationId: string | null; error: string | null }> {
+  const { data, error } = await supabase.rpc('start_direct_conversation', {
+    p_mechanic_id: mechanicId,
+  } as never);
+  return { conversationId: (data as unknown as string) ?? null, error: error?.message ?? null };
 }
 
 export async function deleteConversations(

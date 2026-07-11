@@ -13,7 +13,7 @@ import { ExternalLink } from './external-link';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
-import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 
 export default function AppTabs() {
   return (
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   innerContainer: {
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.five,
-    borderRadius: Spacing.five,
+    borderRadius: Radius.card,
     flexDirection: 'row',
     alignItems: 'center',
     flexGrow: 1,
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   tabButtonView: {
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.three,
+    borderRadius: Radius.control,
   },
   externalPressable: {
     flexDirection: 'row',

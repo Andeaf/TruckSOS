@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { addTruck } from '@/hooks/use-trucks';
 import type { Truck } from '@/types/database';
@@ -26,7 +26,7 @@ interface TruckPickerSheetProps {
   visible: boolean;
   trucks: Truck[];
   driverId: string;
-  onSelect: (data: { make: string; model: string; year: number }) => void;
+  onSelect: (data: { make: string; model: string; year: number; plate_number: string | null }) => void;
   onRefresh: () => void;
   onClose: () => void;
 }
@@ -46,18 +46,19 @@ export function TruckPickerSheet({
   const [model, setModel] = useState('');
   const [yearStr, setYearStr] = useState('');
   const [nickname, setNickname] = useState('');
+  const [plateNumber, setPlateNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   function handleClose() {
     setAddFormOpen(false);
-    setMake(''); setModel(''); setYearStr(''); setNickname('');
+    setMake(''); setModel(''); setYearStr(''); setNickname(''); setPlateNumber('');
     setError('');
     onClose();
   }
 
   function handleSelect(truck: Truck) {
-    onSelect({ make: truck.make, model: truck.model, year: truck.year });
+    onSelect({ make: truck.make, model: truck.model, year: truck.year, plate_number: truck.plate_number });
     handleClose();
   }
 
@@ -71,17 +72,19 @@ export function TruckPickerSheet({
     }
     setLoading(true);
     setError('');
+    const plate = plateNumber.trim().toUpperCase() || null;
     const err = await addTruck({
       driver_id: driverId,
       make: make.trim(),
       model: model.trim(),
       year,
       nickname: nickname.trim() || null,
+      plate_number: plate,
     });
     setLoading(false);
     if (err) { setError(t('truck.errorSave')); return; }
     onRefresh();
-    onSelect({ make: make.trim(), model: model.trim(), year });
+    onSelect({ make: make.trim(), model: model.trim(), year, plate_number: plate });
     handleClose();
   }
 
@@ -173,6 +176,19 @@ export function TruckPickerSheet({
                     autoCapitalize="sentences"
                   />
                 </View>
+                <View style={styles.fieldBlock}>
+                  <ThemedText type="smallBold" style={styles.label}>{t('truck.plateLabel')}</ThemedText>
+                  <TextInput
+                    style={[styles.input, { color: theme.text, backgroundColor: theme.background, borderColor: theme.backgroundSelected }]}
+                    value={plateNumber}
+                    onChangeText={setPlateNumber}
+                    placeholder={t('truck.platePlaceholder')}
+                    placeholderTextColor={theme.textSecondary}
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    maxLength={12}
+                  />
+                </View>
                 {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
                 <Button title={t('truck.addSheetTitle')} onPress={handleAddSave} loading={loading} />
               </View>
@@ -187,15 +203,15 @@ export function TruckPickerSheet({
 const styles = StyleSheet.create({
   wrapper: { flex: 1, justifyContent: 'flex-end' },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
-  sheet: { borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: Spacing.six },
-  handle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: Spacing.two, marginBottom: Spacing.one },
+  sheet: { borderTopLeftRadius: Radius.card, borderTopRightRadius: Radius.card, paddingBottom: Spacing.six },
+  handle: { width: 40, height: 4, borderRadius: Radius.circle, alignSelf: 'center', marginTop: Spacing.two, marginBottom: Spacing.one },
   content: { padding: Spacing.four, gap: Spacing.three },
   title: { fontSize: 20, lineHeight: 28 },
   truckRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.control,
     padding: Spacing.three,
   },
   truckRowText: { flex: 1, fontSize: 14 },
@@ -212,7 +228,7 @@ const styles = StyleSheet.create({
   label: { marginBottom: Spacing.one },
   input: {
     borderWidth: 1.5,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.control,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     fontSize: 16,

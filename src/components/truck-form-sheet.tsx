@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Truck } from '@/types/database';
 
@@ -21,8 +21,14 @@ const CURRENT_YEAR = new Date().getFullYear();
 
 interface TruckFormSheetProps {
   visible: boolean;
-  initialData?: Pick<Truck, 'id' | 'make' | 'model' | 'year' | 'nickname'>;
-  onSave: (data: { make: string; model: string; year: number; nickname: string | null }) => Promise<void>;
+  initialData?: Pick<Truck, 'id' | 'make' | 'model' | 'year' | 'nickname' | 'plate_number'>;
+  onSave: (data: {
+    make: string;
+    model: string;
+    year: number;
+    nickname: string | null;
+    plate_number: string | null;
+  }) => Promise<void>;
   onClose: () => void;
 }
 
@@ -33,6 +39,7 @@ export function TruckFormSheet({ visible, initialData, onSave, onClose }: TruckF
   const [model, setModel] = useState('');
   const [yearStr, setYearStr] = useState('');
   const [nickname, setNickname] = useState('');
+  const [plateNumber, setPlateNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -42,6 +49,7 @@ export function TruckFormSheet({ visible, initialData, onSave, onClose }: TruckF
       setModel(initialData?.model ?? '');
       setYearStr(initialData?.year ? String(initialData.year) : '');
       setNickname(initialData?.nickname ?? '');
+      setPlateNumber(initialData?.plate_number ?? '');
       setError('');
     }
   }, [visible, initialData]);
@@ -56,7 +64,13 @@ export function TruckFormSheet({ visible, initialData, onSave, onClose }: TruckF
     }
     setLoading(true);
     setError('');
-    await onSave({ make: make.trim(), model: model.trim(), year, nickname: nickname.trim() || null });
+    await onSave({
+      make: make.trim(),
+      model: model.trim(),
+      year,
+      nickname: nickname.trim() || null,
+      plate_number: plateNumber.trim().toUpperCase() || null,
+    });
     setLoading(false);
   }
 
@@ -126,6 +140,20 @@ export function TruckFormSheet({ visible, initialData, onSave, onClose }: TruckF
               />
             </View>
 
+            <View style={styles.fieldBlock}>
+              <ThemedText type="smallBold" style={styles.label}>{t('truck.plateLabel')}</ThemedText>
+              <TextInput
+                style={[styles.input, { color: theme.text, backgroundColor: theme.background, borderColor: theme.backgroundSelected }]}
+                value={plateNumber}
+                onChangeText={setPlateNumber}
+                placeholder={t('truck.platePlaceholder')}
+                placeholderTextColor={theme.textSecondary}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                maxLength={12}
+              />
+            </View>
+
             {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
 
             <Button title={t('profile.saveButton')} onPress={handleSave} loading={loading} />
@@ -139,15 +167,15 @@ export function TruckFormSheet({ visible, initialData, onSave, onClose }: TruckF
 const styles = StyleSheet.create({
   wrapper: { flex: 1, justifyContent: 'flex-end' },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
-  sheet: { borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: Spacing.six },
-  handle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: Spacing.two, marginBottom: Spacing.one },
+  sheet: { borderTopLeftRadius: Radius.card, borderTopRightRadius: Radius.card, paddingBottom: Spacing.six },
+  handle: { width: 40, height: 4, borderRadius: Radius.circle, alignSelf: 'center', marginTop: Spacing.two, marginBottom: Spacing.one },
   content: { padding: Spacing.four, gap: Spacing.three },
   title: { fontSize: 20, lineHeight: 28 },
   label: { marginBottom: Spacing.one },
   fieldBlock: { gap: Spacing.one },
   input: {
     borderWidth: 1.5,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.control,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     fontSize: 16,

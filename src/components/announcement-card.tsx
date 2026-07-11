@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Announcement } from '@/types/database';
 
@@ -126,7 +126,7 @@ export function AnnouncementCard({ announcement, onPress, driverName, compact = 
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     padding: Spacing.three,
     gap: Spacing.two,
   },
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
 
   // Compact card
   compactCard: {
-    borderRadius: Spacing.two,
+    borderRadius: Radius.card,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     flexDirection: 'row',
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   rejectedBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 12,
+    borderRadius: Radius.badge,
     backgroundColor: '#ef44441A',
   },
   rejectedBadgeText: {

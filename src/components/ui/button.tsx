@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 
 interface ButtonProps {
   title: string;
@@ -56,7 +56,7 @@ export function Button({
 const styles = StyleSheet.create({
   base: {
     height: 50,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.control,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: Spacing.four,

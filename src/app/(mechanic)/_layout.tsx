@@ -52,6 +52,13 @@ export default function MechanicLayout() {
             <MaterialIcons name="chat" size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          // Tap pe tab-ul Chat → mereu lista de conversații, nu un chat rămas deschis
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('conversations', { screen: 'index' });
+          },
+        })}
       />
       <Tabs.Screen
         name="profile"

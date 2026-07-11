@@ -8,7 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Collapsible } from '@/components/ui/collapsible';
 import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function TabTwoScreen() {
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.two,
-    borderRadius: Spacing.five,
+    borderRadius: Radius.control,
     justifyContent: 'center',
     gap: Spacing.one,
     alignItems: 'center',
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   imageTutorial: {
     width: '100%',
     aspectRatio: 296 / 171,
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     marginTop: Spacing.two,
   },
   imageReact: {

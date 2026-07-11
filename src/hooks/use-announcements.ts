@@ -58,6 +58,7 @@ export async function createAnnouncement(
   truckMake?: string,
   truckModel?: string,
   truckYear?: number | null,
+  plateNumber?: string,
 ): Promise<string | null> {
   const { error } = await supabase
     .from('announcements')
@@ -69,6 +70,7 @@ export async function createAnnouncement(
       truck_make: truckMake || null,
       truck_model: truckModel || null,
       truck_year: truckYear ?? null,
+      plate_number: plateNumber || null,
     } as never);
   return error?.message ?? null;
 }
@@ -237,7 +239,7 @@ export async function fetchApplicationsForAnnouncement(
 export type ApplicationWithDetails = Application & {
   announcement: Pick<
     Announcement,
-    'id' | 'location' | 'description' | 'status' | 'truck_make' | 'truck_model' | 'truck_year'
+    'id' | 'location' | 'description' | 'status' | 'truck_make' | 'truck_model' | 'truck_year' | 'plate_number'
   > & {
     driver: { full_name: string } | null;
     conversations: { id: string }[];
@@ -256,7 +258,7 @@ export function useMyApplications() {
       .from('applications')
       .select(
         `*, announcement:announcements!announcement_id(
-          id, location, description, status, truck_make, truck_model, truck_year,
+          id, location, description, status, truck_make, truck_model, truck_year, plate_number,
           driver:profiles!driver_id(full_name),
           conversations(id)
         )`
@@ -281,7 +283,7 @@ export function useApplication(id: string) {
       .from('applications')
       .select(
         `*, announcement:announcements!announcement_id(
-          id, location, description, status, truck_make, truck_model, truck_year,
+          id, location, description, status, truck_make, truck_model, truck_year, plate_number,
           driver:profiles!driver_id(full_name),
           conversations(id)
         )`

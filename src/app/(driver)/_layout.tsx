@@ -43,6 +43,22 @@ export default function DriverLayout() {
             <MaterialIcons name="chat" size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          // Tap pe tab-ul Chat → mereu lista de conversații, nu un chat rămas deschis
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('conversations', { screen: 'index' });
+          },
+        })}
+      />
+      <Tabs.Screen
+        name="search"
+        options={{
+          title: t('search.tabTitle'),
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="search" size={size} color={color} />
+          ),
+        }}
       />
       <Tabs.Screen
         name="profile"

@@ -35,14 +35,16 @@ export default function NewAnnouncementScreen() {
   const [truckMake, setTruckMake] = useState('');
   const [truckModel, setTruckModel] = useState('');
   const [truckYearStr, setTruckYearStr] = useState('');
+  const [plateNumber, setPlateNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPicker, setShowPicker] = useState(false);
 
-  function handlePickerSelect(data: { make: string; model: string; year: number }) {
+  function handlePickerSelect(data: { make: string; model: string; year: number; plate_number: string | null }) {
     setTruckMake(data.make);
     setTruckModel(data.model);
     setTruckYearStr(String(data.year));
+    setPlateNumber(data.plate_number ?? '');
     setTruckSectionOpen(true);
   }
 
@@ -70,6 +72,7 @@ export default function NewAnnouncementScreen() {
       truckMake.trim() || undefined,
       truckModel.trim() || undefined,
       truckYear,
+      plateNumber.trim().toUpperCase() || undefined,
     );
     setLoading(false);
 
@@ -159,6 +162,15 @@ export default function NewAnnouncementScreen() {
                 placeholder={t('truck.yearPlaceholder')}
                 keyboardType="number-pad"
                 maxLength={4}
+              />
+              <Input
+                label={t('truck.plateLabel')}
+                value={plateNumber}
+                onChangeText={setPlateNumber}
+                placeholder={t('truck.platePlaceholder')}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                maxLength={12}
               />
             </View>
           ) : null}

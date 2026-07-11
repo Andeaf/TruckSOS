@@ -96,7 +96,8 @@
     "mechanicProfile": {
       "title": "Profil mecanic",
       "notFound": "Profilul nu a fost găsit.",
-      "phoneHint": "Numărul de telefon devine vizibil după ce alegi acest mecanic."
+      "phoneHint": "Numărul de telefon devine vizibil după ce alegi acest mecanic.",
+      "contactButton": "Trimite mesaj"
     },
     "conversations": {
       "title": "Conversații",
@@ -185,6 +186,15 @@
     },
     "subtitle": "Discuții publice"
   },
+  "search": {
+    "tabTitle": "Căutare",
+    "title": "Caută mecanici",
+    "placeholder": "Numele mecanicului…",
+    "emptyTitle": "Caută un mecanic",
+    "emptyDescription": "Tastează cel puțin {{min}} caractere din numele mecanicului.",
+    "noResultsTitle": "Niciun rezultat",
+    "noResultsDescription": "Niciun mecanic nu se potrivește cu căutarea ta."
+  },
   "common": {
     "loading": "Se încarcă...",
     "timeNow": "acum",
@@ -243,7 +253,9 @@
     "errorMakeRequired": "Introduceți marca.",
     "errorModelRequired": "Introduceți modelul.",
     "selectSaved": "Selectează camion salvat",
-    "addNewInPicker": "Adaugă camion nou"
+    "addNewInPicker": "Adaugă camion nou",
+    "plateLabel": "Număr de înmatriculare",
+    "platePlaceholder": "ex. B 123 ABC (opțional)"
   },
   "conversations": {
     "selectedCount": "{{count}} selectate",
@@ -251,7 +263,8 @@
     "deleteConfirmTitle": "Ștergi conversațiile selectate?",
     "deleteConfirmMessage": "Vor dispărea doar din lista ta.",
     "deleteConfirmOk": "Da, șterge",
-    "cancelSelection": "Anulează"
+    "cancelSelection": "Anulează",
+    "directLabel": "Conversație directă"
   },
   "status": {
     "open": "Deschis",

@@ -12,7 +12,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import {
   fetchAnnouncementById,
   fetchApplicationsForAnnouncement,
@@ -299,13 +299,18 @@ export default function AnnouncementDetailScreen() {
           <ThemedText>{announcement.location}</ThemedText>
         </ThemedView>
 
-        {truckInfo ? (
+        {truckInfo || announcement.plate_number ? (
           <ThemedView type="backgroundElement" style={styles.section}>
             <View style={styles.sectionHeader}>
               <MaterialIcons name="local-shipping" size={16} color="#208AEF" />
               <ThemedText type="smallBold">{t('truck.sectionTitle')}</ThemedText>
             </View>
-            <ThemedText>{truckInfo}</ThemedText>
+            {truckInfo ? <ThemedText>{truckInfo}</ThemedText> : null}
+            {announcement.plate_number ? (
+              <ThemedText themeColor="textSecondary" type="small">
+                {t('truck.plateLabel')}: {announcement.plate_number}
+              </ThemedText>
+            ) : null}
           </ThemedView>
         ) : null}
 
@@ -418,7 +423,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   section: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     padding: Spacing.three,
     gap: Spacing.two,
   },
@@ -448,7 +453,7 @@ const styles = StyleSheet.create({
   },
   actionBtn: { flex: 1 },
   applicantCard: {
-    borderRadius: Spacing.two,
+    borderRadius: Radius.card,
     padding: Spacing.three,
     gap: Spacing.one,
     borderWidth: 1,

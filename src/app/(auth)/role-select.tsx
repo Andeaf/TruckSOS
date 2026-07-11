@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   },
   cards: { gap: Spacing.three },
   card: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     borderWidth: 2,
     padding: Spacing.four,
     alignItems: 'center',

@@ -96,7 +96,8 @@
     "mechanicProfile": {
       "title": "Mechanic profile",
       "notFound": "Profile not found.",
-      "phoneHint": "The phone number becomes visible after you choose this mechanic."
+      "phoneHint": "The phone number becomes visible after you choose this mechanic.",
+      "contactButton": "Send message"
     },
     "conversations": {
       "title": "Chats",
@@ -185,6 +186,15 @@
     },
     "subtitle": "Public discussions"
   },
+  "search": {
+    "tabTitle": "Search",
+    "title": "Find mechanics",
+    "placeholder": "Mechanic's name…",
+    "emptyTitle": "Search for a mechanic",
+    "emptyDescription": "Type at least {{min}} characters of the mechanic's name.",
+    "noResultsTitle": "No results",
+    "noResultsDescription": "No mechanic matches your search."
+  },
   "profile": {
     "tabTitle": "Profile",
     "myProfileTitle": "My profile",
@@ -232,7 +242,9 @@
     "errorMakeRequired": "Please enter the make.",
     "errorModelRequired": "Please enter the model.",
     "selectSaved": "Select saved truck",
-    "addNewInPicker": "Add new truck"
+    "addNewInPicker": "Add new truck",
+    "plateLabel": "Plate number",
+    "platePlaceholder": "e.g. B 123 ABC (optional)"
   },
   "common": {
     "loading": "Loading...",
@@ -251,7 +263,8 @@
     "deleteConfirmTitle": "Delete selected chats?",
     "deleteConfirmMessage": "They will only disappear from your list.",
     "deleteConfirmOk": "Yes, delete",
-    "cancelSelection": "Cancel"
+    "cancelSelection": "Cancel",
+    "directLabel": "Direct conversation"
   },
   "status": {
     "open": "Open",

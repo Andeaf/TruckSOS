@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { SUPPORTED_CURRENCIES, DEFAULT_CURRENCY } from '@/constants/currencies';
 import { useTheme } from '@/hooks/use-theme';
 import { applyToAnnouncement, resubmitApplication } from '@/hooks/use-announcements';
@@ -242,14 +242,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.45)',
   },
   sheet: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: Radius.card,
+    borderTopRightRadius: Radius.card,
     paddingBottom: Spacing.six,
   },
   handle: {
     width: 40,
     height: 4,
-    borderRadius: 2,
+    borderRadius: Radius.circle,
     alignSelf: 'center',
     marginTop: Spacing.two,
     marginBottom: Spacing.one,
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   },
   segmented: {
     flexDirection: 'row',
-    borderRadius: Spacing.two,
+    borderRadius: Radius.control,
     borderWidth: 1.5,
     borderColor: '#22c55e',
     overflow: 'hidden',
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   amountInput: {
     flex: 1,
     borderWidth: 1.5,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.control,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     fontSize: 16,
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   currencyChip: {
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.two,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.control,
     borderWidth: 1.5,
   },
   currencyChipActive: {

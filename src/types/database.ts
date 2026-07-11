@@ -24,13 +24,14 @@ export interface Announcement {
   truck_make: string | null;
   truck_model: string | null;
   truck_year: number | null;
+  plate_number: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface Conversation {
   id: string;
-  announcement_id: string;
+  announcement_id: string | null; // NULL = conversație directă (fără anunț), Faza 7
   driver_id: string;
   mechanic_id: string;
   created_at: string;
@@ -63,6 +64,7 @@ export interface Truck {
   model: string;
   year: number;
   nickname: string | null;
+  plate_number: string | null;
   created_at: string;
 }
 
@@ -97,6 +99,7 @@ export interface Database {
           truck_make?: string | null;
           truck_model?: string | null;
           truck_year?: number | null;
+          plate_number?: string | null;
         };
         Update: Partial<Omit<Announcement, 'id' | 'driver_id' | 'created_at'>>;
       };
@@ -118,7 +121,7 @@ export interface Database {
       trucks: {
         Row: Truck;
         Insert: Omit<Truck, 'id' | 'created_at'>;
-        Update: Partial<Pick<Truck, 'make' | 'model' | 'year' | 'nickname'>>;
+        Update: Partial<Pick<Truck, 'make' | 'model' | 'year' | 'nickname' | 'plate_number'>>;
       };
       conversation_deletions: {
         Row: { conversation_id: string; user_id: string; deleted_at: string };
@@ -150,6 +153,14 @@ export interface Database {
       accept_announcement: {
         Args: { p_announcement_id: string };
         Returns: void;
+      };
+      start_direct_conversation: {
+        Args: { p_mechanic_id: string };
+        Returns: string;
+      };
+      search_mechanics: {
+        Args: { p_query: string };
+        Returns: Pick<Profile, 'id' | 'full_name' | 'specialization' | 'activity_zone'>[];
       };
       get_mechanic_phone: {
         Args: { p_mechanic_id: string };

@@ -159,6 +159,9 @@ export async function markChannelRead(channelId: string): Promise<void> {
 // nu recompute global la orice mesaj din aplicație — vezi PLAN_CHAT_GLOBAL.md secțiunea 5.
 export function useChannelUnreadCount(userId: string | undefined, channelId: string | undefined) {
   const [count, setCount] = useState(0);
+  // Nume unic per instanță: același hook rulează simultan pe badge-ul de tab ȘI pe
+  // ChannelCard din listă — un topic Realtime comun ar declanșa „add callbacks after subscribe".
+  const channelName = useState(() => `channel-unread:${Math.random()}`)[0];
 
   const fetchCount = useCallback(async () => {
     if (!userId || !channelId) {
@@ -190,7 +193,7 @@ export function useChannelUnreadCount(userId: string | undefined, channelId: str
   useEffect(() => {
     if (!channelId) return;
     const channel = supabase
-      .channel(`channel-unread:${channelId}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -215,7 +218,7 @@ export function useChannelUnreadCount(userId: string | undefined, channelId: str
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [channelId, fetchCount]);
+  }, [channelId, fetchCount, channelName]);
 
   return { count, refresh: fetchCount };
 }

@@ -11,7 +11,7 @@ import { ApplyBottomSheet } from '@/components/apply-bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import {
   fetchOpenAnnouncementById,
   fetchMyApplicationForAnnouncement,
@@ -193,13 +193,18 @@ export default function MechanicAnnouncementDetailScreen() {
           <ThemedText>{announcement.location}</ThemedText>
         </ThemedView>
 
-        {truckInfo ? (
+        {truckInfo || announcement.plate_number ? (
           <ThemedView type="backgroundElement" style={styles.section}>
             <View style={styles.sectionHeader}>
               <MaterialIcons name="local-shipping" size={16} color="#22c55e" />
               <ThemedText type="smallBold">{t('truck.sectionTitle')}</ThemedText>
             </View>
-            <ThemedText>{truckInfo}</ThemedText>
+            {truckInfo ? <ThemedText>{truckInfo}</ThemedText> : null}
+            {announcement.plate_number ? (
+              <ThemedText themeColor="textSecondary" type="small">
+                {t('truck.plateLabel')}: {announcement.plate_number}
+              </ThemedText>
+            ) : null}
           </ThemedView>
         ) : null}
 
@@ -277,7 +282,7 @@ const styles = StyleSheet.create({
   },
   date: { textAlign: 'right' },
   section: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     padding: Spacing.three,
     gap: Spacing.two,
   },
@@ -289,7 +294,7 @@ const styles = StyleSheet.create({
   descriptionText: { lineHeight: 24 },
   hint: { textAlign: 'center', fontSize: 14, lineHeight: 20 },
   statusCard: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     padding: Spacing.three,
     gap: Spacing.two,
   },
@@ -305,7 +310,7 @@ const styles = StyleSheet.create({
   resubmitButton: {
     marginTop: Spacing.one,
     paddingVertical: Spacing.two,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.control,
     backgroundColor: '#22c55e1A',
     borderWidth: 1,
     borderColor: '#22c55e',

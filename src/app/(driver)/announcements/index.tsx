@@ -9,14 +9,14 @@ import { AnnouncementCard } from '@/components/announcement-card';
 import { EmptyState } from '@/components/empty-state';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useMyAnnouncements, deleteAnnouncement } from '@/hooks/use-announcements';
 import type { Announcement } from '@/types/database';
 
 export default function DriverAnnouncementsScreen() {
-  const { profile, signOut } = useAuth();
+  const { profile } = useAuth();
   const { t } = useTranslation();
   const theme = useTheme();
   const { announcements, loading, refresh } = useMyAnnouncements();
@@ -98,17 +98,12 @@ export default function DriverAnnouncementsScreen() {
             </Pressable>
           </View>
         ) : (
-          <>
-            <View>
-              <ThemedText type="subtitle">{t('driver.announcements.listTitle')}</ThemedText>
-              <ThemedText themeColor="textSecondary" type="small">
-                {profile?.full_name}
-              </ThemedText>
-            </View>
-            <Pressable onPress={signOut} hitSlop={12}>
-              <MaterialIcons name="logout" size={22} color={theme.textSecondary} />
-            </Pressable>
-          </>
+          <View>
+            <ThemedText type="subtitle">{t('driver.announcements.listTitle')}</ThemedText>
+            <ThemedText themeColor="textSecondary" type="small">
+              {profile?.full_name}
+            </ThemedText>
+          </View>
         )}
       </View>
 
@@ -192,7 +187,7 @@ const styles = StyleSheet.create({
     right: Spacing.four,
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: Radius.circle,
     backgroundColor: '#208AEF',
     justifyContent: 'center',
     alignItems: 'center',

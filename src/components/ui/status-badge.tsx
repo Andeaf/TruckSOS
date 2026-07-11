@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { Radius } from '@/constants/theme';
 import type { AnnouncementStatus } from '@/types/database';
 
 const COLORS: Record<AnnouncementStatus, { color: string; bg: string }> = {
@@ -24,7 +25,7 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 3,
-    borderRadius: 20,
+    borderRadius: Radius.badge,
     alignSelf: 'flex-start',
   },
   label: {

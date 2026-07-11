@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/empty-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useConversations, deleteConversations, useUnreadCounts, type ConversationWithDetails } from '@/hooks/use-chat';
@@ -75,6 +75,7 @@ function ConversationCard({
   onToggleSelect: () => void;
   unreadCount: number;
 }) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const timeAgo = useTimeAgo();
   return (
@@ -110,13 +111,24 @@ function ConversationCard({
               </View>
             </View>
             <View style={styles.cardBottom}>
-              <View style={styles.locationRow}>
-                <MaterialIcons name="location-on" size={12} color={theme.textSecondary} />
-                <ThemedText themeColor="textSecondary" type="small" numberOfLines={1} style={styles.location}>
-                  {item.announcement.location}
-                </ThemedText>
-              </View>
-              <StatusBadge status={item.announcement.status} />
+              {item.announcement ? (
+                <>
+                  <View style={styles.locationRow}>
+                    <MaterialIcons name="location-on" size={12} color={theme.textSecondary} />
+                    <ThemedText themeColor="textSecondary" type="small" numberOfLines={1} style={styles.location}>
+                      {item.announcement.location}
+                    </ThemedText>
+                  </View>
+                  <StatusBadge status={item.announcement.status} />
+                </>
+              ) : (
+                <View style={styles.locationRow}>
+                  <MaterialIcons name="forum" size={12} color={theme.textSecondary} />
+                  <ThemedText themeColor="textSecondary" type="small" numberOfLines={1} style={styles.location}>
+                    {t('conversations.directLabel')}
+                  </ThemedText>
+                </View>
+              )}
             </View>
           </View>
         </View>
@@ -285,7 +297,7 @@ const styles = StyleSheet.create({
   separator: { height: Spacing.two },
   channelSection: { marginBottom: Spacing.two },
   card: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     padding: Spacing.three,
     gap: Spacing.one,
   },
@@ -294,7 +306,7 @@ const styles = StyleSheet.create({
   channelIcon: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: Radius.circle,
     backgroundColor: '#8B5CF6',
     justifyContent: 'center',
     alignItems: 'center',
@@ -318,7 +330,7 @@ const styles = StyleSheet.create({
   timeRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 0 },
   unreadBadge: {
     backgroundColor: '#ef4444',
-    borderRadius: 9,
+    borderRadius: Radius.circle,
     minWidth: 18,
     height: 18,
     paddingHorizontal: 4,

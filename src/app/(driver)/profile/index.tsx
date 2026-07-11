@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TruckFormSheet } from '@/components/truck-form-sheet';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useSavedTrucks, addTruck, updateTruck, deleteTruck } from '@/hooks/use-trucks';
@@ -31,7 +31,7 @@ export default function DriverProfileScreen() {
   const [successMsg, setSuccessMsg] = useState('');
 
   const [showTruckForm, setShowTruckForm] = useState(false);
-  const [editingTruck, setEditingTruck] = useState<Pick<Truck, 'id' | 'make' | 'model' | 'year' | 'nickname'> | null>(null);
+  const [editingTruck, setEditingTruck] = useState<Pick<Truck, 'id' | 'make' | 'model' | 'year' | 'nickname' | 'plate_number'> | null>(null);
 
   useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
 
@@ -75,7 +75,7 @@ export default function DriverProfileScreen() {
   }
 
   function handleEditTruck(truck: Truck) {
-    setEditingTruck({ id: truck.id, make: truck.make, model: truck.model, year: truck.year, nickname: truck.nickname });
+    setEditingTruck({ id: truck.id, make: truck.make, model: truck.model, year: truck.year, nickname: truck.nickname, plate_number: truck.plate_number });
     setShowTruckForm(true);
   }
 
@@ -97,7 +97,7 @@ export default function DriverProfileScreen() {
     );
   }
 
-  async function handleSaveTruck(data: { make: string; model: string; year: number; nickname: string | null }) {
+  async function handleSaveTruck(data: { make: string; model: string; year: number; nickname: string | null; plate_number: string | null }) {
     const err = editingTruck
       ? await updateTruck(editingTruck.id, data)
       : await addTruck({ ...data, driver_id: profile!.id });
@@ -210,7 +210,14 @@ export default function DriverProfileScreen() {
             ) : (
               trucks.map((truck) => (
                 <ThemedView key={truck.id} type="backgroundElement" style={styles.truckCard}>
-                  <ThemedText style={styles.truckLabel}>{truckLabel(truck)}</ThemedText>
+                  <View style={styles.truckInfo}>
+                    <ThemedText style={styles.truckLabel}>{truckLabel(truck)}</ThemedText>
+                    {truck.plate_number ? (
+                      <ThemedText themeColor="textSecondary" type="small">
+                        {t('truck.plateLabel')}: {truck.plate_number}
+                      </ThemedText>
+                    ) : null}
+                  </View>
                   <View style={styles.truckActions}>
                     <Pressable onPress={() => handleEditTruck(truck)} hitSlop={10}>
                       <MaterialIcons name="edit" size={18} color={theme.textSecondary} />
@@ -252,7 +259,7 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   section: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     padding: Spacing.three,
     gap: Spacing.two,
   },
@@ -286,13 +293,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   truckCard: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     padding: Spacing.three,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  truckLabel: { flex: 1, fontSize: 14 },
+  truckInfo: { flex: 1, gap: 2 },
+  truckLabel: { fontSize: 14 },
   truckActions: {
     flexDirection: 'row',
     gap: Spacing.three,

@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export interface ChatMessageBase {
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   bubbleColumn: { maxWidth: '78%' },
   senderLabel: { marginBottom: 2, marginLeft: 4, fontSize: 11 },
   bubble: {
-    borderRadius: Spacing.two,
+    borderRadius: Radius.control,
     paddingHorizontal: Spacing.two + 2,
     paddingVertical: Spacing.one + 2,
     gap: 2,
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.control,
     paddingHorizontal: Spacing.two + 2,
     paddingVertical: Spacing.two,
     fontSize: 15,
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
   sendButton: {
     width: 42,
     height: 42,
-    borderRadius: 21,
+    borderRadius: Radius.circle,
     justifyContent: 'center',
     alignItems: 'center',
   },

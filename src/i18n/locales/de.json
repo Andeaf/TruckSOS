@@ -96,7 +96,8 @@
     "mechanicProfile": {
       "title": "Mechanikerprofil",
       "notFound": "Profil nicht gefunden.",
-      "phoneHint": "Die Telefonnummer wird sichtbar, nachdem du diesen Mechaniker ausgewählt hast."
+      "phoneHint": "Die Telefonnummer wird sichtbar, nachdem du diesen Mechaniker ausgewählt hast.",
+      "contactButton": "Nachricht senden"
     },
     "conversations": {
       "title": "Gespräche",
@@ -185,6 +186,15 @@
     },
     "subtitle": "Öffentliche Diskussionen"
   },
+  "search": {
+    "tabTitle": "Suche",
+    "title": "Mechaniker finden",
+    "placeholder": "Name des Mechanikers…",
+    "emptyTitle": "Suche einen Mechaniker",
+    "emptyDescription": "Gib mindestens {{min}} Zeichen des Namens ein.",
+    "noResultsTitle": "Keine Ergebnisse",
+    "noResultsDescription": "Kein Mechaniker entspricht deiner Suche."
+  },
   "profile": {
     "tabTitle": "Profil",
     "myProfileTitle": "Mein Profil",
@@ -232,7 +242,9 @@
     "errorMakeRequired": "Bitte Marke eingeben.",
     "errorModelRequired": "Bitte Modell eingeben.",
     "selectSaved": "Gespeichertes Fahrzeug auswählen",
-    "addNewInPicker": "Neues Fahrzeug hinzufügen"
+    "addNewInPicker": "Neues Fahrzeug hinzufügen",
+    "plateLabel": "Kennzeichen",
+    "platePlaceholder": "z. B. B-AB 1234 (optional)"
   },
   "conversations": {
     "selectedCount": "{{count}} ausgewählt",
@@ -240,7 +252,8 @@
     "deleteConfirmTitle": "Ausgewählte Gespräche löschen?",
     "deleteConfirmMessage": "Sie verschwinden nur aus deiner Liste.",
     "deleteConfirmOk": "Ja, löschen",
-    "cancelSelection": "Abbrechen"
+    "cancelSelection": "Abbrechen",
+    "directLabel": "Direktes Gespräch"
   },
   "common": {
     "loading": "Lädt...",

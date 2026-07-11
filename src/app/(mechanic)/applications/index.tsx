@@ -9,7 +9,7 @@ import { ApplyBottomSheet } from '@/components/apply-bottom-sheet';
 import { EmptyState } from '@/components/empty-state';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useMyApplications, withdrawApplication, dismissApplication, resubmitApplication, type ApplicationWithDetails } from '@/hooks/use-announcements';
 import { useTimeAgo } from '@/hooks/use-time-ago';
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   },
   separator: { height: Spacing.two },
   card: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     padding: Spacing.three,
     gap: Spacing.two,
   },
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 3,
-    borderRadius: 20,
+    borderRadius: Radius.badge,
     alignSelf: 'flex-start',
   },
   badgeLabel: {
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 20,
+    borderRadius: Radius.control,
     backgroundColor: '#22c55e1A',
   },
   chatButtonText: {
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
   withdrawButton: {
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 20,
+    borderRadius: Radius.control,
     backgroundColor: '#ef44441A',
   },
   withdrawButtonText: {
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   resubmitButton: {
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 20,
+    borderRadius: Radius.control,
     backgroundColor: '#22c55e1A',
     borderWidth: 1,
     borderColor: '#22c55e',

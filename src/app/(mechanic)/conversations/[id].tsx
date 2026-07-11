@@ -33,7 +33,7 @@ export default function MechanicChatScreen() {
 
   const announcementStatus = useAnnouncementStatus(
     conv?.announcement_id ?? '',
-    conv?.announcement.status ?? 'open'
+    conv?.announcement?.status ?? 'open'
   );
 
   if (!conv || !session) return <ThemedView style={{ flex: 1 }} />;
@@ -43,9 +43,13 @@ export default function MechanicChatScreen() {
       currentUserId={session.user.id}
       accentColor="#22c55e"
       title={conv.driver.full_name}
-      subtitle={conv.announcement.location}
-      subtitleIcon="location-on"
-      bannerText={announcementStatus === 'resolved' ? t('chat.resolvedBanner') : undefined}
+      subtitle={conv.announcement?.location ?? t('conversations.directLabel')}
+      subtitleIcon={conv.announcement ? 'location-on' : 'forum'}
+      bannerText={
+        conv.announcement && announcementStatus === 'resolved'
+          ? t('chat.resolvedBanner')
+          : undefined
+      }
       messages={messages}
       loading={loading}
       onSend={async (content) => {

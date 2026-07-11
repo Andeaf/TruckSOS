@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { ApplyBottomSheet } from '@/components/apply-bottom-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
   useApplication,
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   section: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     padding: Spacing.three,
     gap: Spacing.two,
   },
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: Spacing.two,
     paddingVertical: Spacing.three,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.control,
     backgroundColor: '#22c55e1A',
     borderWidth: 1,
     borderColor: '#22c55e',
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
   chatButtonText: { fontSize: 15, fontWeight: '600', color: '#22c55e' },
   resubmitButton: {
     paddingVertical: Spacing.three,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.control,
     backgroundColor: '#22c55e1A',
     borderWidth: 1,
     borderColor: '#22c55e',
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   resubmitButtonText: { fontSize: 15, fontWeight: '600', color: '#22c55e' },
   withdrawButton: {
     paddingVertical: Spacing.three,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.control,
     backgroundColor: '#ef44441A',
     alignItems: 'center',
   },
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 3,
-    borderRadius: 20,
+    borderRadius: Radius.badge,
     alignSelf: 'flex-start',
   },
   badgeLabel: { fontSize: 12, fontWeight: '600' },

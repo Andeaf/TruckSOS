@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -9,8 +9,9 @@ import { useBack } from '@/hooks/use-back';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
+import { startDirectConversation } from '@/hooks/use-chat';
 import type { Profile } from '@/types/database';
 
 type PublicProfile = Pick<Profile, 'full_name' | 'specialization' | 'activity_zone'>;
@@ -38,9 +39,24 @@ export default function MechanicProfileScreen() {
   const goBack = useBack();
   const insets = useSafeAreaInsets();
 
+  const router = useRouter();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [phone, setPhone] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [contacting, setContacting] = useState(false);
+
+  async function handleContact() {
+    if (contacting) return;
+    setContacting(true);
+    const { conversationId } = await startDirectConversation(id);
+    setContacting(false);
+    if (conversationId) {
+      router.push({
+        pathname: '/(driver)/conversations/[id]' as never,
+        params: { id: conversationId },
+      });
+    }
+  }
 
   useEffect(() => {
     async function load() {
@@ -129,6 +145,20 @@ export default function MechanicProfileScreen() {
             </>
           )}
         </ThemedView>
+
+        <Pressable
+          onPress={handleContact}
+          disabled={contacting}
+          style={({ pressed }) => [styles.contactButton, (pressed || contacting) && styles.pressed]}>
+          {contacting ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <MaterialIcons name="chat" size={18} color="#fff" />
+          )}
+          <ThemedText style={styles.contactButtonText}>
+            {t('driver.mechanicProfile.contactButton')}
+          </ThemedText>
+        </Pressable>
       </ScrollView>
     </ThemedView>
   );
@@ -150,7 +180,7 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   section: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     padding: Spacing.three,
     gap: Spacing.two,
   },
@@ -159,4 +189,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.one,
   },
+  contactButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+    paddingVertical: Spacing.three,
+    borderRadius: Radius.control,
+    backgroundColor: '#208AEF',
+    marginTop: Spacing.two,
+  },
+  contactButtonText: { color: '#ffffff', fontSize: 15, fontWeight: '600' },
+  pressed: { opacity: 0.7 },
 });

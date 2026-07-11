@@ -33,7 +33,7 @@ export default function DriverChatScreen() {
 
   const announcementStatus = useAnnouncementStatus(
     conv?.announcement_id ?? '',
-    conv?.announcement.status ?? 'open'
+    conv?.announcement?.status ?? 'open'
   );
 
   if (!conv || !session) return <ThemedView style={{ flex: 1 }} />;
@@ -43,9 +43,13 @@ export default function DriverChatScreen() {
       currentUserId={session.user.id}
       accentColor="#208AEF"
       title={conv.mechanic.full_name}
-      subtitle={conv.announcement.location}
-      subtitleIcon="location-on"
-      bannerText={announcementStatus === 'resolved' ? t('chat.resolvedBanner') : undefined}
+      subtitle={conv.announcement?.location ?? t('conversations.directLabel')}
+      subtitleIcon={conv.announcement ? 'location-on' : 'forum'}
+      bannerText={
+        conv.announcement && announcementStatus === 'resolved'
+          ? t('chat.resolvedBanner')
+          : undefined
+      }
       messages={messages}
       loading={loading}
       onSend={async (content) => {

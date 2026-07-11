@@ -19,7 +19,7 @@ const VIEW_MODE_KEY = 'mechanic_feed_view_mode';
 type ViewMode = 'compact' | 'extended';
 
 export default function MechanicFeedScreen() {
-  const { profile, signOut, session } = useAuth();
+  const { profile, session } = useAuth();
   const { t } = useTranslation();
   const theme = useTheme();
   const { announcements, loading, refresh } = useOpenAnnouncements();
@@ -60,18 +60,13 @@ export default function MechanicFeedScreen() {
             {profile?.full_name}
           </ThemedText>
         </View>
-        <View style={styles.headerActions}>
-          <Pressable onPress={toggleViewMode} hitSlop={12} accessibilityLabel={t('mechanic.feed.toggleView')}>
-            <MaterialIcons
-              name={viewMode === 'extended' ? 'view-list' : 'view-agenda'}
-              size={22}
-              color={theme.textSecondary}
-            />
-          </Pressable>
-          <Pressable onPress={signOut} hitSlop={12}>
-            <MaterialIcons name="logout" size={22} color={theme.textSecondary} />
-          </Pressable>
-        </View>
+        <Pressable onPress={toggleViewMode} hitSlop={12} accessibilityLabel={t('mechanic.feed.toggleView')}>
+          <MaterialIcons
+            name={viewMode === 'extended' ? 'view-list' : 'view-agenda'}
+            size={22}
+            color={theme.textSecondary}
+          />
+        </Pressable>
       </View>
 
       <FlatList
@@ -117,11 +112,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.three,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
   },
   list: {
     flexGrow: 1,

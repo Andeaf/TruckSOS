@@ -61,5 +61,18 @@ export const Spacing = {
   six: 64,
 } as const;
 
+/**
+ * Colțurile aplicației (Faza 7: design ascuțit). Pentru revert la colțuri
+ * rotunjite se schimbă DOAR valorile de aici (ex. card: 16, control: 8, badge: 20).
+ * `circle` marchează elementele intenționat circulare (avatare, buline, FAB,
+ * send, handle de bottom sheet) — nu se schimbă la re-branding.
+ */
+export const Radius = {
+  card: 0,
+  control: 0,
+  badge: 0,
+  circle: 999,
+} as const;
+
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
