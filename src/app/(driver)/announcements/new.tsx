@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -13,10 +14,11 @@ import { Input } from '@/components/ui/input';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TruckPickerSheet } from '@/components/truck-picker-sheet';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { createAnnouncement } from '@/hooks/use-announcements';
 import { useSavedTrucks } from '@/hooks/use-trucks';
+import { getCurrentCoords } from '@/lib/location';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -36,9 +38,62 @@ export default function NewAnnouncementScreen() {
   const [truckModel, setTruckModel] = useState('');
   const [truckYearStr, setTruckYearStr] = useState('');
   const [plateNumber, setPlateNumber] = useState('');
+  const [latitudeStr, setLatitudeStr] = useState('');
+  const [longitudeStr, setLongitudeStr] = useState('');
+  const [gpsLoading, setGpsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPicker, setShowPicker] = useState(false);
+
+  // Guard „modificări nesalvate": intercepteză back-ul din header, back-ul
+  // hardware și swipe-ul. `savedRef` lasă trecerea liberă după un submit reușit.
+  const navigation = useNavigation();
+  const savedRef = useRef(false);
+  const isDirty =
+    description.trim() !== '' ||
+    location.trim() !== '' ||
+    truckMake.trim() !== '' ||
+    truckModel.trim() !== '' ||
+    truckYearStr.trim() !== '' ||
+    plateNumber.trim() !== '' ||
+    latitudeStr.trim() !== '' ||
+    longitudeStr.trim() !== '';
+
+  usePreventRemove(isDirty, ({ data }) => {
+    if (savedRef.current) {
+      navigation.dispatch(data.action);
+      return;
+    }
+    Alert.alert(
+      t('driver.announcements.discardTitle'),
+      t('driver.announcements.discardMessage'),
+      [
+        { text: t('driver.announcements.discardCancel'), style: 'cancel' },
+        {
+          text: t('driver.announcements.discardOk'),
+          style: 'destructive',
+          onPress: () => navigation.dispatch(data.action),
+        },
+      ],
+    );
+  });
+
+  async function handleUseMyLocation() {
+    setGpsLoading(true);
+    setError('');
+    const result = await getCurrentCoords();
+    setGpsLoading(false);
+    if ('error' in result) {
+      setError(
+        result.error === 'denied'
+          ? t('driver.announcements.errorLocationPermission')
+          : t('driver.announcements.errorLocationUnavailable'),
+      );
+      return;
+    }
+    setLatitudeStr(String(result.latitude));
+    setLongitudeStr(String(result.longitude));
+  }
 
   function handlePickerSelect(data: { make: string; model: string; year: number; plate_number: string | null }) {
     setTruckMake(data.make);
@@ -63,20 +118,45 @@ export default function NewAnnouncementScreen() {
       truckYear = parsed;
     }
 
+    // Coordonate opționale: virgulă→punct (RO/DE), ambele-sau-niciuna, interval.
+    const latRaw = latitudeStr.trim().replace(',', '.');
+    const longRaw = longitudeStr.trim().replace(',', '.');
+    let latitude: number | null = null;
+    let longitude: number | null = null;
+    if (latRaw || longRaw) {
+      if (!latRaw || !longRaw) { setError(t('driver.announcements.errorCoordsBoth')); return; }
+      const latNum = parseFloat(latRaw);
+      const longNum = parseFloat(longRaw);
+      if (
+        isNaN(latNum) || isNaN(longNum) ||
+        latNum < -90 || latNum > 90 || longNum < -180 || longNum > 180
+      ) {
+        setError(t('driver.announcements.errorCoordsRange'));
+        return;
+      }
+      latitude = latNum;
+      longitude = longNum;
+    }
+
     setLoading(true);
     setError('');
     const err = await createAnnouncement(
       session.user.id,
       description.trim(),
       location.trim(),
-      truckMake.trim() || undefined,
-      truckModel.trim() || undefined,
-      truckYear,
-      plateNumber.trim().toUpperCase() || undefined,
+      {
+        truckMake: truckMake.trim() || undefined,
+        truckModel: truckModel.trim() || undefined,
+        truckYear,
+        plateNumber: plateNumber.trim().toUpperCase() || undefined,
+        latitude,
+        longitude,
+      },
     );
     setLoading(false);
 
     if (err) { setError(err); return; }
+    savedRef.current = true;
     goBack();
   }
 
@@ -104,6 +184,49 @@ export default function NewAnnouncementScreen() {
             placeholder={t('driver.announcements.locationPlaceholder')}
             autoCapitalize="sentences"
           />
+
+          <View style={styles.coordsSection}>
+            <ThemedText type="smallBold">{t('driver.announcements.coordsSectionTitle')}</ThemedText>
+            <ThemedText themeColor="textSecondary" type="small">
+              {t('driver.announcements.coordsRationale')}
+            </ThemedText>
+            <Pressable
+              onPress={handleUseMyLocation}
+              disabled={gpsLoading}
+              style={({ pressed }) => [styles.gpsButton, pressed && styles.pressed]}
+              hitSlop={8}>
+              {gpsLoading ? (
+                <ActivityIndicator size="small" color="#208AEF" />
+              ) : (
+                <MaterialIcons name="my-location" size={16} color="#208AEF" />
+              )}
+              <ThemedText style={styles.gpsButtonText}>
+                {t('driver.announcements.useMyLocation')}
+              </ThemedText>
+            </Pressable>
+            <View style={styles.coordsRow}>
+              <View style={styles.coordsField}>
+                <Input
+                  label={t('driver.announcements.latitudeLabel')}
+                  value={latitudeStr}
+                  onChangeText={setLatitudeStr}
+                  placeholder={t('driver.announcements.coordsPlaceholderLat')}
+                  keyboardType="numbers-and-punctuation"
+                  autoCorrect={false}
+                />
+              </View>
+              <View style={styles.coordsField}>
+                <Input
+                  label={t('driver.announcements.longitudeLabel')}
+                  value={longitudeStr}
+                  onChangeText={setLongitudeStr}
+                  placeholder={t('driver.announcements.coordsPlaceholderLong')}
+                  keyboardType="numbers-and-punctuation"
+                  autoCorrect={false}
+                />
+              </View>
+            </View>
+          </View>
 
           <Input
             label={t('driver.announcements.descriptionLabel')}
@@ -221,6 +344,23 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
   },
   selectSavedText: { color: '#208AEF', fontSize: 14, fontWeight: '500' },
+  coordsSection: { gap: Spacing.two },
+  gpsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.one,
+    alignSelf: 'flex-start',
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.control,
+    borderWidth: 1.5,
+    borderColor: '#208AEF',
+  },
+  gpsButtonText: { color: '#208AEF', fontSize: 14, fontWeight: '600' },
+  coordsRow: { flexDirection: 'row', gap: Spacing.two },
+  coordsField: { flex: 1 },
+  pressed: { opacity: 0.7 },
   truckToggle: {
     flexDirection: 'row',
     alignItems: 'center',

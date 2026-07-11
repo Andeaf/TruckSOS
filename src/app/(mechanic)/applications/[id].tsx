@@ -16,6 +16,7 @@ import {
   dismissApplication,
 } from '@/hooks/use-announcements';
 import type { ApplicationStatus, PriceType } from '@/types/database';
+import { openInGoogleMaps } from '@/lib/location';
 
 const STATUS_COLORS: Record<ApplicationStatus, { color: string; bg: string }> = {
   pending:  { color: '#f59e0b', bg: '#f59e0b1A' },
@@ -146,6 +147,20 @@ export default function ApplicationDetailScreen() {
         <ThemedView type="backgroundElement" style={styles.section}>
           <InfoRow icon="person" text={announcement.driver?.full_name ?? t('common.defaultUser')} />
           <InfoRow icon="location-on" text={announcement.location} />
+          {announcement.latitude != null && announcement.longitude != null ? (
+            <>
+              <InfoRow icon="place" text={`${announcement.latitude}, ${announcement.longitude}`} />
+              <Pressable
+                onPress={() => openInGoogleMaps(announcement.latitude!, announcement.longitude!)}
+                style={({ pressed }) => [styles.mapsButton, pressed && styles.pressed]}
+                hitSlop={8}>
+                <MaterialIcons name="directions" size={16} color="#22c55e" />
+                <ThemedText style={styles.mapsButtonText}>
+                  {t('mechanic.feed.openInMaps')}
+                </ThemedText>
+              </Pressable>
+            </>
+          ) : null}
           <ThemedText themeColor="textSecondary" type="small" style={styles.description}>
             {announcement.description}
           </ThemedText>
@@ -248,6 +263,18 @@ const styles = StyleSheet.create({
   },
   infoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two },
   infoText: { flex: 1 },
+  mapsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    alignSelf: 'flex-start',
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.control,
+    borderWidth: 1.5,
+    borderColor: '#22c55e',
+  },
+  mapsButtonText: { color: '#22c55e', fontSize: 14, fontWeight: '600' },
   description: { lineHeight: 20 },
   price: { color: '#22c55e', fontSize: 15 },
   offerMessage: { fontStyle: 'italic' },

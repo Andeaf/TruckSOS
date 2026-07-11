@@ -17,6 +17,7 @@ import {
   fetchMyApplicationForAnnouncement,
   type AnnouncementWithDriver,
 } from '@/hooks/use-announcements';
+import { openInGoogleMaps } from '@/lib/location';
 import type { Application } from '@/types/database';
 
 const LOCALE_MAP: Record<string, string> = { ro: 'ro-RO', en: 'en-GB', de: 'de-DE' };
@@ -191,6 +192,22 @@ export default function MechanicAnnouncementDetailScreen() {
             <ThemedText type="smallBold">{t('mechanic.feed.sectionLocation')}</ThemedText>
           </View>
           <ThemedText>{announcement.location}</ThemedText>
+          {announcement.latitude != null && announcement.longitude != null ? (
+            <>
+              <ThemedText themeColor="textSecondary" type="small">
+                {announcement.latitude}, {announcement.longitude}
+              </ThemedText>
+              <Pressable
+                onPress={() => openInGoogleMaps(announcement.latitude!, announcement.longitude!)}
+                style={({ pressed }) => [styles.mapsButton, pressed && styles.pressed]}
+                hitSlop={8}>
+                <MaterialIcons name="directions" size={16} color="#22c55e" />
+                <ThemedText style={styles.mapsButtonText}>
+                  {t('mechanic.feed.openInMaps')}
+                </ThemedText>
+              </Pressable>
+            </>
+          ) : null}
         </ThemedView>
 
         {truckInfo || announcement.plate_number ? (
@@ -293,6 +310,19 @@ const styles = StyleSheet.create({
   },
   descriptionText: { lineHeight: 24 },
   hint: { textAlign: 'center', fontSize: 14, lineHeight: 20 },
+  mapsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    alignSelf: 'flex-start',
+    marginTop: Spacing.one,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.control,
+    borderWidth: 1.5,
+    borderColor: '#22c55e',
+  },
+  mapsButtonText: { color: '#22c55e', fontSize: 14, fontWeight: '600' },
   statusCard: {
     borderRadius: Radius.card,
     padding: Spacing.three,

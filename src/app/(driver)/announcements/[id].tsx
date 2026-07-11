@@ -25,6 +25,7 @@ import {
   type ApplicationWithMechanic,
 } from '@/hooks/use-announcements';
 import type { PriceType } from '@/types/database';
+import { openInGoogleMaps } from '@/lib/location';
 
 const LOCALE_MAP: Record<string, string> = { ro: 'ro-RO', en: 'en-GB', de: 'de-DE' };
 
@@ -297,6 +298,22 @@ export default function AnnouncementDetailScreen() {
             <ThemedText type="smallBold">{t('driver.announcements.sectionLocation')}</ThemedText>
           </View>
           <ThemedText>{announcement.location}</ThemedText>
+          {announcement.latitude != null && announcement.longitude != null ? (
+            <>
+              <ThemedText themeColor="textSecondary" type="small">
+                {announcement.latitude}, {announcement.longitude}
+              </ThemedText>
+              <Pressable
+                onPress={() => openInGoogleMaps(announcement.latitude!, announcement.longitude!)}
+                style={({ pressed }) => [styles.mapsButton, pressed && styles.pressed]}
+                hitSlop={8}>
+                <MaterialIcons name="directions" size={16} color="#208AEF" />
+                <ThemedText style={styles.mapsButtonText}>
+                  {t('driver.announcements.openInMaps')}
+                </ThemedText>
+              </Pressable>
+            </>
+          ) : null}
         </ThemedView>
 
         {truckInfo || announcement.plate_number ? (
@@ -435,6 +452,19 @@ const styles = StyleSheet.create({
   descriptionText: {
     lineHeight: 24,
   },
+  mapsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    alignSelf: 'flex-start',
+    marginTop: Spacing.one,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.control,
+    borderWidth: 1.5,
+    borderColor: '#208AEF',
+  },
+  mapsButtonText: { color: '#208AEF', fontSize: 14, fontWeight: '600' },
   error: { color: '#ef4444', fontSize: 14 },
   hint: { textAlign: 'center', fontSize: 14, lineHeight: 20 },
   profileLink: {
@@ -467,4 +497,5 @@ const styles = StyleSheet.create({
   applicantName: { flex: 1 },
   applicantPrice: { color: '#22c55e' },
   applicantMessage: { fontStyle: 'italic' },
+  pressed: { opacity: 0.7 },
 });

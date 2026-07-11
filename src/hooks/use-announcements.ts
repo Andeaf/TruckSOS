@@ -51,14 +51,20 @@ export function useOpenAnnouncements() {
   return { announcements, loading, refresh };
 }
 
+export interface CreateAnnouncementOptions {
+  truckMake?: string;
+  truckModel?: string;
+  truckYear?: number | null;
+  plateNumber?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
 export async function createAnnouncement(
   driverId: string,
   description: string,
   location: string,
-  truckMake?: string,
-  truckModel?: string,
-  truckYear?: number | null,
-  plateNumber?: string,
+  options: CreateAnnouncementOptions = {},
 ): Promise<string | null> {
   const { error } = await supabase
     .from('announcements')
@@ -67,10 +73,12 @@ export async function createAnnouncement(
       description,
       location,
       status: 'open',
-      truck_make: truckMake || null,
-      truck_model: truckModel || null,
-      truck_year: truckYear ?? null,
-      plate_number: plateNumber || null,
+      truck_make: options.truckMake || null,
+      truck_model: options.truckModel || null,
+      truck_year: options.truckYear ?? null,
+      plate_number: options.plateNumber || null,
+      latitude: options.latitude ?? null,
+      longitude: options.longitude ?? null,
     } as never);
   return error?.message ?? null;
 }
@@ -239,7 +247,7 @@ export async function fetchApplicationsForAnnouncement(
 export type ApplicationWithDetails = Application & {
   announcement: Pick<
     Announcement,
-    'id' | 'location' | 'description' | 'status' | 'truck_make' | 'truck_model' | 'truck_year' | 'plate_number'
+    'id' | 'location' | 'description' | 'status' | 'truck_make' | 'truck_model' | 'truck_year' | 'plate_number' | 'latitude' | 'longitude'
   > & {
     driver: { full_name: string } | null;
     conversations: { id: string }[];
@@ -258,7 +266,7 @@ export function useMyApplications() {
       .from('applications')
       .select(
         `*, announcement:announcements!announcement_id(
-          id, location, description, status, truck_make, truck_model, truck_year, plate_number,
+          id, location, description, status, truck_make, truck_model, truck_year, plate_number, latitude, longitude,
           driver:profiles!driver_id(full_name),
           conversations(id)
         )`
@@ -283,7 +291,7 @@ export function useApplication(id: string) {
       .from('applications')
       .select(
         `*, announcement:announcements!announcement_id(
-          id, location, description, status, truck_make, truck_model, truck_year, plate_number,
+          id, location, description, status, truck_make, truck_model, truck_year, plate_number, latitude, longitude,
           driver:profiles!driver_id(full_name),
           conversations(id)
         )`

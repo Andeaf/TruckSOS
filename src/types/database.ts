@@ -25,6 +25,8 @@ export interface Announcement {
   truck_model: string | null;
   truck_year: number | null;
   plate_number: string | null;
+  latitude: number | null;
+  longitude: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -100,6 +102,8 @@ export interface Database {
           truck_model?: string | null;
           truck_year?: number | null;
           plate_number?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
         };
         Update: Partial<Omit<Announcement, 'id' | 'driver_id' | 'created_at'>>;
       };

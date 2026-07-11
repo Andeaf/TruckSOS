@@ -37,7 +37,13 @@
         }
       ],
       "expo-secure-store",
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "TruckSOS folosește locația ta pentru a completa automat coordonatele GPS ale anunțului tău."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
