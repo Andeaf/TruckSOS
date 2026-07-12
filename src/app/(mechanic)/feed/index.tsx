@@ -14,6 +14,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useOpenAnnouncements, fetchRejectedAnnouncementIds } from '@/hooks/use-announcements';
+import { useViewedAnnouncements } from '@/hooks/use-viewed-announcements';
 
 const VIEW_MODE_KEY = 'mechanic_feed_view_mode';
 type ViewMode = 'compact' | 'extended';
@@ -27,6 +28,7 @@ export default function MechanicFeedScreen() {
   const insets = useSafeAreaInsets();
   const [viewMode, setViewMode] = useState<ViewMode>('extended');
   const [rejectedIds, setRejectedIds] = useState<Set<string>>(new Set());
+  const { viewed, refresh: refreshViewed } = useViewedAnnouncements(session?.user.id);
 
   useEffect(() => {
     AsyncStorage.getItem(VIEW_MODE_KEY).then((stored) => {
@@ -45,10 +47,12 @@ export default function MechanicFeedScreen() {
   useFocusEffect(
     useCallback(() => {
       refresh();
+      // La întoarcerea din detaliu, anunțul tocmai deschis nu mai e „Nou".
+      refreshViewed();
       if (session?.user.id) {
         fetchRejectedAnnouncementIds(session.user.id).then(setRejectedIds);
       }
-    }, [refresh, session?.user.id])
+    }, [refresh, refreshViewed, session?.user.id])
   );
 
   return (
@@ -82,6 +86,7 @@ export default function MechanicFeedScreen() {
             driverName={item.driver?.full_name}
             compact={viewMode === 'compact'}
             rejectedByUser={rejectedIds.has(item.id)}
+            isNew={!viewed.has(item.id)}
             onPress={() =>
               router.push({
                 pathname: '/(mechanic)/feed/[id]',

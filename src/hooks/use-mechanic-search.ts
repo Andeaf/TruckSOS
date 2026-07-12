@@ -5,7 +5,7 @@ import type { Profile } from '@/types/database';
 
 export type MechanicSearchResult = Pick<
   Profile,
-  'id' | 'full_name' | 'specialization' | 'activity_zone'
+  'id' | 'full_name' | 'specialization' | 'activity_zone' | 'rating_avg' | 'rating_count'
 >;
 
 export const SEARCH_MIN_LENGTH = 2;

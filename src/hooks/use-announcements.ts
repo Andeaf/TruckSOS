@@ -65,8 +65,8 @@ export async function createAnnouncement(
   description: string,
   location: string,
   options: CreateAnnouncementOptions = {},
-): Promise<string | null> {
-  const { error } = await supabase
+): Promise<{ id: string | null; error: string | null }> {
+  const { data, error } = await supabase
     .from('announcements')
     .insert({
       driver_id: driverId,
@@ -79,8 +79,10 @@ export async function createAnnouncement(
       plate_number: options.plateNumber || null,
       latitude: options.latitude ?? null,
       longitude: options.longitude ?? null,
-    } as never);
-  return error?.message ?? null;
+    } as never)
+    .select('id')
+    .single();
+  return { id: (data as { id: string } | null)?.id ?? null, error: error?.message ?? null };
 }
 
 export async function resolveAnnouncement(id: string): Promise<string | null> {
@@ -182,7 +184,10 @@ export async function fetchMyApplicationForAnnouncement(
 }
 
 export type ApplicationWithMechanic = Application & {
-  mechanic: Pick<Profile, 'id' | 'full_name' | 'specialization' | 'activity_zone'>;
+  mechanic: Pick<
+    Profile,
+    'id' | 'full_name' | 'specialization' | 'activity_zone' | 'rating_avg' | 'rating_count'
+  >;
 };
 
 export async function acceptApplication(
@@ -232,12 +237,36 @@ export async function resubmitApplication(
   return error?.message ?? null;
 }
 
+/**
+ * Câte oferte în așteptare are fiecare anunț al șoferului (pt. badge-ul din listă).
+ * Un singur query pentru toate anunțurile; numărăm client-side. RLS lasă șoferul să
+ * vadă candidaturile pe anunțurile proprii, deci nu e nevoie de RPC.
+ */
+export async function fetchPendingApplicationCounts(
+  announcementIds: string[]
+): Promise<Record<string, number>> {
+  if (announcementIds.length === 0) return {};
+  const { data } = await supabase
+    .from('applications')
+    .select('announcement_id')
+    .eq('status', 'pending')
+    .in('announcement_id', announcementIds);
+
+  const counts: Record<string, number> = {};
+  ((data ?? []) as unknown as { announcement_id: string }[]).forEach((row) => {
+    counts[row.announcement_id] = (counts[row.announcement_id] ?? 0) + 1;
+  });
+  return counts;
+}
+
 export async function fetchApplicationsForAnnouncement(
   announcementId: string
 ): Promise<ApplicationWithMechanic[]> {
   const { data } = await supabase
     .from('applications')
-    .select('*, mechanic:profiles!mechanic_id(id, full_name, specialization, activity_zone)')
+    .select(
+      '*, mechanic:profiles!mechanic_id(id, full_name, specialization, activity_zone, rating_avg, rating_count)'
+    )
     .eq('announcement_id', announcementId)
     .eq('status', 'pending')
     .order('created_at', { ascending: true });

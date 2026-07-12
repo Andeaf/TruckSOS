@@ -43,6 +43,22 @@
         {
           "locationWhenInUsePermission": "TruckSOS folosește locația ta pentru a completa automat coordonatele GPS ale anunțului tău."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "TruckSOS accesează pozele tale ca să le poți atașa la anunțuri și în conversații.",
+          "cameraPermission": "TruckSOS folosește camera ca să poți fotografia defecțiunea și să o atașezi la anunț sau în chat.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "TruckSOS accesează galeria foto ca să poți atașa poze la anunțuri și în conversații.",
+          "savePhotosPermission": "TruckSOS salvează în galeria ta pozele primite în conversații.",
+          "isAccessMediaLocationEnabled": false
+        }
       ]
     ],
     "experiments": {

@@ -11,7 +11,21 @@ export interface Profile {
   specialization: string | null;
   activity_zone: string | null;
   phone: string | null;
+  /** Medie denormalizată (1 zecimală), întreținută de trigger. 0 = fără evaluări. */
+  rating_avg: number;
+  rating_count: number;
   created_at: string;
+}
+
+/** Evaluare dată de un șofer unui mecanic. UNIQUE(mechanic_id, driver_id) → upsert. */
+export interface Rating {
+  id: string;
+  mechanic_id: string;
+  driver_id: string;
+  stars: number;
+  comment: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Announcement {
@@ -27,8 +41,17 @@ export interface Announcement {
   plate_number: string | null;
   latitude: number | null;
   longitude: number | null;
+  /** Soft-delete DOAR pentru ecranul de Istoric; anunțul rămâne în DB (Faza 9.3). */
+  hidden_from_history: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface AnnouncementPhoto {
+  id: string;
+  announcement_id: string;
+  storage_path: string;
+  created_at: string;
 }
 
 export interface Conversation {
@@ -43,7 +66,10 @@ export interface Message {
   id: string;
   conversation_id: string;
   sender_id: string;
+  /** Gol ('') când mesajul e o poză — vezi `image_path`. */
   content: string;
+  /** Path în bucket-ul `photos` (`chat/{conv}/{uuid}.jpg`); null pt. mesaj text. */
+  image_path: string | null;
   created_at: string;
 }
 
@@ -81,7 +107,10 @@ export interface ChannelMessage {
   id: string;
   channel_id: string;
   sender_id: string;
+  /** Gol ('') când mesajul e o poză — vezi `image_path`. */
   content: string;
+  /** Path în bucket-ul `photos` (`channel/{channel}/{uuid}.jpg`); null pt. mesaj text. */
+  image_path: string | null;
   created_at: string;
 }
 
@@ -106,6 +135,16 @@ export interface Database {
           longitude?: number | null;
         };
         Update: Partial<Omit<Announcement, 'id' | 'driver_id' | 'created_at'>>;
+      };
+      announcement_photos: {
+        Row: AnnouncementPhoto;
+        Insert: Omit<AnnouncementPhoto, 'id' | 'created_at'>;
+        Update: never;
+      };
+      ratings: {
+        Row: Rating;
+        Insert: Omit<Rating, 'id' | 'created_at' | 'updated_at'> & { comment?: string | null };
+        Update: Partial<Pick<Rating, 'stars' | 'comment'>>;
       };
       conversations: {
         Row: Conversation;
@@ -162,9 +201,17 @@ export interface Database {
         Args: { p_mechanic_id: string };
         Returns: string;
       };
+      set_announcements_hidden: {
+        /** `p_ids` null/absent = ascunde tot istoricul șoferului. */
+        Args: { p_ids?: string[] | null };
+        Returns: number;
+      };
       search_mechanics: {
         Args: { p_query: string };
-        Returns: Pick<Profile, 'id' | 'full_name' | 'specialization' | 'activity_zone'>[];
+        Returns: Pick<
+          Profile,
+          'id' | 'full_name' | 'specialization' | 'activity_zone' | 'rating_avg' | 'rating_count'
+        >[];
       };
       get_mechanic_phone: {
         Args: { p_mechanic_id: string };

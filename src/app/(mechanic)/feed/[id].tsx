@@ -9,6 +9,7 @@ import { useBack } from '@/hooks/use-back';
 import { useTheme } from '@/hooks/use-theme';
 import { ApplyBottomSheet } from '@/components/apply-bottom-sheet';
 import { Button } from '@/components/ui/button';
+import { PhotoGallery } from '@/components/photo-gallery';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
@@ -17,6 +18,9 @@ import {
   fetchMyApplicationForAnnouncement,
   type AnnouncementWithDriver,
 } from '@/hooks/use-announcements';
+import { useAnnouncementPhotos } from '@/hooks/use-announcement-photos';
+import { markAnnouncementViewed } from '@/hooks/use-viewed-announcements';
+import { useAuth } from '@/hooks/use-auth';
 import { openInGoogleMaps } from '@/lib/location';
 import type { Application } from '@/types/database';
 
@@ -103,6 +107,7 @@ export default function MechanicAnnouncementDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, i18n } = useTranslation();
   const theme = useTheme();
+  const { session } = useAuth();
   const goBack = useBack('/(mechanic)/feed');
   const insets = useSafeAreaInsets();
 
@@ -111,6 +116,7 @@ export default function MechanicAnnouncementDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [sheetVisible, setSheetVisible] = useState(false);
   const [resubmitMode, setResubmitMode] = useState(false);
+  const { photos } = useAnnouncementPhotos(id);
 
   async function load() {
     setLoading(true);
@@ -127,6 +133,11 @@ export default function MechanicAnnouncementDetailScreen() {
   }
 
   useEffect(() => { load(); }, [id]);
+
+  // Deschiderea detaliului = anunțul nu mai e „Nou" în feed.
+  useEffect(() => {
+    if (session?.user.id && id) markAnnouncementViewed(session.user.id, id);
+  }, [session?.user.id, id]);
 
   if (loading) {
     return (
@@ -232,6 +243,19 @@ export default function MechanicAnnouncementDetailScreen() {
           </View>
           <ThemedText style={styles.descriptionText}>{announcement.description}</ThemedText>
         </ThemedView>
+
+        {photos.length > 0 ? (
+          <ThemedView type="backgroundElement" style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons name="photo-library" size={16} color="#22c55e" />
+              <ThemedText type="smallBold">{t('photos.sectionTitle')}</ThemedText>
+              <ThemedText themeColor="textSecondary" type="small">
+                ({photos.length})
+              </ThemedText>
+            </View>
+            <PhotoGallery photos={photos} />
+          </ThemedView>
+        ) : null}
 
         {/* Acțiune de jos */}
         {myApplication ? (

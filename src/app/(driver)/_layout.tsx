@@ -70,6 +70,8 @@ export default function DriverLayout() {
         }}
       />
       <Tabs.Screen name="mechanic-profile" options={{ href: null }} />
+      {/* Istoricul se deschide din Profil, nu are tab propriu. */}
+      <Tabs.Screen name="history" options={{ href: null }} />
     </Tabs>
   );
 }

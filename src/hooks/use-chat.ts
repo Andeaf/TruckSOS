@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
+import { uploadPhoto } from '@/lib/storage';
+import type { PickedImage } from '@/lib/media';
 import type { Announcement, Conversation, Message } from '@/types/database';
 import type { AnnouncementStatus } from '@/types/database';
 
@@ -124,14 +126,38 @@ export async function deleteConversations(
 export async function sendMessage(
   conversationId: string,
   senderId: string,
-  content: string
+  content: string,
+  imagePath: string | null = null
 ): Promise<{ message: Message | null; error: string | null }> {
   const { data, error } = await supabase
     .from('messages')
-    .insert({ conversation_id: conversationId, sender_id: senderId, content } as never)
+    .insert({
+      conversation_id: conversationId,
+      sender_id: senderId,
+      content,
+      image_path: imagePath,
+    } as never)
     .select()
     .single();
   return { message: (data as unknown as Message) ?? null, error: error?.message ?? null };
+}
+
+/**
+ * Trimite o poză ca mesaj (Etapa 9.2.2): comprimă + urcă în `chat/{convId}/`,
+ * apoi inserează un mesaj cu `content=''` + `image_path`. O poză = o bulă.
+ * Dacă upload-ul eșuează, NU inserăm mesajul (n-ar avea ce afișa).
+ */
+export async function sendImageMessage(
+  conversationId: string,
+  senderId: string,
+  image: PickedImage
+): Promise<{ message: Message | null; error: string | null }> {
+  const { path, error } = await uploadPhoto('chat', conversationId, image);
+  if (error || !path) {
+    console.warn('[chat] upload poză eșuat:', error);
+    return { message: null, error: error ?? 'upload_failed' };
+  }
+  return sendMessage(conversationId, senderId, '', path);
 }
 
 export function useAnnouncementStatus(
@@ -186,11 +212,25 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
   const fetchCounts = useCallback(async () => {
     if (!userId) return;
 
-    const { data: convs } = await supabase
+    // Conversațiile ȘTERSE de utilizator (Faza 5, soft-delete) NU se mai văd în listă,
+    // deci nu pot fi deschise → n-ar putea fi marcate ca citite niciodată. Dacă le-am
+    // număra, badge-ul ar arăta mesaje necitite imposibil de eliminat.
+    const { data: deletions } = await supabase
+      .from('conversation_deletions')
+      .select('conversation_id')
+      .eq('user_id', userId);
+    const deletedIds = new Set(
+      ((deletions ?? []) as unknown as { conversation_id: string }[]).map((d) => d.conversation_id),
+    );
+
+    const { data: allConvs } = await supabase
       .from('conversations')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .select('id').or(`driver_id.eq.${userId},mechanic_id.eq.${userId}` as any);
-    if (!convs || convs.length === 0) { setCounts({}); return; }
+    const convs = ((allConvs ?? []) as unknown as { id: string }[]).filter(
+      (c) => !deletedIds.has(c.id),
+    );
+    if (convs.length === 0) { setCounts({}); return; }
 
     const { data: reads } = await supabase
       .from('message_reads')
@@ -202,14 +242,17 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
     const result: Record<string, number> = {};
     await Promise.all(
       convs.map(async ({ id }) => {
+        // Fără rând în `message_reads` = conversația n-a fost deschisă NICIODATĂ,
+        // deci TOATE mesajele celuilalt sunt necitite (nu zero — cazul unei
+        // conversații abia create, unde badge-ul chiar trebuie să apară).
         const lastRead = readMap[id];
-        if (!lastRead) { result[id] = 0; return; }
-        const { count } = await supabase
+        let query = supabase
           .from('messages')
           .select('id', { count: 'exact', head: true })
           .eq('conversation_id', id)
-          .neq('sender_id', userId)
-          .gt('created_at', lastRead);
+          .neq('sender_id', userId);
+        if (lastRead) query = query.gt('created_at', lastRead);
+        const { count } = await query;
         result[id] = count ?? 0;
       })
     );

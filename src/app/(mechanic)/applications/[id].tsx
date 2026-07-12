@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { ApplyBottomSheet } from '@/components/apply-bottom-sheet';
+import { PhotoGallery } from '@/components/photo-gallery';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
@@ -15,6 +16,7 @@ import {
   withdrawApplication,
   dismissApplication,
 } from '@/hooks/use-announcements';
+import { useAnnouncementPhotos } from '@/hooks/use-announcement-photos';
 import type { ApplicationStatus, PriceType } from '@/types/database';
 import { openInGoogleMaps } from '@/lib/location';
 
@@ -65,6 +67,8 @@ export default function ApplicationDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [sheetVisible, setSheetVisible] = useState(false);
+  // `id` din rută e al APLICAȚIEI; anunțul (deci pozele) se știe abia după load.
+  const { photos } = useAnnouncementPhotos(item?.announcement?.id ?? '');
 
   if (loading) {
     return (
@@ -166,6 +170,15 @@ export default function ApplicationDetailScreen() {
           </ThemedText>
           {truckLine ? <InfoRow icon="local-shipping" text={truckLine} /> : null}
         </ThemedView>
+
+        {photos.length > 0 ? (
+          <>
+            <SectionTitle label={t('photos.sectionTitle')} />
+            <ThemedView type="backgroundElement" style={styles.section}>
+              <PhotoGallery photos={photos} />
+            </ThemedView>
+          </>
+        ) : null}
 
         <SectionTitle label={t('mechanic.applications.sectionOffer')} />
         <ThemedView type="backgroundElement" style={styles.section}>

@@ -54,6 +54,10 @@
       "descriptionLabel": "Problembeschreibung",
       "descriptionPlaceholder": "z.B.: Motor startet nicht, Rauch aus dem Motor, Reifenpanne...",
       "submitButton": "Anzeige veröffentlichen",
+      "photosLabel": "Fotos (optional)",
+      "photosHint": "Füge Fotos des Problems hinzu — für Mechaniker sichtbar.",
+      "photosFailedTitle": "Fotos nicht hochgeladen",
+      "photosFailedMessage": "Die Anzeige wurde veröffentlicht, aber {{count}} Foto(s) konnten nicht hochgeladen werden.",
       "errorDescription": "Bitte das Problem beschreiben.",
       "errorLocation": "Bitte Standort eingeben.",
       "coordsSectionTitle": "GPS-Koordinaten (optional)",
@@ -104,10 +108,25 @@
       "deleteSelectedConfirmTitle": "Ausgewählte Anzeigen löschen?",
       "deleteSelectedConfirmMessage": "Diese Aktion kann nicht rückgängig gemacht werden.",
       "deleteSelectedConfirmMessageWithOpen": "Mechaniker, die sich beworben haben, werden automatisch abgelehnt. Diese Aktion kann nicht rückgängig gemacht werden.",
-      "deleteSelectedConfirmOk": "Ja, löschen"
+      "deleteSelectedConfirmOk": "Ja, löschen",
+      "applicantsBadgeOne": "1 Mechaniker interessiert! 👀",
+      "applicantsBadge": "{{count}} Mechaniker interessiert! 👀"
     },
     "profile": {
       "phoneHint": "Für den Mechaniker nur sichtbar, wenn ihr ein aktives Gespräch habt."
+    },
+    "history": {
+      "title": "Problemverlauf",
+      "empty": "Du hast keine Probleme im Verlauf.",
+      "hint": "Halte eine Anzeige gedrückt, um mehrere auszuwählen.",
+      "mechanicLabel": "Mechaniker",
+      "selectedCount": "{{count}} ausgewählt",
+      "deleteButton": "Löschen",
+      "cancel": "Abbrechen",
+      "deleteConfirmTitle": "Aus dem Verlauf entfernen?",
+      "deleteAllConfirmTitle": "Gesamten Verlauf löschen?",
+      "deleteConfirmMessage": "Die Anzeigen verschwinden aus dem Verlauf, bleiben aber gespeichert — du kannst die Mechaniker weiterhin bewerten.",
+      "deleteConfirmOk": "Löschen"
     },
     "mechanicProfile": {
       "title": "Mechanikerprofil",
@@ -195,7 +214,8 @@
   "chat": {
     "emptyMessages": "Keine Nachrichten. Schreibe als Erster!",
     "inputPlaceholder": "Nachricht schreiben...",
-    "resolvedBanner": "Die Anzeige wurde als gelöst markiert."
+    "resolvedBanner": "Die Anzeige wurde als gelöst markiert.",
+    "attach": "Foto senden"
   },
   "channel": {
     "name": {
@@ -287,6 +307,35 @@
     "open": "Offen",
     "accepted": "Angenommen",
     "resolved": "Gelöst",
-    "cancelled": "Storniert"
+    "cancelled": "Storniert",
+    "new": "Neu"
+  },
+  "photos": {
+    "add": "Fotos hinzufügen",
+    "sourceTitle": "Foto hinzufügen",
+    "sourceLibrary": "Aus Galerie wählen",
+    "sourceCamera": "Foto aufnehmen",
+    "cancel": "Abbrechen",
+    "remove": "Entfernen",
+    "sectionTitle": "Fotos",
+    "counter": "{{current}} / {{total}}",
+    "close": "Schließen",
+    "download": "Herunterladen",
+    "downloadOk": "Foto in der Galerie gespeichert.",
+    "downloadFailed": "Das Foto konnte nicht gespeichert werden."
+  },
+  "rating": {
+    "sectionTitle": "Bewertungen",
+    "noRatings": "Noch keine Bewertungen",
+    "rateButton": "Mechaniker bewerten",
+    "editButton": "Bewertung ändern",
+    "sheetTitle": "Mechaniker bewerten",
+    "sheetTitleEdit": "Bewertung ändern",
+    "commentLabel": "Kommentar (optional)",
+    "commentPlaceholder": "Wie lief die Zusammenarbeit?",
+    "anonymousHint": "Deine Bewertung erscheint anonym im Mechanikerprofil.",
+    "saveButton": "Bewertung speichern",
+    "errorStarsRequired": "Wähle zwischen 1 und 5 Sternen.",
+    "errorNotAllowed": "Du kannst nur Mechaniker bewerten, mit denen du ein gelöstes Problem hast."
   }
 }

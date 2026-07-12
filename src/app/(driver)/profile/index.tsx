@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
@@ -20,6 +20,7 @@ export default function DriverProfileScreen() {
   const { profile, signOut, updateProfile } = useAuth();
   const { t } = useTranslation();
   const theme = useTheme();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { trucks, refresh } = useSavedTrucks();
 
@@ -187,6 +188,14 @@ export default function DriverProfileScreen() {
                 <ThemedText style={styles.success}>{successMsg}</ThemedText>
               ) : null}
 
+              <Pressable
+                onPress={() => router.push('/(driver)/history' as never)}
+                style={({ pressed }) => [styles.historyRow, pressed && styles.pressed]}>
+                <MaterialIcons name="history" size={18} color="#208AEF" />
+                <ThemedText style={styles.historyText}>{t('driver.history.title')}</ThemedText>
+                <MaterialIcons name="chevron-right" size={20} color={theme.textSecondary} />
+              </Pressable>
+
               <Pressable onPress={signOut} style={styles.signOutRow} hitSlop={8}>
                 <MaterialIcons name="logout" size={18} color="#ef4444" />
                 <ThemedText style={styles.signOutText}>{t('common.signOut')}</ThemedText>
@@ -283,6 +292,17 @@ const styles = StyleSheet.create({
     padding: Spacing.two,
   },
   signOutText: { color: '#ef4444', fontSize: 15 },
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    padding: Spacing.three,
+    borderRadius: Radius.card,
+    borderWidth: 1.5,
+    borderColor: '#208AEF',
+  },
+  historyText: { flex: 1, color: '#208AEF', fontSize: 15, fontWeight: '600' },
+  pressed: { opacity: 0.7 },
   trucksSectionWrapper: {
     gap: Spacing.two,
     marginTop: Spacing.two,

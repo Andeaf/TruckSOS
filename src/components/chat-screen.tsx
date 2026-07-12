@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -10,18 +12,25 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
+import { PhotoViewer } from '@/components/photo-viewer';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useSignedUrls } from '@/hooks/use-signed-urls';
+import { pickFromCamera, pickFromLibrary, type PickedImage } from '@/lib/media';
 
 export interface ChatMessageBase {
   id: string;
+  /** Gol ('') când mesajul e o poză. */
   content: string;
+  /** Path în Storage; prezent doar la mesajele-imagine (Etapa 9.2). */
+  image_path?: string | null;
   sender_id: string;
   created_at: string;
 }
@@ -38,6 +47,9 @@ interface MessageBubbleProps<M extends ChatMessageBase> {
   isMe: boolean;
   accentColor: string;
   senderLabel?: string | null;
+  /** URL semnat, când mesajul e o poză; lipsește cât timp se semnează sau dacă RLS refuză. */
+  imageUrl?: string;
+  onPressImage?: () => void;
 }
 
 function MessageBubble<M extends ChatMessageBase>({
@@ -45,8 +57,11 @@ function MessageBubble<M extends ChatMessageBase>({
   isMe,
   accentColor,
   senderLabel,
+  imageUrl,
+  onPressImage,
 }: MessageBubbleProps<M>) {
   const theme = useTheme();
+  const isImage = !!message.image_path;
   return (
     <View style={[styles.bubbleRow, isMe ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
       <View style={styles.bubbleColumn}>
@@ -58,14 +73,40 @@ function MessageBubble<M extends ChatMessageBase>({
         <View
           style={[
             styles.bubble,
+            isImage && styles.bubbleImage,
             { backgroundColor: isMe ? accentColor : theme.backgroundElement },
           ]}>
-          <Text style={[styles.bubbleText, { color: isMe ? '#ffffff' : theme.text }]}>
-            {message.content}
-          </Text>
-          <Text style={[styles.bubbleTime, { color: isMe ? 'rgba(255,255,255,0.7)' : theme.textSecondary }]}>
-            {formatTime(message.created_at)}
-          </Text>
+          {isImage ? (
+            // Poza umple bula; ora stă peste ea, într-o pastilă întunecată.
+            <Pressable
+              onPress={imageUrl ? onPressImage : undefined}
+              style={({ pressed }) => [styles.imageWrap, pressed && styles.pressed]}>
+              {imageUrl ? (
+                <Image
+                  source={{ uri: imageUrl }}
+                  style={styles.imageThumb}
+                  contentFit="cover"
+                  transition={150}
+                />
+              ) : (
+                <View style={[styles.imageThumb, styles.imagePlaceholder]}>
+                  <ActivityIndicator size="small" color={theme.textSecondary} />
+                </View>
+              )}
+              <View style={styles.imageTimePill}>
+                <Text style={styles.imageTimeText}>{formatTime(message.created_at)}</Text>
+              </View>
+            </Pressable>
+          ) : (
+            <>
+              <Text style={[styles.bubbleText, { color: isMe ? '#ffffff' : theme.text }]}>
+                {message.content}
+              </Text>
+              <Text style={[styles.bubbleTime, { color: isMe ? 'rgba(255,255,255,0.7)' : theme.textSecondary }]}>
+                {formatTime(message.created_at)}
+              </Text>
+            </>
+          )}
         </View>
       </View>
     </View>
@@ -84,6 +125,12 @@ interface ChatScreenProps<M extends ChatMessageBase> {
   loadingMore?: boolean;
   onLoadOlder?: () => void;
   onSend: (content: string) => Promise<void>;
+  /**
+   * Trimite o poză ca mesaj propriu (o poză = o bulă). Când lipsește, butonul de
+   * atașare nu apare — așa ținem funcționalitatea oprită acolo unde n-a fost încă
+   * activată (canalele, până la Etapa 9.2.4).
+   */
+  onSendImage?: (image: PickedImage) => Promise<void>;
   renderSenderLabel?: (message: M) => string | null;
   onBack: () => void;
 }
@@ -100,6 +147,7 @@ export function ChatScreen<M extends ChatMessageBase>({
   loadingMore,
   onLoadOlder,
   onSend,
+  onSendImage,
   renderSenderLabel,
   onBack,
 }: ChatScreenProps<M>) {
@@ -108,9 +156,42 @@ export function ChatScreen<M extends ChatMessageBase>({
   const insets = useSafeAreaInsets();
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [viewerAt, setViewerAt] = useState<number | null>(null);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  // Android emite Did*, iOS Will* — ascultăm ambele ca bara să urce la fel pe amândouă.
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => setKeyboardVisible(true),
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setKeyboardVisible(false),
+    );
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   // Inverted FlatList needs data in descending order (newest first = shown at bottom)
   const reversedMessages = useMemo(() => [...messages].reverse(), [messages]);
+
+  // URL-uri semnate pt. mesajele-imagine, cerute în batch pe măsură ce sosesc.
+  const imagePaths = useMemo(
+    () => messages.map((m) => m.image_path).filter((p): p is string => !!p),
+    [messages],
+  );
+  const urls = useSignedUrls(imagePaths);
+
+  // Pozele conversației, în ordine cronologică: viewer-ul le parcurge pe toate,
+  // nu doar pe cea atinsă.
+  const viewerPhotos = useMemo(
+    () =>
+      messages
+        .filter((m) => m.image_path && urls[m.image_path])
+        .map((m) => ({ id: m.id, url: urls[m.image_path!] })),
+    [messages, urls],
+  );
 
   async function handleSend() {
     const trimmed = text.trim();
@@ -119,6 +200,31 @@ export function ChatScreen<M extends ChatMessageBase>({
     setText('');
     await onSend(trimmed);
     setSending(false);
+  }
+
+  async function sendImages(images: PickedImage[]) {
+    if (!onSendImage || images.length === 0) return;
+    setUploading(true);
+    // Secvențial: fiecare poză devine mesajul ei, în ordinea aleasă.
+    for (const image of images) {
+      await onSendImage(image);
+    }
+    setUploading(false);
+  }
+
+  function handleAttach() {
+    if (uploading) return;
+    Alert.alert(t('photos.sourceTitle'), undefined, [
+      {
+        text: t('photos.sourceLibrary'),
+        onPress: async () => sendImages(await pickFromLibrary()),
+      },
+      {
+        text: t('photos.sourceCamera'),
+        onPress: async () => sendImages(await pickFromCamera()),
+      },
+      { text: t('photos.cancel'), style: 'cancel' },
+    ]);
   }
 
   return (
@@ -189,6 +295,11 @@ export function ChatScreen<M extends ChatMessageBase>({
                     ? renderSenderLabel(item)
                     : null
                 }
+                imageUrl={item.image_path ? urls[item.image_path] : undefined}
+                onPressImage={() => {
+                  const index = viewerPhotos.findIndex((p) => p.id === item.id);
+                  if (index >= 0) setViewerAt(index);
+                }}
               />
             )}
           />
@@ -198,11 +309,28 @@ export function ChatScreen<M extends ChatMessageBase>({
           style={[
             styles.inputBar,
             {
-              paddingBottom: insets.bottom + Spacing.two,
+              // Cu tastatura deschisă, zona de siguranță de jos (bara de navigație)
+              // e acoperită de tastatură — dacă i-am păstra padding-ul, bara de input
+              // ar pluti la câțiva zeci de px deasupra tastelor.
+              paddingBottom: keyboardVisible ? Spacing.one : insets.bottom + Spacing.two,
               backgroundColor: theme.background,
               borderTopColor: theme.backgroundElement,
             },
           ]}>
+          {onSendImage ? (
+            <Pressable
+              onPress={handleAttach}
+              disabled={uploading}
+              style={styles.attachButton}
+              hitSlop={8}
+              accessibilityLabel={t('chat.attach')}>
+              {uploading ? (
+                <ActivityIndicator size="small" color={accentColor} />
+              ) : (
+                <MaterialIcons name="add-a-photo" size={22} color={theme.textSecondary} />
+              )}
+            </Pressable>
+          ) : null}
           <TextInput
             style={[
               styles.input,
@@ -233,6 +361,16 @@ export function ChatScreen<M extends ChatMessageBase>({
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+
+      {viewerAt !== null ? (
+        <PhotoViewer
+          visible
+          photos={viewerPhotos}
+          initialIndex={viewerAt}
+          showDownload
+          onClose={() => setViewerAt(null)}
+        />
+      ) : null}
     </ThemedView>
   );
 }
@@ -271,6 +409,33 @@ const styles = StyleSheet.create({
   },
   bubbleText: { fontSize: 15, lineHeight: 21 },
   bubbleTime: { fontSize: 11, alignSelf: 'flex-end' },
+  // Bula-imagine: fără padding, poza umple bula.
+  bubbleImage: { padding: 0, overflow: 'hidden' },
+  imageWrap: { width: 220, height: 220 },
+  imageThumb: { width: '100%', height: '100%' },
+  imagePlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#00000015',
+  },
+  imageTimePill: {
+    position: 'absolute',
+    right: 6,
+    bottom: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: Radius.badge,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  imageTimeText: { fontSize: 11, color: '#fff' },
+  attachButton: {
+    width: 42,
+    height: 42,
+    borderRadius: Radius.circle,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pressed: { opacity: 0.8 },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',

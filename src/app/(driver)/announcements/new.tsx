@@ -14,9 +14,12 @@ import { Input } from '@/components/ui/input';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TruckPickerSheet } from '@/components/truck-picker-sheet';
+import { PhotoPickerRow } from '@/components/photo-picker-row';
 import { Radius, Spacing } from '@/constants/theme';
+import type { PickedImage } from '@/lib/media';
 import { useAuth } from '@/hooks/use-auth';
 import { createAnnouncement } from '@/hooks/use-announcements';
+import { uploadAnnouncementPhotos } from '@/hooks/use-announcement-photos';
 import { useSavedTrucks } from '@/hooks/use-trucks';
 import { getCurrentCoords } from '@/lib/location';
 
@@ -40,6 +43,7 @@ export default function NewAnnouncementScreen() {
   const [plateNumber, setPlateNumber] = useState('');
   const [latitudeStr, setLatitudeStr] = useState('');
   const [longitudeStr, setLongitudeStr] = useState('');
+  const [photos, setPhotos] = useState<PickedImage[]>([]);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -57,7 +61,8 @@ export default function NewAnnouncementScreen() {
     truckYearStr.trim() !== '' ||
     plateNumber.trim() !== '' ||
     latitudeStr.trim() !== '' ||
-    longitudeStr.trim() !== '';
+    longitudeStr.trim() !== '' ||
+    photos.length > 0;
 
   usePreventRemove(isDirty, ({ data }) => {
     if (savedRef.current) {
@@ -103,6 +108,14 @@ export default function NewAnnouncementScreen() {
     setTruckSectionOpen(true);
   }
 
+  function handleAddPhotos(imgs: PickedImage[]) {
+    setPhotos((prev) => [...prev, ...imgs]);
+  }
+
+  function handleRemovePhoto(index: number) {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  }
+
   async function handleSubmit() {
     if (!description.trim()) { setError(t('driver.announcements.errorDescription')); return; }
     if (!location.trim()) { setError(t('driver.announcements.errorLocation')); return; }
@@ -140,7 +153,7 @@ export default function NewAnnouncementScreen() {
 
     setLoading(true);
     setError('');
-    const err = await createAnnouncement(
+    const { id, error: createErr } = await createAnnouncement(
       session.user.id,
       description.trim(),
       location.trim(),
@@ -153,9 +166,26 @@ export default function NewAnnouncementScreen() {
         longitude,
       },
     );
-    setLoading(false);
 
-    if (err) { setError(err); return; }
+    if (createErr || !id) {
+      setLoading(false);
+      setError(createErr ?? t('common.error'));
+      return;
+    }
+
+    // Anunțul e creat; urcăm pozele (best-effort, loading-ul acoperă și upload-ul).
+    // Dacă vreuna eșuează, anunțul rămâne creat, dar șoferul TREBUIE să afle.
+    if (photos.length > 0) {
+      const { failed } = await uploadAnnouncementPhotos(id, photos);
+      if (failed > 0) {
+        Alert.alert(
+          t('driver.announcements.photosFailedTitle'),
+          t('driver.announcements.photosFailedMessage', { count: failed }),
+        );
+      }
+    }
+
+    setLoading(false);
     savedRef.current = true;
     goBack();
   }
@@ -238,6 +268,19 @@ export default function NewAnnouncementScreen() {
             numberOfLines={5}
             style={styles.textarea}
           />
+
+          <View style={styles.photosSection}>
+            <ThemedText type="smallBold">{t('driver.announcements.photosLabel')}</ThemedText>
+            <ThemedText themeColor="textSecondary" type="small">
+              {t('driver.announcements.photosHint')}
+            </ThemedText>
+            <PhotoPickerRow
+              photos={photos}
+              onAdd={handleAddPhotos}
+              onRemove={handleRemovePhoto}
+              disabled={loading}
+            />
+          </View>
 
           {trucks.length > 0 ? (
             <Pressable onPress={() => setShowPicker(true)} style={styles.selectSavedButton} hitSlop={8}>
@@ -345,6 +388,7 @@ const styles = StyleSheet.create({
   },
   selectSavedText: { color: '#208AEF', fontSize: 14, fontWeight: '500' },
   coordsSection: { gap: Spacing.two },
+  photosSection: { gap: Spacing.two },
   gpsButton: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -54,6 +54,10 @@
       "descriptionLabel": "Descrierea problemei",
       "descriptionPlaceholder": "ex: Motor nu pornește, fum din motor, roatã spartã...",
       "submitButton": "Trimite anunțul",
+      "photosLabel": "Poze (opțional)",
+      "photosHint": "Atașează poze cu defecțiunea — vizibile mecanicilor.",
+      "photosFailedTitle": "Poze neurcate",
+      "photosFailedMessage": "Anunțul a fost publicat, dar {{count}} poză/poze nu s-au putut urca.",
       "errorDescription": "Descrie problema tehnicã.",
       "errorLocation": "Introdu locația.",
       "coordsSectionTitle": "Coordonate GPS (opțional)",
@@ -104,10 +108,25 @@
       "deleteSelectedConfirmTitle": "Ștergi anunțurile selectate?",
       "deleteSelectedConfirmMessage": "Acțiunea nu poate fi anulată.",
       "deleteSelectedConfirmMessageWithOpen": "Mecanicii care au candidat vor fi respinși automat. Acțiunea nu poate fi anulată.",
-      "deleteSelectedConfirmOk": "Da, șterge"
+      "deleteSelectedConfirmOk": "Da, șterge",
+      "applicantsBadgeOne": "1 mecanic interesat! 👀",
+      "applicantsBadge": "{{count}} mecanici interesați! 👀"
     },
     "profile": {
       "phoneHint": "Vizibil mecanicului doar dacă aveți o conversație activă."
+    },
+    "history": {
+      "title": "Istoric probleme",
+      "empty": "Nu ai nicio problemă în istoric.",
+      "hint": "Ține apăsat pe un anunț ca să selectezi mai multe.",
+      "mechanicLabel": "Mecanic",
+      "selectedCount": "{{count}} selectate",
+      "deleteButton": "Șterge",
+      "cancel": "Anulează",
+      "deleteConfirmTitle": "Ștergi din istoric?",
+      "deleteAllConfirmTitle": "Ștergi tot istoricul?",
+      "deleteConfirmMessage": "Anunțurile dispar din istoric, dar rămân salvate — poți în continuare să evaluezi mecanicii cu care ai lucrat.",
+      "deleteConfirmOk": "Șterge"
     },
     "mechanicProfile": {
       "title": "Profil mecanic",
@@ -195,7 +214,8 @@
   "chat": {
     "emptyMessages": "Niciun mesaj. Scrie primul!",
     "inputPlaceholder": "Scrie un mesaj...",
-    "resolvedBanner": "Anunțul a fost marcat ca rezolvat."
+    "resolvedBanner": "Anunțul a fost marcat ca rezolvat.",
+    "attach": "Trimite o poză"
   },
   "channel": {
     "name": {
@@ -287,6 +307,35 @@
     "open": "Deschis",
     "accepted": "Acceptat",
     "resolved": "Rezolvat",
-    "cancelled": "Anulat"
+    "cancelled": "Anulat",
+    "new": "Nou"
+  },
+  "photos": {
+    "add": "Adaugă poze",
+    "sourceTitle": "Adaugă poză",
+    "sourceLibrary": "Alege din galerie",
+    "sourceCamera": "Fă o poză",
+    "cancel": "Anulează",
+    "remove": "Elimină",
+    "sectionTitle": "Poze",
+    "counter": "{{current}} / {{total}}",
+    "close": "Închide",
+    "download": "Descarcă",
+    "downloadOk": "Poza a fost salvată în galerie.",
+    "downloadFailed": "Poza nu a putut fi salvată."
+  },
+  "rating": {
+    "sectionTitle": "Evaluări",
+    "noRatings": "Fără evaluări",
+    "rateButton": "Evaluează mecanicul",
+    "editButton": "Modifică evaluarea",
+    "sheetTitle": "Evaluează mecanicul",
+    "sheetTitleEdit": "Modifică evaluarea",
+    "commentLabel": "Comentariu (opțional)",
+    "commentPlaceholder": "Cum a decurs colaborarea?",
+    "anonymousHint": "Evaluarea apare anonim pe profilul mecanicului.",
+    "saveButton": "Salvează evaluarea",
+    "errorStarsRequired": "Alege între 1 și 5 stele.",
+    "errorNotAllowed": "Poți evalua doar un mecanic cu care ai o problemă finalizată."
   }
 }

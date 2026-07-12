@@ -9,6 +9,7 @@ import { useBack } from '@/hooks/use-back';
 import {
   fetchConversationDetails,
   markConversationRead,
+  sendImageMessage,
   sendMessage,
   useAnnouncementStatus,
   useMessages,
@@ -54,6 +55,10 @@ export default function DriverChatScreen() {
       loading={loading}
       onSend={async (content) => {
         const { message } = await sendMessage(id, session.user.id, content);
+        if (message) addMessage(message);
+      }}
+      onSendImage={async (image) => {
+        const { message } = await sendImageMessage(id, session.user.id, image);
         if (message) addMessage(message);
       }}
       onBack={goBack}

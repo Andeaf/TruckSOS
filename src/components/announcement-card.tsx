@@ -15,6 +15,10 @@ interface AnnouncementCardProps {
   driverName?: string;
   compact?: boolean;
   rejectedByUser?: boolean;
+  /** Mecanic: anunț nedeschis încă → „Nou" în loc de status („Deschis"). */
+  isNew?: boolean;
+  /** Șofer: câți mecanici așteaptă răspuns pe acest anunț (0 = fără badge). */
+  applicantCount?: number;
   selectionMode?: boolean;
   selected?: boolean;
   selectable?: boolean;
@@ -22,7 +26,7 @@ interface AnnouncementCardProps {
   onToggleSelect?: () => void;
 }
 
-export function AnnouncementCard({ announcement, onPress, driverName, compact = false, rejectedByUser = false, selectionMode, selected, selectable = true, onLongPress, onToggleSelect }: AnnouncementCardProps) {
+export function AnnouncementCard({ announcement, onPress, driverName, compact = false, rejectedByUser = false, isNew = false, applicantCount = 0, selectionMode, selected, selectable = true, onLongPress, onToggleSelect }: AnnouncementCardProps) {
   const theme = useTheme();
   const { t } = useTranslation();
 
@@ -95,6 +99,10 @@ export function AnnouncementCard({ announcement, onPress, driverName, compact = 
                     {t('mechanic.applications.status_rejected')}
                   </Text>
                 </View>
+              ) : isNew ? (
+                <View style={styles.newBadge}>
+                  <Text style={styles.newBadgeText}>{t('status.new')}</Text>
+                </View>
               ) : (
                 <StatusBadge status={announcement.status} />
               )}
@@ -117,6 +125,21 @@ export function AnnouncementCard({ announcement, onPress, driverName, compact = 
                 {timeAgo(announcement.created_at)}
               </ThemedText>
             </View>
+
+            {/* Șofer: mecanici care așteaptă răspuns. Plin, nu conturat — trebuie
+                să sară în ochi, e singurul lucru de pe card care cere o acțiune. */}
+            {applicantCount > 0 && !selectionMode ? (
+              <View style={styles.applicantsRow}>
+                <View style={styles.applicantsBadge}>
+                  <MaterialIcons name="engineering" size={14} color="#ffffff" />
+                  <Text style={styles.applicantsText}>
+                    {applicantCount === 1
+                      ? t('driver.announcements.applicantsBadgeOne')
+                      : t('driver.announcements.applicantsBadge', { count: applicantCount })}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
           </View>
         </View>
       </ThemedView>
@@ -192,6 +215,36 @@ const styles = StyleSheet.create({
   compactTruckText: { maxWidth: 80 },
   compactTime: { flexShrink: 0 },
 
+  applicantsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: Spacing.one,
+  },
+  applicantsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: Radius.badge,
+    backgroundColor: '#f59e0b',
+  },
+  applicantsText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  newBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: Radius.badge,
+    backgroundColor: '#22c55e1A',
+  },
+  newBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#22c55e',
+  },
   rejectedBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,

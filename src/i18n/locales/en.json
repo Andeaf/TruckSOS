@@ -54,6 +54,10 @@
       "descriptionLabel": "Problem description",
       "descriptionPlaceholder": "e.g.: Engine won't start, smoke from engine, flat tyre...",
       "submitButton": "Post announcement",
+      "photosLabel": "Photos (optional)",
+      "photosHint": "Attach photos of the problem — visible to mechanics.",
+      "photosFailedTitle": "Photos not uploaded",
+      "photosFailedMessage": "The announcement was posted, but {{count}} photo(s) could not be uploaded.",
       "errorDescription": "Please describe the problem.",
       "errorLocation": "Please enter your location.",
       "coordsSectionTitle": "GPS coordinates (optional)",
@@ -104,10 +108,25 @@
       "deleteSelectedConfirmTitle": "Delete selected announcements?",
       "deleteSelectedConfirmMessage": "This action cannot be undone.",
       "deleteSelectedConfirmMessageWithOpen": "Mechanics who applied will be automatically rejected. This action cannot be undone.",
-      "deleteSelectedConfirmOk": "Yes, delete"
+      "deleteSelectedConfirmOk": "Yes, delete",
+      "applicantsBadgeOne": "1 mechanic interested! 👀",
+      "applicantsBadge": "{{count}} mechanics interested! 👀"
     },
     "profile": {
       "phoneHint": "Visible to the mechanic only if you have an active conversation."
+    },
+    "history": {
+      "title": "Problem history",
+      "empty": "You have no problems in your history.",
+      "hint": "Long-press an announcement to select several.",
+      "mechanicLabel": "Mechanic",
+      "selectedCount": "{{count}} selected",
+      "deleteButton": "Delete",
+      "cancel": "Cancel",
+      "deleteConfirmTitle": "Remove from history?",
+      "deleteAllConfirmTitle": "Clear the whole history?",
+      "deleteConfirmMessage": "The announcements disappear from your history but stay saved — you can still rate the mechanics you worked with.",
+      "deleteConfirmOk": "Delete"
     },
     "mechanicProfile": {
       "title": "Mechanic profile",
@@ -195,7 +214,8 @@
   "chat": {
     "emptyMessages": "No messages. Be the first to write!",
     "inputPlaceholder": "Write a message...",
-    "resolvedBanner": "The announcement has been marked as resolved."
+    "resolvedBanner": "The announcement has been marked as resolved.",
+    "attach": "Send a photo"
   },
   "channel": {
     "name": {
@@ -287,6 +307,35 @@
     "open": "Open",
     "accepted": "Accepted",
     "resolved": "Resolved",
-    "cancelled": "Cancelled"
+    "cancelled": "Cancelled",
+    "new": "New"
+  },
+  "photos": {
+    "add": "Add photos",
+    "sourceTitle": "Add photo",
+    "sourceLibrary": "Choose from gallery",
+    "sourceCamera": "Take a photo",
+    "cancel": "Cancel",
+    "remove": "Remove",
+    "sectionTitle": "Photos",
+    "counter": "{{current}} / {{total}}",
+    "close": "Close",
+    "download": "Download",
+    "downloadOk": "Photo saved to your gallery.",
+    "downloadFailed": "The photo could not be saved."
+  },
+  "rating": {
+    "sectionTitle": "Ratings",
+    "noRatings": "No ratings yet",
+    "rateButton": "Rate this mechanic",
+    "editButton": "Edit your rating",
+    "sheetTitle": "Rate this mechanic",
+    "sheetTitleEdit": "Edit your rating",
+    "commentLabel": "Comment (optional)",
+    "commentPlaceholder": "How did it go?",
+    "anonymousHint": "Your review appears anonymously on the mechanic profile.",
+    "saveButton": "Save rating",
+    "errorStarsRequired": "Pick between 1 and 5 stars.",
+    "errorNotAllowed": "You can only rate a mechanic you have a resolved problem with."
   }
 }

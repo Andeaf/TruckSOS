@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -7,19 +7,26 @@ import { useTranslation } from 'react-i18next';
 
 import { useBack } from '@/hooks/use-back';
 import { useTheme } from '@/hooks/use-theme';
+import { RatingBadge, Stars } from '@/components/rating-badge';
+import { RatingSheet } from '@/components/rating-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/use-auth';
 import { startDirectConversation } from '@/hooks/use-chat';
+import { useCanRate, useMechanicReviews, useMyRatingFor } from '@/hooks/use-ratings';
 import type { Profile } from '@/types/database';
 
-type PublicProfile = Pick<Profile, 'full_name' | 'specialization' | 'activity_zone'>;
+type PublicProfile = Pick<
+  Profile,
+  'full_name' | 'specialization' | 'activity_zone' | 'rating_avg' | 'rating_count'
+>;
 
 async function fetchPublicProfile(mechanicId: string): Promise<PublicProfile | null> {
   const { data } = await supabase
     .from('profiles')
-    .select('full_name, specialization, activity_zone')
+    .select('full_name, specialization, activity_zone, rating_avg, rating_count')
     .eq('id', mechanicId)
     .single();
   return (data as PublicProfile) ?? null;
@@ -40,10 +47,18 @@ export default function MechanicProfileScreen() {
   const insets = useSafeAreaInsets();
 
   const router = useRouter();
+  const { session } = useAuth();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [phone, setPhone] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [contacting, setContacting] = useState(false);
+  const [sheetVisible, setSheetVisible] = useState(false);
+
+  // Eligibilitatea (anunț `resolved` comun) e ACEEAȘI condiție pe care o impune RLS —
+  // o verificăm doar ca să nu arătăm un buton care oricum ar fi refuzat.
+  const canRate = useCanRate(id, session?.user.id);
+  const { rating: myRating, refresh: refreshMyRating } = useMyRatingFor(id, session?.user.id);
+  const { reviews, refresh: refreshReviews } = useMechanicReviews(id);
 
   async function handleContact() {
     if (contacting) return;
@@ -58,19 +73,18 @@ export default function MechanicProfileScreen() {
     }
   }
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      const [prof, ph] = await Promise.all([
-        fetchPublicProfile(id),
-        fetchMechanicPhone(id),
-      ]);
-      setProfile(prof);
-      setPhone(ph);
-      setLoading(false);
-    }
-    load();
+  const load = useCallback(async () => {
+    setLoading(true);
+    const [prof, ph] = await Promise.all([
+      fetchPublicProfile(id),
+      fetchMechanicPhone(id),
+    ]);
+    setProfile(prof);
+    setPhone(ph);
+    setLoading(false);
   }, [id]);
+
+  useEffect(() => { load(); }, [load]);
 
   if (loading) {
     return (
@@ -107,6 +121,41 @@ export default function MechanicProfileScreen() {
             <ThemedText type="smallBold">{t('profile.nameLabel')}</ThemedText>
           </View>
           <ThemedText>{profile.full_name}</ThemedText>
+        </ThemedView>
+
+        <ThemedView type="backgroundElement" style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialIcons name="star" size={16} color="#f59e0b" />
+            <ThemedText type="smallBold">{t('rating.sectionTitle')}</ThemedText>
+          </View>
+          <RatingBadge avg={profile.rating_avg} count={profile.rating_count} />
+
+          {canRate ? (
+            <Pressable
+              onPress={() => setSheetVisible(true)}
+              style={({ pressed }) => [styles.rateButton, pressed && styles.pressed]}>
+              <MaterialIcons name="star" size={16} color="#f59e0b" />
+              <ThemedText style={styles.rateButtonText}>
+                {myRating ? t('rating.editButton') : t('rating.rateButton')}
+              </ThemedText>
+            </Pressable>
+          ) : null}
+
+          {/* Review-uri ANONIME: doar stele + comentariu, fără cine le-a scris. */}
+          {reviews.length > 0 ? (
+            <View style={styles.reviews}>
+              {reviews.map((review) => (
+                <View key={review.id} style={styles.review}>
+                  <Stars value={review.stars} />
+                  {review.comment ? (
+                    <ThemedText themeColor="textSecondary" type="small" style={styles.reviewComment}>
+                      &quot;{review.comment}&quot;
+                    </ThemedText>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          ) : null}
         </ThemedView>
 
         <ThemedView type="backgroundElement" style={styles.section}>
@@ -160,6 +209,25 @@ export default function MechanicProfileScreen() {
           </ThemedText>
         </Pressable>
       </ScrollView>
+
+      {sheetVisible && session ? (
+        <RatingSheet
+          visible
+          mechanicId={id}
+          mechanicName={profile.full_name}
+          driverId={session.user.id}
+          initialStars={myRating?.stars}
+          initialComment={myRating?.comment}
+          onClose={() => setSheetVisible(false)}
+          onSaved={() => {
+            setSheetVisible(false);
+            // Media e denormalizată pe profil (trigger) → reîncărcăm profilul, nu doar lista.
+            load();
+            refreshMyRating();
+            refreshReviews();
+          }}
+        />
+      ) : null}
     </ThemedView>
   );
 }
@@ -200,5 +268,21 @@ const styles = StyleSheet.create({
     marginTop: Spacing.two,
   },
   contactButtonText: { color: '#ffffff', fontSize: 15, fontWeight: '600' },
+  rateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.one,
+    alignSelf: 'flex-start',
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.control,
+    borderWidth: 1.5,
+    borderColor: '#f59e0b',
+  },
+  rateButtonText: { color: '#f59e0b', fontSize: 14, fontWeight: '600' },
+  reviews: { gap: Spacing.two, marginTop: Spacing.one },
+  review: { gap: 2 },
+  reviewComment: { fontStyle: 'italic' },
   pressed: { opacity: 0.7 },
 });

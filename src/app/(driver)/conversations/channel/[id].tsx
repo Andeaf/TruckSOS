@@ -9,6 +9,7 @@ import { useBack } from '@/hooks/use-back';
 import {
   fetchChannel,
   markChannelRead,
+  sendChannelImageMessage,
   sendChannelMessage,
   useChannelMessages,
 } from '@/hooks/use-channel-chat';
@@ -47,6 +48,10 @@ export default function DriverChannelChatScreen() {
       }
       onSend={async (content) => {
         const { message } = await sendChannelMessage(id, session.user.id, content);
+        if (message) addMessage(message);
+      }}
+      onSendImage={async (image) => {
+        const { message } = await sendChannelImageMessage(id, session.user.id, image);
         if (message) addMessage(message);
       }}
       onBack={goBack}

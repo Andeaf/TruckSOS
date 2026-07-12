@@ -10,9 +10,15 @@ import { useTheme } from '@/hooks/use-theme';
 
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
+import { PhotoGallery } from '@/components/photo-gallery';
+import { RatingBadge } from '@/components/rating-badge';
+import { RatingSheet } from '@/components/rating-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
+import { useAnnouncementPhotos } from '@/hooks/use-announcement-photos';
+import { useAuth } from '@/hooks/use-auth';
+import { useMyRatingFor } from '@/hooks/use-ratings';
 import {
   fetchAnnouncementById,
   fetchApplicationsForAnnouncement,
@@ -83,6 +89,7 @@ function ApplicantCard({
         <ThemedText type="smallBold" style={styles.applicantName}>
           {app.mechanic.full_name}
         </ThemedText>
+        <RatingBadge avg={app.mechanic.rating_avg} count={app.mechanic.rating_count} />
       </View>
       {app.mechanic.specialization ? (
         <ThemedText themeColor="textSecondary" type="small">
@@ -156,6 +163,13 @@ export default function AnnouncementDetailScreen() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   const [applications, setApplications] = useState<ApplicationWithMechanic[]>([]);
+  const { photos } = useAnnouncementPhotos(id);
+  const { session } = useAuth();
+  const [ratingVisible, setRatingVisible] = useState(false);
+  const { rating: myRating, refresh: refreshMyRating } = useMyRatingFor(
+    announcement?.mechanic_id ?? undefined,
+    session?.user.id,
+  );
 
   async function load() {
     setLoading(true);
@@ -339,7 +353,21 @@ export default function AnnouncementDetailScreen() {
           <ThemedText style={styles.descriptionText}>{announcement.description}</ThemedText>
         </ThemedView>
 
-        {announcement.status === 'accepted' && announcement.mechanic ? (
+        {photos.length > 0 ? (
+          <ThemedView type="backgroundElement" style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons name="photo-library" size={16} color="#208AEF" />
+              <ThemedText type="smallBold">{t('photos.sectionTitle')}</ThemedText>
+              <ThemedText themeColor="textSecondary" type="small">
+                ({photos.length})
+              </ThemedText>
+            </View>
+            <PhotoGallery photos={photos} />
+          </ThemedView>
+        ) : null}
+
+        {(announcement.status === 'accepted' || announcement.status === 'resolved') &&
+        announcement.mechanic ? (
           <ThemedView type="backgroundElement" style={styles.section}>
             <View style={styles.sectionHeader}>
               <MaterialIcons name="person" size={16} color="#f59e0b" />
@@ -404,9 +432,23 @@ export default function AnnouncementDetailScreen() {
         ) : null}
 
         {announcement.status === 'resolved' ? (
-          <ThemedText themeColor="textSecondary" style={styles.hint}>
-            {t('driver.announcements.hintResolved')}
-          </ThemedText>
+          <>
+            {/* Evaluarea se poate da și de aici, nu doar din Istoric — aceeași
+                condiție ca în RLS: anunț `resolved` cu mecanic asignat. */}
+            {announcement.mechanic_id && announcement.mechanic ? (
+              <Pressable
+                onPress={() => setRatingVisible(true)}
+                style={({ pressed }) => [styles.rateButton, pressed && styles.pressed]}>
+                <MaterialIcons name="star" size={18} color="#f59e0b" />
+                <ThemedText style={styles.rateButtonText}>
+                  {myRating ? t('rating.editButton') : t('rating.rateButton')}
+                </ThemedText>
+              </Pressable>
+            ) : null}
+            <ThemedText themeColor="textSecondary" style={styles.hint}>
+              {t('driver.announcements.hintResolved')}
+            </ThemedText>
+          </>
         ) : null}
 
         {announcement.status === 'cancelled' ? (
@@ -415,6 +457,19 @@ export default function AnnouncementDetailScreen() {
           </ThemedText>
         ) : null}
       </ScrollView>
+
+      {ratingVisible && session && announcement.mechanic_id && announcement.mechanic ? (
+        <RatingSheet
+          visible
+          mechanicId={announcement.mechanic_id}
+          mechanicName={announcement.mechanic.full_name}
+          driverId={session.user.id}
+          initialStars={myRating?.stars}
+          initialComment={myRating?.comment}
+          onClose={() => setRatingVisible(false)}
+          onSaved={() => { setRatingVisible(false); refreshMyRating(); }}
+        />
+      ) : null}
     </ThemedView>
   );
 }
@@ -465,6 +520,17 @@ const styles = StyleSheet.create({
     borderColor: '#208AEF',
   },
   mapsButtonText: { color: '#208AEF', fontSize: 14, fontWeight: '600' },
+  rateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+    paddingVertical: Spacing.three,
+    borderRadius: Radius.control,
+    borderWidth: 1.5,
+    borderColor: '#f59e0b',
+  },
+  rateButtonText: { color: '#f59e0b', fontSize: 15, fontWeight: '600' },
   error: { color: '#ef4444', fontSize: 14 },
   hint: { textAlign: 'center', fontSize: 14, lineHeight: 20 },
   profileLink: {

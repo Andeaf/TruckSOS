@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
+import { uploadPhoto } from '@/lib/storage';
+import type { PickedImage } from '@/lib/media';
 import type { Channel, ChannelMessage, Role } from '@/types/database';
 
 const PAGE_SIZE = 50;
@@ -130,14 +132,37 @@ export function useChannelMessages(channelId: string) {
 export async function sendChannelMessage(
   channelId: string,
   senderId: string,
-  content: string
+  content: string,
+  imagePath: string | null = null
 ): Promise<{ message: ChannelMessageWithSender | null; error: string | null }> {
   const { data, error } = await supabase
     .from('channel_messages')
-    .insert({ channel_id: channelId, sender_id: senderId, content } as never)
+    .insert({
+      channel_id: channelId,
+      sender_id: senderId,
+      content,
+      image_path: imagePath,
+    } as never)
     .select('*, sender:profiles!sender_id(full_name,role)')
     .single();
   return { message: (data as unknown as ChannelMessageWithSender) ?? null, error: error?.message ?? null };
+}
+
+/**
+ * Poză în canal (Etapa 9.2.4) — simetric cu `sendImageMessage` din chatul privat:
+ * comprimă + urcă în `channel/{channelId}/`, apoi inserează mesajul-imagine.
+ */
+export async function sendChannelImageMessage(
+  channelId: string,
+  senderId: string,
+  image: PickedImage
+): Promise<{ message: ChannelMessageWithSender | null; error: string | null }> {
+  const { path, error } = await uploadPhoto('channel', channelId, image);
+  if (error || !path) {
+    console.warn('[channel] upload poză eșuat:', error);
+    return { message: null, error: error ?? 'upload_failed' };
+  }
+  return sendChannelMessage(channelId, senderId, '', path);
 }
 
 export async function markChannelRead(channelId: string): Promise<void> {

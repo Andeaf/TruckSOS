@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -12,7 +12,11 @@ import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
-import { useMyAnnouncements, deleteAnnouncement } from '@/hooks/use-announcements';
+import {
+  useMyAnnouncements,
+  deleteAnnouncement,
+  fetchPendingApplicationCounts,
+} from '@/hooks/use-announcements';
 import type { Announcement } from '@/types/database';
 
 export default function DriverAnnouncementsScreen() {
@@ -24,12 +28,19 @@ export default function DriverAnnouncementsScreen() {
   const insets = useSafeAreaInsets();
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [applicantCounts, setApplicantCounts] = useState<Record<string, number>>({});
 
   useFocusEffect(
     useCallback(() => {
       refresh();
     }, [refresh])
   );
+
+  // Ofertele în așteptare, recalculate ori de câte ori se schimbă lista de anunțuri.
+  useEffect(() => {
+    const openIds = announcements.filter((a) => a.status === 'open').map((a) => a.id);
+    fetchPendingApplicationCounts(openIds).then(setApplicantCounts);
+  }, [announcements]);
 
   function isSelectable(a: Announcement) {
     return a.status === 'open' || a.status === 'cancelled' || a.status === 'resolved';
@@ -119,6 +130,7 @@ export default function DriverAnnouncementsScreen() {
           return (
             <AnnouncementCard
               announcement={item}
+              applicantCount={applicantCounts[item.id] ?? 0}
               selectionMode={selectionMode}
               selected={selectedIds.has(item.id)}
               selectable={selectable}

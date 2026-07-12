@@ -338,3 +338,281 @@ BEGIN
   RETURN v_phone;
 END;
 $$;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- FAZA 9 — Poze (anunțuri + chat), Istoric probleme, Rating mecanici
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Consolidat din: 20260711_faza9_etapa901, _etapa911, 20260712_faza9_etapa921,
+-- _etapa924, _etapa931, _etapa941. Vezi fișierele individuale pentru comentarii.
+
+-- ─── Storage: bucket privat `photos` ───────────────────────────────────────
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('photos', 'photos', false)
+ON CONFLICT (id) DO NOTHING;
+
+-- NOTĂ: în subinterogări, `name` se califică OBLIGATORIU `objects.name` — altfel se
+-- leagă de coloana `name` a tabelei interogate (a spart uploadul pe canale: `channels`
+-- are coloana `name`). Vezi 20260712_faza9_etapa924_channel_photos.sql.
+
+DROP POLICY IF EXISTS "photos_insert_announcement" ON storage.objects;
+CREATE POLICY "photos_insert_announcement" ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'photos'
+    AND (storage.foldername(objects.name))[1] = 'announcements'
+    AND EXISTS (
+      SELECT 1 FROM announcements a
+      WHERE a.id::text = (storage.foldername(objects.name))[2] AND a.driver_id = auth.uid()
+    )
+  );
+
+DROP POLICY IF EXISTS "photos_select_announcement" ON storage.objects;
+CREATE POLICY "photos_select_announcement" ON storage.objects
+  FOR SELECT TO authenticated
+  USING (
+    bucket_id = 'photos'
+    AND (storage.foldername(objects.name))[1] = 'announcements'
+    AND EXISTS (
+      SELECT 1 FROM announcements a
+      WHERE a.id::text = (storage.foldername(objects.name))[2]
+        AND (
+          a.driver_id = auth.uid()
+          OR a.mechanic_id = auth.uid()
+          OR (a.status = 'open'
+              AND EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid() AND p.role = 'mechanic'))
+        )
+    )
+  );
+
+DROP POLICY IF EXISTS "photos_delete_announcement" ON storage.objects;
+CREATE POLICY "photos_delete_announcement" ON storage.objects
+  FOR DELETE TO authenticated
+  USING (
+    bucket_id = 'photos'
+    AND (storage.foldername(objects.name))[1] = 'announcements'
+    AND EXISTS (
+      SELECT 1 FROM announcements a
+      WHERE a.id::text = (storage.foldername(objects.name))[2] AND a.driver_id = auth.uid()
+    )
+  );
+
+DROP POLICY IF EXISTS "photos_insert_chat" ON storage.objects;
+CREATE POLICY "photos_insert_chat" ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'photos'
+    AND (storage.foldername(objects.name))[1] = 'chat'
+    AND EXISTS (
+      SELECT 1 FROM conversations c
+      WHERE c.id::text = (storage.foldername(objects.name))[2]
+        AND (c.driver_id = auth.uid() OR c.mechanic_id = auth.uid())
+    )
+  );
+
+DROP POLICY IF EXISTS "photos_select_chat" ON storage.objects;
+CREATE POLICY "photos_select_chat" ON storage.objects
+  FOR SELECT TO authenticated
+  USING (
+    bucket_id = 'photos'
+    AND (storage.foldername(objects.name))[1] = 'chat'
+    AND EXISTS (
+      SELECT 1 FROM conversations c
+      WHERE c.id::text = (storage.foldername(objects.name))[2]
+        AND (c.driver_id = auth.uid() OR c.mechanic_id = auth.uid())
+    )
+  );
+
+DROP POLICY IF EXISTS "photos_insert_channel" ON storage.objects;
+CREATE POLICY "photos_insert_channel" ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'photos'
+    AND (storage.foldername(objects.name))[1] = 'channel'
+    AND EXISTS (SELECT 1 FROM channels c WHERE c.id::text = (storage.foldername(objects.name))[2])
+  );
+
+DROP POLICY IF EXISTS "photos_select_channel" ON storage.objects;
+CREATE POLICY "photos_select_channel" ON storage.objects
+  FOR SELECT TO authenticated
+  USING (
+    bucket_id = 'photos'
+    AND (storage.foldername(objects.name))[1] = 'channel'
+    AND EXISTS (SELECT 1 FROM channels c WHERE c.id::text = (storage.foldername(objects.name))[2])
+  );
+
+-- ─── 9.1: Poze anunțuri ────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS announcement_photos (
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  announcement_id uuid NOT NULL REFERENCES announcements(id) ON DELETE CASCADE,
+  storage_path    text NOT NULL,
+  created_at      timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_announcement_photos_ann ON announcement_photos(announcement_id);
+ALTER TABLE announcement_photos ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "announcement_photos_select" ON announcement_photos;
+CREATE POLICY "announcement_photos_select" ON announcement_photos
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM announcements a
+      WHERE a.id = announcement_photos.announcement_id
+        AND (
+          a.driver_id = auth.uid()
+          OR a.mechanic_id = auth.uid()
+          OR (a.status = 'open'
+              AND EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid() AND p.role = 'mechanic'))
+        )
+    )
+  );
+
+DROP POLICY IF EXISTS "announcement_photos_insert" ON announcement_photos;
+CREATE POLICY "announcement_photos_insert" ON announcement_photos
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM announcements a
+            WHERE a.id = announcement_photos.announcement_id AND a.driver_id = auth.uid())
+  );
+
+DROP POLICY IF EXISTS "announcement_photos_delete" ON announcement_photos;
+CREATE POLICY "announcement_photos_delete" ON announcement_photos
+  FOR DELETE TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM announcements a
+            WHERE a.id = announcement_photos.announcement_id AND a.driver_id = auth.uid())
+  );
+
+-- ─── 9.2: Poze chat (privat + canale) ──────────────────────────────────────
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS image_path text;
+ALTER TABLE messages DROP CONSTRAINT IF EXISTS messages_text_or_image;
+ALTER TABLE messages ADD CONSTRAINT messages_text_or_image
+  CHECK (content <> '' OR image_path IS NOT NULL);
+
+ALTER TABLE channel_messages ADD COLUMN IF NOT EXISTS image_path text;
+ALTER TABLE channel_messages DROP CONSTRAINT IF EXISTS channel_messages_text_or_image;
+ALTER TABLE channel_messages ADD CONSTRAINT channel_messages_text_or_image
+  CHECK (content <> '' OR image_path IS NOT NULL);
+
+-- ─── 9.3: Istoric (soft-delete + RPC) ──────────────────────────────────────
+ALTER TABLE announcements
+  ADD COLUMN IF NOT EXISTS hidden_from_history boolean NOT NULL DEFAULT false;
+
+CREATE OR REPLACE FUNCTION set_announcements_hidden(p_ids uuid[] DEFAULT NULL)
+RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_count integer;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated';
+  END IF;
+  UPDATE announcements a
+     SET hidden_from_history = true
+   WHERE a.driver_id = auth.uid()
+     AND a.hidden_from_history = false
+     AND (p_ids IS NULL OR a.id = ANY(p_ids));
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN v_count;
+END;
+$$;
+REVOKE ALL ON FUNCTION set_announcements_hidden(uuid[]) FROM public;
+GRANT EXECUTE ON FUNCTION set_announcements_hidden(uuid[]) TO authenticated;
+
+-- ─── 9.4: Rating mecanici ──────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS ratings (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  mechanic_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  driver_id   uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  stars       smallint NOT NULL CHECK (stars BETWEEN 1 AND 5),
+  comment     text,
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  updated_at  timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (mechanic_id, driver_id)
+);
+CREATE INDEX IF NOT EXISTS idx_ratings_mechanic ON ratings(mechanic_id);
+
+ALTER TABLE profiles
+  ADD COLUMN IF NOT EXISTS rating_avg   numeric(2,1) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS rating_count integer      NOT NULL DEFAULT 0;
+
+CREATE OR REPLACE FUNCTION recompute_mechanic_rating(p_mechanic uuid)
+RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
+  UPDATE profiles p SET
+    rating_avg   = coalesce((SELECT round(avg(stars)::numeric, 1) FROM ratings WHERE mechanic_id = p_mechanic), 0),
+    rating_count = (SELECT count(*) FROM ratings WHERE mechanic_id = p_mechanic)
+  WHERE p.id = p_mechanic;
+$$;
+
+CREATE OR REPLACE FUNCTION ratings_after_change()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  PERFORM recompute_mechanic_rating(coalesce(NEW.mechanic_id, OLD.mechanic_id));
+  RETURN NULL;
+END;
+$$;
+DROP TRIGGER IF EXISTS ratings_recompute ON ratings;
+CREATE TRIGGER ratings_recompute
+  AFTER INSERT OR UPDATE OR DELETE ON ratings
+  FOR EACH ROW EXECUTE FUNCTION ratings_after_change();
+
+CREATE OR REPLACE FUNCTION ratings_touch_updated_at()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.updated_at := now();
+  RETURN NEW;
+END;
+$$;
+DROP TRIGGER IF EXISTS ratings_set_updated_at ON ratings;
+CREATE TRIGGER ratings_set_updated_at
+  BEFORE UPDATE ON ratings
+  FOR EACH ROW EXECUTE FUNCTION ratings_touch_updated_at();
+
+ALTER TABLE ratings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS ratings_select_all ON ratings;
+CREATE POLICY ratings_select_all ON ratings
+  FOR SELECT TO authenticated USING (auth.uid() IS NOT NULL);
+
+DROP POLICY IF EXISTS ratings_insert_own ON ratings;
+CREATE POLICY ratings_insert_own ON ratings
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    driver_id = auth.uid()
+    AND EXISTS (SELECT 1 FROM announcements a
+                WHERE a.driver_id = auth.uid() AND a.mechanic_id = ratings.mechanic_id
+                  AND a.status = 'resolved')
+  );
+
+DROP POLICY IF EXISTS ratings_update_own ON ratings;
+CREATE POLICY ratings_update_own ON ratings
+  FOR UPDATE TO authenticated
+  USING (driver_id = auth.uid())
+  WITH CHECK (
+    driver_id = auth.uid()
+    AND EXISTS (SELECT 1 FROM announcements a
+                WHERE a.driver_id = auth.uid() AND a.mechanic_id = ratings.mechanic_id
+                  AND a.status = 'resolved')
+  );
+
+DROP POLICY IF EXISTS ratings_delete_own ON ratings;
+CREATE POLICY ratings_delete_own ON ratings
+  FOR DELETE TO authenticated USING (driver_id = auth.uid());
+
+-- search_mechanics: versiunea finală (Faza 9) — cu rating_avg + rating_count
+DROP FUNCTION IF EXISTS search_mechanics(text);
+CREATE FUNCTION search_mechanics(p_query text)
+RETURNS TABLE (
+  id uuid, full_name text, specialization text, activity_zone text,
+  rating_avg numeric, rating_count integer
+)
+LANGUAGE sql STABLE SECURITY INVOKER
+SET search_path = public, extensions
+AS $$
+  SELECT p.id, p.full_name, p.specialization, p.activity_zone, p.rating_avg, p.rating_count
+  FROM profiles p
+  WHERE p.role = 'mechanic'
+    AND extensions.unaccent(replace(lower(p.full_name), 'ß', 'ss'))
+        LIKE '%' || extensions.unaccent(replace(lower(p_query), 'ß', 'ss')) || '%'
+  ORDER BY p.full_name
+  LIMIT 30;
+$$;
+

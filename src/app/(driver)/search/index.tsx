@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/empty-state';
 import { Input } from '@/components/ui/input';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { RatingBadge } from '@/components/rating-badge';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -48,7 +49,7 @@ function MechanicResultCard({
               </ThemedText>
             </View>
           ) : null}
-          {/* Slot rating: se completează în Faza 9 — până atunci nu se afișează nimic */}
+          <RatingBadge avg={mechanic.rating_avg} count={mechanic.rating_count} />
         </View>
         <MaterialIcons name="chevron-right" size={22} color={theme.textSecondary} />
       </ThemedView>
