@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
+import { Avatar } from '@/components/avatar';
 import { EmptyState } from '@/components/empty-state';
 import { Input } from '@/components/ui/input';
 import { ScreenHeader } from '@/components/screen-header';
@@ -11,6 +12,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { RatingBadge } from '@/components/rating-badge';
 import { Radius, Spacing } from '@/constants/theme';
+import { useSignedUrls } from '@/hooks/use-signed-urls';
 import { useTheme } from '@/hooks/use-theme';
 import {
   SEARCH_MIN_LENGTH,
@@ -20,15 +22,18 @@ import {
 
 function MechanicResultCard({
   mechanic,
+  avatarUrl,
   onPress,
 }: {
   mechanic: MechanicSearchResult;
+  avatarUrl?: string;
   onPress: () => void;
 }) {
   const theme = useTheme();
   return (
     <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView type="backgroundElement" style={styles.card}>
+        <Avatar url={avatarUrl} name={mechanic.full_name} size={44} />
         <View style={styles.cardContent}>
           <ThemedText type="smallBold" numberOfLines={1}>
             {mechanic.full_name}
@@ -62,6 +67,13 @@ export default function DriverSearchScreen() {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const { results, loading } = useMechanicSearch(query);
+
+  // Un singur apel batch de URL-uri semnate pentru toate avatarele din listă.
+  const avatarPaths = useMemo(
+    () => results.map((m) => m.avatar_path).filter((p): p is string => !!p),
+    [results]
+  );
+  const avatarUrls = useSignedUrls(avatarPaths);
 
   const queryActive = query.trim().length >= SEARCH_MIN_LENGTH;
 
@@ -101,6 +113,7 @@ export default function DriverSearchScreen() {
           renderItem={({ item }) => (
             <MechanicResultCard
               mechanic={item}
+              avatarUrl={item.avatar_path ? avatarUrls[item.avatar_path] : undefined}
               onPress={() =>
                 router.push({
                   pathname: '/(driver)/mechanic-profile/[id]' as never,

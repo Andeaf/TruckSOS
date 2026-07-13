@@ -3,12 +3,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { uploadPhoto } from '@/lib/storage';
 import type { PickedImage } from '@/lib/media';
-import type { Channel, ChannelMessage, Role } from '@/types/database';
+import type { Channel, ChannelMessage, PublicUser, Role } from '@/types/database';
 
 const PAGE_SIZE = 50;
 
 export type ChannelMessageWithSender = ChannelMessage & {
-  sender: { full_name: string; role: Role };
+  sender: PublicUser & { role: Role };
 };
 
 export function useChannels() {
@@ -59,7 +59,7 @@ export function useChannelMessages(channelId: string) {
     (async () => {
       const { data } = await supabase
         .from('channel_messages')
-        .select('*, sender:profiles!sender_id(full_name,role)')
+        .select('*, sender:profiles!sender_id(full_name,role,avatar_path)')
         .eq('channel_id', channelId)
         .order('created_at', { ascending: false })
         .limit(PAGE_SIZE);
@@ -88,15 +88,16 @@ export function useChannelMessages(channelId: string) {
           if (messagesRef.current.some((m) => m.id === incoming.id)) return;
           const { data: sender } = await supabase
             .from('profiles')
-            .select('full_name,role')
+            .select('full_name,role,avatar_path')
             .eq('id', incoming.sender_id)
             .single();
           if (!active) return;
           addMessage({
             ...incoming,
-            sender: (sender as { full_name: string; role: Role } | null) ?? {
+            sender: (sender as (PublicUser & { role: Role }) | null) ?? {
               full_name: '',
               role: 'driver',
+              avatar_path: null,
             },
           });
         }
@@ -115,7 +116,7 @@ export function useChannelMessages(channelId: string) {
     const oldest = messagesRef.current[0].created_at;
     const { data } = await supabase
       .from('channel_messages')
-      .select('*, sender:profiles!sender_id(full_name,role)')
+      .select('*, sender:profiles!sender_id(full_name,role,avatar_path)')
       .eq('channel_id', channelId)
       .lt('created_at', oldest)
       .order('created_at', { ascending: false })
@@ -143,7 +144,7 @@ export async function sendChannelMessage(
       content,
       image_path: imagePath,
     } as never)
-    .select('*, sender:profiles!sender_id(full_name,role)')
+    .select('*, sender:profiles!sender_id(full_name,role,avatar_path)')
     .single();
   return { message: (data as unknown as ChannelMessageWithSender) ?? null, error: error?.message ?? null };
 }

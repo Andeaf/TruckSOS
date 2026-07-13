@@ -19,6 +19,9 @@ export interface Profile {
   created_at: string;
 }
 
+/** Ce arătăm despre un alt utilizator în liste/carduri: nume + avatar. */
+export type PublicUser = Pick<Profile, 'full_name' | 'avatar_path'>;
+
 /** Evaluare dată de un șofer unui mecanic. UNIQUE(mechanic_id, driver_id) → upsert. */
 export interface Rating {
   id: string;

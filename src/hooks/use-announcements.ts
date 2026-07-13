@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
-import type { Announcement, Application, Profile, PriceType } from '@/types/database';
+import type { Announcement, Application, Profile, PriceType, PublicUser } from '@/types/database';
 import { useAuth } from '@/hooks/use-auth';
 
 export type AnnouncementWithMechanic = Announcement & {
-  mechanic: { full_name: string } | null;
+  mechanic: PublicUser | null;
 };
 
 export type AnnouncementWithDriver = Announcement & {
-  driver: { full_name: string } | null;
+  driver: PublicUser | null;
 };
 
 // Hook for driver: own announcements (all statuses)
@@ -41,7 +41,7 @@ export function useOpenAnnouncements() {
     setLoading(true);
     const { data } = await supabase
       .from('announcements')
-      .select('*, driver:profiles!driver_id(full_name)')
+      .select('*, driver:profiles!driver_id(full_name,avatar_path)')
       .eq('status', 'open')
       .order('created_at', { ascending: false });
     setAnnouncements((data as unknown as AnnouncementWithDriver[]) ?? []);
@@ -122,7 +122,7 @@ export async function fetchAnnouncementById(
 ): Promise<AnnouncementWithMechanic | null> {
   const { data } = await supabase
     .from('announcements')
-    .select('*, mechanic:profiles!mechanic_id(full_name)')
+    .select('*, mechanic:profiles!mechanic_id(full_name,avatar_path)')
     .eq('id', id)
     .single();
   return (data as unknown as AnnouncementWithMechanic) ?? null;
@@ -140,7 +140,7 @@ export async function fetchOpenAnnouncementById(
 ): Promise<AnnouncementWithDriver | null> {
   const { data } = await supabase
     .from('announcements')
-    .select('*, driver:profiles!driver_id(full_name)')
+    .select('*, driver:profiles!driver_id(full_name,avatar_path)')
     .eq('id', id)
     .single();
   return (data as unknown as AnnouncementWithDriver) ?? null;
@@ -186,7 +186,13 @@ export async function fetchMyApplicationForAnnouncement(
 export type ApplicationWithMechanic = Application & {
   mechanic: Pick<
     Profile,
-    'id' | 'full_name' | 'specialization' | 'activity_zone' | 'rating_avg' | 'rating_count'
+    | 'id'
+    | 'full_name'
+    | 'specialization'
+    | 'activity_zone'
+    | 'rating_avg'
+    | 'rating_count'
+    | 'avatar_path'
   >;
 };
 
@@ -265,7 +271,7 @@ export async function fetchApplicationsForAnnouncement(
   const { data } = await supabase
     .from('applications')
     .select(
-      '*, mechanic:profiles!mechanic_id(id, full_name, specialization, activity_zone, rating_avg, rating_count)'
+      '*, mechanic:profiles!mechanic_id(id, full_name, specialization, activity_zone, rating_avg, rating_count, avatar_path)'
     )
     .eq('announcement_id', announcementId)
     .eq('status', 'pending')
@@ -278,7 +284,7 @@ export type ApplicationWithDetails = Application & {
     Announcement,
     'id' | 'location' | 'description' | 'status' | 'truck_make' | 'truck_model' | 'truck_year' | 'plate_number' | 'latitude' | 'longitude'
   > & {
-    driver: { full_name: string } | null;
+    driver: PublicUser | null;
     conversations: { id: string }[];
   };
 };
@@ -296,7 +302,7 @@ export function useMyApplications() {
       .select(
         `*, announcement:announcements!announcement_id(
           id, location, description, status, truck_make, truck_model, truck_year, plate_number, latitude, longitude,
-          driver:profiles!driver_id(full_name),
+          driver:profiles!driver_id(full_name,avatar_path),
           conversations(id)
         )`
       )
@@ -321,7 +327,7 @@ export function useApplication(id: string) {
       .select(
         `*, announcement:announcements!announcement_id(
           id, location, description, status, truck_make, truck_model, truck_year, plate_number, latitude, longitude,
-          driver:profiles!driver_id(full_name),
+          driver:profiles!driver_id(full_name,avatar_path),
           conversations(id)
         )`
       )

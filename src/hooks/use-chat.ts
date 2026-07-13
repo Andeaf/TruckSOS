@@ -3,14 +3,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { uploadPhoto } from '@/lib/storage';
 import type { PickedImage } from '@/lib/media';
-import type { Announcement, Conversation, Message } from '@/types/database';
+import type { Announcement, Conversation, Message, PublicUser } from '@/types/database';
 import type { AnnouncementStatus } from '@/types/database';
 
 export type ConversationWithDetails = Conversation & {
   // null pentru conversații directe (fără anunț)
   announcement: { location: string; status: AnnouncementStatus; description: string } | null;
-  driver: { full_name: string };
-  mechanic: { full_name: string };
+  driver: PublicUser;
+  mechanic: PublicUser;
 };
 
 export function useConversations(userId: string | undefined) {
@@ -30,7 +30,7 @@ export function useConversations(userId: string | undefined) {
     let query = supabase
       .from('conversations')
       .select(
-        '*, announcement:announcements!announcement_id(location,status,description), driver:profiles!driver_id(full_name), mechanic:profiles!mechanic_id(full_name)'
+        '*, announcement:announcements!announcement_id(location,status,description), driver:profiles!driver_id(full_name,avatar_path), mechanic:profiles!mechanic_id(full_name,avatar_path)'
       )
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .or(`driver_id.eq.${userId},mechanic_id.eq.${userId}` as any)
@@ -284,7 +284,7 @@ export async function fetchConversationDetails(
   const { data } = await supabase
     .from('conversations')
     .select(
-      '*, announcement:announcements!announcement_id(location,status,description), driver:profiles!driver_id(full_name), mechanic:profiles!mechanic_id(full_name)'
+      '*, announcement:announcements!announcement_id(location,status,description), driver:profiles!driver_id(full_name,avatar_path), mechanic:profiles!mechanic_id(full_name,avatar_path)'
     )
     .eq('id', conversationId)
     .single();

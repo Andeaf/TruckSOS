@@ -17,6 +17,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
+import { Avatar } from '@/components/avatar';
 import { PhotoViewer } from '@/components/photo-viewer';
 import { HeaderText, ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
@@ -50,6 +51,10 @@ interface MessageBubbleProps<M extends ChatMessageBase> {
   senderLabel?: string | null;
   /** URL semnat, când mesajul e o poză; lipsește cât timp se semnează sau dacă RLS refuză. */
   imageUrl?: string;
+  /** Avatarul expeditorului, doar în chatul de grup (unde mesajele vin de la mai mulți). */
+  senderName?: string | null;
+  senderAvatarUrl?: string;
+  showSenderAvatar?: boolean;
   onPressImage?: () => void;
 }
 
@@ -59,12 +64,18 @@ function MessageBubble<M extends ChatMessageBase>({
   accentColor,
   senderLabel,
   imageUrl,
+  senderName,
+  senderAvatarUrl,
+  showSenderAvatar,
   onPressImage,
 }: MessageBubbleProps<M>) {
   const theme = useTheme();
   const isImage = !!message.image_path;
   return (
     <View style={[styles.bubbleRow, isMe ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
+      {showSenderAvatar && !isMe ? (
+        <Avatar url={senderAvatarUrl} name={senderName} size={32} />
+      ) : null}
       <View style={styles.bubbleColumn}>
         {senderLabel ? (
           <ThemedText themeColor="textSecondary" type="small" style={styles.senderLabel}>
@@ -133,6 +144,11 @@ interface ChatScreenProps<M extends ChatMessageBase> {
    */
   onSendImage?: (image: PickedImage) => Promise<void>;
   renderSenderLabel?: (message: M) => string | null;
+  /** Chat de grup: numele + avatarul expeditorului, lângă bulele celorlalți. */
+  renderSenderName?: (message: M) => string | null;
+  renderSenderAvatarPath?: (message: M) => string | null;
+  /** Avatarul interlocutorului, în antet (chat 1-la-1). */
+  headerAvatarPath?: string | null;
   onBack: () => void;
 }
 
@@ -150,6 +166,9 @@ export function ChatScreen<M extends ChatMessageBase>({
   onSend,
   onSendImage,
   renderSenderLabel,
+  renderSenderName,
+  renderSenderAvatarPath,
+  headerAvatarPath,
   onBack,
 }: ChatScreenProps<M>) {
   const { t } = useTranslation();
@@ -177,12 +196,14 @@ export function ChatScreen<M extends ChatMessageBase>({
   // Inverted FlatList needs data in descending order (newest first = shown at bottom)
   const reversedMessages = useMemo(() => [...messages].reverse(), [messages]);
 
-  // URL-uri semnate pt. mesajele-imagine, cerute în batch pe măsură ce sosesc.
-  const imagePaths = useMemo(
-    () => messages.map((m) => m.image_path).filter((p): p is string => !!p),
-    [messages],
-  );
-  const urls = useSignedUrls(imagePaths);
+  // URL-uri semnate pt. poze ȘI avatare, într-un singur batch care crește pe măsură
+  // ce sosesc mesaje noi (`useSignedUrls` cere doar path-urile încă nesemnate).
+  const paths = useMemo(() => {
+    const imagePaths = messages.map((m) => m.image_path);
+    const avatarPaths = renderSenderAvatarPath ? messages.map(renderSenderAvatarPath) : [];
+    return [...imagePaths, ...avatarPaths, headerAvatarPath].filter((p): p is string => !!p);
+  }, [messages, renderSenderAvatarPath, headerAvatarPath]);
+  const urls = useSignedUrls(paths);
 
   // Pozele conversației, în ordine cronologică: viewer-ul le parcurge pe toate,
   // nu doar pe cea atinsă.
@@ -234,6 +255,13 @@ export function ChatScreen<M extends ChatMessageBase>({
         <Pressable onPress={onBack} hitSlop={12}>
           <MaterialIcons name="arrow-back" size={24} color={theme.onHeader} />
         </Pressable>
+        {headerAvatarPath !== undefined ? (
+          <Avatar
+            url={headerAvatarPath ? urls[headerAvatarPath] : undefined}
+            name={title}
+            size={36}
+          />
+        ) : null}
         <View style={styles.headerInfo}>
           <HeaderText numberOfLines={1}>{title}</HeaderText>
           <View style={styles.locationRow}>
@@ -284,7 +312,9 @@ export function ChatScreen<M extends ChatMessageBase>({
                 </View>
               ) : null
             }
-            renderItem={({ item }) => (
+            renderItem={({ item }) => {
+              const avatarPath = renderSenderAvatarPath?.(item) ?? null;
+              return (
               <MessageBubble
                 message={item}
                 isMe={item.sender_id === currentUserId}
@@ -294,13 +324,17 @@ export function ChatScreen<M extends ChatMessageBase>({
                     ? renderSenderLabel(item)
                     : null
                 }
+                showSenderAvatar={!!renderSenderAvatarPath}
+                senderName={renderSenderName?.(item) ?? null}
+                senderAvatarUrl={avatarPath ? urls[avatarPath] : undefined}
                 imageUrl={item.image_path ? urls[item.image_path] : undefined}
                 onPressImage={() => {
                   const index = viewerPhotos.findIndex((p) => p.id === item.id);
                   if (index >= 0) setViewerAt(index);
                 }}
               />
-            )}
+              );
+            }}
           />
         )}
 
@@ -388,7 +422,8 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
   },
   loadingMore: { paddingVertical: Spacing.two, alignItems: 'center' },
-  bubbleRow: { flexDirection: 'row', marginVertical: 2 },
+  // `flex-end`: în chatul de grup avatarul stă lângă baza bulei, nu lângă vârful ei.
+  bubbleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.one, marginVertical: 2 },
   bubbleRowRight: { justifyContent: 'flex-end' },
   bubbleRowLeft: { justifyContent: 'flex-start' },
   bubbleColumn: { maxWidth: '78%' },

@@ -22,7 +22,7 @@ export function useHistory(driverId: string | undefined) {
     setLoading(true);
     const { data } = await supabase
       .from('announcements')
-      .select('*, mechanic:profiles!mechanic_id(id, full_name)')
+      .select('*, mechanic:profiles!mechanic_id(id, full_name, avatar_path)')
       .eq('driver_id', driverId)
       .eq('hidden_from_history', false)
       .order('created_at', { ascending: false });

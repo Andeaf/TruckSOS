@@ -44,6 +44,7 @@ export default function DriverChatScreen() {
       currentUserId={session.user.id}
       accentColor="#208AEF"
       title={conv.mechanic.full_name}
+      headerAvatarPath={conv.mechanic.avatar_path}
       subtitle={conv.announcement?.location ?? t('conversations.directLabel')}
       subtitleIcon={conv.announcement ? 'location-on' : 'forum'}
       bannerText={

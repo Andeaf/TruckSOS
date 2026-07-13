@@ -43,6 +43,8 @@ export default function DriverChannelChatScreen() {
       loading={loading}
       loadingMore={loadingMore}
       onLoadOlder={loadOlder}
+      renderSenderName={(message) => message.sender.full_name}
+      renderSenderAvatarPath={(message) => message.sender.avatar_path}
       renderSenderLabel={(message) =>
         `${message.sender.full_name} · ${t(`auth.roleSelect.${message.sender.role}Title`)}`
       }

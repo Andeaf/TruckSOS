@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useBack } from '@/hooks/use-back';
 import { ApplyBottomSheet } from '@/components/apply-bottom-sheet';
+import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/ui/button';
 import { PhotoGallery } from '@/components/photo-gallery';
 import { ScreenHeader } from '@/components/screen-header';
@@ -21,6 +22,7 @@ import {
 import { useAnnouncementPhotos } from '@/hooks/use-announcement-photos';
 import { markAnnouncementViewed } from '@/hooks/use-viewed-announcements';
 import { useAuth } from '@/hooks/use-auth';
+import { useSignedUrl } from '@/hooks/use-signed-urls';
 import { openInGoogleMaps } from '@/lib/location';
 import type { Application } from '@/types/database';
 
@@ -116,6 +118,7 @@ export default function MechanicAnnouncementDetailScreen() {
   const [sheetVisible, setSheetVisible] = useState(false);
   const [resubmitMode, setResubmitMode] = useState(false);
   const { photos } = useAnnouncementPhotos(id);
+  const driverAvatarUrl = useSignedUrl(announcement?.driver?.avatar_path);
 
   async function load() {
     setLoading(true);
@@ -184,7 +187,10 @@ export default function MechanicAnnouncementDetailScreen() {
               <MaterialIcons name="person" size={16} color="#22c55e" />
               <ThemedText type="smallBold">{t('mechanic.feed.sectionDriver')}</ThemedText>
             </View>
-            <ThemedText>{announcement.driver.full_name}</ThemedText>
+            <View style={styles.personRow}>
+              <Avatar url={driverAvatarUrl} name={announcement.driver.full_name} size={36} />
+              <ThemedText>{announcement.driver.full_name}</ThemedText>
+            </View>
           </ThemedView>
         ) : null}
 
@@ -300,6 +306,7 @@ const styles = StyleSheet.create({
   },
   takenTitle: { fontSize: 22, lineHeight: 30, textAlign: 'center' },
   takenDesc: { textAlign: 'center', lineHeight: 22 },
+  personRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   content: {
     padding: Spacing.four,
     gap: Spacing.three,

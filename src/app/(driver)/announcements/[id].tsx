@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { useBack } from '@/hooks/use-back';
 import { useTheme } from '@/hooks/use-theme';
 
 import { StatusBadge } from '@/components/ui/status-badge';
+import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/ui/button';
 import { PhotoGallery } from '@/components/photo-gallery';
 import { RatingBadge } from '@/components/rating-badge';
@@ -19,6 +20,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useAnnouncementPhotos } from '@/hooks/use-announcement-photos';
 import { useAuth } from '@/hooks/use-auth';
 import { useMyRatingFor } from '@/hooks/use-ratings';
+import { useSignedUrls } from '@/hooks/use-signed-urls';
 import {
   fetchAnnouncementById,
   fetchApplicationsForAnnouncement,
@@ -57,10 +59,12 @@ function priceLabel(
 
 function ApplicantCard({
   app,
+  avatarUrl,
   onAccept,
   onReject,
 }: {
   app: ApplicationWithMechanic;
+  avatarUrl?: string;
   onAccept: (appId: string) => Promise<void>;
   onReject: (appId: string) => Promise<void>;
 }) {
@@ -85,7 +89,7 @@ function ApplicantCard({
   return (
     <ThemedView type="background" style={styles.applicantCard}>
       <View style={styles.applicantHeader}>
-        <MaterialIcons name="person" size={16} color="#208AEF" />
+        <Avatar url={avatarUrl} name={app.mechanic.full_name} size={36} />
         <ThemedText type="smallBold" style={styles.applicantName}>
           {app.mechanic.full_name}
         </ThemedText>
@@ -169,6 +173,17 @@ export default function AnnouncementDetailScreen() {
     announcement?.mechanic_id ?? undefined,
     session?.user.id,
   );
+
+  // Avatarele candidaților + al mecanicului acceptat, într-un singur apel batch.
+  const avatarPaths = useMemo(
+    () =>
+      [
+        ...applications.map((a) => a.mechanic.avatar_path),
+        announcement?.mechanic?.avatar_path ?? null,
+      ].filter((p): p is string => !!p),
+    [applications, announcement?.mechanic?.avatar_path],
+  );
+  const avatarUrls = useSignedUrls(avatarPaths);
 
   async function load() {
     setLoading(true);
@@ -370,7 +385,18 @@ export default function AnnouncementDetailScreen() {
               <MaterialIcons name="person" size={16} color="#f59e0b" />
               <ThemedText type="smallBold">{t('driver.announcements.sectionMechanic')}</ThemedText>
             </View>
-            <ThemedText>{announcement.mechanic.full_name}</ThemedText>
+            <View style={styles.personRow}>
+              <Avatar
+                url={
+                  announcement.mechanic.avatar_path
+                    ? avatarUrls[announcement.mechanic.avatar_path]
+                    : undefined
+                }
+                name={announcement.mechanic.full_name}
+                size={36}
+              />
+              <ThemedText>{announcement.mechanic.full_name}</ThemedText>
+            </View>
           </ThemedView>
         ) : null}
 
@@ -396,6 +422,7 @@ export default function AnnouncementDetailScreen() {
                 <ApplicantCard
                   key={app.id}
                   app={app}
+                  avatarUrl={app.mechanic.avatar_path ? avatarUrls[app.mechanic.avatar_path] : undefined}
                   onAccept={handleAcceptApplicant}
                   onReject={handleRejectApplicant}
                 />
@@ -474,6 +501,7 @@ export default function AnnouncementDetailScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  personRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   content: {
     padding: Spacing.four,
     gap: Spacing.three,

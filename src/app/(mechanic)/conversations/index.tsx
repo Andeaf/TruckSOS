@@ -1,9 +1,10 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
+import { Avatar } from '@/components/avatar';
 import { EmptyState } from '@/components/empty-state';
 import { HeaderText, ScreenHeader } from '@/components/screen-header';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -14,6 +15,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useConversations, deleteConversations, useUnreadCounts, type ConversationWithDetails } from '@/hooks/use-chat';
 import { useChannels, useChannelUnreadCount } from '@/hooks/use-channel-chat';
+import { useSignedUrls } from '@/hooks/use-signed-urls';
 import { useTimeAgo } from '@/hooks/use-time-ago';
 import type { Channel } from '@/types/database';
 
@@ -60,6 +62,7 @@ function ChannelCard({
 
 function ConversationCard({
   item,
+  avatarUrl,
   onPress,
   onLongPress,
   selectionMode,
@@ -68,6 +71,7 @@ function ConversationCard({
   unreadCount,
 }: {
   item: ConversationWithDetails;
+  avatarUrl?: string;
   onPress: () => void;
   onLongPress: () => void;
   selectionMode: boolean;
@@ -92,6 +96,7 @@ function ConversationCard({
               color={selected ? '#22c55e' : theme.textSecondary}
             />
           ) : null}
+          <Avatar url={avatarUrl} name={item.driver.full_name} size={44} />
           <View style={styles.cardContent}>
             <View style={styles.cardTop}>
               <ThemedText type="smallBold" numberOfLines={1} style={styles.name}>
@@ -147,6 +152,13 @@ export default function MechanicConversationsScreen() {
   const router = useRouter();
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Un singur apel batch pentru avatarele tuturor șoferilor din listă.
+  const avatarPaths = useMemo(
+    () => conversations.map((c) => c.driver.avatar_path).filter((p): p is string => !!p),
+    [conversations]
+  );
+  const avatarUrls = useSignedUrls(avatarPaths);
 
   useFocusEffect(
     useCallback(() => {
@@ -244,6 +256,7 @@ export default function MechanicConversationsScreen() {
         renderItem={({ item }) => (
           <ConversationCard
             item={item}
+            avatarUrl={item.driver.avatar_path ? avatarUrls[item.driver.avatar_path] : undefined}
             selectionMode={selectionMode}
             selected={selectedIds.has(item.id)}
             onPress={() =>

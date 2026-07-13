@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { signedUrls } from '@/lib/storage';
 
@@ -32,4 +32,11 @@ export function useSignedUrls(paths: string[]): Record<string, string> {
   }, [paths]);
 
   return urls;
+}
+
+/** Un singur path (ex. avatarul unui profil). `undefined` cât timp se semnează. */
+export function useSignedUrl(path: string | null | undefined): string | undefined {
+  const paths = useMemo(() => (path ? [path] : []), [path]);
+  const urls = useSignedUrls(paths);
+  return path ? urls[path] : undefined;
 }

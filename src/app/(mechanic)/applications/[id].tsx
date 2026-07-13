@@ -6,11 +6,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { ApplyBottomSheet } from '@/components/apply-bottom-sheet';
+import { Avatar } from '@/components/avatar';
 import { PhotoGallery } from '@/components/photo-gallery';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
+import { useSignedUrl } from '@/hooks/use-signed-urls';
 import { useTheme } from '@/hooks/use-theme';
 import {
   useApplication,
@@ -70,6 +72,7 @@ export default function ApplicationDetailScreen() {
   const [sheetVisible, setSheetVisible] = useState(false);
   // `id` din rută e al APLICAȚIEI; anunțul (deci pozele) se știe abia după load.
   const { photos } = useAnnouncementPhotos(item?.announcement?.id ?? '');
+  const driverAvatarUrl = useSignedUrl(item?.announcement?.driver?.avatar_path);
 
   if (loading) {
     return (
@@ -146,7 +149,14 @@ export default function ApplicationDetailScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <SectionTitle label={t('mechanic.applications.sectionAnnouncement')} />
         <ThemedView type="backgroundElement" style={styles.section}>
-          <InfoRow icon="person" text={announcement.driver?.full_name ?? t('common.defaultUser')} />
+          <View style={styles.personRow}>
+            <Avatar
+              url={driverAvatarUrl}
+              name={announcement.driver?.full_name}
+              size={36}
+            />
+            <ThemedText>{announcement.driver?.full_name ?? t('common.defaultUser')}</ThemedText>
+          </View>
           <InfoRow icon="location-on" text={announcement.location} />
           {announcement.latitude != null && announcement.longitude != null ? (
             <>
@@ -246,6 +256,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { justifyContent: 'center', alignItems: 'center' },
   backButton: { padding: 4 },
+  personRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   content: {
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.four,

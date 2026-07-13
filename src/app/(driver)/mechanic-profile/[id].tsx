@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import { useBack } from '@/hooks/use-back';
+import { Avatar } from '@/components/avatar';
 import { RatingBadge, Stars } from '@/components/rating-badge';
 import { RatingSheet } from '@/components/rating-sheet';
 import { ScreenHeader } from '@/components/screen-header';
@@ -15,17 +16,18 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { startDirectConversation } from '@/hooks/use-chat';
 import { useCanRate, useMechanicReviews, useMyRatingFor } from '@/hooks/use-ratings';
+import { useSignedUrl } from '@/hooks/use-signed-urls';
 import type { Profile } from '@/types/database';
 
 type PublicProfile = Pick<
   Profile,
-  'full_name' | 'specialization' | 'activity_zone' | 'rating_avg' | 'rating_count'
+  'full_name' | 'specialization' | 'activity_zone' | 'rating_avg' | 'rating_count' | 'avatar_path'
 >;
 
 async function fetchPublicProfile(mechanicId: string): Promise<PublicProfile | null> {
   const { data } = await supabase
     .from('profiles')
-    .select('full_name, specialization, activity_zone, rating_avg, rating_count')
+    .select('full_name, specialization, activity_zone, rating_avg, rating_count, avatar_path')
     .eq('id', mechanicId)
     .single();
   return (data as PublicProfile) ?? null;
@@ -50,6 +52,7 @@ export default function MechanicProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [contacting, setContacting] = useState(false);
   const [sheetVisible, setSheetVisible] = useState(false);
+  const avatarUrl = useSignedUrl(profile?.avatar_path);
 
   // Eligibilitatea (anunț `resolved` comun) e ACEEAȘI condiție pe care o impune RLS —
   // o verificăm doar ca să nu arătăm un buton care oricum ar fi refuzat.
@@ -104,13 +107,10 @@ export default function MechanicProfileScreen() {
       <ScreenHeader title={t('driver.mechanicProfile.title')} onBack={goBack} />
 
       <ScrollView contentContainerStyle={styles.content}>
-        <ThemedView type="backgroundElement" style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialIcons name="person" size={16} color="#208AEF" />
-            <ThemedText type="smallBold">{t('profile.nameLabel')}</ThemedText>
-          </View>
-          <ThemedText>{profile.full_name}</ThemedText>
-        </ThemedView>
+        <View style={styles.identity}>
+          <Avatar url={avatarUrl} name={profile.full_name} size={72} />
+          <ThemedText type="smallBold">{profile.full_name}</ThemedText>
+        </View>
 
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -224,6 +224,7 @@ export default function MechanicProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  identity: { alignItems: 'center', gap: Spacing.two, paddingBottom: Spacing.two },
   content: {
     padding: Spacing.four,
     gap: Spacing.three,
