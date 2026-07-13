@@ -1,7 +1,7 @@
 import { StyleSheet, Text, TextInput, type TextInputProps, View } from 'react-native';
-import { useColorScheme } from 'react-native';
 
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -9,8 +9,9 @@ interface InputProps extends TextInputProps {
 }
 
 export function Input({ label, error, style, ...rest }: InputProps) {
-  const scheme = useColorScheme() ?? 'light';
-  const colors = Colors[scheme];
+  // `useTheme` (nu `useColorScheme`): culorile trebuie să urmeze preferința din
+  // Setări, nu tema sistemului — altfel câmpurile rămân negre pe temă deschisă.
+  const colors = useTheme();
 
   return (
     <View style={styles.container}>
