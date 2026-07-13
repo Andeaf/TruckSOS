@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 
 import { ApplyBottomSheet } from '@/components/apply-bottom-sheet';
 import { Avatar } from '@/components/avatar';
+import { MiniMap } from '@/components/mini-map';
 import { PhotoGallery } from '@/components/photo-gallery';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
@@ -160,7 +161,7 @@ export default function ApplicationDetailScreen() {
           <InfoRow icon="location-on" text={announcement.location} />
           {announcement.latitude != null && announcement.longitude != null ? (
             <>
-              <InfoRow icon="place" text={`${announcement.latitude}, ${announcement.longitude}`} />
+              <MiniMap latitude={announcement.latitude} longitude={announcement.longitude} />
               <Pressable
                 onPress={() => openInGoogleMaps(announcement.latitude!, announcement.longitude!)}
                 style={({ pressed }) => [styles.mapsButton, pressed && styles.pressed]}

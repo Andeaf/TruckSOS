@@ -9,6 +9,7 @@ import { useTheme } from '@/hooks/use-theme';
 
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Avatar } from '@/components/avatar';
+import { MiniMap } from '@/components/mini-map';
 import { Button } from '@/components/ui/button';
 import { PhotoGallery } from '@/components/photo-gallery';
 import { RatingBadge } from '@/components/rating-badge';
@@ -326,9 +327,7 @@ export default function AnnouncementDetailScreen() {
           <ThemedText>{announcement.location}</ThemedText>
           {announcement.latitude != null && announcement.longitude != null ? (
             <>
-              <ThemedText themeColor="textSecondary" type="small">
-                {announcement.latitude}, {announcement.longitude}
-              </ThemedText>
+              <MiniMap latitude={announcement.latitude} longitude={announcement.longitude} />
               <Pressable
                 onPress={() => openInGoogleMaps(announcement.latitude!, announcement.longitude!)}
                 style={({ pressed }) => [styles.mapsButton, pressed && styles.pressed]}

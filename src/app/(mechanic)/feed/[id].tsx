@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { useBack } from '@/hooks/use-back';
 import { ApplyBottomSheet } from '@/components/apply-bottom-sheet';
 import { Avatar } from '@/components/avatar';
+import { MiniMap } from '@/components/mini-map';
 import { Button } from '@/components/ui/button';
 import { PhotoGallery } from '@/components/photo-gallery';
 import { ScreenHeader } from '@/components/screen-header';
@@ -202,9 +203,7 @@ export default function MechanicAnnouncementDetailScreen() {
           <ThemedText>{announcement.location}</ThemedText>
           {announcement.latitude != null && announcement.longitude != null ? (
             <>
-              <ThemedText themeColor="textSecondary" type="small">
-                {announcement.latitude}, {announcement.longitude}
-              </ThemedText>
+              <MiniMap latitude={announcement.latitude} longitude={announcement.longitude} />
               <Pressable
                 onPress={() => openInGoogleMaps(announcement.latitude!, announcement.longitude!)}
                 style={({ pressed }) => [styles.mapsButton, pressed && styles.pressed]}
