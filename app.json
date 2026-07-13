@@ -12,6 +12,11 @@
         "backgroundColor": "#208AEF",
         "foregroundImage": "./assets/images/adaptive-icon-foreground.png"
       },
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCJQ0J-eY5VUFCZbbMHgX5f308YjubNWvI"
+        }
+      },
       "predictiveBackGestureEnabled": false,
       "package": "com.andeaf.trucksos"
     },
