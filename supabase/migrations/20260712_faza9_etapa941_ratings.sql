@@ -17,6 +17,7 @@
 
 -- ─── 1. Tabelul ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS ratings (
+  
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   mechanic_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   driver_id   uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,

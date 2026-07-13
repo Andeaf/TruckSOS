@@ -2,13 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { useBack } from '@/hooks/use-back';
-import { useTheme } from '@/hooks/use-theme';
 import { RatingBadge, Stars } from '@/components/rating-badge';
 import { RatingSheet } from '@/components/rating-sheet';
+import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
@@ -42,9 +41,7 @@ async function fetchMechanicPhone(mechanicId: string): Promise<string | null> {
 export default function MechanicProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
-  const theme = useTheme();
   const goBack = useBack();
-  const insets = useSafeAreaInsets();
 
   const router = useRouter();
   const { session } = useAuth();
@@ -103,16 +100,8 @@ export default function MechanicProfileScreen() {
   }
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <Pressable onPress={goBack} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={24} color={theme.textSecondary} />
-        </Pressable>
-        <ThemedText type="subtitle" style={styles.title}>
-          {t('driver.mechanicProfile.title')}
-        </ThemedText>
-        <View style={{ width: 24 }} />
-      </View>
+    <ThemedView style={styles.container}>
+      <ScreenHeader title={t('driver.mechanicProfile.title')} onBack={goBack} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedView type="backgroundElement" style={styles.section}>
@@ -235,14 +224,6 @@ export default function MechanicProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
-  },
-  title: { fontSize: 22, lineHeight: 30 },
   content: {
     padding: Spacing.four,
     gap: Spacing.three,

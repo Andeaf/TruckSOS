@@ -2,11 +2,11 @@ import { useCallback, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { StatusBadge } from '@/components/ui/status-badge';
 import { RatingSheet } from '@/components/rating-sheet';
+import { HeaderText, ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
@@ -108,7 +108,6 @@ export default function DriverHistoryScreen() {
   const theme = useTheme();
   const router = useRouter();
   const goBack = useBack('/(driver)/profile');
-  const insets = useSafeAreaInsets();
   const { items, loading, refresh } = useHistory(session?.user.id);
 
   const [selectionMode, setSelectionMode] = useState(false);
@@ -158,43 +157,41 @@ export default function DriverHistoryScreen() {
   }
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        {selectionMode ? (
-          <>
+    <ThemedView style={styles.container}>
+      {selectionMode ? (
+        <ScreenHeader>
+          <View style={styles.selectionHeader}>
             <Pressable onPress={exitSelection} hitSlop={12}>
-              <MaterialIcons name="close" size={24} color={theme.textSecondary} />
+              <MaterialIcons name="close" size={24} color={theme.onHeader} />
             </Pressable>
-            <ThemedText type="smallBold">
+            <HeaderText>
               {t('driver.history.selectedCount', { count: selectedIds.size })}
-            </ThemedText>
+            </HeaderText>
             <Pressable
               onPress={() => confirmHide([...selectedIds], 'driver.history.deleteConfirmTitle')}
               disabled={selectedIds.size === 0}
               hitSlop={12}>
-              <ThemedText style={[styles.deleteText, selectedIds.size === 0 && styles.deleteTextDisabled]}>
+              <HeaderText style={selectedIds.size === 0 && styles.deleteTextDisabled}>
                 {t('driver.history.deleteButton')}
-              </ThemedText>
+              </HeaderText>
             </Pressable>
-          </>
-        ) : (
-          <>
-            <Pressable onPress={goBack} hitSlop={12}>
-              <MaterialIcons name="arrow-back" size={24} color={theme.textSecondary} />
-            </Pressable>
-            <ThemedText type="subtitle" style={styles.title}>{t('driver.history.title')}</ThemedText>
-            {items.length > 0 ? (
+          </View>
+        </ScreenHeader>
+      ) : (
+        <ScreenHeader
+          title={t('driver.history.title')}
+          onBack={goBack}
+          right={
+            items.length > 0 ? (
               <Pressable
                 onPress={() => confirmHide(undefined, 'driver.history.deleteAllConfirmTitle')}
                 hitSlop={12}>
-                <MaterialIcons name="delete-sweep" size={22} color={theme.textSecondary} />
+                <MaterialIcons name="delete-sweep" size={22} color={theme.onHeader} />
               </Pressable>
-            ) : (
-              <View style={{ width: 22 }} />
-            )}
-          </>
-        )}
-      </View>
+            ) : null
+          }
+        />
+      )}
 
       <FlatList
         data={items}
@@ -260,14 +257,12 @@ export default function DriverHistoryScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
+  selectionHeader: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
   },
-  title: { fontSize: 22, lineHeight: 30 },
   list: {
     padding: Spacing.four,
     gap: Spacing.two,
@@ -303,7 +298,6 @@ const styles = StyleSheet.create({
   },
   rateText: { color: '#f59e0b', fontSize: 13, fontWeight: '600' },
   pressed: { opacity: 0.7 },
-  deleteText: { color: '#ef4444', fontSize: 15, fontWeight: '600' },
   deleteTextDisabled: { opacity: 0.4 },
   empty: {
     flex: 1,

@@ -2,11 +2,11 @@ import { useCallback, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { ApplyBottomSheet } from '@/components/apply-bottom-sheet';
 import { EmptyState } from '@/components/empty-state';
+import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
@@ -153,7 +153,6 @@ export default function ApplicationsScreen() {
   const { t } = useTranslation();
   const { applications, loading, refresh } = useMyApplications();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const [sheetVisible, setSheetVisible] = useState(false);
   const [sheetItem, setSheetItem] = useState<ApplicationWithDetails | null>(null);
 
@@ -209,10 +208,8 @@ export default function ApplicationsScreen() {
   );
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <ThemedText type="subtitle">{t('mechanic.applications.title')}</ThemedText>
-      </View>
+    <ThemedView style={styles.container}>
+      <ScreenHeader title={t('mechanic.applications.title')} />
 
       <FlatList
         data={applications}
@@ -271,13 +268,10 @@ export default function ApplicationsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
-  },
   list: {
     flexGrow: 1,
     paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.four,
     paddingBottom: Spacing.four,
   },
   separator: { height: Spacing.two },

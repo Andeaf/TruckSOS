@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 
 import { AnnouncementCard } from '@/components/announcement-card';
 import { EmptyState } from '@/components/empty-state';
-import { ThemedText } from '@/components/themed-text';
+import { HeaderText, ScreenHeader } from '@/components/screen-header';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -92,31 +92,29 @@ export default function DriverAnnouncementsScreen() {
   }, [t, selectedIds, announcements, refresh]);
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        {selectionMode ? (
+    <ThemedView style={styles.container}>
+      {selectionMode ? (
+        <ScreenHeader>
           <View style={styles.selectionHeader}>
             <Pressable onPress={exitSelection} hitSlop={8}>
-              <MaterialIcons name="close" size={24} color={theme.textSecondary} />
+              <MaterialIcons name="close" size={24} color={theme.onHeader} />
             </Pressable>
-            <ThemedText type="smallBold">
+            <HeaderText>
               {t('driver.announcements.selectedCount', { count: selectedIds.size })}
-            </ThemedText>
+            </HeaderText>
             <Pressable onPress={handleDeleteSelected} disabled={selectedIds.size === 0} hitSlop={8}>
-              <ThemedText style={[styles.deleteText, selectedIds.size === 0 && styles.deleteTextDisabled]}>
+              <HeaderText style={selectedIds.size === 0 && styles.deleteTextDisabled}>
                 {t('driver.announcements.deleteSelectedButton')}
-              </ThemedText>
+              </HeaderText>
             </Pressable>
           </View>
-        ) : (
-          <View>
-            <ThemedText type="subtitle">{t('driver.announcements.listTitle')}</ThemedText>
-            <ThemedText themeColor="textSecondary" type="small">
-              {profile?.full_name}
-            </ThemedText>
-          </View>
-        )}
-      </View>
+        </ScreenHeader>
+      ) : (
+        <ScreenHeader
+          title={t('driver.announcements.listTitle')}
+          subtitle={profile?.full_name}
+        />
+      )}
 
       <FlatList
         data={announcements}
@@ -169,28 +167,17 @@ export default function DriverAnnouncementsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
-  },
   selectionHeader: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  deleteText: {
-    color: '#ef4444',
-    fontSize: 15,
-    fontWeight: '600',
-  },
   deleteTextDisabled: { opacity: 0.4 },
   list: {
     flexGrow: 1,
     paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.four,
     paddingBottom: Spacing.six + Spacing.four,
   },
   separator: { height: Spacing.two },

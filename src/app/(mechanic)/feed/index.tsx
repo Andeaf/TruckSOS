@@ -2,13 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { AnnouncementCard } from '@/components/announcement-card';
 import { EmptyState } from '@/components/empty-state';
-import { ThemedText } from '@/components/themed-text';
+import { ScreenHeader } from '@/components/screen-header';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -25,7 +24,6 @@ export default function MechanicFeedScreen() {
   const theme = useTheme();
   const { announcements, loading, refresh } = useOpenAnnouncements();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const [viewMode, setViewMode] = useState<ViewMode>('extended');
   const [rejectedIds, setRejectedIds] = useState<Set<string>>(new Set());
   const { viewed, refresh: refreshViewed } = useViewedAnnouncements(session?.user.id);
@@ -56,22 +54,20 @@ export default function MechanicFeedScreen() {
   );
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <View>
-          <ThemedText type="subtitle">{t('mechanic.feed.title')}</ThemedText>
-          <ThemedText themeColor="textSecondary" type="small">
-            {profile?.full_name}
-          </ThemedText>
-        </View>
-        <Pressable onPress={toggleViewMode} hitSlop={12} accessibilityLabel={t('mechanic.feed.toggleView')}>
-          <MaterialIcons
-            name={viewMode === 'extended' ? 'view-list' : 'view-agenda'}
-            size={22}
-            color={theme.textSecondary}
-          />
-        </Pressable>
-      </View>
+    <ThemedView style={styles.container}>
+      <ScreenHeader
+        title={t('mechanic.feed.title')}
+        subtitle={profile?.full_name}
+        right={
+          <Pressable onPress={toggleViewMode} hitSlop={12} accessibilityLabel={t('mechanic.feed.toggleView')}>
+            <MaterialIcons
+              name={viewMode === 'extended' ? 'view-list' : 'view-agenda'}
+              size={22}
+              color={theme.onHeader}
+            />
+          </Pressable>
+        }
+      />
 
       <FlatList
         data={announcements}
@@ -111,16 +107,10 @@ export default function MechanicFeedScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
-  },
   list: {
     flexGrow: 1,
     paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.four,
     paddingBottom: Spacing.four,
   },
   separator: { height: Spacing.two },

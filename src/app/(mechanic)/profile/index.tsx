@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
@@ -16,7 +16,6 @@ export default function MechanicProfileScreen() {
   const { profile, signOut, updateProfile } = useAuth();
   const { t } = useTranslation();
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
 
   const [isEditing, setIsEditing] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name ?? '');
@@ -66,21 +65,19 @@ export default function MechanicProfileScreen() {
   }
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <ThemedText type="subtitle">
-          {isEditing ? t('profile.editTitle') : t('profile.myProfileTitle')}
-        </ThemedText>
-        {!isEditing ? (
-          <Pressable onPress={handleEdit} hitSlop={12}>
-            <MaterialIcons name="edit" size={22} color={theme.textSecondary} />
+    <ThemedView style={styles.container}>
+      <ScreenHeader
+        title={isEditing ? t('profile.editTitle') : t('profile.myProfileTitle')}
+        right={
+          <Pressable onPress={isEditing ? handleCancel : handleEdit} hitSlop={12}>
+            <MaterialIcons
+              name={isEditing ? 'close' : 'edit'}
+              size={22}
+              color={theme.onHeader}
+            />
           </Pressable>
-        ) : (
-          <Pressable onPress={handleCancel} hitSlop={12}>
-            <MaterialIcons name="close" size={22} color={theme.textSecondary} />
-          </Pressable>
-        )}
-      </View>
+        }
+      />
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -193,13 +190,6 @@ export default function MechanicProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   flex: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
-  },
   content: {
     padding: Spacing.four,
     gap: Spacing.three,

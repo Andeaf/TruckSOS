@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 
 import { ApplyBottomSheet } from '@/components/apply-bottom-sheet';
 import { PhotoGallery } from '@/components/photo-gallery';
+import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
@@ -135,16 +136,12 @@ export default function ApplicationDetailScreen() {
   }
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={24} color={theme.textSecondary} />
-        </Pressable>
-        <ThemedText type="subtitle" style={styles.headerTitle}>
-          {t('mechanic.applications.detailTitle')}
-        </ThemedText>
-        <StatusBadge status={item.status} />
-      </View>
+    <ThemedView style={styles.container}>
+      <ScreenHeader
+        title={t('mechanic.applications.detailTitle')}
+        onBack={() => router.back()}
+        right={<StatusBadge status={item.status} />}
+      />
 
       <ScrollView contentContainerStyle={styles.content}>
         <SectionTitle label={t('mechanic.applications.sectionAnnouncement')} />
@@ -248,17 +245,10 @@ export default function ApplicationDetailScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { justifyContent: 'center', alignItems: 'center' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
-  },
   backButton: { padding: 4 },
-  headerTitle: { flex: 1 },
   content: {
     paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.four,
     paddingBottom: Spacing.six,
     gap: Spacing.two,
   },

@@ -6,10 +6,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { useBack } from '@/hooks/use-back';
-import { useTheme } from '@/hooks/use-theme';
 import { ApplyBottomSheet } from '@/components/apply-bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { PhotoGallery } from '@/components/photo-gallery';
+import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
@@ -106,7 +106,6 @@ function ApplicationStatusCard({
 export default function MechanicAnnouncementDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, i18n } = useTranslation();
-  const theme = useTheme();
   const { session } = useAuth();
   const goBack = useBack('/(mechanic)/feed');
   const insets = useSafeAreaInsets();
@@ -171,16 +170,8 @@ export default function MechanicAnnouncementDetailScreen() {
   const truckInfo = formatTruck(announcement);
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <Pressable onPress={goBack} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={24} color={theme.textSecondary} />
-        </Pressable>
-        <ThemedText type="subtitle" style={styles.title}>
-          {t('mechanic.feed.detailTitle')}
-        </ThemedText>
-        <View style={{ width: 24 }} />
-      </View>
+    <ThemedView style={styles.container}>
+      <ScreenHeader title={t('mechanic.feed.detailTitle')} onBack={goBack} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedText themeColor="textSecondary" type="small" style={styles.date}>
@@ -309,14 +300,6 @@ const styles = StyleSheet.create({
   },
   takenTitle: { fontSize: 22, lineHeight: 30, textAlign: 'center' },
   takenDesc: { textAlign: 'center', lineHeight: 22 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
-  },
-  title: { fontSize: 22, lineHeight: 30 },
   content: {
     padding: Spacing.four,
     gap: Spacing.three,

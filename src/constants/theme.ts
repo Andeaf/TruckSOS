@@ -14,6 +14,9 @@ export const Colors = {
     backgroundElement: '#F0F0F3',
     backgroundSelected: '#E0E1E6',
     textSecondary: '#60646C',
+    brand: '#208AEF',
+    header: '#208AEF',
+    onHeader: '#FFFFFF',
   },
   dark: {
     text: '#ffffff',
@@ -21,6 +24,10 @@ export const Colors = {
     backgroundElement: '#212225',
     backgroundSelected: '#2E3135',
     textSecondary: '#B0B4BA',
+    brand: '#208AEF',
+    /** Albastrul brand ar fi strident pe negru → aceeași nuanță, ~35% mai închisă. */
+    header: '#15568F',
+    onHeader: '#FFFFFF',
   },
 } as const;
 

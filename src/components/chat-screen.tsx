@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { PhotoViewer } from '@/components/photo-viewer';
+import { HeaderText, ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
@@ -228,25 +229,23 @@ export function ChatScreen<M extends ChatMessageBase>({
   }
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={[styles.header, { borderBottomColor: theme.backgroundElement }]}>
+    <ThemedView style={styles.container}>
+      <ScreenHeader>
         <Pressable onPress={onBack} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={24} color={theme.textSecondary} />
+          <MaterialIcons name="arrow-back" size={24} color={theme.onHeader} />
         </Pressable>
         <View style={styles.headerInfo}>
-          <ThemedText type="smallBold" numberOfLines={1}>
-            {title}
-          </ThemedText>
+          <HeaderText numberOfLines={1}>{title}</HeaderText>
           <View style={styles.locationRow}>
             {subtitleIcon ? (
-              <MaterialIcons name={subtitleIcon} size={11} color={theme.textSecondary} />
+              <MaterialIcons name={subtitleIcon} size={11} color={theme.onHeader} />
             ) : null}
-            <ThemedText themeColor="textSecondary" type="small" numberOfLines={1}>
+            <Text style={[styles.headerSubtitle, { color: theme.onHeader }]} numberOfLines={1}>
               {subtitle}
-            </ThemedText>
+            </Text>
           </View>
         </View>
-      </View>
+      </ScreenHeader>
 
       {bannerText ? (
         <View style={styles.resolvedBanner}>
@@ -378,15 +377,8 @@ export function ChatScreen<M extends ChatMessageBase>({
 const styles = StyleSheet.create({
   container: { flex: 1 },
   flex: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.two,
-    gap: Spacing.three,
-    borderBottomWidth: 1,
-  },
   headerInfo: { flex: 1, gap: 2 },
+  headerSubtitle: { fontSize: 13, lineHeight: 18, opacity: 0.85 },
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.two },
   emptyText: { textAlign: 'center' },

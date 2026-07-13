@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { useBack } from '@/hooks/use-back';
@@ -13,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { PhotoGallery } from '@/components/photo-gallery';
 import { RatingBadge } from '@/components/rating-badge';
 import { RatingSheet } from '@/components/rating-sheet';
+import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
@@ -155,7 +155,6 @@ export default function AnnouncementDetailScreen() {
   const theme = useTheme();
   const router = useRouter();
   const goBack = useBack('/(driver)/announcements');
-  const insets = useSafeAreaInsets();
   const [announcement, setAnnouncement] = useState<AnnouncementWithMechanic | null>(null);
   const [loading, setLoading] = useState(true);
   const [resolving, setResolving] = useState(false);
@@ -283,20 +282,18 @@ export default function AnnouncementDetailScreen() {
   const truckInfo = formatTruck(announcement);
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <Pressable onPress={goBack} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={24} color={theme.textSecondary} />
-        </Pressable>
-        <ThemedText type="subtitle" style={styles.title}>{t('driver.announcements.detailTitle')}</ThemedText>
-        {announcement.status !== 'accepted' ? (
-          <Pressable onPress={handleDeletePress} hitSlop={12} disabled={deleting}>
-            <MaterialIcons name="delete" size={22} color={theme.textSecondary} />
-          </Pressable>
-        ) : (
-          <View style={{ width: 22 }} />
-        )}
-      </View>
+    <ThemedView style={styles.container}>
+      <ScreenHeader
+        title={t('driver.announcements.detailTitle')}
+        onBack={goBack}
+        right={
+          announcement.status !== 'accepted' ? (
+            <Pressable onPress={handleDeletePress} hitSlop={12} disabled={deleting}>
+              <MaterialIcons name="delete" size={22} color={theme.onHeader} />
+            </Pressable>
+          ) : null
+        }
+      />
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.statusRow}>
@@ -477,14 +474,6 @@ export default function AnnouncementDetailScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
-  },
-  title: { fontSize: 22, lineHeight: 30 },
   content: {
     padding: Spacing.four,
     gap: Spacing.three,

@@ -3,7 +3,6 @@ import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, Sc
 import { useRouter } from 'expo-router';
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { useBack } from '@/hooks/use-back';
@@ -11,6 +10,7 @@ import { useTheme } from '@/hooks/use-theme';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TruckPickerSheet } from '@/components/truck-picker-sheet';
@@ -31,7 +31,6 @@ export default function NewAnnouncementScreen() {
   const theme = useTheme();
   const router = useRouter();
   const goBack = useBack('/(driver)/announcements');
-  const insets = useSafeAreaInsets();
   const { trucks, refresh: refreshTrucks } = useSavedTrucks();
 
   const [description, setDescription] = useState('');
@@ -191,14 +190,8 @@ export default function NewAnnouncementScreen() {
   }
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <Pressable onPress={goBack} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={24} color={theme.textSecondary} />
-        </Pressable>
-        <ThemedText type="subtitle" style={styles.title}>{t('driver.announcements.newTitle')}</ThemedText>
-        <View style={{ width: 24 }} />
-      </View>
+    <ThemedView style={styles.container}>
+      <ScreenHeader title={t('driver.announcements.newTitle')} onBack={goBack} />
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -362,14 +355,6 @@ export default function NewAnnouncementScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   flex: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
-  },
-  title: { fontSize: 22, lineHeight: 30 },
   form: {
     padding: Spacing.four,
     gap: Spacing.three,

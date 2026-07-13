@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { EmptyState } from '@/components/empty-state';
 import { Input } from '@/components/ui/input';
+import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { RatingBadge } from '@/components/rating-badge';
@@ -60,17 +60,14 @@ function MechanicResultCard({
 export default function DriverSearchScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const { results, loading } = useMechanicSearch(query);
 
   const queryActive = query.trim().length >= SEARCH_MIN_LENGTH;
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <ThemedText type="subtitle">{t('search.title')}</ThemedText>
-      </View>
+    <ThemedView style={styles.container}>
+      <ScreenHeader title={t('search.title')} />
 
       <View style={styles.searchBar}>
         <Input
@@ -127,12 +124,9 @@ export default function DriverSearchScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
-  },
   searchBar: {
     paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.four,
     paddingBottom: Spacing.three,
   },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
