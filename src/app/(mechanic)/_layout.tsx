@@ -28,22 +28,22 @@ export default function MechanicLayout() {
         tabBarInactiveTintColor: theme.textSecondary,
         tabBarStyle: { backgroundColor: theme.background },
       }}>
-      <Tabs.Screen
-        name="feed"
-        options={{
-          title: t('mechanic.tabs.feed'),
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="directions-car" size={size} color={color} />
-          ),
-        }}
-      />
-      {/* Harta stă lângă Feed: sunt două vederi peste aceleași anunțuri deschise. */}
+      {/* Harta prima, lângă Feed: sunt două vederi peste aceleași anunțuri deschise. */}
       <Tabs.Screen
         name="map"
         options={{
           title: t('mechanic.tabs.map'),
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="map" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="feed"
+        options={{
+          title: t('mechanic.tabs.feed'),
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="directions-car" size={size} color={color} />
           ),
         }}
       />
