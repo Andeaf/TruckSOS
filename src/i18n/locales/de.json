@@ -250,7 +250,10 @@
     "emptyField": "Nicht angegeben",
     "savedSuccess": "Profil gespeichert.",
     "errorSave": "Fehler beim Speichern des Profils.",
-    "errorNameRequired": "Der Name darf nicht leer sein."
+    "errorNameRequired": "Der Name darf nicht leer sein.",
+    "avatarTitle": "Profilfoto",
+    "avatarRemove": "Foto entfernen",
+    "avatarError": "Das Profilfoto konnte nicht aktualisiert werden."
   },
   "truck": {
     "sectionToggleAdd": "+ LKW-Details hinzufügen (optional)",

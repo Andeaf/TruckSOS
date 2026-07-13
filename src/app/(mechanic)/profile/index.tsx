@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
+import { AvatarPicker } from '@/components/avatar-picker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScreenHeader } from '@/components/screen-header';
@@ -83,6 +84,10 @@ export default function MechanicProfileScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+
+          <View style={styles.avatarRow}>
+            <AvatarPicker />
+          </View>
 
           {/* Câmpuri editabile */}
           {isEditing ? (
@@ -194,6 +199,7 @@ const styles = StyleSheet.create({
     padding: Spacing.four,
     gap: Spacing.three,
   },
+  avatarRow: { alignItems: 'center' },
   section: {
     borderRadius: Radius.card,
     padding: Spacing.three,

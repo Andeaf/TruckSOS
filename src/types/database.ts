@@ -11,6 +11,8 @@ export interface Profile {
   specialization: string | null;
   activity_zone: string | null;
   phone: string | null;
+  /** Path în bucketul `photos`: `avatars/{user_id}/{uuid}.jpg`. NULL = fallback pe inițiale. */
+  avatar_path: string | null;
   /** Medie denormalizată (1 zecimală), întreținută de trigger. 0 = fără evaluări. */
   rating_avg: number;
   rating_count: number;

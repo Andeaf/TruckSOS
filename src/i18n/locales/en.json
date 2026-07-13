@@ -250,7 +250,10 @@
     "emptyField": "Not set",
     "savedSuccess": "Profile saved.",
     "errorSave": "Error saving profile.",
-    "errorNameRequired": "Name cannot be empty."
+    "errorNameRequired": "Name cannot be empty.",
+    "avatarTitle": "Profile photo",
+    "avatarRemove": "Remove photo",
+    "avatarError": "The profile photo could not be updated."
   },
   "truck": {
     "sectionToggleAdd": "+ Add truck details (optional)",

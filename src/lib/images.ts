@@ -32,16 +32,18 @@ export async function compressImage(
   uri: string,
   width: number,
   height: number,
+  maxEdge: number = MAX_EDGE,
+  quality: number = QUALITY,
 ): Promise<CompressedImage> {
   const context = ImageManipulator.manipulate(uri);
 
   const longest = Math.max(width, height);
-  if (longest > MAX_EDGE) {
+  if (longest > maxEdge) {
     // Specificăm o singură latură; librăria calculează cealaltă păstrând raportul.
-    context.resize(width >= height ? { width: MAX_EDGE } : { height: MAX_EDGE });
+    context.resize(width >= height ? { width: maxEdge } : { height: maxEdge });
   }
 
   const rendered = await context.renderAsync();
-  const result = await rendered.saveAsync({ format: SaveFormat.JPEG, compress: QUALITY });
+  const result = await rendered.saveAsync({ format: SaveFormat.JPEG, compress: quality });
   return { uri: result.uri, width: result.width, height: result.height };
 }

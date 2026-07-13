@@ -19,6 +19,9 @@ export default function DriverLayout() {
 
   return (
     <Tabs
+      // Back-ul fizic urcă în istoricul REAL de navigare (tabul anterior), nu sare
+      // direct pe primul tab — comportamentul implicit („firstRoute").
+      backBehavior="history"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#208AEF',

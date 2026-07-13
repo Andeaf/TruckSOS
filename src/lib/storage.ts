@@ -14,7 +14,11 @@ const BUCKET = 'photos';
 /** Valabilitate URL semnat: 1h. Cache-uit apoi de `expo-image` per ecran. */
 const SIGNED_URL_TTL = 3600;
 
-export type PhotoFolder = 'announcements' | 'chat' | 'channel';
+export type PhotoFolder = 'announcements' | 'chat' | 'channel' | 'avatars';
+
+/** Avatarele se afișează la 40–96px — 512px e amplu, la ~30–60 KB per poză. */
+const AVATAR_MAX_EDGE = 512;
+const AVATAR_QUALITY = 0.8;
 
 export interface UploadSource {
   uri: string;
@@ -32,9 +36,16 @@ export async function uploadPhoto(
   folder: PhotoFolder,
   parentId: string,
   source: UploadSource,
+  compression?: { maxEdge: number; quality: number },
 ): Promise<{ path: string | null; error: string | null }> {
   try {
-    const compressed = await compressImage(source.uri, source.width, source.height);
+    const compressed = await compressImage(
+      source.uri,
+      source.width,
+      source.height,
+      compression?.maxEdge,
+      compression?.quality,
+    );
     const path = `${folder}/${parentId}/${Crypto.randomUUID()}.jpg`;
     const bytes = await new File(compressed.uri).arrayBuffer();
     const { error } = await supabase.storage
@@ -48,6 +59,21 @@ export async function uploadPhoto(
   } catch (e) {
     return { path: null, error: e instanceof Error ? e.message : 'upload_failed' };
   }
+}
+
+/**
+ * Avatarul propriu → `avatars/{user_id}/{uuid}.jpg`. UUID nou la fiecare schimbare,
+ * ca URL-ul semnat vechi și cache-ul `expo-image` să nu mai servească poza veche.
+ * Callerul salvează path-ul în `profiles.avatar_path` și șterge apoi obiectul vechi.
+ */
+export async function uploadAvatar(
+  userId: string,
+  source: UploadSource,
+): Promise<{ path: string | null; error: string | null }> {
+  return uploadPhoto('avatars', userId, source, {
+    maxEdge: AVATAR_MAX_EDGE,
+    quality: AVATAR_QUALITY,
+  });
 }
 
 /**

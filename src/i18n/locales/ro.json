@@ -261,7 +261,10 @@
     "emptyField": "Necompletat",
     "savedSuccess": "Profilul a fost salvat.",
     "errorSave": "Eroare la salvarea profilului.",
-    "errorNameRequired": "Numele nu poate fi gol."
+    "errorNameRequired": "Numele nu poate fi gol.",
+    "avatarTitle": "Poza de profil",
+    "avatarRemove": "Șterge poza",
+    "avatarError": "Poza de profil nu a putut fi actualizată."
   },
   "truck": {
     "sectionToggleAdd": "+ Adaugă detalii camion (opțional)",
