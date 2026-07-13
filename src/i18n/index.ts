@@ -12,8 +12,20 @@ const resources = {
   de: { translation: de },
 };
 
-const deviceLocale = Localization.getLocales()[0]?.languageCode ?? 'en';
-const supportedLocale = deviceLocale in resources ? deviceLocale : 'en';
+export const SUPPORTED_LANGUAGES = ['ro', 'en', 'de'] as const;
+export type Language = (typeof SUPPORTED_LANGUAGES)[number];
+
+/** Limba dispozitivului, folosită pe preferința `auto` și ca valoare inițială la import. */
+export function deviceLanguage(): Language {
+  const locale = Localization.getLocales()[0]?.languageCode ?? 'en';
+  return (SUPPORTED_LANGUAGES as readonly string[]).includes(locale)
+    ? (locale as Language)
+    : 'en';
+}
+
+// Doar valoarea inițială — sursa de adevăr e SettingsProvider, care apelează
+// `i18n.changeLanguage()` după ce citește preferința din AsyncStorage.
+const supportedLocale = deviceLanguage();
 
 i18n.use(initReactI18next).init({
   resources,
