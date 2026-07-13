@@ -376,7 +376,18 @@
       "auto": "Automatisch",
       "light": "Hell",
       "dark": "Dunkel"
-    }
+    },
+    "notifications": "Benachrichtigungen",
+    "pushEnabled": "Push-Benachrichtigungen",
+    "radius": "Radius für neue Anzeigen",
+    "radiusOff": "Ohne Limit",
+    "radiusKm": "{{km}} km",
+    "position": "Mein Referenzstandort",
+    "positionSet": "Festgelegt",
+    "positionUnset": "Nicht festgelegt",
+    "positionLoading": "Wird gesucht…",
+    "positionError": "Der Standort konnte nicht festgelegt werden.",
+    "radiusNeedsPosition": "Du hast einen Radius, aber keinen Standort festgelegt — bis dahin erhältst du keine Benachrichtigungen für neue Anzeigen."
   },
   "legal": {
     "draftNotice": "In Arbeit — vorläufiger Text.",

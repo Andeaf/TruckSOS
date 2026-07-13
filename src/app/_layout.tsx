@@ -5,6 +5,8 @@ import { ActivityIndicator, View } from 'react-native';
 import { I18nextProvider } from 'react-i18next';
 
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
+import { useLangSync } from '@/hooks/use-lang-sync';
+import { usePushNavigation } from '@/hooks/use-push-navigation';
 import { SettingsProvider, useSettings } from '@/hooks/use-settings';
 import i18n from '@/i18n';
 
@@ -13,6 +15,10 @@ function RootLayoutNav() {
   const { resolvedScheme, ready } = useSettings();
   const segments = useSegments();
   const router = useRouter();
+
+  // Tap pe notificare → ecranul potrivit; limba userului → serverul, pentru textul push.
+  usePushNavigation();
+  useLangSync();
 
   useEffect(() => {
     if (loading) return;

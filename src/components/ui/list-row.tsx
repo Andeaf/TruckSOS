@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { ThemedText } from '@/components/themed-text';
@@ -36,6 +36,33 @@ export function ListRow({ icon, label, value, onPress, destructive }: ListRowPro
         )}
       </ThemedView>
     </Pressable>
+  );
+}
+
+/** Rând cu comutator (ex. notificări pornite/oprite). Fără chevron: nu navighează nicăieri. */
+export function SwitchRow({
+  icon,
+  label,
+  value,
+  onValueChange,
+}: {
+  icon: keyof typeof MaterialIcons.glyphMap;
+  label: string;
+  value: boolean;
+  onValueChange: (next: boolean) => void;
+}) {
+  const theme = useTheme();
+
+  return (
+    <ThemedView type="backgroundElement" style={styles.row}>
+      <MaterialIcons name={icon} size={20} color={theme.brand} />
+      <ThemedText style={styles.label}>{label}</ThemedText>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        trackColor={{ true: theme.brand, false: theme.backgroundSelected }}
+      />
+    </ThemedView>
   );
 }
 

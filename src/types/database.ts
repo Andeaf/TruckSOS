@@ -16,6 +16,15 @@ export interface Profile {
   /** Medie denormalizată (1 zecimală), întreținută de trigger. 0 = fără evaluări. */
   rating_avg: number;
   rating_count: number;
+  /** Comutatorul global de notificări din Setări. */
+  push_enabled: boolean;
+  /** Mecanic: raza (km) peste care nu mai vrea anunțuri noi. NULL = primește tot. */
+  notify_radius_km: number | null;
+  /** Mecanic: poziția de referință (atelier/domiciliu), pentru filtrul de rază. */
+  latitude: number | null;
+  longitude: number | null;
+  /** Limba în care serverul compune textul notificărilor. */
+  lang: string;
   created_at: string;
 }
 

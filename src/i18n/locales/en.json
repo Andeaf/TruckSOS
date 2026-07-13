@@ -376,7 +376,18 @@
       "auto": "Automatic",
       "light": "Light",
       "dark": "Dark"
-    }
+    },
+    "notifications": "Notifications",
+    "pushEnabled": "Push notifications",
+    "radius": "New announcement radius",
+    "radiusOff": "No limit",
+    "radiusKm": "{{km}} km",
+    "position": "My reference position",
+    "positionSet": "Set",
+    "positionUnset": "Not set",
+    "positionLoading": "Locating…",
+    "positionError": "The position could not be set.",
+    "radiusNeedsPosition": "You set a radius but not your position — until you do, you will not get notifications for new announcements."
   },
   "legal": {
     "draftNotice": "Work in progress — placeholder text.",

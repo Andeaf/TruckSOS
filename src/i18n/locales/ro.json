@@ -378,7 +378,18 @@
       "auto": "Automat",
       "light": "Deschisă",
       "dark": "Închisă"
-    }
+    },
+    "notifications": "Notificări",
+    "pushEnabled": "Notificări push",
+    "radius": "Rază anunțuri noi",
+    "radiusOff": "Fără limită",
+    "radiusKm": "{{km}} km",
+    "position": "Poziția mea de referință",
+    "positionSet": "Setată",
+    "positionUnset": "Nesetată",
+    "positionLoading": "Se caută…",
+    "positionError": "Poziția nu a putut fi setată.",
+    "radiusNeedsPosition": "Ai setat o rază, dar nu și poziția ta — până o setezi, nu primești notificări pentru anunțuri noi."
   },
   "legal": {
     "draftNotice": "Conținut în lucru — text provizoriu.",

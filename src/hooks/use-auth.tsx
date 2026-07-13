@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 
 import { supabase } from '@/lib/supabase';
+import { registerPushToken, unregisterPushToken } from '@/lib/push';
 import type { Profile } from '@/types/database';
 import i18n from '@/i18n';
 
@@ -13,7 +14,7 @@ interface AuthContextValue {
   signUp: (email: string, password: string, fullName: string) => Promise<string | null>;
   signOut: () => Promise<void>;
   createProfile: (role: 'driver' | 'mechanic') => Promise<string | null>;
-  updateProfile: (updates: { full_name?: string; specialization?: string | null; activity_zone?: string | null; phone?: string | null; avatar_path?: string | null }) => Promise<string | null>;
+  updateProfile: (updates: { full_name?: string; specialization?: string | null; activity_zone?: string | null; phone?: string | null; avatar_path?: string | null; push_enabled?: boolean; notify_radius_km?: number | null; latitude?: number | null; longitude?: number | null; lang?: string }) => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -22,6 +23,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  // Tokenul acestui dispozitiv, ținut ca să-l putem șterge exact pe el la logout.
+  const pushTokenRef = useRef<string | null>(null);
 
   async function fetchProfile(userId: string) {
     try {
@@ -87,7 +90,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return error?.message ?? null;
   }
 
+  // Înregistrăm tokenul de fiecare dată când avem sesiune (login sau repornire).
+  // În Expo Go `registerPushToken` iese tăcut → nimic nu se schimbă acolo.
+  useEffect(() => {
+    const userId = session?.user.id;
+    if (!userId) return;
+    registerPushToken(userId).then((token) => {
+      pushTokenRef.current = token;
+    });
+  }, [session?.user.id]);
+
   async function signOut() {
+    // Întâi scoatem tokenul: altfel telefonul ar primi notificările contului vechi.
+    const token = pushTokenRef.current;
+    if (token) {
+      await unregisterPushToken(token);
+      pushTokenRef.current = null;
+    }
     await supabase.auth.signOut();
   }
 
@@ -97,6 +116,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     activity_zone?: string | null;
     phone?: string | null;
     avatar_path?: string | null;
+    push_enabled?: boolean;
+    notify_radius_km?: number | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    lang?: string;
   }): Promise<string | null> {
     const userId = session?.user.id;
     if (!userId) return i18n.t('common.noSession');
