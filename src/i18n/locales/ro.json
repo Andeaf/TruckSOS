@@ -110,7 +110,8 @@
       "deleteSelectedConfirmMessageWithOpen": "Mecanicii care au candidat vor fi respinși automat. Acțiunea nu poate fi anulată.",
       "deleteSelectedConfirmOk": "Da, șterge",
       "applicantsBadgeOne": "1 mecanic interesat! 👀",
-      "applicantsBadge": "{{count}} mecanici interesați! 👀"
+      "applicantsBadge": "{{count}} mecanici interesați! 👀",
+      "coordsMapHint": "Fără coordonate GPS, anunțul tău NU apare pe harta mecanicilor — va fi vizibil doar în lista lor de anunțuri."
     },
     "profile": {
       "phoneHint": "Vizibil mecanicului doar dacă aveți o conversație activă."
@@ -144,7 +145,8 @@
     "tabs": {
       "feed": "Anunturi",
       "applications": "Candidaturi",
-      "conversations": "Conversatii"
+      "conversations": "Conversatii",
+      "map": "Hartă"
     },
     "feed": {
       "title": "Anunțuri deschise",
@@ -209,6 +211,15 @@
       "errorAmountRequired": "Introdu o sumă validă.",
       "errorSubmit": "Eroare la trimiterea candidaturii.",
       "errorAlreadyApplied": "Ai candidat deja la acest anunț."
+    },
+    "map": {
+      "title": "Harta anunțurilor",
+      "pinCount_one": "{{count}} anunț pe hartă",
+      "pinCount_few": "{{count}} anunțuri pe hartă",
+      "pinCount_other": "{{count}} de anunțuri pe hartă",
+      "missingCount_one": "{{count}} anunț fără locație",
+      "missingCount_few": "{{count}} anunțuri fără locație",
+      "missingCount_other": "{{count}} de anunțuri fără locație"
     }
   },
   "chat": {

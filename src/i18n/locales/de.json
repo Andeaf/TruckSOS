@@ -110,7 +110,8 @@
       "deleteSelectedConfirmMessageWithOpen": "Mechaniker, die sich beworben haben, werden automatisch abgelehnt. Diese Aktion kann nicht rückgängig gemacht werden.",
       "deleteSelectedConfirmOk": "Ja, löschen",
       "applicantsBadgeOne": "1 Mechaniker interessiert! 👀",
-      "applicantsBadge": "{{count}} Mechaniker interessiert! 👀"
+      "applicantsBadge": "{{count}} Mechaniker interessiert! 👀",
+      "coordsMapHint": "Ohne GPS-Koordinaten erscheint deine Anzeige NICHT auf der Karte der Mechaniker — sie ist nur in deren Liste sichtbar."
     },
     "profile": {
       "phoneHint": "Für den Mechaniker nur sichtbar, wenn ihr ein aktives Gespräch habt."
@@ -144,7 +145,8 @@
     "tabs": {
       "feed": "Anzeigen",
       "applications": "Bewerbungen",
-      "conversations": "Gespräche"
+      "conversations": "Gespräche",
+      "map": "Karte"
     },
     "feed": {
       "title": "Offene Anzeigen",
@@ -209,6 +211,13 @@
       "errorAmountRequired": "Bitte gib einen gültigen Betrag ein.",
       "errorSubmit": "Fehler beim Einreichen der Bewerbung.",
       "errorAlreadyApplied": "Du hast dich bereits für diese Anzeige beworben."
+    },
+    "map": {
+      "title": "Karte der Anzeigen",
+      "pinCount_one": "{{count}} Anzeige auf der Karte",
+      "pinCount_other": "{{count}} Anzeigen auf der Karte",
+      "missingCount_one": "{{count}} Anzeige ohne Standort",
+      "missingCount_other": "{{count}} Anzeigen ohne Standort"
     }
   },
   "chat": {

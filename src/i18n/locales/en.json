@@ -110,7 +110,8 @@
       "deleteSelectedConfirmMessageWithOpen": "Mechanics who applied will be automatically rejected. This action cannot be undone.",
       "deleteSelectedConfirmOk": "Yes, delete",
       "applicantsBadgeOne": "1 mechanic interested! 👀",
-      "applicantsBadge": "{{count}} mechanics interested! 👀"
+      "applicantsBadge": "{{count}} mechanics interested! 👀",
+      "coordsMapHint": "Without GPS coordinates your announcement will NOT appear on the mechanics’ map — it will only show up in their list."
     },
     "profile": {
       "phoneHint": "Visible to the mechanic only if you have an active conversation."
@@ -144,7 +145,8 @@
     "tabs": {
       "feed": "Announcements",
       "applications": "Applications",
-      "conversations": "Chat"
+      "conversations": "Chat",
+      "map": "Map"
     },
     "feed": {
       "title": "Open announcements",
@@ -209,6 +211,13 @@
       "errorAmountRequired": "Please enter a valid amount.",
       "errorSubmit": "Error submitting application.",
       "errorAlreadyApplied": "You have already applied to this announcement."
+    },
+    "map": {
+      "title": "Announcements map",
+      "pinCount_one": "{{count}} announcement on the map",
+      "pinCount_other": "{{count}} announcements on the map",
+      "missingCount_one": "{{count}} announcement without a location",
+      "missingCount_other": "{{count}} announcements without a location"
     }
   },
   "chat": {

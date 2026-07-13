@@ -213,6 +213,13 @@ export default function NewAnnouncementScreen() {
             <ThemedText themeColor="textSecondary" type="small">
               {t('driver.announcements.coordsRationale')}
             </ThemedText>
+            {/* Coordonatele rămân opționale — dar fără ele anunțul lipsește de pe hartă. */}
+            <View style={styles.mapHint}>
+              <MaterialIcons name="map" size={14} color="#208AEF" />
+              <ThemedText themeColor="textSecondary" type="small" style={styles.mapHintText}>
+                {t('driver.announcements.coordsMapHint')}
+              </ThemedText>
+            </View>
             <Pressable
               onPress={handleUseMyLocation}
               disabled={gpsLoading}
@@ -373,6 +380,8 @@ const styles = StyleSheet.create({
   },
   selectSavedText: { color: '#208AEF', fontSize: 14, fontWeight: '500' },
   coordsSection: { gap: Spacing.two },
+  mapHint: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.one },
+  mapHintText: { flex: 1 },
   photosSection: { gap: Spacing.two },
   gpsButton: {
     flexDirection: 'row',

@@ -37,6 +37,16 @@ export default function MechanicLayout() {
           ),
         }}
       />
+      {/* Harta stă lângă Feed: sunt două vederi peste aceleași anunțuri deschise. */}
+      <Tabs.Screen
+        name="map"
+        options={{
+          title: t('mechanic.tabs.map'),
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="map" size={size} color={color} />
+          ),
+        }}
+      />
       <Tabs.Screen
         name="applications"
         options={{
