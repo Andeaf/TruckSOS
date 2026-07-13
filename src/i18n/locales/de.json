@@ -253,7 +253,16 @@
     "errorNameRequired": "Der Name darf nicht leer sein.",
     "avatarTitle": "Profilfoto",
     "avatarRemove": "Foto entfernen",
-    "avatarError": "Das Profilfoto konnte nicht aktualisiert werden."
+    "avatarError": "Das Profilfoto konnte nicht aktualisiert werden.",
+    "discardTitle": "Änderungen verwerfen?",
+    "discardMessage": "Nicht gespeicherte Änderungen gehen verloren.",
+    "discardCancel": "Weiter bearbeiten",
+    "discardOk": "Verwerfen",
+    "connectedAs": "Angemeldet als",
+    "sectionAccount": "Konto",
+    "sectionDetails": "Details",
+    "terms": "Nutzungsbedingungen",
+    "privacy": "Datenschutz"
   },
   "truck": {
     "sectionToggleAdd": "+ LKW-Details hinzufügen (optional)",
@@ -340,5 +349,35 @@
     "saveButton": "Bewertung speichern",
     "errorStarsRequired": "Wähle zwischen 1 und 5 Sternen.",
     "errorNotAllowed": "Du kannst nur Mechaniker bewerten, mit denen du ein gelöstes Problem hast."
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "editProfile": "Profil bearbeiten",
+    "appearance": "Darstellung",
+    "language": "Sprache",
+    "version": "Version {{version}}",
+    "lang": {
+      "auto": "Automatisch",
+      "ro": "Română",
+      "en": "English",
+      "de": "Deutsch"
+    },
+    "theme": {
+      "label": "Design",
+      "auto": "Automatisch",
+      "light": "Hell",
+      "dark": "Dunkel"
+    }
+  },
+  "legal": {
+    "draftNotice": "In Arbeit — vorläufiger Text.",
+    "terms": {
+      "title": "Nutzungsbedingungen",
+      "body": "TruckSOS verbindet liegengebliebene LKW-Fahrer mit verfügbaren Mechanikern. Die App vermittelt den Kontakt; Preis, Reparatur und Zahlung werden direkt zwischen Fahrer und Mechaniker vereinbart. Konten mit falschen Anzeigen oder missbräuchlichen Inhalten können gesperrt werden."
+    },
+    "privacy": {
+      "title": "Datenschutzerklärung",
+      "body": "Wir erfassen Kontodaten (Name, E-Mail, Telefon, Rolle) und die von dir veröffentlichten Inhalte (Anzeigen, Fotos, Nachrichten, Bewertungen). Deine Telefonnummer sieht nur ein Mechaniker mit offener Konversation. Dein Profilfoto ist für andere angemeldete Nutzer sichtbar. Die Daten bleiben gespeichert, solange dein Konto aktiv ist."
+    }
   }
 }

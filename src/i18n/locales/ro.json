@@ -264,7 +264,16 @@
     "errorNameRequired": "Numele nu poate fi gol.",
     "avatarTitle": "Poza de profil",
     "avatarRemove": "Șterge poza",
-    "avatarError": "Poza de profil nu a putut fi actualizată."
+    "avatarError": "Poza de profil nu a putut fi actualizată.",
+    "discardTitle": "Renunți la modificări?",
+    "discardMessage": "Modificările nesalvate se pierd.",
+    "discardCancel": "Rămâi",
+    "discardOk": "Renunță",
+    "connectedAs": "Conectat ca",
+    "sectionAccount": "Cont",
+    "sectionDetails": "Detalii",
+    "terms": "Termeni și condiții",
+    "privacy": "Confidențialitate"
   },
   "truck": {
     "sectionToggleAdd": "+ Adaugă detalii camion (opțional)",
@@ -340,5 +349,35 @@
     "saveButton": "Salvează evaluarea",
     "errorStarsRequired": "Alege între 1 și 5 stele.",
     "errorNotAllowed": "Poți evalua doar un mecanic cu care ai o problemă finalizată."
+  },
+  "settings": {
+    "title": "Setări",
+    "editProfile": "Editare profil",
+    "appearance": "Aspect",
+    "language": "Limbă",
+    "version": "Versiunea {{version}}",
+    "lang": {
+      "auto": "Automat",
+      "ro": "Română",
+      "en": "English",
+      "de": "Deutsch"
+    },
+    "theme": {
+      "label": "Temă",
+      "auto": "Automat",
+      "light": "Deschisă",
+      "dark": "Închisă"
+    }
+  },
+  "legal": {
+    "draftNotice": "Conținut în lucru — text provizoriu.",
+    "terms": {
+      "title": "Termeni și condiții",
+      "body": "TruckSOS pune în legătură șoferi de camion aflați în pană cu mecanici disponibili. Aplicația facilitează contactul; înțelegerile privind prețul, execuția reparației și plata se fac direct între șofer și mecanic. Ne rezervăm dreptul de a suspenda conturile care publică anunțuri false sau conținut abuziv."
+    },
+    "privacy": {
+      "title": "Politica de confidențialitate",
+      "body": "Colectăm datele de cont (nume, e-mail, telefon, rol) și conținutul pe care îl publici (anunțuri, poze, mesaje, evaluări). Numărul de telefon este vizibil doar mecanicului cu care ai o conversație deschisă. Poza de profil este vizibilă celorlalți utilizatori autentificați. Datele se păstrează cât timp contul este activ."
+    }
   }
 }

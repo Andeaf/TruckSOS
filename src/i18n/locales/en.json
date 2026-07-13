@@ -253,7 +253,16 @@
     "errorNameRequired": "Name cannot be empty.",
     "avatarTitle": "Profile photo",
     "avatarRemove": "Remove photo",
-    "avatarError": "The profile photo could not be updated."
+    "avatarError": "The profile photo could not be updated.",
+    "discardTitle": "Discard changes?",
+    "discardMessage": "Unsaved changes will be lost.",
+    "discardCancel": "Keep editing",
+    "discardOk": "Discard",
+    "connectedAs": "Signed in as",
+    "sectionAccount": "Account",
+    "sectionDetails": "Details",
+    "terms": "Terms and conditions",
+    "privacy": "Privacy"
   },
   "truck": {
     "sectionToggleAdd": "+ Add truck details (optional)",
@@ -340,5 +349,35 @@
     "saveButton": "Save rating",
     "errorStarsRequired": "Pick between 1 and 5 stars.",
     "errorNotAllowed": "You can only rate a mechanic you have a resolved problem with."
+  },
+  "settings": {
+    "title": "Settings",
+    "editProfile": "Edit profile",
+    "appearance": "Appearance",
+    "language": "Language",
+    "version": "Version {{version}}",
+    "lang": {
+      "auto": "Automatic",
+      "ro": "Română",
+      "en": "English",
+      "de": "Deutsch"
+    },
+    "theme": {
+      "label": "Theme",
+      "auto": "Automatic",
+      "light": "Light",
+      "dark": "Dark"
+    }
+  },
+  "legal": {
+    "draftNotice": "Work in progress — placeholder text.",
+    "terms": {
+      "title": "Terms and conditions",
+      "body": "TruckSOS connects broken-down truck drivers with available mechanics. The app facilitates contact; price, repair and payment are agreed directly between driver and mechanic. We may suspend accounts that post false listings or abusive content."
+    },
+    "privacy": {
+      "title": "Privacy policy",
+      "body": "We collect account data (name, email, phone, role) and the content you publish (listings, photos, messages, reviews). Your phone number is visible only to a mechanic you have an open conversation with. Your profile photo is visible to other signed-in users. Data is kept while your account is active."
+    }
   }
 }
