@@ -304,6 +304,17 @@
     "plateLabel": "Plate number",
     "platePlaceholder": "e.g. B 123 ABC (optional)"
   },
+  "radiusFilter": {
+    "title": "Filter by distance",
+    "off": "No filter",
+    "km": "{{km}} km",
+    "distance": "~{{km}} km",
+    "noLocation": "Location not specified",
+    "locationDenied": "No location access — the filter is off, showing all announcements",
+    "locationUnavailable": "Your position couldn't be determined — showing all announcements",
+    "emptyFilteredTitle": "No announcements within {{km}} km",
+    "emptyFilteredDescription": "Increase the radius or turn the filter off to see all announcements"
+  },
   "common": {
     "loading": "Loading...",
     "timeNow": "just now",

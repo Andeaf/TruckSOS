@@ -313,6 +313,17 @@
     "cancelSelection": "Abbrechen",
     "directLabel": "Direktes Gespräch"
   },
+  "radiusFilter": {
+    "title": "Nach Entfernung filtern",
+    "off": "Kein Filter",
+    "km": "{{km}} km",
+    "distance": "~{{km}} km",
+    "noLocation": "Standort nicht angegeben",
+    "locationDenied": "Kein Standortzugriff — der Filter ist aus, alle Anzeigen werden angezeigt",
+    "locationUnavailable": "Deine Position konnte nicht ermittelt werden — alle Anzeigen werden angezeigt",
+    "emptyFilteredTitle": "Keine Anzeigen im Umkreis von {{km}} km",
+    "emptyFilteredDescription": "Vergrößere den Radius oder deaktiviere den Filter, um alle Anzeigen zu sehen"
+  },
   "common": {
     "loading": "Lädt...",
     "timeNow": "gerade eben",

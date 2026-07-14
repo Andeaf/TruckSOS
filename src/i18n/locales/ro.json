@@ -243,6 +243,17 @@
     "noResultsTitle": "Niciun rezultat",
     "noResultsDescription": "Niciun mecanic nu se potrivește cu căutarea ta."
   },
+  "radiusFilter": {
+    "title": "Filtrează după distanță",
+    "off": "Fără filtru",
+    "km": "{{km}} km",
+    "distance": "~{{km}} km",
+    "noLocation": "Locație nespecificată",
+    "locationDenied": "Fără acces la locație — filtrul nu se aplică, vezi toate anunțurile",
+    "locationUnavailable": "Poziția nu a putut fi determinată — vezi toate anunțurile",
+    "emptyFilteredTitle": "Niciun anunț în raza de {{km}} km",
+    "emptyFilteredDescription": "Mărește raza sau dezactivează filtrul ca să vezi toate anunțurile"
+  },
   "common": {
     "loading": "Se încarcă...",
     "timeNow": "acum",

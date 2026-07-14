@@ -17,6 +17,12 @@ interface AnnouncementCardProps {
   rejectedByUser?: boolean;
   /** Mecanic: anunț nedeschis încă → „Nou" în loc de status („Deschis"). */
   isNew?: boolean;
+  /**
+   * Mecanic, cu filtrul de rază activ: distanța până la anunț (km) sau `null`
+   * dacă anunțul n-are coordonate („Locație nespecificată"). `undefined` = filtru
+   * inactiv, nu se afișează nimic.
+   */
+  distanceKm?: number | null;
   /** Șofer: câți mecanici așteaptă răspuns pe acest anunț (0 = fără badge). */
   applicantCount?: number;
   selectionMode?: boolean;
@@ -26,7 +32,7 @@ interface AnnouncementCardProps {
   onToggleSelect?: () => void;
 }
 
-export function AnnouncementCard({ announcement, onPress, driverName, compact = false, rejectedByUser = false, isNew = false, applicantCount = 0, selectionMode, selected, selectable = true, onLongPress, onToggleSelect }: AnnouncementCardProps) {
+export function AnnouncementCard({ announcement, onPress, driverName, compact = false, rejectedByUser = false, isNew = false, distanceKm, applicantCount = 0, selectionMode, selected, selectable = true, onLongPress, onToggleSelect }: AnnouncementCardProps) {
   const theme = useTheme();
   const { t } = useTranslation();
 
@@ -51,6 +57,9 @@ export function AnnouncementCard({ announcement, onPress, driverName, compact = 
             </ThemedText>
           </View>
           <View style={styles.compactRight}>
+            {distanceKm === null ? (
+              <MaterialIcons name="location-off" size={12} color={theme.textSecondary} />
+            ) : null}
             {announcement.truck_make ? (
               <View style={styles.compactTruck}>
                 <MaterialIcons name="local-shipping" size={12} color={theme.textSecondary} />
@@ -126,6 +135,21 @@ export function AnnouncementCard({ announcement, onPress, driverName, compact = 
               </ThemedText>
             </View>
 
+            {distanceKm !== undefined ? (
+              <View style={styles.distanceRow}>
+                <MaterialIcons
+                  name={distanceKm == null ? 'location-off' : 'near-me'}
+                  size={12}
+                  color={theme.textSecondary}
+                />
+                <ThemedText themeColor="textSecondary" type="small">
+                  {distanceKm == null
+                    ? t('radiusFilter.noLocation')
+                    : t('radiusFilter.distance', { km: Math.round(distanceKm) })}
+                </ThemedText>
+              </View>
+            ) : null}
+
             {/* Șofer: mecanici care așteaptă răspuns. Plin, nu conturat — trebuie
                 să sară în ochi, e singurul lucru de pe card care cere o acțiune. */}
             {applicantCount > 0 && !selectionMode ? (
@@ -183,6 +207,12 @@ const styles = StyleSheet.create({
   },
   driverName: { fontSize: 12 },
   time: { flexShrink: 0 },
+  distanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: Spacing.one,
+  },
 
   // Compact card
   compactCard: {
