@@ -39,6 +39,9 @@ yarn-error.log*
 logs/
 
 # ─── Certificate & Key files ─────────────────────────────────────────────────
+# Cheia de serviciu Firebase (push FCM V1) e SECRETĂ — trăiește doar în EAS.
+# `google-services.json` NU e secret și rămâne versionat.
+*-adminsdk-*.json
 *.jks
 *.p8
 *.p12

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "889090807475",
+    "project_id": "trucksos-502308",
+    "storage_bucket": "trucksos-502308.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:889090807475:android:6c088e6584e6132ab382c6",
+        "android_client_info": {
+          "package_name": "com.andeaf.trucksos"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJQ0J-eY5VUFCZbbMHgX5f308YjubNWvI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
