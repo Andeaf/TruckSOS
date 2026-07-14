@@ -6,6 +6,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useUnreadCounts } from '@/hooks/use-chat';
 import { useChannels, useChannelUnreadCount } from '@/hooks/use-channel-chat';
+import { RadiusFilterProvider } from '@/hooks/use-radius-filter';
 
 export default function MechanicLayout() {
   const theme = useTheme();
@@ -18,6 +19,7 @@ export default function MechanicLayout() {
   const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0) + channelUnread;
 
   return (
+    <RadiusFilterProvider>
     <Tabs
       // Back-ul fizic urcă în istoricul REAL de navigare (tabul anterior), nu sare
       // direct pe primul tab — comportamentul implicit („firstRoute").
@@ -83,5 +85,6 @@ export default function MechanicLayout() {
         }}
       />
     </Tabs>
+    </RadiusFilterProvider>
   );
 }

@@ -33,6 +33,21 @@ export async function getCurrentCoords(): Promise<CoordsResult> {
 }
 
 /**
+ * Distanța Haversine în km, pentru filtrul de rază (PLAN_FAZA13.md §1.3).
+ * Eroarea (<0.5% sub 500 km) e irelevantă pentru un filtru vizual; serverul are
+ * propria variantă SQL (`distance_km`, Faza 12) pentru filtrul de push.
+ */
+export function distanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.sqrt(a));
+}
+
+/**
  * Deschide Google Maps (app nativă sau browser) cu traseul până la coordonate.
  * Doar `destination` — Google completează originul din locația dispozitivului,
  * deci nu cerem nicio permisiune de locație aici (PLAN_FAZA8.md §4).
