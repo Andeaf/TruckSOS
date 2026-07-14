@@ -31,6 +31,20 @@ export interface Profile {
 /** Ce arătăm despre un alt utilizator în liste/carduri: nume + avatar. */
 export type PublicUser = Pick<Profile, 'full_name' | 'avatar_path'>;
 
+/** Mecanic favorit al unui șofer. PK compus (driver_id, mechanic_id). */
+export interface FavoriteMechanic {
+  driver_id: string;
+  mechanic_id: string;
+  created_at: string;
+}
+
+/** Intrare în istoricul de căutare al șoferului. PK compus → dedup prin upsert. */
+export interface SearchHistoryEntry {
+  driver_id: string;
+  mechanic_id: string;
+  searched_at: string;
+}
+
 /** Evaluare dată de un șofer unui mecanic. UNIQUE(mechanic_id, driver_id) → upsert. */
 export interface Rating {
   id: string;
