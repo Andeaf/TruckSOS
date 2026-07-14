@@ -3,8 +3,9 @@ import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import MapView, { Marker, type Region } from 'react-native-maps';
+import MapView, { Circle, Marker, type Region } from 'react-native-maps';
 
+import { RadiusFilterButton } from '@/components/radius-filter-button';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -12,6 +13,7 @@ import { DARK_MAP_STYLE, ROMANIA_REGION, USER_REGION_DELTA } from '@/constants/m
 import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useOpenAnnouncements, type AnnouncementWithDriver } from '@/hooks/use-announcements';
+import { applyRadiusFilter, useRadiusFilter } from '@/hooks/use-radius-filter';
 import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { useTimeAgo } from '@/hooks/use-time-ago';
@@ -40,6 +42,7 @@ export default function MechanicMapScreen() {
   const { session } = useAuth();
   const { announcements, refresh } = useOpenAnnouncements();
   const { viewed, refresh: refreshViewed } = useViewedAnnouncements(session?.user.id);
+  const { radiusKm, coords, locationError, refreshCoords } = useRadiusFilter();
 
   // `initialRegion` se aplică o singură dată, la montare → randăm harta abia după ce
   // știm de unde pornim (poziția mecanicului sau, la refuz/eroare, centrul României).
@@ -69,17 +72,23 @@ export default function MechanicMapScreen() {
       refresh();
       // La întoarcerea din detaliu, pinul tocmai deschis trebuie să devină „văzut".
       refreshViewed();
-    }, [refresh, refreshViewed])
+      // Poziția pentru filtrul de rază — throttle intern.
+      refreshCoords();
+    }, [refresh, refreshViewed, refreshCoords])
   );
 
   const located = announcements.filter(hasCoords);
+  // Contorul „fără locație" rămâne pe lista COMPLETĂ (R8): acele anunțuri nu sunt
+  // excluse de filtru, pur și simplu nu pot fi desenate.
   const missingCount = announcements.length - located.length;
+  const visible = applyRadiusFilter(located, radiusKm, coords);
 
   return (
     <ThemedView style={styles.container}>
       <ScreenHeader
         title={t('mechanic.map.title')}
-        subtitle={t('mechanic.map.pinCount', { count: located.length })}
+        subtitle={t('mechanic.map.pinCount', { count: visible.length })}
+        right={<RadiusFilterButton />}
       />
 
       {region ? (
@@ -92,7 +101,17 @@ export default function MechanicMapScreen() {
             toolbarEnabled={false}
             customMapStyle={scheme === 'dark' ? DARK_MAP_STYLE : undefined}
             onPress={() => setSelected(null)}>
-            {located.map((item) => (
+            {/* Raza filtrului, desenată — face vizibil intuitiv de ce lipsesc pin-uri. */}
+            {radiusKm != null && coords != null ? (
+              <Circle
+                center={coords}
+                radius={radiusKm * 1000}
+                strokeColor={theme.brand}
+                strokeWidth={1}
+                fillColor={`${theme.brand}1F`}
+              />
+            ) : null}
+            {visible.map((item) => (
               <Marker
                 key={item.id}
                 coordinate={{ latitude: item.latitude, longitude: item.longitude }}
@@ -103,16 +122,31 @@ export default function MechanicMapScreen() {
             ))}
           </MapView>
 
-          {missingCount > 0 ? (
-            <ThemedView type="backgroundElement" style={styles.missingBanner}>
-              <MaterialIcons name="location-off" size={14} color={theme.textSecondary} />
-              <ThemedText themeColor="textSecondary" type="small">
-                {t('mechanic.map.missingCount', { count: missingCount })}
-              </ThemedText>
-            </ThemedView>
-          ) : null}
+          <View style={styles.banners} pointerEvents="none">
+            {missingCount > 0 ? (
+              <ThemedView type="backgroundElement" style={styles.missingBanner}>
+                <MaterialIcons name="location-off" size={14} color={theme.textSecondary} />
+                <ThemedText themeColor="textSecondary" type="small">
+                  {t('mechanic.map.missingCount', { count: missingCount })}
+                </ThemedText>
+              </ThemedView>
+            ) : null}
+            {radiusKm != null && coords == null && locationError != null ? (
+              <ThemedView type="backgroundElement" style={styles.missingBanner}>
+                <MaterialIcons name="location-off" size={14} color={theme.textSecondary} />
+                <ThemedText themeColor="textSecondary" type="small">
+                  {t(
+                    locationError === 'denied'
+                      ? 'radiusFilter.locationDenied'
+                      : 'radiusFilter.locationUnavailable'
+                  )}
+                </ThemedText>
+              </ThemedView>
+            ) : null}
+          </View>
 
-          {selected ? (
+          {/* Cardul dispare dacă pinul lui tocmai a ieșit din rază (filtru strâns). */}
+          {selected && visible.some((v) => v.id === selected.id) ? (
             <Pressable
               onPress={() =>
                 router.push({
@@ -159,10 +193,15 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   mapWrapper: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  missingBanner: {
+  banners: {
     position: 'absolute',
     top: Spacing.three,
-    alignSelf: 'center',
+    left: Spacing.four,
+    right: Spacing.four,
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  missingBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one,
