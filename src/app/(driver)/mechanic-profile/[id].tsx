@@ -15,6 +15,8 @@ import { Radius, Spacing } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { startDirectConversation } from '@/hooks/use-chat';
+import { useFavorites } from '@/hooks/use-favorites';
+import { useTheme } from '@/hooks/use-theme';
 import { useCanRate, useMechanicReviews, useMyRatingFor } from '@/hooks/use-ratings';
 import { useSignedUrl } from '@/hooks/use-signed-urls';
 import type { Profile } from '@/types/database';
@@ -43,6 +45,7 @@ async function fetchMechanicPhone(mechanicId: string): Promise<string | null> {
 export default function MechanicProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
+  const theme = useTheme();
   const goBack = useBack();
 
   const router = useRouter();
@@ -59,6 +62,10 @@ export default function MechanicProfileScreen() {
   const canRate = useCanRate(id, session?.user.id);
   const { rating: myRating, refresh: refreshMyRating } = useMyRatingFor(id, session?.user.id);
   const { reviews, refresh: refreshReviews } = useMechanicReviews(id);
+  const { favoriteIds, toggleFavorite, refresh: refreshFavorites } = useFavorites();
+  const isFavorite = favoriteIds.has(id);
+
+  useEffect(() => { refreshFavorites(); }, [refreshFavorites]);
 
   async function handleContact() {
     if (contacting) return;
@@ -104,7 +111,23 @@ export default function MechanicProfileScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScreenHeader title={t('driver.mechanicProfile.title')} onBack={goBack} />
+      <ScreenHeader
+        title={t('driver.mechanicProfile.title')}
+        onBack={goBack}
+        right={
+          // Pe banda albastră steaua brand nu s-ar vedea → albă (decizie R4).
+          <Pressable
+            onPress={() => toggleFavorite(id)}
+            hitSlop={12}
+            accessibilityLabel={t('favorites.toggle')}>
+            <MaterialIcons
+              name={isFavorite ? 'star' : 'star-outline'}
+              size={26}
+              color={theme.onHeader}
+            />
+          </Pressable>
+        }
+      />
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.identity}>

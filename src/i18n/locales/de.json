@@ -313,6 +313,10 @@
     "cancelSelection": "Abbrechen",
     "directLabel": "Direktes Gespräch"
   },
+  "favorites": {
+    "toggle": "Favorit",
+    "sectionTitle": "Favoriten"
+  },
   "radiusFilter": {
     "title": "Nach Entfernung filtern",
     "off": "Kein Filter",

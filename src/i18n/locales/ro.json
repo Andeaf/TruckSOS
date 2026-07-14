@@ -243,6 +243,10 @@
     "noResultsTitle": "Niciun rezultat",
     "noResultsDescription": "Niciun mecanic nu se potrivește cu căutarea ta."
   },
+  "favorites": {
+    "toggle": "Favorit",
+    "sectionTitle": "Favoriți"
+  },
   "radiusFilter": {
     "title": "Filtrează după distanță",
     "off": "Fără filtru",

@@ -304,6 +304,10 @@
     "plateLabel": "Plate number",
     "platePlaceholder": "e.g. B 123 ABC (optional)"
   },
+  "favorites": {
+    "toggle": "Favorite",
+    "sectionTitle": "Favorites"
+  },
   "radiusFilter": {
     "title": "Filter by distance",
     "off": "No filter",
