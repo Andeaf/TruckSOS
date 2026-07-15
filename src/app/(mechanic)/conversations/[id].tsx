@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { ChatScreen } from '@/components/chat-screen';
@@ -23,6 +23,7 @@ export default function MechanicChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
   const { t } = useTranslation();
+  const router = useRouter();
   const goBack = useBack('/(mechanic)/conversations');
   const [conv, setConv] = useState<ConversationWithDetails | null>(null);
   const { messages, loading, addMessage, patchMessage } = useMessages(id);
@@ -48,6 +49,10 @@ export default function MechanicChatScreen() {
       accentColor="#22c55e"
       title={conv.driver.full_name}
       headerAvatarPath={conv.driver.avatar_path}
+      headerUserId={conv.driver_id}
+      onPressUser={(userId) =>
+        router.push({ pathname: '/(mechanic)/public-profile/[id]' as never, params: { id: userId } })
+      }
       subtitle={conv.announcement?.location ?? t('conversations.directLabel')}
       subtitleIcon={conv.announcement ? 'location-on' : 'forum'}
       bannerText={

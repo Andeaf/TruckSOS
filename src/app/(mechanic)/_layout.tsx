@@ -84,6 +84,7 @@ export default function MechanicLayout() {
           ),
         }}
       />
+      <Tabs.Screen name="public-profile" options={{ href: null }} />
     </Tabs>
     </RadiusFilterProvider>
   );

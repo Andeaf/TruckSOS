@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { ChatScreen } from '@/components/chat-screen';
@@ -20,6 +20,7 @@ export default function MechanicChannelChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
   const { t } = useTranslation();
+  const router = useRouter();
   const goBack = useBack('/(mechanic)/conversations');
   const [channel, setChannel] = useState<Channel | null>(null);
   const { messages, loading, loadingMore, loadOlder, addMessage, patchMessage } =
@@ -47,6 +48,9 @@ export default function MechanicChannelChatScreen() {
       onLoadOlder={loadOlder}
       renderSenderName={(message) => message.sender.full_name}
       renderSenderAvatarPath={(message) => message.sender.avatar_path}
+      onPressUser={(userId) =>
+        router.push({ pathname: '/(mechanic)/public-profile/[id]' as never, params: { id: userId } })
+      }
       renderSenderLabel={(message) =>
         `${message.sender.full_name} · ${t(`auth.roleSelect.${message.sender.role}Title`)}`
       }

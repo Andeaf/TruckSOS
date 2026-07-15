@@ -243,6 +243,10 @@
     "photo": "📷 Photo",
     "you": "You"
   },
+  "publicProfile": {
+    "title": "Profile",
+    "notFound": "Profile unavailable"
+  },
   "channel": {
     "name": {
       "global": "TruckSOS Community"

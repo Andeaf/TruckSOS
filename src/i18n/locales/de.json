@@ -243,6 +243,10 @@
     "photo": "📷 Foto",
     "you": "Du"
   },
+  "publicProfile": {
+    "title": "Profil",
+    "notFound": "Profil nicht verfügbar"
+  },
   "channel": {
     "name": {
       "global": "TruckSOS Gemeinschaft"

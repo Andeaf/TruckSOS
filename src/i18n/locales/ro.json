@@ -245,6 +245,10 @@
     "photo": "📷 Poză",
     "you": "Tu"
   },
+  "publicProfile": {
+    "title": "Profil",
+    "notFound": "Profil indisponibil"
+  },
   "channel": {
     "name": {
       "global": "Comunitate TruckSOS"

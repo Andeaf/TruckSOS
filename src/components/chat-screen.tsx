@@ -76,6 +76,8 @@ interface MessageBubbleProps<M extends ChatMessageBase> {
   onLongPress?: () => void;
   /** Tap pe citat → derulează la mesajul original (dacă e încărcat). */
   onPressQuote?: () => void;
+  /** Tap pe avatarul expeditorului (chat de grup) → profilul lui. */
+  onPressAvatar?: () => void;
 }
 
 function MessageBubble<M extends ChatMessageBase>({
@@ -90,6 +92,7 @@ function MessageBubble<M extends ChatMessageBase>({
   onPressImage,
   onLongPress,
   onPressQuote,
+  onPressAvatar,
 }: MessageBubbleProps<M>) {
   const theme = useTheme();
   const { t } = useTranslation();
@@ -107,7 +110,9 @@ function MessageBubble<M extends ChatMessageBase>({
   return (
     <View style={[styles.bubbleRow, isMe ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
       {showSenderAvatar && !isMe ? (
-        <Avatar url={senderAvatarUrl} name={senderName} size={32} />
+        <Pressable onPress={onPressAvatar} disabled={!onPressAvatar}>
+          <Avatar url={senderAvatarUrl} name={senderName} size={32} />
+        </Pressable>
       ) : null}
       <View style={styles.bubbleColumn}>
         {senderLabel ? (
@@ -223,6 +228,10 @@ interface ChatScreenProps<M extends ChatMessageBase> {
   renderSenderAvatarPath?: (message: M) => string | null;
   /** Avatarul interlocutorului, în antet (chat 1-la-1). */
   headerAvatarPath?: string | null;
+  /** Id-ul interlocutorului din antet — pentru tap pe avatar → profil (chat 1-la-1). */
+  headerUserId?: string;
+  /** Tap pe avatar (antet sau bulă) → profilul acelui utilizator. Rutarea o decide ecranul. */
+  onPressUser?: (userId: string) => void;
   onBack: () => void;
   /**
    * Acțiuni din meniul contextual (tap lung pe bulă), toate opționale — o acțiune
@@ -253,6 +262,8 @@ export function ChatScreen<M extends ChatMessageBase>({
   renderSenderName,
   renderSenderAvatarPath,
   headerAvatarPath,
+  headerUserId,
+  onPressUser,
   onBack,
   onEditMessage,
   onDeleteMessage,
@@ -409,11 +420,15 @@ export function ChatScreen<M extends ChatMessageBase>({
           <MaterialIcons name="arrow-back" size={24} color={theme.onHeader} />
         </Pressable>
         {headerAvatarPath !== undefined ? (
-          <Avatar
-            url={headerAvatarPath ? urls[headerAvatarPath] : undefined}
-            name={title}
-            size={36}
-          />
+          <Pressable
+            onPress={onPressUser && headerUserId ? () => onPressUser(headerUserId) : undefined}
+            disabled={!onPressUser || !headerUserId}>
+            <Avatar
+              url={headerAvatarPath ? urls[headerAvatarPath] : undefined}
+              name={title}
+              size={36}
+            />
+          </Pressable>
         ) : null}
         <View style={styles.headerInfo}>
           <HeaderText numberOfLines={1}>{title}</HeaderText>
@@ -491,6 +506,9 @@ export function ChatScreen<M extends ChatMessageBase>({
                 onLongPress={() => setMenuMessage(item)}
                 onPressQuote={
                   item.reply_to_id ? () => scrollToQuoted(item.reply_to_id!) : undefined
+                }
+                onPressAvatar={
+                  onPressUser ? () => onPressUser(item.sender_id) : undefined
                 }
               />
               );
