@@ -385,6 +385,7 @@
     "timeHoursAgo": "vor {{count}} Std.",
     "timeDaysAgo": "vor {{count}} Tagen",
     "defaultUser": "Benutzer",
+    "deletedUser": "Gelöschter Benutzer",
     "noSession": "Keine aktive Sitzung",
     "signOut": "Abmelden",
     "error": "Fehler"
@@ -454,7 +455,24 @@
     "positionUnset": "Nicht festgelegt",
     "positionLoading": "Wird gesucht…",
     "positionError": "Der Standort konnte nicht festgelegt werden.",
-    "radiusNeedsPosition": "Du hast einen Radius, aber keinen Standort festgelegt — bis dahin erhältst du keine Benachrichtigungen für neue Anzeigen."
+    "radiusNeedsPosition": "Du hast einen Radius, aber keinen Standort festgelegt — bis dahin erhältst du keine Benachrichtigungen für neue Anzeigen.",
+    "deleteAccount": "Konto löschen",
+    "deleteAccountScreen": {
+      "title": "Konto löschen",
+      "explainTitle": "Was gelöscht wird",
+      "explainBody": "Folgendes wird dauerhaft gelöscht: deine Anzeigen, gespeicherten LKW, abgegebenen Bewertungen, Favoriten und die im Chat gesendeten Fotos. Deine Textnachrichten bleiben in Unterhaltungen sichtbar, angezeigt als von einem gelöschten Benutzer.",
+      "warning": "Diese Aktion erfolgt sofort und kann nicht rückgängig gemacht werden.",
+      "passwordLabel": "Mit deinem Passwort bestätigen",
+      "passwordPlaceholder": "Passwort",
+      "passwordRequired": "Gib dein Passwort zur Bestätigung ein.",
+      "passwordWrong": "Falsches Passwort.",
+      "submit": "Endgültig löschen",
+      "finalTitle": "Bist du dir absolut sicher?",
+      "finalBody": "Dein Konto und deine Daten werden sofort gelöscht und können nicht wiederhergestellt werden.",
+      "finalOk": "Ja, mein Konto löschen",
+      "cancel": "Abbrechen",
+      "error": "Das Konto konnte nicht gelöscht werden. Bitte versuche es erneut."
+    }
   },
   "legal": {
     "draftNotice": "In Arbeit — vorläufiger Text.",

@@ -19,17 +19,18 @@ import { useFavorites } from '@/hooks/use-favorites';
 import { useTheme } from '@/hooks/use-theme';
 import { useCanRate, useMechanicReviews, useMyRatingFor } from '@/hooks/use-ratings';
 import { useSignedUrl } from '@/hooks/use-signed-urls';
+import { displayName, isDeletedUser } from '@/lib/display-name';
 import type { Profile } from '@/types/database';
 
 type PublicProfile = Pick<
   Profile,
-  'full_name' | 'specialization' | 'activity_zone' | 'rating_avg' | 'rating_count' | 'avatar_path'
+  'full_name' | 'specialization' | 'activity_zone' | 'rating_avg' | 'rating_count' | 'avatar_path' | 'deleted_at'
 >;
 
 async function fetchPublicProfile(mechanicId: string): Promise<PublicProfile | null> {
   const { data } = await supabase
     .from('profiles')
-    .select('full_name, specialization, activity_zone, rating_avg, rating_count, avatar_path')
+    .select('full_name, specialization, activity_zone, rating_avg, rating_count, avatar_path, deleted_at')
     .eq('id', mechanicId)
     .single();
   return (data as PublicProfile) ?? null;
@@ -109,30 +110,35 @@ export default function MechanicProfileScreen() {
     );
   }
 
+  // Cont șters (piatră-funerară): nu mai poți iniția acțiuni cu el (contact, favorit, rating).
+  const deleted = isDeletedUser(profile);
+
   return (
     <ThemedView style={styles.container}>
       <ScreenHeader
         title={t('driver.mechanicProfile.title')}
         onBack={goBack}
         right={
-          // Pe banda albastră steaua brand nu s-ar vedea → albă (decizie R4).
-          <Pressable
-            onPress={() => toggleFavorite(id)}
-            hitSlop={12}
-            accessibilityLabel={t('favorites.toggle')}>
-            <MaterialIcons
-              name={isFavorite ? 'star' : 'star-outline'}
-              size={26}
-              color={theme.onHeader}
-            />
-          </Pressable>
+          deleted ? undefined : (
+            // Pe banda albastră steaua brand nu s-ar vedea → albă (decizie R4).
+            <Pressable
+              onPress={() => toggleFavorite(id)}
+              hitSlop={12}
+              accessibilityLabel={t('favorites.toggle')}>
+              <MaterialIcons
+                name={isFavorite ? 'star' : 'star-outline'}
+                size={26}
+                color={theme.onHeader}
+              />
+            </Pressable>
+          )
         }
       />
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.identity}>
-          <Avatar url={avatarUrl} name={profile.full_name} size={72} />
-          <ThemedText type="smallBold">{profile.full_name}</ThemedText>
+          <Avatar url={avatarUrl} name={displayName(profile, t)} size={72} />
+          <ThemedText type="smallBold">{displayName(profile, t)}</ThemedText>
         </View>
 
         <ThemedView type="backgroundElement" style={styles.section}>
@@ -142,7 +148,7 @@ export default function MechanicProfileScreen() {
           </View>
           <RatingBadge avg={profile.rating_avg} count={profile.rating_count} />
 
-          {canRate ? (
+          {canRate && !deleted ? (
             <Pressable
               onPress={() => setSheetVisible(true)}
               style={({ pressed }) => [styles.rateButton, pressed && styles.pressed]}>
@@ -207,26 +213,29 @@ export default function MechanicProfileScreen() {
           )}
         </ThemedView>
 
-        <Pressable
-          onPress={handleContact}
-          disabled={contacting}
-          style={({ pressed }) => [styles.contactButton, (pressed || contacting) && styles.pressed]}>
-          {contacting ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <MaterialIcons name="chat" size={18} color="#fff" />
-          )}
-          <ThemedText style={styles.contactButtonText}>
-            {t('driver.mechanicProfile.contactButton')}
-          </ThemedText>
-        </Pressable>
+        {/* Un cont șters nu mai poate fi contactat (n-are cine să răspundă). */}
+        {deleted ? null : (
+          <Pressable
+            onPress={handleContact}
+            disabled={contacting}
+            style={({ pressed }) => [styles.contactButton, (pressed || contacting) && styles.pressed]}>
+            {contacting ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <MaterialIcons name="chat" size={18} color="#fff" />
+            )}
+            <ThemedText style={styles.contactButtonText}>
+              {t('driver.mechanicProfile.contactButton')}
+            </ThemedText>
+          </Pressable>
+        )}
       </ScrollView>
 
       {sheetVisible && session ? (
         <RatingSheet
           visible
           mechanicId={id}
-          mechanicName={profile.full_name}
+          mechanicName={displayName(profile, t)}
           driverId={session.user.id}
           initialStars={myRating?.stars}
           initialComment={myRating?.comment}

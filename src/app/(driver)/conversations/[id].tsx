@@ -6,6 +6,7 @@ import { ChatScreen } from '@/components/chat-screen';
 import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
+import { displayName } from '@/lib/display-name';
 import {
   deleteMessage,
   editMessage,
@@ -49,7 +50,7 @@ export default function DriverChatScreen() {
     <ChatScreen
       currentUserId={session.user.id}
       accentColor="#208AEF"
-      title={conv.mechanic.full_name}
+      title={displayName(conv.mechanic, t)}
       headerAvatarPath={conv.mechanic.avatar_path}
       headerUserId={conv.mechanic_id}
       onPressUser={(userId) =>

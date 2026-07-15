@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -26,7 +26,15 @@ const THEMES: ThemePref[] = ['auto', 'light', 'dark'];
 /** Raze fixe, nu câmp liber: alegerea e mai rapidă și evită valori absurde. */
 const RADII: (number | null)[] = [25, 50, 100, 200, null];
 
-export function SettingsScreen({ editPath, backPath }: { editPath: string; backPath: string }) {
+export function SettingsScreen({
+  editPath,
+  backPath,
+  deletePath,
+}: {
+  editPath: string;
+  backPath: string;
+  deletePath: string;
+}) {
   const { t } = useTranslation();
   const router = useRouter();
   const goBack = useBack(backPath);
@@ -151,6 +159,18 @@ export function SettingsScreen({ editPath, backPath }: { editPath: string; backP
         <ThemedText themeColor="textSecondary" type="small" style={styles.version}>
           {t('settings.version', { version: Constants.expoConfig?.version ?? '—' })}
         </ThemedText>
+
+        {/* Zonă distructivă, separată vizual: ștergerea contului nu trebuie apăsată din greșeală. */}
+        <View style={styles.dangerZone}>
+          <RowGroup>
+            <ListRow
+              icon="delete-forever"
+              label={t('settings.deleteAccount')}
+              destructive
+              onPress={() => router.push(deletePath as never)}
+            />
+          </RowGroup>
+        </View>
       </ScrollView>
 
       <ActionSheet
@@ -180,4 +200,5 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: Spacing.four, gap: Spacing.two },
   version: { textAlign: 'center', marginTop: Spacing.four },
+  dangerZone: { marginTop: Spacing.four },
 });

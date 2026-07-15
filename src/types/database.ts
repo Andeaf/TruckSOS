@@ -25,11 +25,13 @@ export interface Profile {
   longitude: number | null;
   /** Limba în care serverul compune textul notificărilor. */
   lang: string;
+  /** Faza 15: piatră-funerară. NOT NULL = cont șters (PII golit); UI afișează „Utilizator șters". */
+  deleted_at: string | null;
   created_at: string;
 }
 
-/** Ce arătăm despre un alt utilizator în liste/carduri: nume + avatar. */
-export type PublicUser = Pick<Profile, 'full_name' | 'avatar_path'>;
+/** Ce arătăm despre un alt utilizator în liste/carduri: nume + avatar (+ marcaj de cont șters). */
+export type PublicUser = Pick<Profile, 'full_name' | 'avatar_path' | 'deleted_at'>;
 
 /** Mecanic favorit al unui șofer. PK compus (driver_id, mechanic_id). */
 export interface FavoriteMechanic {
@@ -87,6 +89,9 @@ export interface Conversation {
   announcement_id: string | null; // NULL = conversație directă (fără anunț), Faza 7
   driver_id: string;
   mechanic_id: string;
+  /** Faza 15: true = conversație directă autentică (start_direct_conversation); false = pe anunț
+   * SAU orfanată de un anunț șters. Indexul unic de perechi directe se aplică doar celor true. */
+  is_direct: boolean;
   created_at: string;
 }
 
@@ -208,7 +213,8 @@ export interface Database {
       };
       conversations: {
         Row: Conversation;
-        Insert: Omit<Conversation, 'id' | 'created_at'>;
+        // is_direct e setat server-side (start_direct_conversation) sau default false — nu la insert din client.
+        Insert: Omit<Conversation, 'id' | 'created_at' | 'is_direct'>;
         Update: never;
       };
       messages: {

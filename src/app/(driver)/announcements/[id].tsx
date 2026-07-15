@@ -18,6 +18,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
+import { displayName } from '@/lib/display-name';
 import { useAnnouncementPhotos } from '@/hooks/use-announcement-photos';
 import { useAuth } from '@/hooks/use-auth';
 import { useMyRatingFor } from '@/hooks/use-ratings';
@@ -391,10 +392,10 @@ export default function AnnouncementDetailScreen() {
                     ? avatarUrls[announcement.mechanic.avatar_path]
                     : undefined
                 }
-                name={announcement.mechanic.full_name}
+                name={displayName(announcement.mechanic, t)}
                 size={36}
               />
-              <ThemedText>{announcement.mechanic.full_name}</ThemedText>
+              <ThemedText>{displayName(announcement.mechanic, t)}</ThemedText>
             </View>
           </ThemedView>
         ) : null}
@@ -485,7 +486,7 @@ export default function AnnouncementDetailScreen() {
         <RatingSheet
           visible
           mechanicId={announcement.mechanic_id}
-          mechanicName={announcement.mechanic.full_name}
+          mechanicName={displayName(announcement.mechanic, t)}
           driverId={session.user.id}
           initialStars={myRating?.stars}
           initialComment={myRating?.comment}

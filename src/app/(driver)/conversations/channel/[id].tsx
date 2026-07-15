@@ -14,6 +14,7 @@ import {
   useChannelMessages,
 } from '@/hooks/use-channel-chat';
 import { deleteMessage, editMessage, withinEditWindow } from '@/hooks/use-chat';
+import { displayName } from '@/lib/display-name';
 import type { Channel } from '@/types/database';
 
 export default function DriverChannelChatScreen() {
@@ -46,13 +47,13 @@ export default function DriverChannelChatScreen() {
       loading={loading}
       loadingMore={loadingMore}
       onLoadOlder={loadOlder}
-      renderSenderName={(message) => message.sender.full_name}
+      renderSenderName={(message) => displayName(message.sender, t)}
       renderSenderAvatarPath={(message) => message.sender.avatar_path}
       onPressUser={(userId) =>
         router.push({ pathname: '/(driver)/public-profile/[id]' as never, params: { id: userId } })
       }
       renderSenderLabel={(message) =>
-        `${message.sender.full_name} · ${t(`auth.roleSelect.${message.sender.role}Title`)}`
+        `${displayName(message.sender, t)} · ${t(`auth.roleSelect.${message.sender.role}Title`)}`
       }
       onSend={async (content, replyToId) => {
         const { message } = await sendChannelMessage(id, session.user.id, content, null, replyToId);

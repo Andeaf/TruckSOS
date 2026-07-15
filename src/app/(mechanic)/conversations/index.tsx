@@ -18,6 +18,7 @@ import { useChannels, useChannelUnreadCount } from '@/hooks/use-channel-chat';
 import { useSignedUrls } from '@/hooks/use-signed-urls';
 import { useTimeAgo } from '@/hooks/use-time-ago';
 import { formatBadge } from '@/lib/badge';
+import { displayName } from '@/lib/display-name';
 import type { Channel } from '@/types/database';
 
 function ChannelCard({
@@ -97,11 +98,11 @@ function ConversationCard({
               color={selected ? '#22c55e' : theme.textSecondary}
             />
           ) : null}
-          <Avatar url={avatarUrl} name={item.driver.full_name} size={44} />
+          <Avatar url={avatarUrl} name={displayName(item.driver, t)} size={44} />
           <View style={styles.cardContent}>
             <View style={styles.cardTop}>
               <ThemedText type="smallBold" numberOfLines={1} style={styles.name}>
-                {item.driver.full_name}
+                {displayName(item.driver, t)}
               </ThemedText>
               <View style={styles.timeRow}>
                 {unreadCount > 0 && !selectionMode ? (

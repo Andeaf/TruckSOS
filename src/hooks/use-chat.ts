@@ -31,7 +31,7 @@ export function useConversations(userId: string | undefined) {
     let query = supabase
       .from('conversations')
       .select(
-        '*, announcement:announcements!announcement_id(location,status,description), driver:profiles!driver_id(full_name,avatar_path), mechanic:profiles!mechanic_id(full_name,avatar_path)'
+        '*, announcement:announcements!announcement_id(location,status,description), driver:profiles!driver_id(full_name,avatar_path,deleted_at), mechanic:profiles!mechanic_id(full_name,avatar_path,deleted_at)'
       )
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .or(`driver_id.eq.${userId},mechanic_id.eq.${userId}` as any)
@@ -80,8 +80,12 @@ export function useMessages(conversationId: string) {
       }
     })();
 
+    // Nume UNIC per abonare: supabase.channel() refolosește un canal cu același topic, iar
+    // la remount/Fast Refresh cleanup-ul (removeChannel) e asincron — un nume determinist ar
+    // returna canalul vechi deja subscribe()-uit, și .on() ar arunca „after subscribe()".
+    // (Același motiv pentru care useReadCursor/useUnreadCounts folosesc deja Math.random().)
     const channel = supabase
-      .channel(`messages:${conversationId}`)
+      .channel(`messages:${conversationId}:${Math.random()}`)
       .on(
         'postgres_changes',
         {
@@ -234,7 +238,7 @@ export function useAnnouncementStatus(
   useEffect(() => {
     if (!announcementId) return;
     const channel = supabase
-      .channel(`announcement-status:${announcementId}`)
+      .channel(`announcement-status:${announcementId}:${Math.random()}`)
       .on(
         'postgres_changes',
         {
@@ -403,7 +407,7 @@ export async function fetchConversationDetails(
   const { data } = await supabase
     .from('conversations')
     .select(
-      '*, announcement:announcements!announcement_id(location,status,description), driver:profiles!driver_id(full_name,avatar_path), mechanic:profiles!mechanic_id(full_name,avatar_path)'
+      '*, announcement:announcements!announcement_id(location,status,description), driver:profiles!driver_id(full_name,avatar_path,deleted_at), mechanic:profiles!mechanic_id(full_name,avatar_path,deleted_at)'
     )
     .eq('id', conversationId)
     .single();

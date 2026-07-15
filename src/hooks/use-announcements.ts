@@ -122,7 +122,7 @@ export async function fetchAnnouncementById(
 ): Promise<AnnouncementWithMechanic | null> {
   const { data } = await supabase
     .from('announcements')
-    .select('*, mechanic:profiles!mechanic_id(full_name,avatar_path)')
+    .select('*, mechanic:profiles!mechanic_id(full_name,avatar_path,deleted_at)')
     .eq('id', id)
     .single();
   return (data as unknown as AnnouncementWithMechanic) ?? null;

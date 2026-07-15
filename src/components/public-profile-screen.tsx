@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
 import { useTheme } from '@/hooks/use-theme';
 import { useSignedUrl } from '@/hooks/use-signed-urls';
+import { displayName, isDeletedUser } from '@/lib/display-name';
 import type { Profile } from '@/types/database';
 
 /**
@@ -31,13 +32,13 @@ import type { Profile } from '@/types/database';
 
 type PublicProfile = Pick<
   Profile,
-  'full_name' | 'role' | 'avatar_path' | 'specialization' | 'activity_zone' | 'rating_avg' | 'rating_count'
+  'full_name' | 'role' | 'avatar_path' | 'specialization' | 'activity_zone' | 'rating_avg' | 'rating_count' | 'deleted_at'
 >;
 
 async function fetchPublicProfile(userId: string): Promise<PublicProfile | null> {
   const { data } = await supabase
     .from('profiles')
-    .select('full_name, role, avatar_path, specialization, activity_zone, rating_avg, rating_count')
+    .select('full_name, role, avatar_path, specialization, activity_zone, rating_avg, rating_count, deleted_at')
     .eq('id', userId)
     .single();
   return (data as unknown as PublicProfile) ?? null;
@@ -55,8 +56,8 @@ export function PublicProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [reportVisible, setReportVisible] = useState(false);
   const avatarUrl = useSignedUrl(profile?.avatar_path);
-  // Nu te poți raporta pe tine însuți.
-  const canReport = !!session && session.user.id !== id;
+  // Nu te poți raporta pe tine însuți — și nici un cont deja șters (nu mai are ce modera).
+  const canReport = !!session && session.user.id !== id && !isDeletedUser(profile);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -108,8 +109,8 @@ export function PublicProfileScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.identity}>
-          <Avatar url={avatarUrl} name={profile.full_name} size={72} />
-          <ThemedText type="smallBold">{profile.full_name}</ThemedText>
+          <Avatar url={avatarUrl} name={displayName(profile, t)} size={72} />
+          <ThemedText type="smallBold">{displayName(profile, t)}</ThemedText>
           <ThemedText themeColor="textSecondary" type="small">
             {t(`auth.roleSelect.${profile.role}Title`)}
           </ThemedText>

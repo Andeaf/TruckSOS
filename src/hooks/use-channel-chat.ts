@@ -67,7 +67,7 @@ export function useChannelMessages(channelId: string) {
       const { data } = await supabase
         .from('channel_messages')
         .select(
-          '*, sender:profiles!sender_id(full_name,role,avatar_path)' +
+          '*, sender:profiles!sender_id(full_name,role,avatar_path,deleted_at)' +
             (v14 ? replyEmbed('channel_messages') : '')
         )
         .eq('channel_id', channelId)
@@ -80,8 +80,10 @@ export function useChannelMessages(channelId: string) {
       setLoading(false);
     })();
 
+    // Nume UNIC per abonare (vezi use-chat.ts): altfel remount/Fast Refresh refolosește un
+    // canal deja subscribe()-uit și .on() aruncă „after subscribe()".
     const channel = supabase
-      .channel(`channel-messages:${channelId}`)
+      .channel(`channel-messages:${channelId}:${Math.random()}`)
       .on(
         'postgres_changes',
         {
@@ -98,7 +100,7 @@ export function useChannelMessages(channelId: string) {
           if (messagesRef.current.some((m) => m.id === incoming.id)) return;
           const { data: sender } = await supabase
             .from('profiles')
-            .select('full_name,role,avatar_path')
+            .select('full_name,role,avatar_path,deleted_at')
             .eq('id', incoming.sender_id)
             .single();
           if (!active) return;
@@ -108,6 +110,7 @@ export function useChannelMessages(channelId: string) {
               full_name: '',
               role: 'driver',
               avatar_path: null,
+              deleted_at: null,
             },
           });
         }
@@ -145,7 +148,7 @@ export function useChannelMessages(channelId: string) {
     const { data } = await supabase
       .from('channel_messages')
       .select(
-        '*, sender:profiles!sender_id(full_name,role,avatar_path)' +
+        '*, sender:profiles!sender_id(full_name,role,avatar_path,deleted_at)' +
           (v14 ? replyEmbed('channel_messages') : '')
       )
       .eq('channel_id', channelId)
@@ -180,7 +183,7 @@ export async function sendChannelMessage(
     .from('channel_messages')
     .insert(row as never)
     .select(
-      '*, sender:profiles!sender_id(full_name,role,avatar_path)' +
+      '*, sender:profiles!sender_id(full_name,role,avatar_path,deleted_at)' +
         (v14 ? replyEmbed('channel_messages') : '')
     )
     .single();

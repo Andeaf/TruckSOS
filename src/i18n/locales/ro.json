@@ -314,6 +314,7 @@
     "timeHoursAgo": "{{count}}h în urmă",
     "timeDaysAgo": "{{count}} zile în urmă",
     "defaultUser": "Utilizator",
+    "deletedUser": "Utilizator șters",
     "noSession": "Sesiune inexistentă",
     "signOut": "Deconectare",
     "error": "Eroare"
@@ -456,7 +457,24 @@
     "positionUnset": "Nesetată",
     "positionLoading": "Se caută…",
     "positionError": "Poziția nu a putut fi setată.",
-    "radiusNeedsPosition": "Ai setat o rază, dar nu și poziția ta — până o setezi, nu primești notificări pentru anunțuri noi."
+    "radiusNeedsPosition": "Ai setat o rază, dar nu și poziția ta — până o setezi, nu primești notificări pentru anunțuri noi.",
+    "deleteAccount": "Șterge contul",
+    "deleteAccountScreen": {
+      "title": "Șterge contul",
+      "explainTitle": "Ce se șterge",
+      "explainBody": "Se vor șterge definitiv: anunțurile tale, camioanele salvate, evaluările date, favoritele și pozele trimise în chat. Mesajele tale text rămân vizibile în conversații, afișate ca provenind de la un utilizator șters.",
+      "warning": "Această acțiune este imediată și nu poate fi anulată.",
+      "passwordLabel": "Confirmă cu parola ta",
+      "passwordPlaceholder": "Parola",
+      "passwordRequired": "Introdu parola pentru a confirma.",
+      "passwordWrong": "Parolă incorectă.",
+      "submit": "Șterge definitiv",
+      "finalTitle": "Ești absolut sigur?",
+      "finalBody": "Contul și datele tale vor fi șterse imediat și nu pot fi recuperate.",
+      "finalOk": "Da, șterge contul",
+      "cancel": "Anulează",
+      "error": "Contul nu a putut fi șters. Încearcă din nou."
+    }
   },
   "legal": {
     "draftNotice": "Conținut în lucru — text provizoriu.",

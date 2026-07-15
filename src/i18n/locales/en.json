@@ -376,6 +376,7 @@
     "timeHoursAgo": "{{count}}h ago",
     "timeDaysAgo": "{{count}} days ago",
     "defaultUser": "User",
+    "deletedUser": "Deleted user",
     "noSession": "No active session",
     "signOut": "Sign out",
     "error": "Error"
@@ -454,7 +455,24 @@
     "positionUnset": "Not set",
     "positionLoading": "Locating…",
     "positionError": "The position could not be set.",
-    "radiusNeedsPosition": "You set a radius but not your position — until you do, you will not get notifications for new announcements."
+    "radiusNeedsPosition": "You set a radius but not your position — until you do, you will not get notifications for new announcements.",
+    "deleteAccount": "Delete account",
+    "deleteAccountScreen": {
+      "title": "Delete account",
+      "explainTitle": "What gets deleted",
+      "explainBody": "The following will be permanently deleted: your announcements, saved trucks, ratings you gave, favorites, and photos you sent in chat. Your text messages remain visible in conversations, shown as coming from a deleted user.",
+      "warning": "This action is immediate and cannot be undone.",
+      "passwordLabel": "Confirm with your password",
+      "passwordPlaceholder": "Password",
+      "passwordRequired": "Enter your password to confirm.",
+      "passwordWrong": "Incorrect password.",
+      "submit": "Delete permanently",
+      "finalTitle": "Are you absolutely sure?",
+      "finalBody": "Your account and data will be deleted immediately and cannot be recovered.",
+      "finalOk": "Yes, delete my account",
+      "cancel": "Cancel",
+      "error": "The account could not be deleted. Please try again."
+    }
   },
   "legal": {
     "draftNotice": "Work in progress — placeholder text.",
