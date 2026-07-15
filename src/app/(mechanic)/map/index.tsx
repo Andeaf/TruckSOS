@@ -18,7 +18,7 @@ import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { useTimeAgo } from '@/hooks/use-time-ago';
 import { useViewedAnnouncements } from '@/hooks/use-viewed-announcements';
-import { getCurrentCoords } from '@/lib/location';
+import { getCurrentCoords, getLastKnownCoords } from '@/lib/location';
 
 /**
  * Harta mecanicului (PLAN_FAZA11.md §2): un pin per anunț deschis CU coordonate.
@@ -53,19 +53,46 @@ export default function MechanicMapScreen() {
 
   useEffect(() => {
     let active = true;
-    getCurrentCoords().then((result) => {
-      if (!active) return;
-      setRegion(
-        'latitude' in result
-          ? {
-              latitude: result.latitude,
-              longitude: result.longitude,
-              latitudeDelta: USER_REGION_DELTA,
-              longitudeDelta: USER_REGION_DELTA,
-            }
-          : ROMANIA_REGION
-      );
+    const toRegion = (c: { latitude: number; longitude: number }): Region => ({
+      latitude: c.latitude,
+      longitude: c.longitude,
+      latitudeDelta: USER_REGION_DELTA,
+      longitudeDelta: USER_REGION_DELTA,
     });
+
+    (async () => {
+      // 1) Cache-ul OS (getLastKnownPositionAsync) — instant, fără pornirea GPS-ului.
+      //    Pentru CENTRARE e suficient: poziția exactă o arată oricum punctul albastru
+      //    (showsUserLocation), iar butonul nativ de localizare recentrează la nevoie.
+      //    Un fix real (getCurrentPositionAsync) poate dura ~10s cu GPS „rece" — de aici
+      //    veneau încărcările lente ale hărții.
+      const cached = await getLastKnownCoords();
+      if (!active) return;
+      if (cached) {
+        setRegion('latitude' in cached ? toRegion(cached) : ROMANIA_REGION);
+        return;
+      }
+
+      // 2) Fără cache (ex. telefon abia pornit): cerem fix real, dar plafonat la 5s —
+      //    harta se deschide pe România și nu mai ține mecanicul pe spinner.
+      const fix = getCurrentCoords();
+      const result = await Promise.race([
+        fix,
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)),
+      ]);
+      if (!active) return;
+      setRegion(result && 'latitude' in result ? toRegion(result) : ROMANIA_REGION);
+
+      // 3) Dacă fixul sosește după plafon, recentrăm o singură dată pe poziția reală.
+      if (result === null) {
+        fix.then((late) => {
+          if (active && 'latitude' in late) {
+            mapRef.current?.animateToRegion(toRegion(late), 600);
+          }
+        });
+      }
+    })();
+
     return () => { active = false; };
   }, []);
 

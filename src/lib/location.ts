@@ -33,6 +33,30 @@ export async function getCurrentCoords(): Promise<CoordsResult> {
 }
 
 /**
+ * Ultima poziție cunoscută de OS — se întoarce INSTANT, fără a porni GPS-ul.
+ * Poate fi veche de câteva minute (maxAge mai jos), deci e potrivită DOAR pentru
+ * centrarea inițială a hărții — NU pentru coordonate de anunț sau poziția de
+ * referință a mecanicului (acelea rămân pe getCurrentCoords, cu fix real).
+ * `null` = nu există cache valid (ex. telefon abia pornit) → apelantul cade pe
+ * getCurrentCoords().
+ */
+export async function getLastKnownCoords(): Promise<CoordsResult | null> {
+  try {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') return { error: 'denied' };
+
+    const pos = await Location.getLastKnownPositionAsync({ maxAge: 15 * 60 * 1000 });
+    if (!pos) return null;
+    return {
+      latitude: round6(pos.coords.latitude),
+      longitude: round6(pos.coords.longitude),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Distanța Haversine în km, pentru filtrul de rază (PLAN_FAZA13.md §1.3).
  * Eroarea (<0.5% sub 500 km) e irelevantă pentru un filtru vizual; serverul are
  * propria variantă SQL (`distance_km`, Faza 12) pentru filtrul de push.
