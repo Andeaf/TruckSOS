@@ -1,9 +1,8 @@
 import { useEffect } from 'react';
-import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 
 import { useAuth } from '@/hooks/use-auth';
-import type { PushData } from '@/lib/push';
+import { pushAvailable, type PushData } from '@/lib/push';
 
 /**
  * Tap pe notificare → ecranul potrivit (PLAN_FAZA12.md §3.6).
@@ -17,7 +16,9 @@ export function usePushNavigation() {
   const { profile } = useAuth();
 
   useEffect(() => {
-    if (!profile) return;
+    // În Expo Go push-ul nu există → nici nu importăm expo-notifications (side-effect
+    // care crapă în Expo Go SDK 53+). Doar pe development build ajungem mai departe.
+    if (!profile || !pushAvailable()) return;
     const role = profile.role;
 
     function open(data: PushData) {
@@ -45,6 +46,9 @@ export function usePushNavigation() {
           break;
       }
     }
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const Notifications = require('expo-notifications') as typeof import('expo-notifications');
 
     // Aplicația era închisă: notificarea care a pornit-o.
     Notifications.getLastNotificationResponseAsync().then((response) => {

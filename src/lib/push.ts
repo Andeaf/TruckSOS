@@ -1,5 +1,4 @@
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 
@@ -9,19 +8,13 @@ import { supabase } from '@/lib/supabase';
  * Notificări push (PLAN_FAZA12.md §3).
  *
  * Push-ul remote NU merge în Expo Go pe Android din SDK 53 — cere development build.
- * De aceea totul e păzit de `pushAvailable()`: în Expo Go ieșim tăcut, aplicația
- * funcționează normal, doar fără notificări. Nu rupem fluxul de dezvoltare.
+ *
+ * ⚠️ `expo-notifications` NU se importă static: simpla importare rulează un side-effect
+ * de auto-înregistrare (`DevicePushTokenAutoRegistration.fx`) care în Expo Go SDK 53+
+ * aruncă un ERROR la pornire. Îl încărcăm LENEȘ (`require`), doar când `pushAvailable()`,
+ * deci în Expo Go modulul nu se evaluează niciodată → fără eroare. Aplicația merge normal,
+ * doar fără notificări.
  */
-
-/** Notificările apar și când aplicația e DESCHISĂ, nu doar în fundal. */
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
 
 /** Datele pe care le trimite serverul, ca tapul să deschidă ecranul potrivit. */
 export interface PushData {
@@ -29,10 +22,31 @@ export interface PushData {
   id?: string;
 }
 
-function pushAvailable(): boolean {
+export function pushAvailable(): boolean {
   // Emulatoarele n-au servicii Google → nu pot primi token.
   if (!Device.isDevice) return false;
   return Constants.executionEnvironment !== ExecutionEnvironment.StoreClient;
+}
+
+type NotificationsModule = typeof import('expo-notifications');
+let notifications: NotificationsModule | null = null;
+
+/** Încarcă expo-notifications lenevos (Metro rulează codul modulului abia la primul
+ *  `require`) și setează o singură dată handler-ul de afișare în prim-plan. */
+function getNotifications(): NotificationsModule {
+  if (!notifications) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    notifications = require('expo-notifications') as NotificationsModule;
+    notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+  }
+  return notifications;
 }
 
 /**
@@ -44,6 +58,7 @@ export async function registerPushToken(userId: string): Promise<string | null> 
   if (!pushAvailable()) return null;
 
   try {
+    const Notifications = getNotifications();
     // Canalul TREBUIE creat înainte de a cere tokenul (Android 8+), altfel
     // notificările sosesc dar nu se afișează.
     if (Platform.OS === 'android') {
@@ -66,10 +81,11 @@ export async function registerPushToken(userId: string): Promise<string | null> 
 
     const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
 
-    // `upsert` pe PK (token): același dispozitiv, alt cont → rândul se mută pe noul user.
-    await supabase
-      .from('push_tokens')
-      .upsert({ token, user_id: userId, updated_at: new Date().toISOString() } as never);
+    // RPC SECURITY DEFINER: revendică tokenul pentru contul curent. Un `upsert` direct
+    // NU poate muta un token de pe alt cont (RLS UPDATE cere user_id = auth.uid() pe
+    // rândul VECHI) → tokenul ar rămâne legat de contul precedent și notificările ar
+    // ajunge pe dispozitivul greșit. Vezi 20260715_faza14_fix_push_token_claim.sql.
+    await supabase.rpc('claim_push_token', { p_token: token } as never);
 
     return token;
   } catch {

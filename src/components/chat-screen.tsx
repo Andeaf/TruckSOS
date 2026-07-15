@@ -17,7 +17,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
-import * as Clipboard from 'expo-clipboard';
 
 import { Avatar } from '@/components/avatar';
 import { MessageActionSheet } from '@/components/message-action-sheet';
@@ -110,7 +109,12 @@ function MessageBubble<M extends ChatMessageBase>({
       color={readState === 'read' ? '#5EC5FF' : secondaryColor}
     />
   ) : null;
-  const quote = !isDeleted ? message.reply_to : null;
+  // PostgREST întoarce embed-ul self-join `reply_to` ca ARRAY ([] pentru non-reply),
+  // nu ca obiect/null. `[]` e truthy → randa un chenar `styles.quote` gol deasupra
+  // textului (foarte vizibil pe bulele verzi). Normalizăm (array→primul) și cerem `id`.
+  const rawReply = message.reply_to as unknown;
+  const rt = (Array.isArray(rawReply) ? rawReply[0] : rawReply) as ChatMessageBase['reply_to'];
+  const quote = !isDeleted && rt && rt.id ? rt : null;
   const quoteSnippet = quote
     ? quote.deleted_at
       ? t('chat.deletedMessage')
@@ -325,8 +329,19 @@ export function ChatScreen<M extends ChatMessageBase>({
 
   const handleCopy = useCallback(
     async (m: M) => {
-      await Clipboard.setStringAsync(m.content);
-      setToast(t('chat.copied'));
+      try {
+        // Import LENEȘ: pe development build-urile vechi (compilate înainte ca
+        // expo-clipboard să fie adăugat în Faza 14) modulul nativ `ExpoClipboard`
+        // lipsește, iar un import STATIC ar crăpa aplicația la pornire. Îl încărcăm
+        // doar la apăsarea pe „Copiază” și degradăm elegant dacă lipsește.
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const Clipboard = require('expo-clipboard') as typeof import('expo-clipboard');
+        await Clipboard.setStringAsync(m.content);
+        setToast(t('chat.copied'));
+      } catch {
+        // Modul nativ absent (dev build vechi) → copierea nu e disponibilă. În Expo Go
+        // și pe build-urile noi funcționează normal.
+      }
     },
     [t],
   );
@@ -721,9 +736,12 @@ const styles = StyleSheet.create({
   },
   bubbleText: { fontSize: 15, lineHeight: 21 },
   bubbleTime: { fontSize: 11, alignSelf: 'flex-end' },
-  deletedText: { fontStyle: 'italic' },
+  // paddingRight: Android măsoară textul italic cu lățimea glifelor drepte (o
+  // subestimează) → ultimul cuvânt se tăia la marginea bulei („This message was…”).
+  // Padding-ul mută zona tăiată pe spațiu gol, nu pe text.
+  deletedText: { fontStyle: 'italic', paddingRight: 3 },
   metaRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-end', gap: Spacing.one },
-  editedLabel: { fontStyle: 'italic' },
+  editedLabel: { fontStyle: 'italic', paddingRight: 2 }, // italic: același clip ca deletedText
   quote: {
     borderLeftWidth: 3,
     borderRadius: Radius.badge,
