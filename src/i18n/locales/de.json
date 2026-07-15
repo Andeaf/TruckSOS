@@ -32,10 +32,10 @@
     "roleSelect": {
       "title": "Willkommen,",
       "subtitle": "Was ist deine Rolle in der App?",
-      "driverTitle": "Fahrer",
+      "driverTitle": "Transporteur",
       "driverDescription": "Pannen melden und verfügbare Mechaniker schnell finden",
       "mechanicTitle": "Mechaniker",
-      "mechanicDescription": "Anzeigen von Fahrern sehen und technische Hilfe anbieten",
+      "mechanicDescription": "Anzeigen von Transporteuren sehen und technische Hilfe anbieten",
       "loading": "Lädt..."
     }
   },
@@ -151,16 +151,16 @@
     "feed": {
       "title": "Offene Anzeigen",
       "emptyTitle": "Keine offenen Anzeigen",
-      "emptyDescription": "Zurzeit benötigt kein Fahrer Hilfe",
+      "emptyDescription": "Zurzeit benötigt kein Transporteur Hilfe",
       "detailTitle": "Anzeigendetails",
-      "sectionDriver": "Fahrer",
+      "sectionDriver": "Transporteur",
       "sectionLocation": "Standort",
       "sectionDescription": "Problembeschreibung",
       "unavailableTitle": "Anzeige nicht verfügbar",
       "unavailableDescription": "Diese Anzeige wurde bereits von einem anderen Mechaniker angenommen.",
       "backToFeed": "← Zurück zum Feed",
       "acceptButton": "Anzeige annehmen",
-      "acceptHint": "Mit der Annahme bist du der einzige Mechaniker, der diesem Fahrer zugewiesen ist.",
+      "acceptHint": "Mit der Annahme bist du der einzige Mechaniker, der diesem Transporteur zugewiesen ist.",
       "alreadyTakenHint": "Diese Anzeige wurde bereits von einem anderen Mechaniker angenommen.",
       "errorAlreadyAccepted": "Diese Anzeige wurde bereits von einem anderen Mechaniker angenommen.",
       "openInMaps": "In Google Maps navigieren",
@@ -192,7 +192,7 @@
     },
     "apply": {
       "buttonInterested": "Ich bin interessiert",
-      "interestedHint": "Sende dem Fahrer ein Preisangebot. Er wählt den passenden Mechaniker aus.",
+      "interestedHint": "Sende dem Transporteur ein Preisangebot. Er wählt den passenden Mechaniker aus.",
       "sheetTitle": "Bewerbung einreichen",
       "priceTypeLabel": "Preisart",
       "priceTypeFixed": "Festpreis",
@@ -258,7 +258,7 @@
     "activityZonePlaceholder": "z.B.: Bayern, Nordrhein-Westfalen...",
     "phoneLabel": "Telefonnummer (optional)",
     "phonePlaceholder": "z.B.: 0170 123 4567",
-    "phoneHint": "Für den Fahrer nur sichtbar, nachdem er dich ausgewählt hat.",
+    "phoneHint": "Für den Transporteur nur sichtbar, nachdem er dich ausgewählt hat.",
     "emptyField": "Nicht angegeben",
     "savedSuccess": "Profil gespeichert.",
     "errorSave": "Fehler beim Speichern des Profils.",
@@ -419,7 +419,7 @@
     "draftNotice": "In Arbeit — vorläufiger Text.",
     "terms": {
       "title": "Nutzungsbedingungen",
-      "body": "TruckSOS verbindet liegengebliebene LKW-Fahrer mit verfügbaren Mechanikern. Die App vermittelt den Kontakt; Preis, Reparatur und Zahlung werden direkt zwischen Fahrer und Mechaniker vereinbart. Konten mit falschen Anzeigen oder missbräuchlichen Inhalten können gesperrt werden."
+      "body": "TruckSOS verbindet liegengebliebene Transporteure mit verfügbaren Mechanikern. Die App vermittelt den Kontakt; Preis, Reparatur und Zahlung werden direkt zwischen Transporteur und Mechaniker vereinbart. Konten mit falschen Anzeigen oder missbräuchlichen Inhalten können gesperrt werden."
     },
     "privacy": {
       "title": "Datenschutzerklärung",

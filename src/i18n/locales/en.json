@@ -32,10 +32,10 @@
     "roleSelect": {
       "title": "Welcome,",
       "subtitle": "What is your role in the app?",
-      "driverTitle": "Driver",
+      "driverTitle": "Carrier",
       "driverDescription": "Report breakdowns and find available mechanics quickly",
       "mechanicTitle": "Mechanic",
-      "mechanicDescription": "View announcements from drivers and offer technical assistance",
+      "mechanicDescription": "View announcements from carriers and offer technical assistance",
       "loading": "Loading..."
     }
   },
@@ -151,16 +151,16 @@
     "feed": {
       "title": "Open announcements",
       "emptyTitle": "No open announcements",
-      "emptyDescription": "No drivers currently need help",
+      "emptyDescription": "No carriers currently need help",
       "detailTitle": "Announcement details",
-      "sectionDriver": "Driver",
+      "sectionDriver": "Carrier",
       "sectionLocation": "Location",
       "sectionDescription": "Problem description",
       "unavailableTitle": "Announcement unavailable",
       "unavailableDescription": "This announcement has already been accepted by another mechanic.",
       "backToFeed": "← Back to feed",
       "acceptButton": "Accept announcement",
-      "acceptHint": "By accepting, you are the only mechanic assigned to this driver.",
+      "acceptHint": "By accepting, you are the only mechanic assigned to this carrier.",
       "alreadyTakenHint": "This announcement has already been accepted by another mechanic.",
       "errorAlreadyAccepted": "This announcement has already been accepted by another mechanic.",
       "openInMaps": "Navigate in Google Maps",
@@ -192,7 +192,7 @@
     },
     "apply": {
       "buttonInterested": "I'm interested",
-      "interestedHint": "Send a price offer to the driver. They will choose the right mechanic.",
+      "interestedHint": "Send a price offer to the carrier. They will choose the right mechanic.",
       "sheetTitle": "Submit application",
       "priceTypeLabel": "Price type",
       "priceTypeFixed": "Fixed price",
@@ -258,7 +258,7 @@
     "activityZonePlaceholder": "e.g.: Bavaria, North Rhine-Westphalia...",
     "phoneLabel": "Phone number (optional)",
     "phonePlaceholder": "e.g.: +49 170 123 4567",
-    "phoneHint": "Visible to the driver only after they choose you.",
+    "phoneHint": "Visible to the carrier only after they choose you.",
     "emptyField": "Not set",
     "savedSuccess": "Profile saved.",
     "errorSave": "Error saving profile.",
@@ -419,7 +419,7 @@
     "draftNotice": "Work in progress — placeholder text.",
     "terms": {
       "title": "Terms and conditions",
-      "body": "TruckSOS connects broken-down truck drivers with available mechanics. The app facilitates contact; price, repair and payment are agreed directly between driver and mechanic. We may suspend accounts that post false listings or abusive content."
+      "body": "TruckSOS connects broken-down truck carriers with available mechanics. The app facilitates contact; price, repair and payment are agreed directly between carrier and mechanic. We may suspend accounts that post false listings or abusive content."
     },
     "privacy": {
       "title": "Privacy policy",

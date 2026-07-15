@@ -32,10 +32,10 @@
     "roleSelect": {
       "title": "Bun venit,",
       "subtitle": "Care este rolul tău în aplicație?",
-      "driverTitle": "Sofer",
+      "driverTitle": "Transportator",
       "driverDescription": "Raportezi defectiuni si gasesti mecanici disponibili rapid",
       "mechanicTitle": "Mecanic",
-      "mechanicDescription": "Vezi anunturi de la soferi si ofera ajutor tehnic",
+      "mechanicDescription": "Vezi anunțuri de la transportatori și oferă ajutor tehnic",
       "loading": "Se incarca..."
     }
   },
@@ -151,16 +151,16 @@
     "feed": {
       "title": "Anunțuri deschise",
       "emptyTitle": "Niciun anunț deschis",
-      "emptyDescription": "Nu există șoferi care au nevoie de ajutor în acest moment",
+      "emptyDescription": "Nu există transportatori care au nevoie de ajutor în acest moment",
       "detailTitle": "Detalii anunț",
-      "sectionDriver": "Șofer",
+      "sectionDriver": "Transportator",
       "sectionLocation": "Locație",
       "sectionDescription": "Descrierea problemei",
       "unavailableTitle": "Anunț indisponibil",
       "unavailableDescription": "Anunțul a fost deja acceptat de un alt mecanic.",
       "backToFeed": "← Înapoi la feed",
       "acceptButton": "Acceptă anunțul",
-      "acceptHint": "Acceptând, ești singurul mecanic asignat acestui șofer.",
+      "acceptHint": "Acceptând, ești singurul mecanic asignat acestui transportator.",
       "alreadyTakenHint": "Acest anunț a fost deja acceptat de un alt mecanic.",
       "errorAlreadyAccepted": "Anunțul a fost deja acceptat de un alt mecanic.",
       "openInMaps": "Navighează în Google Maps",
@@ -192,7 +192,7 @@
     },
     "apply": {
       "buttonInterested": "Sunt interesat",
-      "interestedHint": "Trimite o ofertă de preț șoferului. El va alege mecanicul potrivit.",
+      "interestedHint": "Trimite o ofertă de preț transportatorului. El va alege mecanicul potrivit.",
       "sheetTitle": "Trimite candidatura",
       "priceTypeLabel": "Tip preț",
       "priceTypeFixed": "Preț fix",
@@ -294,7 +294,7 @@
     "activityZonePlaceholder": "ex: Moldova, Muntenia...",
     "phoneLabel": "Număr de telefon (opțional)",
     "phonePlaceholder": "ex: 0722 123 456",
-    "phoneHint": "Vizibil șoferului doar după ce te-a ales.",
+    "phoneHint": "Vizibil transportatorului doar după ce te-a ales.",
     "emptyField": "Necompletat",
     "savedSuccess": "Profilul a fost salvat.",
     "errorSave": "Eroare la salvarea profilului.",
@@ -421,7 +421,7 @@
     "draftNotice": "Conținut în lucru — text provizoriu.",
     "terms": {
       "title": "Termeni și condiții",
-      "body": "TruckSOS pune în legătură șoferi de camion aflați în pană cu mecanici disponibili. Aplicația facilitează contactul; înțelegerile privind prețul, execuția reparației și plata se fac direct între șofer și mecanic. Ne rezervăm dreptul de a suspenda conturile care publică anunțuri false sau conținut abuziv."
+      "body": "TruckSOS pune în legătură transportatori de camion aflați în pană cu mecanici disponibili. Aplicația facilitează contactul; înțelegerile privind prețul, execuția reparației și plata se fac direct între transportator și mecanic. Ne rezervăm dreptul de a suspenda conturile care publică anunțuri false sau conținut abuziv."
     },
     "privacy": {
       "title": "Politica de confidențialitate",
