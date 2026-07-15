@@ -111,7 +111,7 @@ function ApplicationCard({
 
         {item.message ? (
           <ThemedText themeColor="textSecondary" type="small" numberOfLines={2} style={styles.message}>
-            "{item.message}"
+            &quot;{item.message}&quot;
           </ThemedText>
         ) : null}
 

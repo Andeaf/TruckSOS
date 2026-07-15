@@ -106,7 +106,7 @@ function ApplicantCard({
       </ThemedText>
       {app.message ? (
         <ThemedText themeColor="textSecondary" type="small" style={styles.applicantMessage}>
-          "{app.message}"
+          &quot;{app.message}&quot;
         </ThemedText>
       ) : null}
       <Pressable

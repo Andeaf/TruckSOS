@@ -90,7 +90,7 @@ function ApplicationStatusCard({
       </ThemedText>
       {application.message ? (
         <ThemedText themeColor="textSecondary" type="small">
-          "{application.message}"
+          &quot;{application.message}&quot;
         </ThemedText>
       ) : null}
       {onResubmit ? (

@@ -195,7 +195,7 @@ export default function ApplicationDetailScreen() {
           </ThemedText>
           {item.message ? (
             <ThemedText themeColor="textSecondary" type="small" style={styles.offerMessage}>
-              "{item.message}"
+              &quot;{item.message}&quot;
             </ThemedText>
           ) : null}
         </ThemedView>
