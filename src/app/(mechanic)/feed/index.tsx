@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { AnnouncementCard } from '@/components/announcement-card';
 import { EmptyState } from '@/components/empty-state';
-import { RadiusFilterButton } from '@/components/radius-filter-button';
+import { RadiusFilterMenu } from '@/components/radius-filter-menu';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -74,7 +74,7 @@ export default function MechanicFeedScreen() {
         subtitle={profile?.full_name}
         right={
           <View style={styles.headerActions}>
-            <RadiusFilterButton />
+            <RadiusFilterMenu />
             <Pressable onPress={toggleViewMode} hitSlop={12} accessibilityLabel={t('mechanic.feed.toggleView')}>
               <MaterialIcons
                 name={viewMode === 'extended' ? 'view-list' : 'view-agenda'}

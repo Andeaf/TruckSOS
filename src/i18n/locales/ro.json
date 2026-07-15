@@ -255,6 +255,10 @@
   "radiusFilter": {
     "title": "Filtrează după distanță",
     "off": "Fără filtru",
+    "custom": "Personalizat…",
+    "customLabel": "Rază personalizată",
+    "customPlaceholder": "ex. 275",
+    "apply": "Aplică",
     "km": "{{km}} km",
     "distance": "~{{km}} km",
     "noLocation": "Locație nespecificată",

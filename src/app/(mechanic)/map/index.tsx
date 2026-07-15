@@ -5,7 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import MapView, { Circle, Marker, type Region } from 'react-native-maps';
 
-import { RadiusFilterButton } from '@/components/radius-filter-button';
+import { RadiusFilterMenu } from '@/components/radius-filter-menu';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -88,12 +88,18 @@ export default function MechanicMapScreen() {
       <ScreenHeader
         title={t('mechanic.map.title')}
         subtitle={t('mechanic.map.pinCount', { count: visible.length })}
-        right={<RadiusFilterButton />}
+        right={<RadiusFilterMenu />}
       />
 
       {region ? (
         <View style={styles.mapWrapper}>
           <MapView
+            // react-native-maps (1.20.1) NU resetează `customMapStyle` când prop-ul
+            // trece de la stilul dark înapoi la `undefined` — stilul vechi rămâne lipit
+            // pe harta nativă. Remontăm harta la schimbarea temei ca stilul corect să
+            // se aplice de la zero. `initialRegion` se re-aplică din `region` (păstrat
+            // în state), deci se recentrează, nu se pierde poziția.
+            key={scheme}
             style={StyleSheet.absoluteFill}
             initialRegion={region}
             showsUserLocation

@@ -325,6 +325,10 @@
   "radiusFilter": {
     "title": "Nach Entfernung filtern",
     "off": "Kein Filter",
+    "custom": "Benutzerdefiniert…",
+    "customLabel": "Eigener Radius",
+    "customPlaceholder": "z. B. 275",
+    "apply": "Übernehmen",
     "km": "{{km}} km",
     "distance": "~{{km}} km",
     "noLocation": "Standort nicht angegeben",

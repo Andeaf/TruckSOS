@@ -316,6 +316,10 @@
   "radiusFilter": {
     "title": "Filter by distance",
     "off": "No filter",
+    "custom": "Custom…",
+    "customLabel": "Custom radius",
+    "customPlaceholder": "e.g. 275",
+    "apply": "Apply",
     "km": "{{km}} km",
     "distance": "~{{km}} km",
     "noLocation": "Location not specified",

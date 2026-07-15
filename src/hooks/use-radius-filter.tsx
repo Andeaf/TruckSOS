@@ -21,8 +21,12 @@ import { loadRadiusPref, saveRadiusPref } from '@/lib/preferences';
  * se VEDE, client-side, pe poziția CURENTĂ — nu se sincronizează (decizie R1).
  */
 
-/** Aceleași trepte ca raza de notificări din Setări; `null` = fără filtru. */
-export const RADIUS_FILTER_OPTIONS: (number | null)[] = [25, 50, 100, 200, null];
+/**
+ * Treptele standard din dropdown-ul de rază. Include 300 km (autostrăzi fără limită
+ * de viteză — un mecanic ajunge departe repede); orice altă valoare se dă prin
+ * opțiunea „Personalizat". `null` (fără filtru) e tratat separat în UI.
+ */
+export const RADIUS_FILTER_STANDARD: number[] = [25, 50, 100, 200, 300];
 
 /** Poziția nu se re-cere mai des de atât — un filtru vizual nu justifică GPS continuu. */
 const COORDS_TTL_MS = 2 * 60 * 1000;
