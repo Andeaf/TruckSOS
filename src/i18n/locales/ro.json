@@ -227,7 +227,14 @@
     "emptyMessages": "Niciun mesaj. Scrie primul!",
     "inputPlaceholder": "Scrie un mesaj...",
     "resolvedBanner": "Anunțul a fost marcat ca rezolvat.",
-    "attach": "Trimite o poză"
+    "attach": "Trimite o poză",
+    "messageActions": "Acțiuni mesaj",
+    "reply": "Răspunde",
+    "copy": "Copiază",
+    "copied": "Copiat",
+    "edit": "Editează",
+    "delete": "Șterge",
+    "report": "Raportează"
   },
   "channel": {
     "name": {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,8 +17,12 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
+import * as Clipboard from 'expo-clipboard';
+
 import { Avatar } from '@/components/avatar';
+import { MessageActionSheet } from '@/components/message-action-sheet';
 import { PhotoViewer } from '@/components/photo-viewer';
+import { Toast } from '@/components/toast';
 import { HeaderText, ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -35,6 +39,10 @@ export interface ChatMessageBase {
   image_path?: string | null;
   sender_id: string;
   created_at: string;
+  /** Faza 14: marcaje opționale (coloane adăugate incremental în etapele 14.1–14.3). */
+  deleted_at?: string | null;
+  edited_at?: string | null;
+  reply_to_id?: string | null;
 }
 
 function formatTime(dateStr: string) {
@@ -56,6 +64,7 @@ interface MessageBubbleProps<M extends ChatMessageBase> {
   senderAvatarUrl?: string;
   showSenderAvatar?: boolean;
   onPressImage?: () => void;
+  onLongPress?: () => void;
 }
 
 function MessageBubble<M extends ChatMessageBase>({
@@ -68,6 +77,7 @@ function MessageBubble<M extends ChatMessageBase>({
   senderAvatarUrl,
   showSenderAvatar,
   onPressImage,
+  onLongPress,
 }: MessageBubbleProps<M>) {
   const theme = useTheme();
   const isImage = !!message.image_path;
@@ -82,7 +92,9 @@ function MessageBubble<M extends ChatMessageBase>({
             {senderLabel}
           </ThemedText>
         ) : null}
-        <View
+        <Pressable
+          onLongPress={onLongPress}
+          delayLongPress={300}
           style={[
             styles.bubble,
             isImage && styles.bubbleImage,
@@ -92,6 +104,8 @@ function MessageBubble<M extends ChatMessageBase>({
             // Poza umple bula; ora stă peste ea, într-o pastilă întunecată.
             <Pressable
               onPress={imageUrl ? onPressImage : undefined}
+              onLongPress={onLongPress}
+              delayLongPress={300}
               style={({ pressed }) => [styles.imageWrap, pressed && styles.pressed]}>
               {imageUrl ? (
                 <Image
@@ -119,7 +133,7 @@ function MessageBubble<M extends ChatMessageBase>({
               </Text>
             </>
           )}
-        </View>
+        </Pressable>
       </View>
     </View>
   );
@@ -150,6 +164,16 @@ interface ChatScreenProps<M extends ChatMessageBase> {
   /** Avatarul interlocutorului, în antet (chat 1-la-1). */
   headerAvatarPath?: string | null;
   onBack: () => void;
+  /**
+   * Acțiuni din meniul contextual (tap lung pe bulă), toate opționale — o acțiune
+   * apare doar dacă ecranul o furnizează (Faza 14). „Copiază" e intern (client-side).
+   */
+  onReplyMessage?: (m: M) => void;
+  onEditMessage?: (m: M) => void;
+  onDeleteMessage?: (m: M) => void;
+  onReportMessage?: (m: M) => void;
+  /** Fereastra de editare (3 min), calculată de ecran — vezi Etapa 14.2. */
+  canEditMessage?: (m: M) => boolean;
 }
 
 export function ChatScreen<M extends ChatMessageBase>({
@@ -170,6 +194,11 @@ export function ChatScreen<M extends ChatMessageBase>({
   renderSenderAvatarPath,
   headerAvatarPath,
   onBack,
+  onReplyMessage,
+  onEditMessage,
+  onDeleteMessage,
+  onReportMessage,
+  canEditMessage,
 }: ChatScreenProps<M>) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -179,6 +208,17 @@ export function ChatScreen<M extends ChatMessageBase>({
   const [uploading, setUploading] = useState(false);
   const [viewerAt, setViewerAt] = useState<number | null>(null);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [menuMessage, setMenuMessage] = useState<M | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const handleCopy = useCallback(
+    async (m: M) => {
+      await Clipboard.setStringAsync(m.content);
+      setToast(t('chat.copied'));
+    },
+    [t],
+  );
+  const hideToast = useCallback(() => setToast(null), []);
 
   // Android emite Did*, iOS Will* — ascultăm ambele ca bara să urce la fel pe amândouă.
   useEffect(() => {
@@ -332,6 +372,7 @@ export function ChatScreen<M extends ChatMessageBase>({
                   const index = viewerPhotos.findIndex((p) => p.id === item.id);
                   if (index >= 0) setViewerAt(index);
                 }}
+                onLongPress={() => setMenuMessage(item)}
               />
               );
             }}
@@ -404,6 +445,20 @@ export function ChatScreen<M extends ChatMessageBase>({
           onClose={() => setViewerAt(null)}
         />
       ) : null}
+
+      <MessageActionSheet
+        message={menuMessage}
+        isMe={menuMessage ? menuMessage.sender_id === currentUserId : false}
+        canEdit={menuMessage && canEditMessage ? canEditMessage(menuMessage) : false}
+        onClose={() => setMenuMessage(null)}
+        onCopy={handleCopy}
+        onReply={onReplyMessage}
+        onEdit={onEditMessage}
+        onDelete={onDeleteMessage}
+        onReport={onReportMessage}
+      />
+
+      <Toast message={toast} onHide={hideToast} bottomOffset={64} />
     </ThemedView>
   );
 }

@@ -225,7 +225,14 @@
     "emptyMessages": "Keine Nachrichten. Schreibe als Erster!",
     "inputPlaceholder": "Nachricht schreiben...",
     "resolvedBanner": "Die Anzeige wurde als gelöst markiert.",
-    "attach": "Foto senden"
+    "attach": "Foto senden",
+    "messageActions": "Nachrichtenaktionen",
+    "reply": "Antworten",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "report": "Melden"
   },
   "channel": {
     "name": {

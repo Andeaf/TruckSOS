@@ -225,7 +225,14 @@
     "emptyMessages": "No messages. Be the first to write!",
     "inputPlaceholder": "Write a message...",
     "resolvedBanner": "The announcement has been marked as resolved.",
-    "attach": "Send a photo"
+    "attach": "Send a photo",
+    "messageActions": "Message actions",
+    "reply": "Reply",
+    "copy": "Copy",
+    "copied": "Copied",
+    "edit": "Edit",
+    "delete": "Delete",
+    "report": "Report"
   },
   "channel": {
     "name": {
