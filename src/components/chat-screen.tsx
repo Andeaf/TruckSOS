@@ -189,7 +189,8 @@ interface ChatScreenProps<M extends ChatMessageBase> {
    * apare doar dacă ecranul o furnizează (Faza 14). „Copiază" e intern (client-side).
    */
   onReplyMessage?: (m: M) => void;
-  onEditMessage?: (m: M) => void;
+  /** Aplică editarea (RPC) după ce utilizatorul confirmă textul nou din bara de input. */
+  onEditMessage?: (m: M, newContent: string) => Promise<void> | void;
   onDeleteMessage?: (m: M) => void;
   onReportMessage?: (m: M) => void;
   /** Fereastra de editare (3 min), calculată de ecran — vezi Etapa 14.2. */
@@ -230,6 +231,17 @@ export function ChatScreen<M extends ChatMessageBase>({
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [menuMessage, setMenuMessage] = useState<M | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [editTarget, setEditTarget] = useState<M | null>(null);
+
+  // „Editează" din meniu → intrăm în mod editare: input precompletat + banner cu anulare.
+  const enterEditMode = useCallback((m: M) => {
+    setEditTarget(m);
+    setText(m.content);
+  }, []);
+  const cancelEdit = useCallback(() => {
+    setEditTarget(null);
+    setText('');
+  }, []);
 
   const handleCopy = useCallback(
     async (m: M) => {
@@ -290,8 +302,16 @@ export function ChatScreen<M extends ChatMessageBase>({
     const trimmed = text.trim();
     if (!trimmed || sending) return;
     setSending(true);
-    setText('');
-    await onSend(trimmed);
+    if (editTarget && onEditMessage) {
+      // Mod editare: confirmarea de send aplică editarea în loc să trimită un mesaj nou.
+      const target = editTarget;
+      setEditTarget(null);
+      setText('');
+      await onEditMessage(target, trimmed);
+    } else {
+      setText('');
+      await onSend(trimmed);
+    }
     setSending(false);
   }
 
@@ -410,6 +430,25 @@ export function ChatScreen<M extends ChatMessageBase>({
           />
         )}
 
+        {editTarget ? (
+          <View style={[styles.editBanner, { backgroundColor: theme.backgroundElement }]}>
+            <MaterialIcons name="edit" size={16} color={accentColor} />
+            <View style={styles.editBannerInfo}>
+              <Text style={[styles.editBannerTitle, { color: accentColor }]}>
+                {t('chat.editingMessage')}
+              </Text>
+              <Text
+                style={[styles.editBannerText, { color: theme.textSecondary }]}
+                numberOfLines={1}>
+                {editTarget.content}
+              </Text>
+            </View>
+            <Pressable onPress={cancelEdit} hitSlop={8} accessibilityLabel={t('chat.cancelEdit')}>
+              <MaterialIcons name="close" size={20} color={theme.textSecondary} />
+            </Pressable>
+          </View>
+        ) : null}
+
         <View
           style={[
             styles.inputBar,
@@ -422,7 +461,7 @@ export function ChatScreen<M extends ChatMessageBase>({
               borderTopColor: theme.backgroundElement,
             },
           ]}>
-          {onSendImage ? (
+          {onSendImage && !editTarget ? (
             <Pressable
               onPress={handleAttach}
               disabled={uploading}
@@ -461,7 +500,7 @@ export function ChatScreen<M extends ChatMessageBase>({
             {sending ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <MaterialIcons name="send" size={20} color="#fff" />
+              <MaterialIcons name={editTarget ? 'check' : 'send'} size={20} color="#fff" />
             )}
           </Pressable>
         </View>
@@ -484,7 +523,7 @@ export function ChatScreen<M extends ChatMessageBase>({
         onClose={() => setMenuMessage(null)}
         onCopy={handleCopy}
         onReply={onReplyMessage}
-        onEdit={onEditMessage}
+        onEdit={onEditMessage ? enterEditMode : undefined}
         onDelete={onDeleteMessage ? handleDelete : undefined}
         onReport={onReportMessage}
       />
@@ -583,6 +622,19 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one + 2,
     backgroundColor: '#22c55e1A',
   },
+  editBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    marginHorizontal: Spacing.three,
+    marginBottom: Spacing.one,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.control,
+  },
+  editBannerInfo: { flex: 1, gap: 1 },
+  editBannerTitle: { fontSize: 12, fontWeight: '700' },
+  editBannerText: { fontSize: 13 },
   resolvedText: {
     fontSize: 12,
     color: '#22c55e',

@@ -8,12 +8,14 @@ import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
 import {
   deleteMessage,
+  editMessage,
   fetchConversationDetails,
   markConversationRead,
   sendImageMessage,
   sendMessage,
   useAnnouncementStatus,
   useMessages,
+  withinEditWindow,
   type ConversationWithDetails,
 } from '@/hooks/use-chat';
 
@@ -69,6 +71,11 @@ export default function MechanicChatScreen() {
           patchMessage(m.id, { content: '', image_path: null, deleted_at: new Date().toISOString() });
         }
       }}
+      onEditMessage={async (m, content) => {
+        const err = await editMessage('messages', m.id, content);
+        if (!err) patchMessage(m.id, { content, edited_at: new Date().toISOString() });
+      }}
+      canEditMessage={(m) => withinEditWindow(m.created_at)}
       onBack={goBack}
     />
   );

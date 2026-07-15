@@ -238,7 +238,9 @@
     "deletedMessage": "Acest mesaj a fost șters",
     "deleteConfirmTitle": "Ștergi mesajul?",
     "deleteConfirmBody": "Mesajul va fi șters pentru toți. Această acțiune nu poate fi anulată.",
-    "edited": "editat"
+    "edited": "editat",
+    "editingMessage": "Editezi mesajul",
+    "cancelEdit": "Anulează editarea"
   },
   "channel": {
     "name": {

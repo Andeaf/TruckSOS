@@ -13,7 +13,7 @@ import {
   sendChannelMessage,
   useChannelMessages,
 } from '@/hooks/use-channel-chat';
-import { deleteMessage } from '@/hooks/use-chat';
+import { deleteMessage, editMessage, withinEditWindow } from '@/hooks/use-chat';
 import type { Channel } from '@/types/database';
 
 export default function DriverChannelChatScreen() {
@@ -64,6 +64,11 @@ export default function DriverChannelChatScreen() {
           patchMessage(m.id, { content: '', image_path: null, deleted_at: new Date().toISOString() });
         }
       }}
+      onEditMessage={async (m, content) => {
+        const err = await editMessage('channel_messages', m.id, content);
+        if (!err) patchMessage(m.id, { content, edited_at: new Date().toISOString() });
+      }}
+      canEditMessage={(m) => withinEditWindow(m.created_at)}
       onBack={goBack}
     />
   );

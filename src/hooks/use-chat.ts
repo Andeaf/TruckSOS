@@ -135,6 +135,14 @@ export async function deleteMessage(
   return error?.message ?? null;
 }
 
+/** Fereastra de editare: 3 min de la trimitere (aceeași valoare ca în RPC-ul edit_message). */
+export const EDIT_WINDOW_MS = 3 * 60 * 1000;
+
+/** UI-only: ascunde opțiunea „Editează" după expirare. Serverul reverifică oricum. */
+export function withinEditWindow(createdAt: string): boolean {
+  return Date.now() - new Date(createdAt).getTime() < EDIT_WINDOW_MS;
+}
+
 /** Editează un mesaj text (fereastră de 3 min, verificată server-side). */
 export async function editMessage(
   table: 'messages' | 'channel_messages',

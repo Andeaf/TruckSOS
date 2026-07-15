@@ -236,7 +236,9 @@
     "deletedMessage": "Diese Nachricht wurde gelöscht",
     "deleteConfirmTitle": "Nachricht löschen?",
     "deleteConfirmBody": "Die Nachricht wird für alle gelöscht. Das kann nicht rückgängig gemacht werden.",
-    "edited": "bearbeitet"
+    "edited": "bearbeitet",
+    "editingMessage": "Nachricht bearbeiten",
+    "cancelEdit": "Bearbeiten abbrechen"
   },
   "channel": {
     "name": {
