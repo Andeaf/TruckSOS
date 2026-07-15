@@ -125,7 +125,7 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
 
           <View>
             <Input
-              label={t('profile.phoneLabel')}
+              label={t('profile.phoneLabelOptional')}
               value={phone}
               onChangeText={setPhone}
               placeholder={t('profile.phonePlaceholder')}
