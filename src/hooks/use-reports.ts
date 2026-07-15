@@ -48,8 +48,7 @@ export async function submitReport(
   } as never);
 
   if (error) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const duplicate = (error as any).code === '23505';
+    const duplicate = (error as { code?: string }).code === '23505';
     return { error: error.message, duplicate };
   }
   return { error: null, duplicate: false };
