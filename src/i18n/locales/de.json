@@ -247,6 +247,24 @@
     "title": "Profil",
     "notFound": "Profil nicht verfügbar"
   },
+  "report": {
+    "title": "Melden",
+    "subtitle": "Sag uns, was nicht stimmt. Wir prüfen deine Meldung.",
+    "reason": {
+      "spam": "Spam",
+      "harassment": "Beleidigende Sprache / Belästigung",
+      "inappropriate": "Unangemessener Inhalt",
+      "scam": "Betrug",
+      "other": "Etwas anderes"
+    },
+    "detailsPlaceholder": "Details (optional)",
+    "submitButton": "Meldung senden",
+    "submitted": "Deine Meldung wurde gesendet. Wir prüfen sie.",
+    "submittedTitle": "Danke",
+    "errorReasonRequired": "Wähle einen Grund.",
+    "errorGeneric": "Die Meldung konnte nicht gesendet werden. Versuche es erneut.",
+    "alreadyReported": "Du hast diese Nachricht bereits gemeldet."
+  },
   "channel": {
     "name": {
       "global": "TruckSOS Gemeinschaft"

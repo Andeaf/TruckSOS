@@ -130,6 +130,24 @@ export interface Truck {
   created_at: string;
 }
 
+export type ReportReason = 'spam' | 'harassment' | 'inappropriate' | 'scam' | 'other';
+export type ReportStatus = 'pending' | 'reviewed' | 'dismissed';
+
+/** Raport pe mesaj (cu snapshot) sau pe utilizator (message_id null). Faza 14.5. */
+export interface Report {
+  id: string;
+  reporter_id: string;
+  reported_user_id: string;
+  message_id: string | null;
+  message_table: 'messages' | 'channel_messages' | null;
+  reason: ReportReason;
+  details: string | null;
+  content_snapshot: string | null;
+  image_path_snapshot: string | null;
+  status: ReportStatus;
+  created_at: string;
+}
+
 export interface Channel {
   id: string;
   name: string;
@@ -230,6 +248,11 @@ export interface Database {
         Row: { channel_id: string; user_id: string; last_read_at: string };
         Insert: { channel_id: string; user_id: string; last_read_at?: string };
         Update: { last_read_at: string };
+      };
+      reports: {
+        Row: Report;
+        Insert: Omit<Report, 'id' | 'created_at' | 'status'> & { status?: ReportStatus };
+        Update: never;
       };
     };
     Functions: {

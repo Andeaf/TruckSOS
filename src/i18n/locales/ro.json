@@ -249,6 +249,24 @@
     "title": "Profil",
     "notFound": "Profil indisponibil"
   },
+  "report": {
+    "title": "Raportează",
+    "subtitle": "Spune-ne ce nu e în regulă. Vom analiza raportul.",
+    "reason": {
+      "spam": "Spam",
+      "harassment": "Limbaj ofensator / hărțuire",
+      "inappropriate": "Conținut nepotrivit",
+      "scam": "Escrocherie / fraudă",
+      "other": "Altceva"
+    },
+    "detailsPlaceholder": "Detalii (opțional)",
+    "submitButton": "Trimite raportul",
+    "submitted": "Raportul a fost trimis. Îl vom analiza.",
+    "submittedTitle": "Mulțumim",
+    "errorReasonRequired": "Alege un motiv.",
+    "errorGeneric": "Raportul nu a putut fi trimis. Încearcă din nou.",
+    "alreadyReported": "Ai raportat deja acest mesaj."
+  },
   "channel": {
     "name": {
       "global": "Comunitate TruckSOS"

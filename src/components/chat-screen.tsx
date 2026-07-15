@@ -22,6 +22,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Avatar } from '@/components/avatar';
 import { MessageActionSheet } from '@/components/message-action-sheet';
 import { PhotoViewer } from '@/components/photo-viewer';
+import { ReportSheet } from '@/components/report-sheet';
 import { Toast } from '@/components/toast';
 import { HeaderText, ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
@@ -240,7 +241,8 @@ interface ChatScreenProps<M extends ChatMessageBase> {
   /** Aplică editarea (RPC) după ce utilizatorul confirmă textul nou din bara de input. */
   onEditMessage?: (m: M, newContent: string) => Promise<void> | void;
   onDeleteMessage?: (m: M) => void;
-  onReportMessage?: (m: M) => void;
+  /** Tabelul mesajelor („messages" privat / „channel_messages" canal) — activează raportarea. */
+  messageTable?: 'messages' | 'channel_messages';
   /** Fereastra de editare (3 min), calculată de ecran — vezi Etapa 14.2. */
   canEditMessage?: (m: M) => boolean;
 }
@@ -267,7 +269,7 @@ export function ChatScreen<M extends ChatMessageBase>({
   onBack,
   onEditMessage,
   onDeleteMessage,
-  onReportMessage,
+  messageTable,
   canEditMessage,
 }: ChatScreenProps<M>) {
   const { t } = useTranslation();
@@ -282,6 +284,7 @@ export function ChatScreen<M extends ChatMessageBase>({
   const [toast, setToast] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<M | null>(null);
   const [replyTarget, setReplyTarget] = useState<M | null>(null);
+  const [reportTarget, setReportTarget] = useState<M | null>(null);
   const listRef = useRef<FlatList<M>>(null);
 
   // „Editează" din meniu → intrăm în mod editare: input precompletat + banner cu anulare.
@@ -635,8 +638,24 @@ export function ChatScreen<M extends ChatMessageBase>({
         onReply={enterReplyMode}
         onEdit={onEditMessage ? enterEditMode : undefined}
         onDelete={onDeleteMessage ? handleDelete : undefined}
-        onReport={onReportMessage}
+        onReport={messageTable ? setReportTarget : undefined}
       />
+
+      {reportTarget && messageTable ? (
+        <ReportSheet
+          visible
+          reportedUserId={reportTarget.sender_id}
+          messageId={reportTarget.id}
+          messageTable={messageTable}
+          contentSnapshot={reportTarget.content}
+          imagePathSnapshot={reportTarget.image_path}
+          onClose={() => setReportTarget(null)}
+          onSubmitted={() => {
+            setReportTarget(null);
+            setToast(t('report.submitted'));
+          }}
+        />
+      ) : null}
 
       <Toast message={toast} onHide={hideToast} bottomOffset={64} />
     </ThemedView>

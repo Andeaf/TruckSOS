@@ -81,6 +81,7 @@ export default function MechanicChatScreen() {
         if (!err) patchMessage(m.id, { content, edited_at: new Date().toISOString() });
       }}
       canEditMessage={(m) => withinEditWindow(m.created_at)}
+      messageTable="messages"
       onBack={goBack}
     />
   );

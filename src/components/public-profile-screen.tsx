@@ -1,17 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import { Avatar } from '@/components/avatar';
 import { RatingBadge } from '@/components/rating-badge';
+import { ReportSheet } from '@/components/report-sheet';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
+import { useTheme } from '@/hooks/use-theme';
 import { useSignedUrl } from '@/hooks/use-signed-urls';
 import type { Profile } from '@/types/database';
 
@@ -46,9 +49,14 @@ export function PublicProfileScreen() {
   // Ecran mereu deschis prin push (din chat) → back-ul urcă în stivă; fallback-ul „/"
   // (index → redirect pe grupul corect) acoperă doar cazul rar fără istoric.
   const goBack = useBack('/');
+  const theme = useTheme();
+  const { session } = useAuth();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reportVisible, setReportVisible] = useState(false);
   const avatarUrl = useSignedUrl(profile?.avatar_path);
+  // Nu te poți raporta pe tine însuți.
+  const canReport = !!session && session.user.id !== id;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,7 +91,20 @@ export function PublicProfileScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScreenHeader title={t('publicProfile.title')} onBack={goBack} />
+      <ScreenHeader
+        title={t('publicProfile.title')}
+        onBack={goBack}
+        right={
+          canReport ? (
+            <Pressable
+              onPress={() => setReportVisible(true)}
+              hitSlop={12}
+              accessibilityLabel={t('report.title')}>
+              <MaterialIcons name="flag" size={24} color={theme.onHeader} />
+            </Pressable>
+          ) : undefined
+        }
+      />
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.identity}>
@@ -126,6 +147,18 @@ export function PublicProfileScreen() {
           </>
         ) : null}
       </ScrollView>
+
+      {reportVisible ? (
+        <ReportSheet
+          visible
+          reportedUserId={id}
+          onClose={() => setReportVisible(false)}
+          onSubmitted={() => {
+            setReportVisible(false);
+            Alert.alert(t('report.submittedTitle'), t('report.submitted'));
+          }}
+        />
+      ) : null}
     </ThemedView>
   );
 }

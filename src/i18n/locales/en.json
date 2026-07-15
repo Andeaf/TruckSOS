@@ -247,6 +247,24 @@
     "title": "Profile",
     "notFound": "Profile unavailable"
   },
+  "report": {
+    "title": "Report",
+    "subtitle": "Tell us what's wrong. We'll review your report.",
+    "reason": {
+      "spam": "Spam",
+      "harassment": "Offensive language / harassment",
+      "inappropriate": "Inappropriate content",
+      "scam": "Scam / fraud",
+      "other": "Something else"
+    },
+    "detailsPlaceholder": "Details (optional)",
+    "submitButton": "Submit report",
+    "submitted": "Your report has been sent. We'll review it.",
+    "submittedTitle": "Thank you",
+    "errorReasonRequired": "Choose a reason.",
+    "errorGeneric": "The report couldn't be sent. Try again.",
+    "alreadyReported": "You've already reported this message."
+  },
   "channel": {
     "name": {
       "global": "TruckSOS Community"
