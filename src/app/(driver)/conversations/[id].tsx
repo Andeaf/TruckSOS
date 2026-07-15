@@ -15,6 +15,7 @@ import {
   sendMessage,
   useAnnouncementStatus,
   useMessages,
+  useReadCursor,
   withinEditWindow,
   type ConversationWithDetails,
 } from '@/hooks/use-chat';
@@ -27,6 +28,7 @@ export default function DriverChatScreen() {
   const goBack = useBack('/(driver)/conversations');
   const [conv, setConv] = useState<ConversationWithDetails | null>(null);
   const { messages, loading, addMessage, patchMessage } = useMessages(id);
+  const readCursor = useReadCursor(id, conv?.mechanic_id);
 
   useEffect(() => {
     fetchConversationDetails(id).then(setConv);
@@ -82,6 +84,8 @@ export default function DriverChatScreen() {
       }}
       canEditMessage={(m) => withinEditWindow(m.created_at)}
       messageTable="messages"
+      readReceipts
+      readCursor={readCursor}
       onBack={goBack}
     />
   );

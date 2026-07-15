@@ -79,6 +79,8 @@ interface MessageBubbleProps<M extends ChatMessageBase> {
   onPressQuote?: () => void;
   /** Tap pe avatarul expeditorului (chat de grup) → profilul lui. */
   onPressAvatar?: () => void;
+  /** Bife (doar chat privat, mesaj propriu): trimis (✓) / citit (✓✓). Null = fără bife. */
+  readState?: 'sent' | 'read' | null;
 }
 
 function MessageBubble<M extends ChatMessageBase>({
@@ -94,12 +96,20 @@ function MessageBubble<M extends ChatMessageBase>({
   onLongPress,
   onPressQuote,
   onPressAvatar,
+  readState,
 }: MessageBubbleProps<M>) {
   const theme = useTheme();
   const { t } = useTranslation();
   const isDeleted = !!message.deleted_at;
   const isImage = !isDeleted && !!message.image_path;
   const secondaryColor = isMe ? 'rgba(255,255,255,0.7)' : theme.textSecondary;
+  const tick = readState ? (
+    <MaterialIcons
+      name={readState === 'read' ? 'done-all' : 'check'}
+      size={14}
+      color={readState === 'read' ? '#5EC5FF' : secondaryColor}
+    />
+  ) : null;
   const quote = !isDeleted ? message.reply_to : null;
   const quoteSnippet = quote
     ? quote.deleted_at
@@ -160,6 +170,7 @@ function MessageBubble<M extends ChatMessageBase>({
               )}
               <View style={styles.imageTimePill}>
                 <Text style={styles.imageTimeText}>{formatTime(message.created_at)}</Text>
+                {tick}
               </View>
             </Pressable>
           ) : (
@@ -196,6 +207,7 @@ function MessageBubble<M extends ChatMessageBase>({
                 <Text style={[styles.bubbleTime, { color: secondaryColor }]}>
                   {formatTime(message.created_at)}
                 </Text>
+                {tick}
               </View>
             </>
           )}
@@ -245,6 +257,10 @@ interface ChatScreenProps<M extends ChatMessageBase> {
   messageTable?: 'messages' | 'channel_messages';
   /** Fereastra de editare (3 min), calculată de ecran — vezi Etapa 14.2. */
   canEditMessage?: (m: M) => boolean;
+  /** Bife de citit — DOAR chat privat (nu are sens cu N participanți). */
+  readReceipts?: boolean;
+  /** `last_read_at` al celuilalt participant (chat privat) — decide ✓ vs ✓✓. */
+  readCursor?: string | null;
 }
 
 export function ChatScreen<M extends ChatMessageBase>({
@@ -271,6 +287,8 @@ export function ChatScreen<M extends ChatMessageBase>({
   onDeleteMessage,
   messageTable,
   canEditMessage,
+  readReceipts,
+  readCursor,
 }: ChatScreenProps<M>) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -513,6 +531,14 @@ export function ChatScreen<M extends ChatMessageBase>({
                 onPressAvatar={
                   onPressUser ? () => onPressUser(item.sender_id) : undefined
                 }
+                readState={
+                  readReceipts && item.sender_id === currentUserId && !item.deleted_at
+                    ? readCursor &&
+                      new Date(readCursor).getTime() > new Date(item.created_at).getTime()
+                      ? 'read'
+                      : 'sent'
+                    : null
+                }
               />
               );
             }}
@@ -716,6 +742,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 6,
     bottom: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: Radius.badge,

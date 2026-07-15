@@ -264,6 +264,57 @@ export async function markConversationRead(conversationId: string): Promise<void
     );
 }
 
+/**
+ * Cursorul de citire al CELUILALT participant (bife ✓✓, doar chat privat, Etapa 14.7).
+ * RLS relaxat (faza14_e7) lasă participanții aceleiași conversații să-și vadă reciproc
+ * `last_read_at`. Subscripție filtrată pe conversation_id → bifele se actualizează live
+ * când celălalt deschide conversația.
+ */
+export function useReadCursor(conversationId: string, otherUserId: string | undefined): string | null {
+  const [cursor, setCursor] = useState<string | null>(null);
+  const channelName = useState(() => `read-cursor:${Math.random()}`)[0];
+
+  const fetchCursor = useCallback(async () => {
+    if (!otherUserId) {
+      setCursor(null);
+      return;
+    }
+    const { data } = await supabase
+      .from('message_reads')
+      .select('last_read_at')
+      .eq('conversation_id', conversationId)
+      .eq('user_id', otherUserId)
+      .maybeSingle();
+    setCursor((data as unknown as { last_read_at: string } | null)?.last_read_at ?? null);
+  }, [conversationId, otherUserId]);
+
+  useEffect(() => {
+    fetchCursor();
+  }, [fetchCursor]);
+
+  useEffect(() => {
+    if (!conversationId) return;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'message_reads',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        () => fetchCursor()
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, fetchCursor, channelName]);
+
+  return cursor;
+}
+
 export function useUnreadCounts(userId: string | undefined): { counts: Record<string, number>; refresh: () => Promise<void> } {
   const [counts, setCounts] = useState<Record<string, number>>({});
   // eslint-disable-next-line react-hooks/exhaustive-deps
