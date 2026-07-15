@@ -214,6 +214,7 @@
     },
     "map": {
       "title": "Harta anunțurilor",
+      "fitRange": "Anunțuri în rază",
       "pinCount_one": "{{count}} anunț pe hartă",
       "pinCount_few": "{{count}} anunțuri pe hartă",
       "pinCount_other": "{{count}} de anunțuri pe hartă",
@@ -254,6 +255,7 @@
   },
   "radiusFilter": {
     "title": "Filtrează după distanță",
+    "button": "Arie",
     "off": "Fără filtru",
     "custom": "Personalizat…",
     "customLabel": "Rază personalizată",

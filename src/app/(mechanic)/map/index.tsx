@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import MapView, { Circle, Marker, type Region } from 'react-native-maps';
 
-import { RadiusFilterMenu } from '@/components/radius-filter-menu';
+import { RadiusFilterMenu, type RadiusFilterMenuHandle } from '@/components/radius-filter-menu';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -48,6 +48,8 @@ export default function MechanicMapScreen() {
   // știm de unde pornim (poziția mecanicului sau, la refuz/eroare, centrul României).
   const [region, setRegion] = useState<Region | null>(null);
   const [selected, setSelected] = useState<Located | null>(null);
+  const mapRef = useRef<MapView>(null);
+  const rangeMenuRef = useRef<RadiusFilterMenuHandle>(null);
 
   useEffect(() => {
     let active = true;
@@ -83,12 +85,39 @@ export default function MechanicMapScreen() {
   const missingCount = announcements.length - located.length;
   const visible = applyRadiusFilter(located, radiusKm, coords);
 
+  // „Anunțuri în rază": încadrează harta pe anunțurile din raza aleasă, ca mecanicul
+  // să vadă dintr-o privire toți șoferii cu probleme din jur.
+  function handleFitRange() {
+    // Fără rază aleasă → deschidem selectorul „Arie", nu blocăm mecanicul.
+    if (radiusKm == null) {
+      rangeMenuRef.current?.open();
+      return;
+    }
+    if (visible.length === 0) {
+      Alert.alert(
+        t('radiusFilter.emptyFilteredTitle', { km: radiusKm }),
+        t('radiusFilter.emptyFilteredDescription')
+      );
+      return;
+    }
+    // Includem și poziția mecanicului (centrul cercului), ca încadrarea să arate
+    // unde e el față de anunțuri, nu doar aglomerarea de pin-uri.
+    const points = [
+      ...(coords ? [coords] : []),
+      ...visible.map((v) => ({ latitude: v.latitude, longitude: v.longitude })),
+    ];
+    mapRef.current?.fitToCoordinates(points, {
+      edgePadding: { top: 90, right: 60, bottom: 140, left: 60 },
+      animated: true,
+    });
+  }
+
   return (
     <ThemedView style={styles.container}>
       <ScreenHeader
         title={t('mechanic.map.title')}
         subtitle={t('mechanic.map.pinCount', { count: visible.length })}
-        right={<RadiusFilterMenu />}
+        right={<RadiusFilterMenu ref={rangeMenuRef} />}
       />
 
       {region ? (
@@ -100,6 +129,7 @@ export default function MechanicMapScreen() {
             // se aplice de la zero. `initialRegion` se re-aplică din `region` (păstrat
             // în state), deci se recentrează, nu se pierde poziția.
             key={scheme}
+            ref={mapRef}
             style={StyleSheet.absoluteFill}
             initialRegion={region}
             showsUserLocation
@@ -150,6 +180,22 @@ export default function MechanicMapScreen() {
               </ThemedView>
             ) : null}
           </View>
+
+          {/* Buton de încadrare pe rază — ascuns cât timp un card de anunț e deschis,
+              ca să nu se suprapună peste el. */}
+          {!selected ? (
+            <Pressable
+              onPress={handleFitRange}
+              accessibilityLabel={t('mechanic.map.fitRange')}
+              style={({ pressed }) => [
+                styles.fitButton,
+                { backgroundColor: theme.brand },
+                pressed && styles.pressed,
+              ]}>
+              <MaterialIcons name="zoom-out-map" size={18} color="#fff" />
+              <Text style={styles.fitLabel}>{t('mechanic.map.fitRange')}</Text>
+            </Pressable>
+          ) : null}
 
           {/* Cardul dispare dacă pinul lui tocmai a ieșit din rază (filtru strâns). */}
           {selected && visible.some((v) => v.id === selected.id) ? (
@@ -245,6 +291,27 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  fitButton: {
+    position: 'absolute',
+    right: Spacing.three,
+    bottom: Spacing.three,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.control,
+    ...Platform.select({
+      android: { elevation: 6 },
+      default: {
+        shadowColor: '#000',
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 3 },
+      },
+    }),
+  },
+  fitLabel: { color: '#fff', fontSize: 14, fontWeight: '600' },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   cardTitle: { flex: 1 },
   cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

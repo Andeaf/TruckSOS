@@ -214,6 +214,7 @@
     },
     "map": {
       "title": "Announcements map",
+      "fitRange": "Announcements in range",
       "pinCount_one": "{{count}} announcement on the map",
       "pinCount_other": "{{count}} announcements on the map",
       "missingCount_one": "{{count}} announcement without a location",
@@ -315,6 +316,7 @@
   },
   "radiusFilter": {
     "title": "Filter by distance",
+    "button": "Range",
     "off": "No filter",
     "custom": "Custom…",
     "customLabel": "Custom radius",

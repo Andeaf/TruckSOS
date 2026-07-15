@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import {
   Dimensions,
   Modal,
@@ -22,11 +22,19 @@ import { RADIUS_FILTER_STANDARD, useRadiusFilter } from '@/hooks/use-radius-filt
  * declanșator, cu trepte standard, „Fără filtru" și o opțiune „Personalizat" (input
  * numeric liber). Valoarea personalizată se persistă ca orice altă rază
  * (`saveRadiusPref` stochează orice număr) → e la fel de stabilă ca treptele fixe.
+ *
+ * Expune `open()` prin ref: harta îl cheamă când mecanicul apasă „Anunțuri în rază"
+ * fără să fi ales o rază — dropdown-ul se deschide ancorat la butonul din header.
  */
 
 type Anchor = { top: number; right: number };
 
-export function RadiusFilterMenu() {
+export type RadiusFilterMenuHandle = { open: () => void };
+
+export const RadiusFilterMenu = forwardRef<RadiusFilterMenuHandle>(function RadiusFilterMenu(
+  _props,
+  ref
+) {
   const { t } = useTranslation();
   const theme = useTheme();
   const { radiusKm, setRadiusKm } = useRadiusFilter();
@@ -66,6 +74,10 @@ export function RadiusFilterMenu() {
     }
   }
 
+  // Fără deps: `open` citește starea curentă prin closure, deci handle-ul trebuie
+  // să rămână proaspăt la fiecare randare.
+  useImperativeHandle(ref, () => ({ open }));
+
   return (
     <>
       <Pressable
@@ -74,7 +86,9 @@ export function RadiusFilterMenu() {
         hitSlop={12}
         accessibilityLabel={t('radiusFilter.title')}
         style={styles.trigger}>
-        <MaterialIcons name="filter-alt" size={22} color={theme.onHeader} />
+        <Text style={[styles.label, { color: theme.onHeader }]}>
+          {t('radiusFilter.button')}
+        </Text>
         {radiusKm != null ? (
           <Text style={[styles.value, { color: theme.onHeader }]}>
             {t('radiusFilter.km', { km: radiusKm })}
@@ -164,7 +178,7 @@ export function RadiusFilterMenu() {
       </Modal>
     </>
   );
-}
+});
 
 function MenuRow({
   label,
@@ -190,8 +204,9 @@ function MenuRow({
 }
 
 const styles = StyleSheet.create({
-  trigger: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  value: { fontSize: 13, fontWeight: '600' },
+  trigger: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  label: { fontSize: 15, fontWeight: '600' },
+  value: { fontSize: 13, fontWeight: '600', opacity: 0.9 },
   backdrop: { ...StyleSheet.absoluteFillObject },
   menu: {
     position: 'absolute',
