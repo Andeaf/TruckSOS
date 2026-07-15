@@ -1,17 +1,17 @@
-import { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, FlatList, SectionList, StyleSheet, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
-import { Avatar } from '@/components/avatar';
 import { EmptyState } from '@/components/empty-state';
 import { Input } from '@/components/ui/input';
+import { MechanicCard } from '@/components/mechanic-card';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { RatingBadge } from '@/components/rating-badge';
-import { Radius, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
+import { useFavorites } from '@/hooks/use-favorites';
 import { useSignedUrls } from '@/hooks/use-signed-urls';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -20,62 +20,63 @@ import {
   type MechanicSearchResult,
 } from '@/hooks/use-mechanic-search';
 
-function MechanicResultCard({
-  mechanic,
-  avatarUrl,
-  onPress,
-}: {
-  mechanic: MechanicSearchResult;
-  avatarUrl?: string;
-  onPress: () => void;
-}) {
-  const theme = useTheme();
-  return (
-    <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView type="backgroundElement" style={styles.card}>
-        <Avatar url={avatarUrl} name={mechanic.full_name} size={44} />
-        <View style={styles.cardContent}>
-          <ThemedText type="smallBold" numberOfLines={1}>
-            {mechanic.full_name}
-          </ThemedText>
-          {mechanic.specialization ? (
-            <View style={styles.detailRow}>
-              <MaterialIcons name="build" size={12} color={theme.textSecondary} />
-              <ThemedText themeColor="textSecondary" type="small" numberOfLines={1} style={styles.detailText}>
-                {mechanic.specialization}
-              </ThemedText>
-            </View>
-          ) : null}
-          {mechanic.activity_zone ? (
-            <View style={styles.detailRow}>
-              <MaterialIcons name="place" size={12} color={theme.textSecondary} />
-              <ThemedText themeColor="textSecondary" type="small" numberOfLines={1} style={styles.detailText}>
-                {mechanic.activity_zone}
-              </ThemedText>
-            </View>
-          ) : null}
-          <RatingBadge avg={mechanic.rating_avg} count={mechanic.rating_count} />
-        </View>
-        <MaterialIcons name="chevron-right" size={22} color={theme.textSecondary} />
-      </ThemedView>
-    </Pressable>
-  );
-}
+/** Secțiunile stării goale (PLAN_FAZA13.md §3.1): Favoriți sus, apoi (F13.3) Recente. */
+type EmptySection = {
+  key: string;
+  title: string;
+  icon: keyof typeof MaterialIcons.glyphMap;
+  data: MechanicSearchResult[];
+};
 
 export default function DriverSearchScreen() {
   const { t } = useTranslation();
+  const theme = useTheme();
   const router = useRouter();
   const [query, setQuery] = useState('');
   const { results, loading } = useMechanicSearch(query);
+  const { favoriteIds, favorites, toggleFavorite, refresh: refreshFavorites } = useFavorites();
 
-  // Un singur apel batch de URL-uri semnate pentru toate avatarele din listă.
+  useFocusEffect(
+    useCallback(() => {
+      refreshFavorites();
+    }, [refreshFavorites])
+  );
+
+  // Un singur apel batch de URL-uri semnate pentru TOATE avatarele de pe ecran
+  // (rezultate + favoriți), indiferent ce stare e vizibilă.
   const avatarPaths = useMemo(
-    () => results.map((m) => m.avatar_path).filter((p): p is string => !!p),
-    [results]
+    () =>
+      [...results, ...favorites]
+        .map((m) => m.avatar_path)
+        .filter((p): p is string => !!p),
+    [results, favorites]
   );
   const avatarUrls = useSignedUrls(avatarPaths);
 
   const queryActive = query.trim().length >= SEARCH_MIN_LENGTH;
+
+  const openProfile = useCallback(
+    (mechanicId: string) => {
+      router.push({
+        pathname: '/(driver)/mechanic-profile/[id]' as never,
+        params: { id: mechanicId },
+      });
+    },
+    [router]
+  );
+
+  const emptySections = useMemo<EmptySection[]>(() => {
+    const sections: EmptySection[] = [];
+    if (favorites.length > 0) {
+      sections.push({
+        key: 'favorites',
+        title: t('favorites.sectionTitle'),
+        icon: 'star',
+        data: favorites,
+      });
+    }
+    return sections;
+  }, [favorites, t]);
 
   return (
     <ThemedView style={styles.container}>
@@ -94,14 +95,43 @@ export default function DriverSearchScreen() {
       </View>
 
       {!queryActive ? (
-        <EmptyState
-          icon="search"
-          title={t('search.emptyTitle')}
-          description={t('search.emptyDescription', { min: SEARCH_MIN_LENGTH })}
-        />
+        emptySections.length > 0 ? (
+          <SectionList
+            sections={emptySections}
+            keyExtractor={(item, index) => `${item.id}-${index}`}
+            contentContainerStyle={styles.list}
+            stickySectionHeadersEnabled={false}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            SectionSeparatorComponent={() => <View style={styles.separator} />}
+            keyboardShouldPersistTaps="handled"
+            renderSectionHeader={({ section }) => (
+              <View style={styles.sectionHeader}>
+                <MaterialIcons name={section.icon} size={14} color={theme.textSecondary} />
+                <ThemedText themeColor="textSecondary" type="smallBold">
+                  {section.title}
+                </ThemedText>
+              </View>
+            )}
+            renderItem={({ item }) => (
+              <MechanicCard
+                mechanic={item}
+                avatarUrl={item.avatar_path ? avatarUrls[item.avatar_path] : undefined}
+                isFavorite={favoriteIds.has(item.id)}
+                onToggleFavorite={() => toggleFavorite(item.id)}
+                onPress={() => openProfile(item.id)}
+              />
+            )}
+          />
+        ) : (
+          <EmptyState
+            icon="search"
+            title={t('search.emptyTitle')}
+            description={t('search.emptyDescription', { min: SEARCH_MIN_LENGTH })}
+          />
+        )
       ) : loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#208AEF" />
+          <ActivityIndicator size="large" color={theme.brand} />
         </View>
       ) : (
         <FlatList
@@ -111,15 +141,12 @@ export default function DriverSearchScreen() {
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => (
-            <MechanicResultCard
+            <MechanicCard
               mechanic={item}
               avatarUrl={item.avatar_path ? avatarUrls[item.avatar_path] : undefined}
-              onPress={() =>
-                router.push({
-                  pathname: '/(driver)/mechanic-profile/[id]' as never,
-                  params: { id: item.id },
-                })
-              }
+              isFavorite={favoriteIds.has(item.id)}
+              onToggleFavorite={() => toggleFavorite(item.id)}
+              onPress={() => openProfile(item.id)}
             />
           )}
           ListEmptyComponent={
@@ -149,15 +176,10 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.four,
   },
   separator: { height: Spacing.two },
-  card: {
-    borderRadius: Radius.card,
+  sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
-    padding: Spacing.three,
+    gap: Spacing.one,
+    paddingBottom: Spacing.one,
   },
-  cardContent: { flex: 1, gap: 3 },
-  detailRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  detailText: { flex: 1 },
-  pressed: { opacity: 0.7 },
 });
