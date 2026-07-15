@@ -247,7 +247,10 @@
   },
   "favorites": {
     "toggle": "Favorit",
-    "sectionTitle": "Favoriți"
+    "sectionTitle": "Favoriți",
+    "emptyTitle": "Niciun mecanic favorit",
+    "emptyDescription": "Marchează un mecanic cu stea ca să-l găsești rapid aici.",
+    "openList": "Mecanici favoriți"
   },
   "radiusFilter": {
     "title": "Filtrează după distanță",

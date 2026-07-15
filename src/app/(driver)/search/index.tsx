@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, SectionList, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -15,24 +15,7 @@ import { useFavorites } from '@/hooks/use-favorites';
 import { useSearchHistory } from '@/hooks/use-search-history';
 import { useSignedUrls } from '@/hooks/use-signed-urls';
 import { useTheme } from '@/hooks/use-theme';
-import {
-  SEARCH_MIN_LENGTH,
-  useMechanicSearch,
-  type MechanicSearchResult,
-} from '@/hooks/use-mechanic-search';
-
-/**
- * Secțiunile stării goale (PLAN_FAZA13.md §3.1): Favoriți sus, Recente jos, fără
- * dedup între ele — un mecanic poate apărea în ambele, deci cheia de listă poartă
- * prefixul secțiunii (id-ul singur s-ar ciocni între secțiuni).
- */
-type EmptyItem = MechanicSearchResult & { listKey: string };
-type EmptySection = {
-  key: 'favorites' | 'history';
-  title: string;
-  icon: keyof typeof MaterialIcons.glyphMap;
-  data: EmptyItem[];
-};
+import { SEARCH_MIN_LENGTH, useMechanicSearch } from '@/hooks/use-mechanic-search';
 
 export default function DriverSearchScreen() {
   const { t } = useTranslation();
@@ -40,7 +23,9 @@ export default function DriverSearchScreen() {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const { results, loading } = useMechanicSearch(query);
-  const { favoriteIds, favorites, toggleFavorite, refresh: refreshFavorites } = useFavorites();
+  // Favoriții au ecran propriu (butonul-stea din header); aici păstrăm doar setul de
+  // id-uri, pentru starea plină/contur a stelelor de pe carduri.
+  const { favoriteIds, toggleFavorite, refresh: refreshFavorites } = useFavorites();
   const { history, recordSearch, removeEntry, refresh: refreshHistory } = useSearchHistory();
 
   useFocusEffect(
@@ -50,14 +35,14 @@ export default function DriverSearchScreen() {
     }, [refreshFavorites, refreshHistory])
   );
 
-  // Un singur apel batch de URL-uri semnate pentru TOATE avatarele de pe ecran
-  // (rezultate + favoriți + istoric), indiferent ce stare e vizibilă.
+  // Un singur apel batch de URL-uri semnate pentru avatarele de pe ecran
+  // (rezultate + istoric), indiferent ce stare e vizibilă.
   const avatarPaths = useMemo(
     () =>
-      [...results, ...favorites, ...history]
+      [...results, ...history]
         .map((m) => m.avatar_path)
         .filter((p): p is string => !!p),
-    [results, favorites, history]
+    [results, history]
   );
   const avatarUrls = useSignedUrls(avatarPaths);
 
@@ -73,30 +58,19 @@ export default function DriverSearchScreen() {
     [router]
   );
 
-  const emptySections = useMemo<EmptySection[]>(() => {
-    const sections: EmptySection[] = [];
-    if (favorites.length > 0) {
-      sections.push({
-        key: 'favorites',
-        title: t('favorites.sectionTitle'),
-        icon: 'star',
-        data: favorites.map((m) => ({ ...m, listKey: `fav-${m.id}` })),
-      });
-    }
-    if (history.length > 0) {
-      sections.push({
-        key: 'history',
-        title: t('search.historyTitle'),
-        icon: 'history',
-        data: history.map((m) => ({ ...m, listKey: `hist-${m.id}` })),
-      });
-    }
-    return sections;
-  }, [favorites, history, t]);
-
   return (
     <ThemedView style={styles.container}>
-      <ScreenHeader title={t('search.title')} />
+      <ScreenHeader
+        title={t('search.title')}
+        right={
+          <Pressable
+            onPress={() => router.push('/(driver)/search/favorites' as never)}
+            hitSlop={12}
+            accessibilityLabel={t('favorites.openList')}>
+            <MaterialIcons name="star" size={24} color={theme.onHeader} />
+          </Pressable>
+        }
+      />
 
       <View style={styles.searchBar}>
         <Input
@@ -110,30 +84,28 @@ export default function DriverSearchScreen() {
       </View>
 
       {!queryActive ? (
-        emptySections.length > 0 ? (
-          <SectionList
-            sections={emptySections}
-            keyExtractor={(item) => item.listKey}
+        history.length > 0 ? (
+          <FlatList
+            data={history}
+            keyExtractor={(item) => item.id}
             contentContainerStyle={styles.list}
-            stickySectionHeadersEnabled={false}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
-            SectionSeparatorComponent={() => <View style={styles.separator} />}
             keyboardShouldPersistTaps="handled"
-            renderSectionHeader={({ section }) => (
+            ListHeaderComponent={
               <View style={styles.sectionHeader}>
-                <MaterialIcons name={section.icon} size={14} color={theme.textSecondary} />
+                <MaterialIcons name="history" size={14} color={theme.textSecondary} />
                 <ThemedText themeColor="textSecondary" type="smallBold">
-                  {section.title}
+                  {t('search.historyTitle')}
                 </ThemedText>
               </View>
-            )}
-            renderItem={({ item, section }) => (
+            }
+            renderItem={({ item }) => (
               <MechanicCard
                 mechanic={item}
                 avatarUrl={item.avatar_path ? avatarUrls[item.avatar_path] : undefined}
                 isFavorite={favoriteIds.has(item.id)}
                 onToggleFavorite={() => toggleFavorite(item.id)}
-                onRemove={section.key === 'history' ? () => removeEntry(item.id) : undefined}
+                onRemove={() => removeEntry(item.id)}
                 onPress={() => openProfile(item.id)}
               />
             )}
@@ -201,6 +173,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one,
-    paddingBottom: Spacing.one,
+    paddingBottom: Spacing.two,
   },
 });

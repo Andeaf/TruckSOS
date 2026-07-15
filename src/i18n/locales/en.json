@@ -308,7 +308,10 @@
   },
   "favorites": {
     "toggle": "Favorite",
-    "sectionTitle": "Favorites"
+    "sectionTitle": "Favorites",
+    "emptyTitle": "No favorite mechanics",
+    "emptyDescription": "Tap the star on a mechanic to find them quickly here.",
+    "openList": "Favorite mechanics"
   },
   "radiusFilter": {
     "title": "Filter by distance",

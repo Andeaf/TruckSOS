@@ -317,7 +317,10 @@
   },
   "favorites": {
     "toggle": "Favorit",
-    "sectionTitle": "Favoriten"
+    "sectionTitle": "Favoriten",
+    "emptyTitle": "Keine favorisierten Mechaniker",
+    "emptyDescription": "Markiere einen Mechaniker mit einem Stern, um ihn hier schnell zu finden.",
+    "openList": "Favorisierte Mechaniker"
   },
   "radiusFilter": {
     "title": "Nach Entfernung filtern",
