@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
+import { hasChatV14, replyEmbed } from '@/lib/chat-schema';
 import { uploadPhoto } from '@/lib/storage';
 import type { PickedImage } from '@/lib/media';
 import type { Channel, ChannelMessage, PublicUser, Role } from '@/types/database';
@@ -62,10 +63,12 @@ export function useChannelMessages(channelId: string) {
     setMessages([]);
 
     (async () => {
+      const v14 = await hasChatV14();
       const { data } = await supabase
         .from('channel_messages')
         .select(
-          '*, sender:profiles!sender_id(full_name,role,avatar_path), reply_to:channel_messages!reply_to_id(id,content,image_path,sender_id,deleted_at,sender:profiles!sender_id(full_name))'
+          '*, sender:profiles!sender_id(full_name,role,avatar_path)' +
+            (v14 ? replyEmbed('channel_messages') : '')
         )
         .eq('channel_id', channelId)
         .order('created_at', { ascending: false })
@@ -138,10 +141,12 @@ export function useChannelMessages(channelId: string) {
     if (loadingMore || !hasMore || messagesRef.current.length === 0) return;
     setLoadingMore(true);
     const oldest = messagesRef.current[0].created_at;
+    const v14 = await hasChatV14();
     const { data } = await supabase
       .from('channel_messages')
       .select(
-        '*, sender:profiles!sender_id(full_name,role,avatar_path), reply_to:channel_messages!reply_to_id(id,content,image_path,sender_id,deleted_at)'
+        '*, sender:profiles!sender_id(full_name,role,avatar_path)' +
+          (v14 ? replyEmbed('channel_messages') : '')
       )
       .eq('channel_id', channelId)
       .lt('created_at', oldest)
@@ -163,17 +168,20 @@ export async function sendChannelMessage(
   imagePath: string | null = null,
   replyToId: string | null = null
 ): Promise<{ message: ChannelMessageWithSender | null; error: string | null }> {
+  const v14 = await hasChatV14();
+  const row: Record<string, unknown> = {
+    channel_id: channelId,
+    sender_id: senderId,
+    content,
+    image_path: imagePath,
+  };
+  if (v14) row.reply_to_id = replyToId;
   const { data, error } = await supabase
     .from('channel_messages')
-    .insert({
-      channel_id: channelId,
-      sender_id: senderId,
-      content,
-      image_path: imagePath,
-      reply_to_id: replyToId,
-    } as never)
+    .insert(row as never)
     .select(
-      '*, sender:profiles!sender_id(full_name,role,avatar_path), reply_to:channel_messages!reply_to_id(id,content,image_path,sender_id,deleted_at,sender:profiles!sender_id(full_name))'
+      '*, sender:profiles!sender_id(full_name,role,avatar_path)' +
+        (v14 ? replyEmbed('channel_messages') : '')
     )
     .single();
   return { message: (data as unknown as ChannelMessageWithSender) ?? null, error: error?.message ?? null };
@@ -235,9 +243,9 @@ export function useChannelUnreadCount(userId: string | undefined, channelId: str
       .from('channel_messages')
       .select('id', { count: 'exact', head: true })
       .eq('channel_id', channelId)
-      .neq('sender_id', userId)
-      // Tombstone-urile (Faza 14) nu se numără.
-      .is('deleted_at', null);
+      .neq('sender_id', userId);
+    // Tombstone-urile (Faza 14) nu se numără — doar dacă schema are coloana.
+    if (await hasChatV14()) query = query.is('deleted_at', null);
     if (read?.last_read_at) query = query.gt('created_at', read.last_read_at);
 
     const { count: c } = await query;

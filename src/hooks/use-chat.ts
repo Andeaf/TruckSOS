@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
+import { hasChatV14, replyEmbed } from '@/lib/chat-schema';
 import { uploadPhoto } from '@/lib/storage';
 import type { PickedImage } from '@/lib/media';
 import type { Announcement, Conversation, Message, PublicUser } from '@/types/database';
@@ -67,11 +68,10 @@ export function useMessages(conversationId: string) {
     let active = true;
 
     (async () => {
+      const v14 = await hasChatV14();
       const { data } = await supabase
         .from('messages')
-        .select(
-          '*, reply_to:messages!reply_to_id(id,content,image_path,sender_id,deleted_at,sender:profiles!sender_id(full_name))'
-        )
+        .select('*' + (v14 ? replyEmbed('messages') : ''))
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
       if (active) {
@@ -185,19 +185,20 @@ export async function sendMessage(
   imagePath: string | null = null,
   replyToId: string | null = null
 ): Promise<{ message: Message | null; error: string | null }> {
+  const v14 = await hasChatV14();
+  const row: Record<string, unknown> = {
+    conversation_id: conversationId,
+    sender_id: senderId,
+    content,
+    image_path: imagePath,
+  };
+  // reply_to_id doar dacă schema îl are (altfel insert-ul ar eșua pe schema veche).
+  if (v14) row.reply_to_id = replyToId;
   const { data, error } = await supabase
     .from('messages')
-    .insert({
-      conversation_id: conversationId,
-      sender_id: senderId,
-      content,
-      image_path: imagePath,
-      reply_to_id: replyToId,
-    } as never)
+    .insert(row as never)
     // Returnăm și citatul, ca bula proprie să afișeze reply-ul instant (optimist).
-    .select(
-      '*, reply_to:messages!reply_to_id(id,content,image_path,sender_id,deleted_at,sender:profiles!sender_id(full_name))'
-    )
+    .select('*' + (v14 ? replyEmbed('messages') : ''))
     .single();
   return { message: (data as unknown as Message) ?? null, error: error?.message ?? null };
 }
@@ -322,6 +323,7 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
 
   const fetchCounts = useCallback(async () => {
     if (!userId) return;
+    const v14 = await hasChatV14();
 
     // Conversațiile ȘTERSE de utilizator (Faza 5, soft-delete) NU se mai văd în listă,
     // deci nu pot fi deschise → n-ar putea fi marcate ca citite niciodată. Dacă le-am
@@ -361,10 +363,9 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
           .from('messages')
           .select('id', { count: 'exact', head: true })
           .eq('conversation_id', id)
-          .neq('sender_id', userId)
-          // Tombstone-urile (Faza 14) nu se numără — altfel badge-ul rămâne „agățat"
-          // pe un mesaj necitit șters de expeditor.
-          .is('deleted_at', null);
+          .neq('sender_id', userId);
+        // Tombstone-urile (Faza 14) nu se numără — dar doar dacă schema are coloana.
+        if (v14) query = query.is('deleted_at', null);
         if (lastRead) query = query.gt('created_at', lastRead);
         const { count } = await query;
         result[id] = count ?? 0;
