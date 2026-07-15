@@ -116,6 +116,8 @@ export interface Application {
   currency: string;
   message: string | null;
   status: ApplicationStatus;
+  /** Faza 14.10: bumpat de trigger la orice UPDATE (accept/reject/dismiss) — pt. bulina de Candidaturi. */
+  updated_at: string;
   created_at: string;
 }
 

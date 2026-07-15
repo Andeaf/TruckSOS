@@ -17,6 +17,7 @@ import { useConversations, deleteConversations, useUnreadCounts, type Conversati
 import { useChannels, useChannelUnreadCount } from '@/hooks/use-channel-chat';
 import { useSignedUrls } from '@/hooks/use-signed-urls';
 import { useTimeAgo } from '@/hooks/use-time-ago';
+import { formatBadge } from '@/lib/badge';
 import type { Channel } from '@/types/database';
 
 function ChannelCard({
@@ -45,7 +46,7 @@ function ChannelCard({
               {unreadCount > 0 ? (
                 <View style={styles.unreadBadge}>
                   <ThemedText style={styles.unreadText}>
-                    {unreadCount > 99 ? '99+' : unreadCount}
+                    {formatBadge(unreadCount)}
                   </ThemedText>
                 </View>
               ) : null}
@@ -106,7 +107,7 @@ function ConversationCard({
                 {unreadCount > 0 && !selectionMode ? (
                   <View style={styles.unreadBadge}>
                     <ThemedText style={styles.unreadText}>
-                      {unreadCount > 99 ? '99+' : unreadCount}
+                      {formatBadge(unreadCount)}
                     </ThemedText>
                   </View>
                 ) : null}

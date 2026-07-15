@@ -6,6 +6,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useUnreadCounts } from '@/hooks/use-chat';
 import { useChannels, useChannelUnreadCount } from '@/hooks/use-channel-chat';
+import { formatBadge } from '@/lib/badge';
 
 export default function DriverLayout() {
   const theme = useTheme();
@@ -41,7 +42,7 @@ export default function DriverLayout() {
         name="conversations"
         options={{
           title: t('driver.tabs.conversations'),
-          tabBarBadge: totalUnread > 0 ? totalUnread : undefined,
+          tabBarBadge: totalUnread > 0 ? formatBadge(totalUnread) : undefined,
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="chat" size={size} color={color} />
           ),
