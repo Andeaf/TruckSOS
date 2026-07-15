@@ -86,8 +86,16 @@ DROP POLICY IF EXISTS "channel_messages_delete_own" ON channel_messages;
 -- channel_messages e deja REPLICA IDENTITY FULL + în publicație (Faza 6).
 -- messages: ne asigurăm de FULL (subscripțiile filtrate + payload-ul de UPDATE îl cer).
 ALTER TABLE messages REPLICA IDENTITY FULL;
--- Dacă `messages` nu e încă în publicație (ar trebui, din Faza 5), decomentează:
--- ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+-- Adăugăm messages în publicație doar dacă nu e deja (idempotent — nu dă eroare la re-rulare).
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'messages'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+  END IF;
+END $$;
 
 -- ─── Verificări (manual) ────────────────────────────────────────────────────
 --   a) delete_message('messages', <id-propriu>)   → bula devine tombstone la ambii.
