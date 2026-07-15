@@ -238,7 +238,10 @@
     "deleteConfirmBody": "The message will be deleted for everyone. This can't be undone.",
     "edited": "edited",
     "editingMessage": "Editing message",
-    "cancelEdit": "Cancel editing"
+    "cancelEdit": "Cancel editing",
+    "cancelReply": "Cancel reply",
+    "photo": "📷 Photo",
+    "you": "You"
   },
   "channel": {
     "name": {

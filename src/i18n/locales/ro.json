@@ -240,7 +240,10 @@
     "deleteConfirmBody": "Mesajul va fi șters pentru toți. Această acțiune nu poate fi anulată.",
     "edited": "editat",
     "editingMessage": "Editezi mesajul",
-    "cancelEdit": "Anulează editarea"
+    "cancelEdit": "Anulează editarea",
+    "cancelReply": "Anulează răspunsul",
+    "photo": "📷 Poză",
+    "you": "Tu"
   },
   "channel": {
     "name": {

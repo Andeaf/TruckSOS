@@ -57,8 +57,8 @@ export default function DriverChatScreen() {
       }
       messages={messages}
       loading={loading}
-      onSend={async (content) => {
-        const { message } = await sendMessage(id, session.user.id, content);
+      onSend={async (content, replyToId) => {
+        const { message } = await sendMessage(id, session.user.id, content, null, replyToId);
         if (message) addMessage(message);
       }}
       onSendImage={async (image) => {

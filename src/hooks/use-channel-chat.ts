@@ -65,7 +65,7 @@ export function useChannelMessages(channelId: string) {
       const { data } = await supabase
         .from('channel_messages')
         .select(
-          '*, sender:profiles!sender_id(full_name,role,avatar_path), reply_to:channel_messages!reply_to_id(id,content,image_path,sender_id,deleted_at)'
+          '*, sender:profiles!sender_id(full_name,role,avatar_path), reply_to:channel_messages!reply_to_id(id,content,image_path,sender_id,deleted_at,sender:profiles!sender_id(full_name))'
         )
         .eq('channel_id', channelId)
         .order('created_at', { ascending: false })
@@ -160,7 +160,8 @@ export async function sendChannelMessage(
   channelId: string,
   senderId: string,
   content: string,
-  imagePath: string | null = null
+  imagePath: string | null = null,
+  replyToId: string | null = null
 ): Promise<{ message: ChannelMessageWithSender | null; error: string | null }> {
   const { data, error } = await supabase
     .from('channel_messages')
@@ -169,8 +170,11 @@ export async function sendChannelMessage(
       sender_id: senderId,
       content,
       image_path: imagePath,
+      reply_to_id: replyToId,
     } as never)
-    .select('*, sender:profiles!sender_id(full_name,role,avatar_path)')
+    .select(
+      '*, sender:profiles!sender_id(full_name,role,avatar_path), reply_to:channel_messages!reply_to_id(id,content,image_path,sender_id,deleted_at,sender:profiles!sender_id(full_name))'
+    )
     .single();
   return { message: (data as unknown as ChannelMessageWithSender) ?? null, error: error?.message ?? null };
 }

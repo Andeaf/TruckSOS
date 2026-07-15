@@ -50,8 +50,8 @@ export default function MechanicChannelChatScreen() {
       renderSenderLabel={(message) =>
         `${message.sender.full_name} · ${t(`auth.roleSelect.${message.sender.role}Title`)}`
       }
-      onSend={async (content) => {
-        const { message } = await sendChannelMessage(id, session.user.id, content);
+      onSend={async (content, replyToId) => {
+        const { message } = await sendChannelMessage(id, session.user.id, content, null, replyToId);
         if (message) addMessage(message);
       }}
       onSendImage={async (image) => {

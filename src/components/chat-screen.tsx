@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -43,6 +43,15 @@ export interface ChatMessageBase {
   deleted_at?: string | null;
   edited_at?: string | null;
   reply_to_id?: string | null;
+  /** Faza 14: mesajul citat (self-join). NULL dacă nu e reply sau citatul a fost șters din DB. */
+  reply_to?: {
+    id: string;
+    content: string;
+    image_path: string | null;
+    sender_id: string;
+    deleted_at: string | null;
+    sender?: { full_name: string } | null;
+  } | null;
 }
 
 function formatTime(dateStr: string) {
@@ -65,6 +74,8 @@ interface MessageBubbleProps<M extends ChatMessageBase> {
   showSenderAvatar?: boolean;
   onPressImage?: () => void;
   onLongPress?: () => void;
+  /** Tap pe citat → derulează la mesajul original (dacă e încărcat). */
+  onPressQuote?: () => void;
 }
 
 function MessageBubble<M extends ChatMessageBase>({
@@ -78,12 +89,21 @@ function MessageBubble<M extends ChatMessageBase>({
   showSenderAvatar,
   onPressImage,
   onLongPress,
+  onPressQuote,
 }: MessageBubbleProps<M>) {
   const theme = useTheme();
   const { t } = useTranslation();
   const isDeleted = !!message.deleted_at;
   const isImage = !isDeleted && !!message.image_path;
   const secondaryColor = isMe ? 'rgba(255,255,255,0.7)' : theme.textSecondary;
+  const quote = !isDeleted ? message.reply_to : null;
+  const quoteSnippet = quote
+    ? quote.deleted_at
+      ? t('chat.deletedMessage')
+      : quote.image_path
+        ? t('chat.photo')
+        : quote.content
+    : '';
   return (
     <View style={[styles.bubbleRow, isMe ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
       {showSenderAvatar && !isMe ? (
@@ -138,6 +158,26 @@ function MessageBubble<M extends ChatMessageBase>({
             </Pressable>
           ) : (
             <>
+              {quote ? (
+                <Pressable
+                  onPress={onPressQuote}
+                  style={[
+                    styles.quote,
+                    {
+                      backgroundColor: isMe ? 'rgba(255,255,255,0.16)' : theme.background,
+                      borderLeftColor: isMe ? '#ffffff' : accentColor,
+                    },
+                  ]}>
+                  <Text
+                    numberOfLines={1}
+                    style={[styles.quoteName, { color: isMe ? '#ffffff' : accentColor }]}>
+                    {quote.sender?.full_name ?? ''}
+                  </Text>
+                  <Text numberOfLines={1} style={[styles.quoteSnippet, { color: secondaryColor }]}>
+                    {quoteSnippet}
+                  </Text>
+                </Pressable>
+              ) : null}
               <Text style={[styles.bubbleText, { color: isMe ? '#ffffff' : theme.text }]}>
                 {message.content}
               </Text>
@@ -170,7 +210,7 @@ interface ChatScreenProps<M extends ChatMessageBase> {
   loading: boolean;
   loadingMore?: boolean;
   onLoadOlder?: () => void;
-  onSend: (content: string) => Promise<void>;
+  onSend: (content: string, replyToId?: string | null) => Promise<void>;
   /**
    * Trimite o poză ca mesaj propriu (o poză = o bulă). Când lipsește, butonul de
    * atașare nu apare — așa ținem funcționalitatea oprită acolo unde n-a fost încă
@@ -188,7 +228,6 @@ interface ChatScreenProps<M extends ChatMessageBase> {
    * Acțiuni din meniul contextual (tap lung pe bulă), toate opționale — o acțiune
    * apare doar dacă ecranul o furnizează (Faza 14). „Copiază" e intern (client-side).
    */
-  onReplyMessage?: (m: M) => void;
   /** Aplică editarea (RPC) după ce utilizatorul confirmă textul nou din bara de input. */
   onEditMessage?: (m: M, newContent: string) => Promise<void> | void;
   onDeleteMessage?: (m: M) => void;
@@ -215,7 +254,6 @@ export function ChatScreen<M extends ChatMessageBase>({
   renderSenderAvatarPath,
   headerAvatarPath,
   onBack,
-  onReplyMessage,
   onEditMessage,
   onDeleteMessage,
   onReportMessage,
@@ -232,9 +270,13 @@ export function ChatScreen<M extends ChatMessageBase>({
   const [menuMessage, setMenuMessage] = useState<M | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<M | null>(null);
+  const [replyTarget, setReplyTarget] = useState<M | null>(null);
+  const listRef = useRef<FlatList<M>>(null);
 
   // „Editează" din meniu → intrăm în mod editare: input precompletat + banner cu anulare.
+  // Editarea și reply-ul se exclud reciproc în compozitor.
   const enterEditMode = useCallback((m: M) => {
+    setReplyTarget(null);
     setEditTarget(m);
     setText(m.content);
   }, []);
@@ -242,6 +284,12 @@ export function ChatScreen<M extends ChatMessageBase>({
     setEditTarget(null);
     setText('');
   }, []);
+  const enterReplyMode = useCallback((m: M) => {
+    setEditTarget(null);
+    setText('');
+    setReplyTarget(m);
+  }, []);
+  const cancelReply = useCallback(() => setReplyTarget(null), []);
 
   const handleCopy = useCallback(
     async (m: M) => {
@@ -279,6 +327,18 @@ export function ChatScreen<M extends ChatMessageBase>({
   // Inverted FlatList needs data in descending order (newest first = shown at bottom)
   const reversedMessages = useMemo(() => [...messages].reverse(), [messages]);
 
+  // Tap pe citat → derulează la mesajul original, dacă e în pagina încărcată.
+  // Dacă e mai vechi decât paginarea (canal, 50/pagină) → no-op discret.
+  const scrollToQuoted = useCallback(
+    (quotedId: string) => {
+      const index = reversedMessages.findIndex((m) => m.id === quotedId);
+      if (index >= 0) {
+        listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
+      }
+    },
+    [reversedMessages],
+  );
+
   // URL-uri semnate pt. poze ȘI avatare, într-un singur batch care crește pe măsură
   // ce sosesc mesaje noi (`useSignedUrls` cere doar path-urile încă nesemnate).
   const paths = useMemo(() => {
@@ -309,8 +369,10 @@ export function ChatScreen<M extends ChatMessageBase>({
       setText('');
       await onEditMessage(target, trimmed);
     } else {
+      const replyId = replyTarget?.id ?? null;
       setText('');
-      await onSend(trimmed);
+      setReplyTarget(null);
+      await onSend(trimmed, replyId);
     }
     setSending(false);
   }
@@ -390,12 +452,15 @@ export function ChatScreen<M extends ChatMessageBase>({
           </View>
         ) : (
           <FlatList
+            ref={listRef}
             data={reversedMessages}
             keyExtractor={(item) => item.id}
             inverted
             contentContainerStyle={styles.messageList}
             onEndReached={onLoadOlder}
             onEndReachedThreshold={0.3}
+            // Mesajul citat poate să nu fie randat încă → eșec grațios, fără crash.
+            onScrollToIndexFailed={() => {}}
             ListFooterComponent={
               loadingMore ? (
                 <View style={styles.loadingMore}>
@@ -424,11 +489,38 @@ export function ChatScreen<M extends ChatMessageBase>({
                   if (index >= 0) setViewerAt(index);
                 }}
                 onLongPress={() => setMenuMessage(item)}
+                onPressQuote={
+                  item.reply_to_id ? () => scrollToQuoted(item.reply_to_id!) : undefined
+                }
               />
               );
             }}
           />
         )}
+
+        {replyTarget && !editTarget ? (
+          <View style={[styles.editBanner, { backgroundColor: theme.backgroundElement }]}>
+            <MaterialIcons name="reply" size={16} color={accentColor} />
+            <View style={styles.editBannerInfo}>
+              <Text style={[styles.editBannerTitle, { color: accentColor }]} numberOfLines={1}>
+                {renderSenderName?.(replyTarget) ??
+                  (replyTarget.sender_id === currentUserId ? t('chat.you') : title)}
+              </Text>
+              <Text
+                style={[styles.editBannerText, { color: theme.textSecondary }]}
+                numberOfLines={1}>
+                {replyTarget.deleted_at
+                  ? t('chat.deletedMessage')
+                  : replyTarget.image_path
+                    ? t('chat.photo')
+                    : replyTarget.content}
+              </Text>
+            </View>
+            <Pressable onPress={cancelReply} hitSlop={8} accessibilityLabel={t('chat.cancelReply')}>
+              <MaterialIcons name="close" size={20} color={theme.textSecondary} />
+            </Pressable>
+          </View>
+        ) : null}
 
         {editTarget ? (
           <View style={[styles.editBanner, { backgroundColor: theme.backgroundElement }]}>
@@ -522,7 +614,7 @@ export function ChatScreen<M extends ChatMessageBase>({
         canEdit={menuMessage && canEditMessage ? canEditMessage(menuMessage) : false}
         onClose={() => setMenuMessage(null)}
         onCopy={handleCopy}
-        onReply={onReplyMessage}
+        onReply={enterReplyMode}
         onEdit={onEditMessage ? enterEditMode : undefined}
         onDelete={onDeleteMessage ? handleDelete : undefined}
         onReport={onReportMessage}
@@ -564,6 +656,16 @@ const styles = StyleSheet.create({
   deletedText: { fontStyle: 'italic' },
   metaRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-end', gap: Spacing.one },
   editedLabel: { fontStyle: 'italic' },
+  quote: {
+    borderLeftWidth: 3,
+    borderRadius: Radius.badge,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.one,
+    marginBottom: Spacing.one,
+    gap: 1,
+  },
+  quoteName: { fontSize: 12, fontWeight: '700' },
+  quoteSnippet: { fontSize: 13 },
   // Bula-imagine: fără padding, poza umple bula.
   bubbleImage: { padding: 0, overflow: 'hidden' },
   imageWrap: { width: 220, height: 220 },

@@ -69,7 +69,9 @@ export function useMessages(conversationId: string) {
     (async () => {
       const { data } = await supabase
         .from('messages')
-        .select('*, reply_to:messages!reply_to_id(id,content,image_path,sender_id,deleted_at)')
+        .select(
+          '*, reply_to:messages!reply_to_id(id,content,image_path,sender_id,deleted_at,sender:profiles!sender_id(full_name))'
+        )
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
       if (active) {
@@ -180,7 +182,8 @@ export async function sendMessage(
   conversationId: string,
   senderId: string,
   content: string,
-  imagePath: string | null = null
+  imagePath: string | null = null,
+  replyToId: string | null = null
 ): Promise<{ message: Message | null; error: string | null }> {
   const { data, error } = await supabase
     .from('messages')
@@ -189,8 +192,12 @@ export async function sendMessage(
       sender_id: senderId,
       content,
       image_path: imagePath,
+      reply_to_id: replyToId,
     } as never)
-    .select()
+    // Returnăm și citatul, ca bula proprie să afișeze reply-ul instant (optimist).
+    .select(
+      '*, reply_to:messages!reply_to_id(id,content,image_path,sender_id,deleted_at,sender:profiles!sender_id(full_name))'
+    )
     .single();
   return { message: (data as unknown as Message) ?? null, error: error?.message ?? null };
 }
