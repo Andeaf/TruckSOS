@@ -50,6 +50,11 @@ export function useChannelMessages(channelId: string) {
     setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
   }, []);
 
+  // Actualizare locală optimistă (tombstone/editare), înainte de UPDATE-ul Realtime.
+  const patchMessage = useCallback((id: string, patch: Partial<ChannelMessage>) => {
+    setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
+  }, []);
+
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -59,7 +64,9 @@ export function useChannelMessages(channelId: string) {
     (async () => {
       const { data } = await supabase
         .from('channel_messages')
-        .select('*, sender:profiles!sender_id(full_name,role,avatar_path)')
+        .select(
+          '*, sender:profiles!sender_id(full_name,role,avatar_path), reply_to:channel_messages!reply_to_id(id,content,image_path,sender_id,deleted_at)'
+        )
         .eq('channel_id', channelId)
         .order('created_at', { ascending: false })
         .limit(PAGE_SIZE);
@@ -102,6 +109,23 @@ export function useChannelMessages(channelId: string) {
           });
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'channel_messages',
+          filter: `channel_id=eq.${channelId}`,
+        },
+        (payload) => {
+          if (!active) return;
+          const updated = payload.new as ChannelMessage;
+          // Păstrăm `sender` și `reply_to` (nu vin în payload-ul de UPDATE), suprascriem restul.
+          setMessages((prev) =>
+            prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m))
+          );
+        }
+      )
       .subscribe();
 
     return () => {
@@ -116,7 +140,9 @@ export function useChannelMessages(channelId: string) {
     const oldest = messagesRef.current[0].created_at;
     const { data } = await supabase
       .from('channel_messages')
-      .select('*, sender:profiles!sender_id(full_name,role,avatar_path)')
+      .select(
+        '*, sender:profiles!sender_id(full_name,role,avatar_path), reply_to:channel_messages!reply_to_id(id,content,image_path,sender_id,deleted_at)'
+      )
       .eq('channel_id', channelId)
       .lt('created_at', oldest)
       .order('created_at', { ascending: false })
@@ -127,7 +153,7 @@ export function useChannelMessages(channelId: string) {
     setLoadingMore(false);
   }, [channelId, hasMore, loadingMore]);
 
-  return { messages, loading, loadingMore, hasMore, loadOlder, addMessage };
+  return { messages, loading, loadingMore, hasMore, loadOlder, addMessage, patchMessage };
 }
 
 export async function sendChannelMessage(
@@ -205,7 +231,9 @@ export function useChannelUnreadCount(userId: string | undefined, channelId: str
       .from('channel_messages')
       .select('id', { count: 'exact', head: true })
       .eq('channel_id', channelId)
-      .neq('sender_id', userId);
+      .neq('sender_id', userId)
+      // Tombstone-urile (Faza 14) nu se numără.
+      .is('deleted_at', null);
     if (read?.last_read_at) query = query.gt('created_at', read.last_read_at);
 
     const { count: c } = await query;
@@ -224,6 +252,17 @@ export function useChannelUnreadCount(userId: string | undefined, channelId: str
         'postgres_changes',
         {
           event: 'INSERT',
+          schema: 'public',
+          table: 'channel_messages',
+          filter: `channel_id=eq.${channelId}`,
+        },
+        () => fetchCount()
+      )
+      // UPDATE = tombstone: recalculăm ca badge-ul să scadă la ștergerea unui necitit.
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
           schema: 'public',
           table: 'channel_messages',
           filter: `channel_id=eq.${channelId}`,

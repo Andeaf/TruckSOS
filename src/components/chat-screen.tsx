@@ -80,7 +80,10 @@ function MessageBubble<M extends ChatMessageBase>({
   onLongPress,
 }: MessageBubbleProps<M>) {
   const theme = useTheme();
-  const isImage = !!message.image_path;
+  const { t } = useTranslation();
+  const isDeleted = !!message.deleted_at;
+  const isImage = !isDeleted && !!message.image_path;
+  const secondaryColor = isMe ? 'rgba(255,255,255,0.7)' : theme.textSecondary;
   return (
     <View style={[styles.bubbleRow, isMe ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
       {showSenderAvatar && !isMe ? (
@@ -100,7 +103,17 @@ function MessageBubble<M extends ChatMessageBase>({
             isImage && styles.bubbleImage,
             { backgroundColor: isMe ? accentColor : theme.backgroundElement },
           ]}>
-          {isImage ? (
+          {isDeleted ? (
+            // Tombstone (Faza 14): bula rămâne, textul e discret (italic/gri).
+            <>
+              <Text style={[styles.bubbleText, styles.deletedText, { color: secondaryColor }]}>
+                {t('chat.deletedMessage')}
+              </Text>
+              <Text style={[styles.bubbleTime, { color: secondaryColor }]}>
+                {formatTime(message.created_at)}
+              </Text>
+            </>
+          ) : isImage ? (
             // Poza umple bula; ora stă peste ea, într-o pastilă întunecată.
             <Pressable
               onPress={imageUrl ? onPressImage : undefined}
@@ -128,9 +141,16 @@ function MessageBubble<M extends ChatMessageBase>({
               <Text style={[styles.bubbleText, { color: isMe ? '#ffffff' : theme.text }]}>
                 {message.content}
               </Text>
-              <Text style={[styles.bubbleTime, { color: isMe ? 'rgba(255,255,255,0.7)' : theme.textSecondary }]}>
-                {formatTime(message.created_at)}
-              </Text>
+              <View style={styles.metaRow}>
+                {message.edited_at ? (
+                  <Text style={[styles.bubbleTime, styles.editedLabel, { color: secondaryColor }]}>
+                    {t('chat.edited')}
+                  </Text>
+                ) : null}
+                <Text style={[styles.bubbleTime, { color: secondaryColor }]}>
+                  {formatTime(message.created_at)}
+                </Text>
+              </View>
             </>
           )}
         </Pressable>
@@ -219,6 +239,17 @@ export function ChatScreen<M extends ChatMessageBase>({
     [t],
   );
   const hideToast = useCallback(() => setToast(null), []);
+
+  // Confirmarea de ștergere e centralizată aici (nu duplicată în cele 4 ecrane).
+  const handleDelete = useCallback(
+    (m: M) => {
+      Alert.alert(t('chat.deleteConfirmTitle'), t('chat.deleteConfirmBody'), [
+        { text: t('photos.cancel'), style: 'cancel' },
+        { text: t('chat.delete'), style: 'destructive', onPress: () => onDeleteMessage?.(m) },
+      ]);
+    },
+    [t, onDeleteMessage],
+  );
 
   // Android emite Did*, iOS Will* — ascultăm ambele ca bara să urce la fel pe amândouă.
   useEffect(() => {
@@ -454,7 +485,7 @@ export function ChatScreen<M extends ChatMessageBase>({
         onCopy={handleCopy}
         onReply={onReplyMessage}
         onEdit={onEditMessage}
-        onDelete={onDeleteMessage}
+        onDelete={onDeleteMessage ? handleDelete : undefined}
         onReport={onReportMessage}
       />
 
@@ -491,6 +522,9 @@ const styles = StyleSheet.create({
   },
   bubbleText: { fontSize: 15, lineHeight: 21 },
   bubbleTime: { fontSize: 11, alignSelf: 'flex-end' },
+  deletedText: { fontStyle: 'italic' },
+  metaRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-end', gap: Spacing.one },
+  editedLabel: { fontStyle: 'italic' },
   // Bula-imagine: fără padding, poza umple bula.
   bubbleImage: { padding: 0, overflow: 'hidden' },
   imageWrap: { width: 220, height: 220 },

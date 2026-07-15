@@ -232,7 +232,11 @@
     "copied": "Copied",
     "edit": "Edit",
     "delete": "Delete",
-    "report": "Report"
+    "report": "Report",
+    "deletedMessage": "This message was deleted",
+    "deleteConfirmTitle": "Delete message?",
+    "deleteConfirmBody": "The message will be deleted for everyone. This can't be undone.",
+    "edited": "edited"
   },
   "channel": {
     "name": {

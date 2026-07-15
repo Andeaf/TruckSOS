@@ -234,7 +234,11 @@
     "copied": "Copiat",
     "edit": "Editează",
     "delete": "Șterge",
-    "report": "Raportează"
+    "report": "Raportează",
+    "deletedMessage": "Acest mesaj a fost șters",
+    "deleteConfirmTitle": "Ștergi mesajul?",
+    "deleteConfirmBody": "Mesajul va fi șters pentru toți. Această acțiune nu poate fi anulată.",
+    "edited": "editat"
   },
   "channel": {
     "name": {

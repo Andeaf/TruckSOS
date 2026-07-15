@@ -7,6 +7,7 @@ import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
 import {
+  deleteMessage,
   fetchConversationDetails,
   markConversationRead,
   sendImageMessage,
@@ -22,7 +23,7 @@ export default function MechanicChatScreen() {
   const { t } = useTranslation();
   const goBack = useBack('/(mechanic)/conversations');
   const [conv, setConv] = useState<ConversationWithDetails | null>(null);
-  const { messages, loading, addMessage } = useMessages(id);
+  const { messages, loading, addMessage, patchMessage } = useMessages(id);
 
   useEffect(() => {
     fetchConversationDetails(id).then(setConv);
@@ -61,6 +62,12 @@ export default function MechanicChatScreen() {
       onSendImage={async (image) => {
         const { message } = await sendImageMessage(id, session.user.id, image);
         if (message) addMessage(message);
+      }}
+      onDeleteMessage={async (m) => {
+        const err = await deleteMessage('messages', m.id);
+        if (!err) {
+          patchMessage(m.id, { content: '', image_path: null, deleted_at: new Date().toISOString() });
+        }
       }}
       onBack={goBack}
     />

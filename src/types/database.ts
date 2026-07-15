@@ -94,10 +94,16 @@ export interface Message {
   id: string;
   conversation_id: string;
   sender_id: string;
-  /** Gol ('') când mesajul e o poză — vezi `image_path`. */
+  /** Gol ('') când mesajul e o poză SAU când e șters (tombstone). */
   content: string;
-  /** Path în bucket-ul `photos` (`chat/{conv}/{uuid}.jpg`); null pt. mesaj text. */
+  /** Path în bucket-ul `photos` (`chat/{conv}/{uuid}.jpg`); null pt. mesaj text/șters. */
   image_path: string | null;
+  /** Faza 14: tombstone — mesaj șters „pentru toți", bula rămâne cu text discret. */
+  deleted_at: string | null;
+  /** Faza 14: mesaj editat (fereastră 3 min) → etichetă „editat". */
+  edited_at: string | null;
+  /** Faza 14: reply — mesajul citat (același tabel), NULL dacă citatul a fost șters din DB. */
+  reply_to_id: string | null;
   created_at: string;
 }
 
@@ -135,10 +141,16 @@ export interface ChannelMessage {
   id: string;
   channel_id: string;
   sender_id: string;
-  /** Gol ('') când mesajul e o poză — vezi `image_path`. */
+  /** Gol ('') când mesajul e o poză SAU când e șters (tombstone). */
   content: string;
-  /** Path în bucket-ul `photos` (`channel/{channel}/{uuid}.jpg`); null pt. mesaj text. */
+  /** Path în bucket-ul `photos` (`channel/{channel}/{uuid}.jpg`); null pt. mesaj text/șters. */
   image_path: string | null;
+  /** Faza 14: tombstone — mesaj șters „pentru toți". */
+  deleted_at: string | null;
+  /** Faza 14: mesaj editat (fereastră 3 min). */
+  edited_at: string | null;
+  /** Faza 14: reply — mesajul citat (același tabel). */
+  reply_to_id: string | null;
   created_at: string;
 }
 

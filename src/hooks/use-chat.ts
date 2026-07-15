@@ -58,17 +58,22 @@ export function useMessages(conversationId: string) {
     setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
   }, []);
 
+  // Actualizare locală optimistă (tombstone/editare), înainte ca UPDATE-ul Realtime să sosească.
+  const patchMessage = useCallback((id: string, patch: Partial<Message>) => {
+    setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
+  }, []);
+
   useEffect(() => {
     let active = true;
 
     (async () => {
       const { data } = await supabase
         .from('messages')
-        .select('*')
+        .select('*, reply_to:messages!reply_to_id(id,content,image_path,sender_id,deleted_at)')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
       if (active) {
-        setMessages((data as Message[]) ?? []);
+        setMessages((data as unknown as Message[]) ?? []);
         setLoading(false);
       }
     })();
@@ -93,6 +98,23 @@ export function useMessages(conversationId: string) {
           }
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          if (!active) return;
+          const updated = payload.new as Message;
+          // Tombstone/editare: înlocuim rândul, păstrând `reply_to` (join-ul nu vine în payload).
+          setMessages((prev) =>
+            prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m))
+          );
+        }
+      )
       .subscribe();
 
     return () => {
@@ -101,7 +123,30 @@ export function useMessages(conversationId: string) {
     };
   }, [conversationId]);
 
-  return { messages, loading, addMessage };
+  return { messages, loading, addMessage, patchMessage };
+}
+
+/** Șterge un mesaj (tombstone „pentru toți") prin RPC. Doar propriul mesaj (verificat server-side). */
+export async function deleteMessage(
+  table: 'messages' | 'channel_messages',
+  id: string
+): Promise<string | null> {
+  const { error } = await supabase.rpc('delete_message', { p_table: table, p_id: id } as never);
+  return error?.message ?? null;
+}
+
+/** Editează un mesaj text (fereastră de 3 min, verificată server-side). */
+export async function editMessage(
+  table: 'messages' | 'channel_messages',
+  id: string,
+  content: string
+): Promise<string | null> {
+  const { error } = await supabase.rpc('edit_message', {
+    p_table: table,
+    p_id: id,
+    p_content: content,
+  } as never);
+  return error?.message ?? null;
 }
 
 // Întoarce conversația directă existentă cu mecanicul sau creează una nouă (RPC atomic)
@@ -250,7 +295,10 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
           .from('messages')
           .select('id', { count: 'exact', head: true })
           .eq('conversation_id', id)
-          .neq('sender_id', userId);
+          .neq('sender_id', userId)
+          // Tombstone-urile (Faza 14) nu se numără — altfel badge-ul rămâne „agățat"
+          // pe un mesaj necitit șters de expeditor.
+          .is('deleted_at', null);
         if (lastRead) query = query.gt('created_at', lastRead);
         const { count } = await query;
         result[id] = count ?? 0;
@@ -266,6 +314,10 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
     const channel = supabase
       .channel(channelName)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => {
+        fetchCounts();
+      })
+      // UPDATE = tombstone/editare: recalculăm ca badge-ul să scadă când un necitit e șters.
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, () => {
         fetchCounts();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'message_reads' }, () => {

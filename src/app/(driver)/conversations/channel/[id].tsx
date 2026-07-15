@@ -13,6 +13,7 @@ import {
   sendChannelMessage,
   useChannelMessages,
 } from '@/hooks/use-channel-chat';
+import { deleteMessage } from '@/hooks/use-chat';
 import type { Channel } from '@/types/database';
 
 export default function DriverChannelChatScreen() {
@@ -21,7 +22,8 @@ export default function DriverChannelChatScreen() {
   const { t } = useTranslation();
   const goBack = useBack('/(driver)/conversations');
   const [channel, setChannel] = useState<Channel | null>(null);
-  const { messages, loading, loadingMore, loadOlder, addMessage } = useChannelMessages(id);
+  const { messages, loading, loadingMore, loadOlder, addMessage, patchMessage } =
+    useChannelMessages(id);
 
   useEffect(() => {
     fetchChannel(id).then(setChannel);
@@ -55,6 +57,12 @@ export default function DriverChannelChatScreen() {
       onSendImage={async (image) => {
         const { message } = await sendChannelImageMessage(id, session.user.id, image);
         if (message) addMessage(message);
+      }}
+      onDeleteMessage={async (m) => {
+        const err = await deleteMessage('channel_messages', m.id);
+        if (!err) {
+          patchMessage(m.id, { content: '', image_path: null, deleted_at: new Date().toISOString() });
+        }
       }}
       onBack={goBack}
     />
