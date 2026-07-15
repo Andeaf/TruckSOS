@@ -22,10 +22,15 @@ function toPicked(assets: ImagePicker.ImagePickerAsset[]): PickedImage[] {
  * Nu cerem permisiune explicită: pickerul de sistem o gestionează singur.
  * `quality: 1` — compresia reală o face `compressImage` la upload (resize + JPEG).
  */
+/** Max poze într-o singură selecție (Faza 14.8). iOS respectă selectionLimit; pe Android
+ *  pickerul de sistem poate ignora limita, de aceea callerii taie surplusul suplimentar. */
+export const MAX_PHOTOS = 10;
+
 export async function pickFromLibrary(): Promise<PickedImage[]> {
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
     allowsMultipleSelection: true,
+    selectionLimit: MAX_PHOTOS,
     quality: 1,
   });
   if (result.canceled) return [];

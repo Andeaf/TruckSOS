@@ -410,7 +410,9 @@
     "close": "Închide",
     "download": "Descarcă",
     "downloadOk": "Poza a fost salvată în galerie.",
-    "downloadFailed": "Poza nu a putut fi salvată."
+    "downloadFailed": "Poza nu a putut fi salvată.",
+    "limitReached": "Maxim {{max}} poze",
+    "limitReachedTitle": "Limită atinsă"
   },
   "rating": {
     "sectionTitle": "Evaluări",

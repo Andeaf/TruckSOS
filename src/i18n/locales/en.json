@@ -408,7 +408,9 @@
     "close": "Close",
     "download": "Download",
     "downloadOk": "Photo saved to your gallery.",
-    "downloadFailed": "The photo could not be saved."
+    "downloadFailed": "The photo could not be saved.",
+    "limitReached": "Maximum {{max}} photos",
+    "limitReachedTitle": "Limit reached"
   },
   "rating": {
     "sectionTitle": "Ratings",

@@ -408,7 +408,9 @@
     "close": "Schließen",
     "download": "Herunterladen",
     "downloadOk": "Foto in der Galerie gespeichert.",
-    "downloadFailed": "Das Foto konnte nicht gespeichert werden."
+    "downloadFailed": "Das Foto konnte nicht gespeichert werden.",
+    "limitReached": "Maximal {{max}} Fotos",
+    "limitReachedTitle": "Limit erreicht"
   },
   "rating": {
     "sectionTitle": "Bewertungen",

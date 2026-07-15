@@ -30,7 +30,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useSignedUrls } from '@/hooks/use-signed-urls';
-import { pickFromCamera, pickFromLibrary, type PickedImage } from '@/lib/media';
+import { MAX_PHOTOS, pickFromCamera, pickFromLibrary, type PickedImage } from '@/lib/media';
 
 export interface ChatMessageBase {
   id: string;
@@ -411,9 +411,14 @@ export function ChatScreen<M extends ChatMessageBase>({
 
   async function sendImages(images: PickedImage[]) {
     if (!onSendImage || images.length === 0) return;
+    // Max 10 poze deodată (Faza 14.8); pe Android pickerul poate ignora selectionLimit.
+    const capped = images.slice(0, MAX_PHOTOS);
+    if (images.length > MAX_PHOTOS) {
+      Alert.alert(t('photos.limitReachedTitle'), t('photos.limitReached', { max: MAX_PHOTOS }));
+    }
     setUploading(true);
     // Secvențial: fiecare poză devine mesajul ei, în ordinea aleasă.
-    for (const image of images) {
+    for (const image of capped) {
       await onSendImage(image);
     }
     setUploading(false);

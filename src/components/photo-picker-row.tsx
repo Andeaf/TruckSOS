@@ -20,29 +20,45 @@ interface PhotoPickerRowProps {
   onAdd: (images: PickedImage[]) => void;
   onRemove: (index: number) => void;
   disabled?: boolean;
+  /** Numărul maxim de poze (Faza 14.8). Butonul „+" se blochează la atingere. */
+  max?: number;
 }
 
 const THUMB = 76;
+const DEFAULT_MAX = 10;
 
-export function PhotoPickerRow({ photos, onAdd, onRemove, disabled }: PhotoPickerRowProps) {
+export function PhotoPickerRow({ photos, onAdd, onRemove, disabled, max = DEFAULT_MAX }: PhotoPickerRowProps) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const atLimit = photos.length >= max;
+
+  // Adaugă cel mult până la limită; dacă selecția depășește, taie surplusul și explică.
+  function addClamped(imgs: PickedImage[]) {
+    const remaining = max - photos.length;
+    if (remaining <= 0) return;
+    if (imgs.length > remaining) {
+      onAdd(imgs.slice(0, remaining));
+      Alert.alert(t('photos.limitReachedTitle'), t('photos.limitReached', { max }));
+    } else {
+      onAdd(imgs);
+    }
+  }
 
   function handleAddPress() {
-    if (disabled) return;
+    if (disabled || atLimit) return;
     Alert.alert(t('photos.sourceTitle'), undefined, [
       {
         text: t('photos.sourceLibrary'),
         onPress: async () => {
           const imgs = await pickFromLibrary();
-          if (imgs.length > 0) onAdd(imgs);
+          if (imgs.length > 0) addClamped(imgs);
         },
       },
       {
         text: t('photos.sourceCamera'),
         onPress: async () => {
           const imgs = await pickFromCamera();
-          if (imgs.length > 0) onAdd(imgs);
+          if (imgs.length > 0) addClamped(imgs);
         },
       },
       { text: t('photos.cancel'), style: 'cancel' },
@@ -69,16 +85,24 @@ export function PhotoPickerRow({ photos, onAdd, onRemove, disabled }: PhotoPicke
         </View>
       ))}
 
-      <Pressable
-        onPress={handleAddPress}
-        disabled={disabled}
-        style={[styles.addTile, { borderColor: theme.textSecondary, opacity: disabled ? 0.5 : 1 }]}
-        hitSlop={4}>
-        <MaterialIcons name="add-a-photo" size={22} color={theme.textSecondary} />
-        <ThemedText themeColor="textSecondary" type="small" style={styles.addText}>
-          {t('photos.add')}
-        </ThemedText>
-      </Pressable>
+      {!atLimit ? (
+        <Pressable
+          onPress={handleAddPress}
+          disabled={disabled}
+          style={[styles.addTile, { borderColor: theme.textSecondary, opacity: disabled ? 0.5 : 1 }]}
+          hitSlop={4}>
+          <MaterialIcons name="add-a-photo" size={22} color={theme.textSecondary} />
+          <ThemedText themeColor="textSecondary" type="small" style={styles.addText}>
+            {t('photos.add')}
+          </ThemedText>
+        </Pressable>
+      ) : (
+        <View style={[styles.addTile, styles.limitTile, { borderColor: theme.textSecondary }]}>
+          <ThemedText themeColor="textSecondary" type="small" style={styles.addText}>
+            {t('photos.limitReached', { max })}
+          </ThemedText>
+        </View>
+      )}
     </View>
   );
 }
@@ -123,5 +147,9 @@ const styles = StyleSheet.create({
   addText: {
     fontSize: 11,
     textAlign: 'center',
+  },
+  limitTile: {
+    borderStyle: 'solid',
+    paddingHorizontal: Spacing.one,
   },
 });
