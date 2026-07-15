@@ -239,7 +239,9 @@
     "emptyTitle": "Search for a mechanic",
     "emptyDescription": "Type at least {{min}} characters of the mechanic's name.",
     "noResultsTitle": "No results",
-    "noResultsDescription": "No mechanic matches your search."
+    "noResultsDescription": "No mechanic matches your search.",
+    "historyTitle": "Recent searches",
+    "historyRemove": "Remove from history"
   },
   "profile": {
     "tabTitle": "Profile",

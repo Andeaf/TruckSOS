@@ -241,7 +241,9 @@
     "emptyTitle": "Caută un mecanic",
     "emptyDescription": "Tastează cel puțin {{min}} caractere din numele mecanicului.",
     "noResultsTitle": "Niciun rezultat",
-    "noResultsDescription": "Niciun mecanic nu se potrivește cu căutarea ta."
+    "noResultsDescription": "Niciun mecanic nu se potrivește cu căutarea ta.",
+    "historyTitle": "Căutări recente",
+    "historyRemove": "Șterge din istoric"
   },
   "favorites": {
     "toggle": "Favorit",

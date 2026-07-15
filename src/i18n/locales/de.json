@@ -239,7 +239,9 @@
     "emptyTitle": "Suche einen Mechaniker",
     "emptyDescription": "Gib mindestens {{min}} Zeichen des Namens ein.",
     "noResultsTitle": "Keine Ergebnisse",
-    "noResultsDescription": "Kein Mechaniker entspricht deiner Suche."
+    "noResultsDescription": "Kein Mechaniker entspricht deiner Suche.",
+    "historyTitle": "Letzte Suchen",
+    "historyRemove": "Aus dem Verlauf entfernen"
   },
   "profile": {
     "tabTitle": "Profil",

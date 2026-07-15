@@ -12,6 +12,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useFavorites } from '@/hooks/use-favorites';
+import { useSearchHistory } from '@/hooks/use-search-history';
 import { useSignedUrls } from '@/hooks/use-signed-urls';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -20,12 +21,17 @@ import {
   type MechanicSearchResult,
 } from '@/hooks/use-mechanic-search';
 
-/** Secțiunile stării goale (PLAN_FAZA13.md §3.1): Favoriți sus, apoi (F13.3) Recente. */
+/**
+ * Secțiunile stării goale (PLAN_FAZA13.md §3.1): Favoriți sus, Recente jos, fără
+ * dedup între ele — un mecanic poate apărea în ambele, deci cheia de listă poartă
+ * prefixul secțiunii (id-ul singur s-ar ciocni între secțiuni).
+ */
+type EmptyItem = MechanicSearchResult & { listKey: string };
 type EmptySection = {
-  key: string;
+  key: 'favorites' | 'history';
   title: string;
   icon: keyof typeof MaterialIcons.glyphMap;
-  data: MechanicSearchResult[];
+  data: EmptyItem[];
 };
 
 export default function DriverSearchScreen() {
@@ -35,21 +41,23 @@ export default function DriverSearchScreen() {
   const [query, setQuery] = useState('');
   const { results, loading } = useMechanicSearch(query);
   const { favoriteIds, favorites, toggleFavorite, refresh: refreshFavorites } = useFavorites();
+  const { history, recordSearch, removeEntry, refresh: refreshHistory } = useSearchHistory();
 
   useFocusEffect(
     useCallback(() => {
       refreshFavorites();
-    }, [refreshFavorites])
+      refreshHistory();
+    }, [refreshFavorites, refreshHistory])
   );
 
   // Un singur apel batch de URL-uri semnate pentru TOATE avatarele de pe ecran
-  // (rezultate + favoriți), indiferent ce stare e vizibilă.
+  // (rezultate + favoriți + istoric), indiferent ce stare e vizibilă.
   const avatarPaths = useMemo(
     () =>
-      [...results, ...favorites]
+      [...results, ...favorites, ...history]
         .map((m) => m.avatar_path)
         .filter((p): p is string => !!p),
-    [results, favorites]
+    [results, favorites, history]
   );
   const avatarUrls = useSignedUrls(avatarPaths);
 
@@ -72,11 +80,19 @@ export default function DriverSearchScreen() {
         key: 'favorites',
         title: t('favorites.sectionTitle'),
         icon: 'star',
-        data: favorites,
+        data: favorites.map((m) => ({ ...m, listKey: `fav-${m.id}` })),
+      });
+    }
+    if (history.length > 0) {
+      sections.push({
+        key: 'history',
+        title: t('search.historyTitle'),
+        icon: 'history',
+        data: history.map((m) => ({ ...m, listKey: `hist-${m.id}` })),
       });
     }
     return sections;
-  }, [favorites, t]);
+  }, [favorites, history, t]);
 
   return (
     <ThemedView style={styles.container}>
@@ -87,7 +103,6 @@ export default function DriverSearchScreen() {
           value={query}
           onChangeText={setQuery}
           placeholder={t('search.placeholder')}
-          autoFocus
           autoCapitalize="words"
           autoCorrect={false}
           returnKeyType="search"
@@ -98,7 +113,7 @@ export default function DriverSearchScreen() {
         emptySections.length > 0 ? (
           <SectionList
             sections={emptySections}
-            keyExtractor={(item, index) => `${item.id}-${index}`}
+            keyExtractor={(item) => item.listKey}
             contentContainerStyle={styles.list}
             stickySectionHeadersEnabled={false}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -112,12 +127,13 @@ export default function DriverSearchScreen() {
                 </ThemedText>
               </View>
             )}
-            renderItem={({ item }) => (
+            renderItem={({ item, section }) => (
               <MechanicCard
                 mechanic={item}
                 avatarUrl={item.avatar_path ? avatarUrls[item.avatar_path] : undefined}
                 isFavorite={favoriteIds.has(item.id)}
                 onToggleFavorite={() => toggleFavorite(item.id)}
+                onRemove={section.key === 'history' ? () => removeEntry(item.id) : undefined}
                 onPress={() => openProfile(item.id)}
               />
             )}
@@ -146,7 +162,12 @@ export default function DriverSearchScreen() {
               avatarUrl={item.avatar_path ? avatarUrls[item.avatar_path] : undefined}
               isFavorite={favoriteIds.has(item.id)}
               onToggleFavorite={() => toggleFavorite(item.id)}
-              onPress={() => openProfile(item.id)}
+              onPress={() => {
+                // Cerința e „accesat DIN CĂUTARE": doar rezultatele înregistrează
+                // istoric, nu și tap-urile pe carduri de favorit/istoric.
+                recordSearch(item.id);
+                openProfile(item.id);
+              }}
             />
           )}
           ListEmptyComponent={
