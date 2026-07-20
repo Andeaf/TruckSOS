@@ -32,13 +32,13 @@ import type { Profile } from '@/types/database';
 
 type PublicProfile = Pick<
   Profile,
-  'full_name' | 'role' | 'avatar_path' | 'specialization' | 'activity_zone' | 'rating_avg' | 'rating_count' | 'deleted_at'
+  'full_name' | 'role' | 'avatar_path' | 'specialization' | 'activity_zone' | 'company_name' | 'contact_email' | 'rating_avg' | 'rating_count' | 'deleted_at'
 >;
 
 async function fetchPublicProfile(userId: string): Promise<PublicProfile | null> {
   const { data } = await supabase
     .from('profiles')
-    .select('full_name, role, avatar_path, specialization, activity_zone, rating_avg, rating_count, deleted_at')
+    .select('full_name, role, avatar_path, specialization, activity_zone, company_name, contact_email, rating_avg, rating_count, deleted_at')
     .eq('id', userId)
     .single();
   return (data as unknown as PublicProfile) ?? null;
@@ -147,6 +147,27 @@ export function PublicProfileScreen() {
             </ThemedView>
           </>
         ) : null}
+
+        {/* Firmă + email de contact — publice, la ambele roluri. */}
+        <ThemedView type="backgroundElement" style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialIcons name="business" size={16} color="#208AEF" />
+            <ThemedText type="smallBold">{t('profile.companyLabel')}</ThemedText>
+          </View>
+          <ThemedText themeColor={profile.company_name ? undefined : 'textSecondary'}>
+            {profile.company_name || t('profile.emptyField')}
+          </ThemedText>
+        </ThemedView>
+
+        <ThemedView type="backgroundElement" style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialIcons name="email" size={16} color="#208AEF" />
+            <ThemedText type="smallBold">{t('profile.emailLabel')}</ThemedText>
+          </View>
+          <ThemedText themeColor={profile.contact_email ? undefined : 'textSecondary'}>
+            {profile.contact_email || t('profile.emptyField')}
+          </ThemedText>
+        </ThemedView>
       </ScrollView>
 
       {reportVisible ? (

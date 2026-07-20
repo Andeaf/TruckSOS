@@ -1,4 +1,4 @@
-export type Role = 'driver' | 'mechanic';
+export type Role = 'driver' | 'mechanic' | 'admin';
 export type AnnouncementStatus = 'open' | 'accepted' | 'resolved' | 'cancelled';
 export type ApplicationStatus = 'pending' | 'accepted' | 'rejected';
 export type PriceType = 'fixed' | 'hourly';
@@ -11,6 +11,10 @@ export interface Profile {
   specialization: string | null;
   activity_zone: string | null;
   phone: string | null;
+  /** Firma/angajatorul (ambele roluri). Public, ca semnal de încredere. */
+  company_name: string | null;
+  /** Email de contact ales de utilizator (separat de auth.users.email). Public. */
+  contact_email: string | null;
   /** Path în bucketul `photos`: `avatars/{user_id}/{uuid}.jpg`. NULL = fallback pe inițiale. */
   avatar_path: string | null;
   /** Medie denormalizată (1 zecimală), întreținută de trigger. 0 = fără evaluări. */
@@ -27,6 +31,12 @@ export interface Profile {
   lang: string;
   /** Faza 15: piatră-funerară. NOT NULL = cont șters (PII golit); UI afișează „Utilizator șters". */
   deleted_at: string | null;
+  /** Faza 16: ban aplicativ. NOT NULL = cont banat (setat DOAR prin admin_ban_user). */
+  banned_at: string | null;
+  /** Faza 16: NULL = ban permanent; altfel banul expiră automat la depășirea datei. */
+  banned_until: string | null;
+  /** Faza 16: motivul banului, afișat (localizat) pe ecranul de ban. */
+  ban_reason: string | null;
   created_at: string;
 }
 
@@ -109,6 +119,8 @@ export interface Message {
   edited_at: string | null;
   /** Faza 14: reply — mesajul citat (același tabel), NULL dacă citatul a fost șters din DB. */
   reply_to_id: string | null;
+  /** Faza 16: true = tombstone pus de un moderator (marcaj distinct „Șters de moderator"). */
+  deleted_by_admin: boolean;
   created_at: string;
 }
 
@@ -176,6 +188,19 @@ export interface ChannelMessage {
   edited_at: string | null;
   /** Faza 14: reply — mesajul citat (același tabel). */
   reply_to_id: string | null;
+  /** Faza 16: true = tombstone pus de un moderator (marcaj distinct „Șters de moderator"). */
+  deleted_by_admin: boolean;
+  created_at: string;
+}
+
+/** Faza 16: o intrare în jurnalul de audit al acțiunilor de admin. Doar-citire (scris server-side). */
+export interface AdminAuditEntry {
+  id: string;
+  admin_id: string;
+  action: string;
+  target_type: string | null;
+  target_id: string | null;
+  details: Record<string, unknown>;
   created_at: string;
 }
 
@@ -185,7 +210,11 @@ export interface Database {
       profiles: {
         Row: Profile;
         Insert: Omit<Profile, 'created_at'>;
-        Update: Partial<Omit<Profile, 'id' | 'created_at' | 'role'>>;
+        // role + coloanele de ban sunt privilegiate: setate DOAR de RPC-uri admin /
+        // service_role, blocate din client de trigger-ul profiles_guard_privileged.
+        Update: Partial<
+          Omit<Profile, 'id' | 'created_at' | 'role' | 'banned_at' | 'banned_until' | 'ban_reason'>
+        >;
       };
       announcements: {
         Row: Announcement;
@@ -260,6 +289,12 @@ export interface Database {
       reports: {
         Row: Report;
         Insert: Omit<Report, 'id' | 'created_at' | 'status'> & { status?: ReportStatus };
+        Update: never;
+      };
+      admin_audit_log: {
+        Row: AdminAuditEntry;
+        // Scris exclusiv din RPC-urile SECURITY DEFINER; clientul doar citește (dacă e admin).
+        Insert: never;
         Update: never;
       };
     };

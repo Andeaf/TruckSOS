@@ -27,6 +27,8 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
 
   const [fullName, setFullName] = useState(profile?.full_name ?? '');
   const [phone, setPhone] = useState(profile?.phone ?? '');
+  const [companyName, setCompanyName] = useState(profile?.company_name ?? '');
+  const [contactEmail, setContactEmail] = useState(profile?.contact_email ?? '');
   const [specialization, setSpecialization] = useState(profile?.specialization ?? '');
   const [activityZone, setActivityZone] = useState(profile?.activity_zone ?? '');
   const [saving, setSaving] = useState(false);
@@ -38,6 +40,8 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
   const isDirty =
     fullName !== (profile?.full_name ?? '') ||
     phone !== (profile?.phone ?? '') ||
+    companyName !== (profile?.company_name ?? '') ||
+    contactEmail !== (profile?.contact_email ?? '') ||
     (isMechanic &&
       (specialization !== (profile?.specialization ?? '') ||
         activityZone !== (profile?.activity_zone ?? '')));
@@ -62,12 +66,20 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
       setError(t('profile.errorNameRequired'));
       return;
     }
+    const email = contactEmail.trim();
+    // Validare minimă de format: ceva@ceva.ceva, fără spații. Câmpul e opțional.
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError(t('profile.errorEmailInvalid'));
+      return;
+    }
     setSaving(true);
     setError('');
 
     const err = await updateProfile({
       full_name: fullName.trim(),
       phone: phone.trim() || null,
+      company_name: companyName.trim() || null,
+      contact_email: email || null,
       ...(isMechanic
         ? {
             specialization: specialization.trim() || null,
@@ -98,6 +110,14 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
             value={fullName}
             onChangeText={setFullName}
             placeholder={t('profile.namePlaceholder')}
+            autoCapitalize="words"
+          />
+
+          <Input
+            label={t('profile.companyLabel')}
+            value={companyName}
+            onChangeText={setCompanyName}
+            placeholder={t('profile.companyPlaceholder')}
             autoCapitalize="words"
           />
 
@@ -133,6 +153,21 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
             />
             <ThemedText themeColor="textSecondary" type="small" style={styles.phoneHint}>
               {isMechanic ? t('profile.phoneHint') : t('driver.profile.phoneHint')}
+            </ThemedText>
+          </View>
+
+          <View>
+            <Input
+              label={t('profile.emailLabel')}
+              value={contactEmail}
+              onChangeText={setContactEmail}
+              placeholder={t('profile.emailPlaceholder')}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <ThemedText themeColor="textSecondary" type="small" style={styles.phoneHint}>
+              {t('profile.emailHint')}
             </ThemedText>
           </View>
 

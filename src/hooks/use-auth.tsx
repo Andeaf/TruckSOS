@@ -14,7 +14,7 @@ interface AuthContextValue {
   signUp: (email: string, password: string, fullName: string) => Promise<string | null>;
   signOut: () => Promise<void>;
   createProfile: (role: 'driver' | 'mechanic') => Promise<string | null>;
-  updateProfile: (updates: { full_name?: string; specialization?: string | null; activity_zone?: string | null; phone?: string | null; avatar_path?: string | null; push_enabled?: boolean; notify_radius_km?: number | null; latitude?: number | null; longitude?: number | null; lang?: string }) => Promise<string | null>;
+  updateProfile: (updates: { full_name?: string; specialization?: string | null; activity_zone?: string | null; phone?: string | null; company_name?: string | null; contact_email?: string | null; avatar_path?: string | null; push_enabled?: boolean; notify_radius_km?: number | null; latitude?: number | null; longitude?: number | null; lang?: string }) => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -115,6 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     specialization?: string | null;
     activity_zone?: string | null;
     phone?: string | null;
+    company_name?: string | null;
+    contact_email?: string | null;
     avatar_path?: string | null;
     push_enabled?: boolean;
     notify_radius_km?: number | null;

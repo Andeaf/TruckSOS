@@ -41,6 +41,8 @@ export interface ChatMessageBase {
   created_at: string;
   /** Faza 14: marcaje opționale (coloane adăugate incremental în etapele 14.1–14.3). */
   deleted_at?: string | null;
+  /** Faza 16: tombstone pus de un moderator → marcaj distinct „Șters de moderator". */
+  deleted_by_admin?: boolean | null;
   edited_at?: string | null;
   reply_to_id?: string | null;
   /** Faza 14: mesajul citat (self-join). NULL dacă nu e reply sau citatul a fost șters din DB. */
@@ -145,9 +147,10 @@ function MessageBubble<M extends ChatMessageBase>({
           ]}>
           {isDeleted ? (
             // Tombstone (Faza 14): bula rămâne, textul e discret (italic/gri).
+            // Faza 16: marcaj DISTINCT dacă ștergerea a fost făcută de un moderator.
             <>
               <Text style={[styles.bubbleText, styles.deletedText, { color: secondaryColor }]}>
-                {t('chat.deletedMessage')}
+                {message.deleted_by_admin ? t('chat.deletedByModerator') : t('chat.deletedMessage')}
               </Text>
               <Text style={[styles.bubbleTime, { color: secondaryColor }]}>
                 {formatTime(message.created_at)}

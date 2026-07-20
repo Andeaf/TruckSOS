@@ -24,13 +24,13 @@ import type { Profile } from '@/types/database';
 
 type PublicProfile = Pick<
   Profile,
-  'full_name' | 'specialization' | 'activity_zone' | 'rating_avg' | 'rating_count' | 'avatar_path' | 'deleted_at'
+  'full_name' | 'specialization' | 'activity_zone' | 'company_name' | 'contact_email' | 'rating_avg' | 'rating_count' | 'avatar_path' | 'deleted_at'
 >;
 
 async function fetchPublicProfile(mechanicId: string): Promise<PublicProfile | null> {
   const { data } = await supabase
     .from('profiles')
-    .select('full_name, specialization, activity_zone, rating_avg, rating_count, avatar_path, deleted_at')
+    .select('full_name, specialization, activity_zone, company_name, contact_email, rating_avg, rating_count, avatar_path, deleted_at')
     .eq('id', mechanicId)
     .single();
   return (data as PublicProfile) ?? null;
@@ -198,6 +198,16 @@ export default function MechanicProfileScreen() {
 
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
+            <MaterialIcons name="business" size={16} color="#208AEF" />
+            <ThemedText type="smallBold">{t('profile.companyLabel')}</ThemedText>
+          </View>
+          <ThemedText themeColor={profile.company_name ? undefined : 'textSecondary'}>
+            {profile.company_name || t('profile.emptyField')}
+          </ThemedText>
+        </ThemedView>
+
+        <ThemedView type="backgroundElement" style={styles.section}>
+          <View style={styles.sectionHeader}>
             <MaterialIcons name="phone" size={16} color="#208AEF" />
             <ThemedText type="smallBold">{t('profile.phoneLabel')}</ThemedText>
           </View>
@@ -211,6 +221,17 @@ export default function MechanicProfileScreen() {
               </ThemedText>
             </>
           )}
+        </ThemedView>
+
+        {/* Email de contact — public (spre deosebire de telefon, care e gated). */}
+        <ThemedView type="backgroundElement" style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialIcons name="email" size={16} color="#208AEF" />
+            <ThemedText type="smallBold">{t('profile.emailLabel')}</ThemedText>
+          </View>
+          <ThemedText themeColor={profile.contact_email ? undefined : 'textSecondary'}>
+            {profile.contact_email || t('profile.emptyField')}
+          </ThemedText>
         </ThemedView>
 
         {/* Un cont șters nu mai poate fi contactat (n-are cine să răspundă). */}

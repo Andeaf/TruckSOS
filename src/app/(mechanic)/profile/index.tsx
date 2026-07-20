@@ -10,8 +10,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ListRow, RowGroup, SectionLabel } from '@/components/ui/list-row';
 import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
+import { useSettings } from '@/hooks/use-settings';
 
 /**
  * Profilul mecanicului (PLAN_FAZA10.md §4): read-only + navigație.
@@ -20,8 +20,8 @@ import { useAuth } from '@/hooks/use-auth';
  */
 export default function MechanicProfileScreen() {
   const { session, profile, signOut } = useAuth();
+  const { setAdminViewAs } = useSettings();
   const { t } = useTranslation();
-  const theme = useTheme();
   const router = useRouter();
 
   function detail(icon: keyof typeof MaterialIcons.glyphMap, label: string, value: string | null) {
@@ -61,12 +61,14 @@ export default function MechanicProfileScreen() {
 
         <SectionLabel>{t('profile.sectionDetails')}</SectionLabel>
         <ThemedView type="backgroundElement" style={styles.detailsCard}>
+          {detail('business', t('profile.companyLabel'), profile?.company_name ?? null)}
           {detail('build', t('profile.specializationLabel'), profile?.specialization ?? null)}
           {detail('place', t('profile.activityZoneLabel'), profile?.activity_zone ?? null)}
           {detail('phone', t('profile.phoneLabel'), profile?.phone ?? null)}
           <ThemedText themeColor="textSecondary" type="small">
             {t('profile.phoneHint')}
           </ThemedText>
+          {detail('email', t('profile.emailLabel'), profile?.contact_email ?? null)}
         </ThemedView>
 
         <SectionLabel>{t('profile.sectionAccount')}</SectionLabel>
@@ -87,6 +89,21 @@ export default function MechanicProfileScreen() {
             onPress={() => router.push('/(mechanic)/profile/privacy' as never)}
           />
         </RowGroup>
+
+        {profile?.role === 'admin' ? (
+          <View style={styles.signOut}>
+            <RowGroup>
+              <ListRow
+                icon="admin-panel-settings"
+                label={t('admin.backToAdmin')}
+                onPress={() => {
+                  setAdminViewAs('admin');
+                  router.replace('/(admin)/dashboard');
+                }}
+              />
+            </RowGroup>
+          </View>
+        ) : null}
 
         <View style={styles.signOut}>
           <ListRow icon="logout" label={t('common.signOut')} destructive onPress={signOut} />

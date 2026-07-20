@@ -21,6 +21,9 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 
 type Scheme = 'light' | 'dark';
 
+/** Faza 16: modul în care un cont admin folosește aplicația (schimbat din Panou). */
+export type AdminViewAs = 'admin' | 'driver' | 'mechanic';
+
 interface SettingsValue {
   theme: ThemePref;
   setTheme: (value: ThemePref) => void;
@@ -30,6 +33,9 @@ interface SettingsValue {
   setLang: (value: LangPref) => void;
   /** `false` cât timp citim AsyncStorage — rădăcina ține splash-ul până devine `true`. */
   ready: boolean;
+  /** Faza 16: doar pentru admini — în ce mod e vizualizată aplicația. În memorie (nu persistă). */
+  adminViewAs: AdminViewAs;
+  setAdminViewAs: (value: AdminViewAs) => void;
 }
 
 const SettingsContext = createContext<SettingsValue | null>(null);
@@ -39,6 +45,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemePref>('auto');
   const [lang, setLangState] = useState<LangPref>('auto');
   const [ready, setReady] = useState(false);
+  const [adminViewAs, setAdminViewAs] = useState<AdminViewAs>('admin');
 
   useEffect(() => {
     Promise.all([loadThemePref(), loadLangPref()]).then(([storedTheme, storedLang]) => {
@@ -65,8 +72,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const resolvedScheme = resolveScheme(theme, systemScheme);
 
   const value = useMemo<SettingsValue>(
-    () => ({ theme, setTheme, resolvedScheme, lang, setLang, ready }),
-    [theme, setTheme, resolvedScheme, lang, setLang, ready]
+    () => ({ theme, setTheme, resolvedScheme, lang, setLang, ready, adminViewAs, setAdminViewAs }),
+    [theme, setTheme, resolvedScheme, lang, setLang, ready, adminViewAs]
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;

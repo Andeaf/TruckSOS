@@ -13,6 +13,7 @@ import { ListRow, RowGroup, SectionLabel } from '@/components/ui/list-row';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
+import { useSettings } from '@/hooks/use-settings';
 import { useSavedTrucks, addTruck, updateTruck, deleteTruck } from '@/hooks/use-trucks';
 import type { Truck } from '@/types/database';
 
@@ -22,6 +23,7 @@ import type { Truck } from '@/types/database';
  */
 export default function DriverProfileScreen() {
   const { session, profile, signOut } = useAuth();
+  const { setAdminViewAs } = useSettings();
   const { t } = useTranslation();
   const theme = useTheme();
   const router = useRouter();
@@ -170,6 +172,21 @@ export default function DriverProfileScreen() {
             onPress={() => router.push('/(driver)/profile/privacy' as never)}
           />
         </RowGroup>
+
+        {profile?.role === 'admin' ? (
+          <View style={styles.signOut}>
+            <RowGroup>
+              <ListRow
+                icon="admin-panel-settings"
+                label={t('admin.backToAdmin')}
+                onPress={() => {
+                  setAdminViewAs('admin');
+                  router.replace('/(admin)/dashboard');
+                }}
+              />
+            </RowGroup>
+          </View>
+        ) : null}
 
         <View style={styles.signOut}>
           <ListRow icon="logout" label={t('common.signOut')} destructive onPress={signOut} />
