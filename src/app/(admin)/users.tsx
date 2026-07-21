@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
+import {
+  Alert,
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -19,6 +28,9 @@ import {
   type AdminUserRow,
 } from '@/hooks/use-admin';
 import { isBanned } from '@/lib/ban';
+
+/** Locale explicit: altfel formatul urmează regiunea dispozitivului, nu limba aplicației. */
+const LOCALE_MAP: Record<string, string> = { ro: 'ro-RO', en: 'en-GB', de: 'de-DE' };
 
 export default function AdminUsers() {
   const { t } = useTranslation();
@@ -139,7 +151,7 @@ function UserDetailModal({
   onClose: () => void;
   onChanged: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
   const [banOpen, setBanOpen] = useState(false);
 
@@ -166,7 +178,9 @@ function UserDetailModal({
               <Field label={t('admin.users.roleLabel')} value={t(`admin.users.role_${detail.role}`)} />
               <Field
                 label={t('admin.users.registered')}
-                value={new Date(detail.registered_at).toLocaleDateString()}
+                value={new Date(detail.registered_at).toLocaleDateString(
+                  LOCALE_MAP[i18n.language] ?? 'ro-RO',
+                )}
               />
               <Field
                 label={t('admin.users.rating')}
@@ -262,6 +276,11 @@ function BanModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      {/* Modalul e centrat vertical: pe iOS, fără KAV, tastatura ar acoperi butonul de
+          confirmare (PLAN_FAZA17.md K3). KAV-ul e la rădăcina Modalului (y=0) → fără offset. */}
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={[styles.modal, { backgroundColor: theme.background }]} onPress={() => {}}>
           <ThemedText type="subtitle" style={styles.modalName}>
@@ -301,6 +320,7 @@ function BanModal({
           </Pressable>
         </Pressable>
       </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -319,6 +339,7 @@ const styles = StyleSheet.create({
   userName: { fontWeight: '600' },
   badge: { paddingVertical: 2, paddingHorizontal: Spacing.two, borderRadius: Radius.badge },
   badgeText: { color: '#fff', fontSize: 12 },
+  flex: { flex: 1 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: Spacing.four },
   modal: { borderRadius: Radius.card, padding: Spacing.four, gap: Spacing.two, maxHeight: '85%' },
   modalName: { marginBottom: Spacing.two },

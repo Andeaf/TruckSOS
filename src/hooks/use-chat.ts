@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { AppState } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 import { hasChatV14, replyEmbed } from '@/lib/chat-schema';
@@ -19,7 +20,12 @@ export function useConversations(userId: string | undefined) {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!userId) return;
+    // Fără user încă (sesiune în hidratare): nu lăsa `loading` blocat pe true —
+    // pe iOS asta ținea insetul de RefreshControl inserat (gol sub antet).
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
 
     const { data: deletions } = await supabase
@@ -322,6 +328,12 @@ export function useReadCursor(conversationId: string, otherUserId: string | unde
 
 export function useUnreadCounts(userId: string | undefined): { counts: Record<string, number>; refresh: () => Promise<void> } {
   const [counts, setCounts] = useState<Record<string, number>>({});
+  // Ids-urile conversațiilor curente, pentru subscripții Realtime FILTRATE.
+  // Subscripția nefiltrată pe `messages` nu livra evenimente către destinatar
+  // (RLS-ul cu JOIN pe conversations + lipsa filtrului), în timp ce canalul global
+  // — filtrat, cu RLS trivial — funcționa (verificat pe device: badge-ul se aprindea
+  // doar pentru canal). Filtrul `in.(...)` readuce livrarea pe tiparul care merge.
+  const [convIdsKey, setConvIdsKey] = useState('');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const channelName = useState(() => `unread-counts-${Math.random()}`)[0];
 
@@ -347,6 +359,7 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
     const convs = ((allConvs ?? []) as unknown as { id: string }[]).filter(
       (c) => !deletedIds.has(c.id),
     );
+    setConvIdsKey(convs.map((c) => c.id).sort().join(','));
     if (convs.length === 0) { setCounts({}); return; }
 
     const { data: reads } = await supabase
@@ -380,23 +393,41 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
 
   useEffect(() => { fetchCounts(); }, [fetchCounts]);
 
+  // Plasă de siguranță: evenimentele Realtime ratate cât timp aplicația a stat în
+  // fundal nu mai pot fi „prinse" — recalculăm la revenirea în prim-plan.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') fetchCounts();
+    });
+    return () => sub.remove();
+  }, [fetchCounts]);
+
   useEffect(() => {
     if (!userId) return;
-    const channel = supabase
-      .channel(channelName)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => {
+    let channel = supabase.channel(channelName);
+    if (convIdsKey) {
+      const filter = `conversation_id=in.(${convIdsKey})`;
+      channel = channel
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter }, () => {
+          fetchCounts();
+        })
+        // UPDATE = tombstone/editare: recalculăm ca badge-ul să scadă când un necitit e șters.
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter }, () => {
+          fetchCounts();
+        });
+    }
+    channel = channel
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'message_reads', filter: `user_id=eq.${userId}` }, () => {
         fetchCounts();
       })
-      // UPDATE = tombstone/editare: recalculăm ca badge-ul să scadă când un necitit e șters.
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, () => {
-        fetchCounts();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'message_reads' }, () => {
+      // Conversație nouă (poate cu primul mesaj deja trimis): reintră în calcul —
+      // filtrul in.(...) de mai sus nu o acoperă până nu refacem lista de ids.
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations' }, () => {
         fetchCounts();
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [userId, fetchCounts, channelName]);
+  }, [userId, fetchCounts, channelName, convIdsKey]);
 
   return { counts, refresh: fetchCounts };
 }

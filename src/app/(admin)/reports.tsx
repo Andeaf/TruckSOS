@@ -20,6 +20,9 @@ import type { ReportStatus } from '@/types/database';
 
 const FILTERS: (ReportStatus | 'all')[] = ['pending', 'reviewed', 'dismissed', 'all'];
 
+/** Locale explicit: altfel formatul urmează regiunea dispozitivului, nu limba aplicației. */
+const LOCALE_MAP: Record<string, string> = { ro: 'ro-RO', en: 'en-GB', de: 'de-DE' };
+
 export default function AdminReports() {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -140,7 +143,7 @@ function ReportCard({
   onContext: () => void;
   onUser: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
   const isMessage = !!report.message_id;
 
@@ -149,7 +152,7 @@ function ReportCard({
       <View style={styles.cardHead}>
         <ThemedText style={styles.reason}>{t(`admin.reports.reason_${report.reason}`)}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          {new Date(report.created_at).toLocaleDateString()}
+          {new Date(report.created_at).toLocaleDateString(LOCALE_MAP[i18n.language] ?? 'ro-RO')}
         </ThemedText>
       </View>
 
@@ -209,7 +212,7 @@ function ContextModal({
   messages: AdminContextMessage[] | null;
   onClose: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
   return (
     <Modal visible={messages !== null} transparent animationType="fade" onRequestClose={onClose}>
@@ -222,7 +225,7 @@ function ContextModal({
             messages.map((m) => (
               <View key={m.id} style={[styles.ctxRow, { borderColor: theme.backgroundElement }]}>
                 <ThemedText type="small" themeColor="textSecondary">
-                  {new Date(m.created_at).toLocaleTimeString()}
+                  {new Date(m.created_at).toLocaleTimeString(LOCALE_MAP[i18n.language] ?? 'ro-RO')}
                 </ThemedText>
                 <ThemedText>
                   {m.deleted_at

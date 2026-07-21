@@ -50,11 +50,14 @@ export function usePushNavigation() {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const Notifications = require('expo-notifications') as typeof import('expo-notifications');
 
-    // Aplicația era închisă: notificarea care a pornit-o.
-    Notifications.getLastNotificationResponseAsync().then((response) => {
-      const data = response?.notification.request.content.data as PushData | undefined;
-      if (data) open(data);
-    });
+    // Aplicația era închisă: notificarea care a pornit-o. `.catch`: pe iOS un reject
+    // netratat aici ar fi unhandled rejection la cold start (PLAN_FAZA17.md N4).
+    Notifications.getLastNotificationResponseAsync()
+      .then((response) => {
+        const data = response?.notification.request.content.data as PushData | undefined;
+        if (data) open(data);
+      })
+      .catch(() => {});
 
     // Aplicația era deschisă/în fundal.
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {

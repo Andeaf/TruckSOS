@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/themed-text';
@@ -43,6 +44,7 @@ export function ApplyBottomSheet({
 }: ApplyBottomSheetProps) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const [priceType, setPriceType] = useState<PriceType>('fixed');
   const [priceAmount, setPriceAmount] = useState('');
   const [currency, setCurrency] = useState(DEFAULT_CURRENCY.code);
@@ -110,7 +112,13 @@ export function ApplyBottomSheet({
         style={styles.wrapper}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <Pressable style={styles.backdrop} onPress={handleClose} />
-        <View style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}>
+        <View
+          style={[
+            styles.sheet,
+            { backgroundColor: theme.backgroundElement },
+            // iOS: home indicator — pattern-ul ActionSheet (PLAN_FAZA17.md L2); Android neatins.
+            Platform.OS === 'ios' && { paddingBottom: insets.bottom + Spacing.three },
+          ]}>
           {/* Handle */}
           <View style={[styles.handle, { backgroundColor: theme.backgroundSelected }]} />
 

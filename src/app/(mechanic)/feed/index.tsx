@@ -67,23 +67,24 @@ export default function MechanicFeedScreen() {
     }, [refresh, refreshViewed, refreshCoords, session?.user.id])
   );
 
+  // Pull-to-refresh separat de load-ul programatic: pe iOS, `refreshing=true` setat
+  // programatic (la fiecare focus) inserează insetul spinner-ului, care uneori rămâne
+  // blocat → spațiu gol scrollabil sub antet (confirmat pe iPhone cu screenshot).
+  const [pullRefreshing, setPullRefreshing] = useState(false);
+  const onPullRefresh = useCallback(async () => {
+    setPullRefreshing(true);
+    await refresh();
+    setPullRefreshing(false);
+  }, [refresh]);
+
   return (
     <ThemedView style={styles.container}>
+      {/* În antet rămâne doar filtrul de rază — comutatorul de aspect s-a mutat
+          deasupra cardurilor (antetul era prea înghesuit, feedback pe device). */}
       <ScreenHeader
         title={t('mechanic.feed.title')}
         subtitle={profile?.full_name}
-        right={
-          <View style={styles.headerActions}>
-            <RadiusFilterMenu />
-            <Pressable onPress={toggleViewMode} hitSlop={12} accessibilityLabel={t('mechanic.feed.toggleView')}>
-              <MaterialIcons
-                name={viewMode === 'extended' ? 'view-list' : 'view-agenda'}
-                size={22}
-                color={theme.onHeader}
-              />
-            </Pressable>
-          </View>
-        }
+        right={<RadiusFilterMenu />}
       />
 
       {/* Raza e setată, dar n-avem poziția (permisiune refuzată / GPS indisponibil):
@@ -101,13 +102,23 @@ export default function MechanicFeedScreen() {
         </ThemedView>
       ) : null}
 
+      <View style={styles.listToolbar}>
+        <Pressable onPress={toggleViewMode} hitSlop={12} accessibilityLabel={t('mechanic.feed.toggleView')}>
+          <MaterialIcons
+            name={viewMode === 'extended' ? 'view-list' : 'view-agenda'}
+            size={22}
+            color={theme.textSecondary}
+          />
+        </Pressable>
+      </View>
+
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={viewMode === 'compact' ? styles.separatorCompact : styles.separator} />}
-        refreshing={loading}
-        onRefresh={refresh}
+        refreshing={pullRefreshing}
+        onRefresh={onPullRefresh}
         renderItem={({ item }) => (
           <AnnouncementCard
             announcement={item}
@@ -158,12 +169,17 @@ const styles = StyleSheet.create({
   list: {
     flexGrow: 1,
     paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.four,
+    paddingTop: Spacing.two,
     paddingBottom: Spacing.four,
   },
   separator: { height: Spacing.two },
   separatorCompact: { height: Spacing.one },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  listToolbar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.two,
+  },
   locationBanner: {
     flexDirection: 'row',
     alignItems: 'center',

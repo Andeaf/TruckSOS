@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,7 +24,7 @@ import { useAnnouncementPhotos } from '@/hooks/use-announcement-photos';
 import { markAnnouncementViewed } from '@/hooks/use-viewed-announcements';
 import { useAuth } from '@/hooks/use-auth';
 import { useSignedUrl } from '@/hooks/use-signed-urls';
-import { openInGoogleMaps } from '@/lib/location';
+import { openInGoogleMaps, openInMaps } from '@/lib/location';
 import type { Application } from '@/types/database';
 
 const LOCALE_MAP: Record<string, string> = { ro: 'ro-RO', en: 'en-GB', de: 'de-DE' };
@@ -204,15 +204,44 @@ export default function MechanicAnnouncementDetailScreen() {
           {announcement.latitude != null && announcement.longitude != null ? (
             <>
               <MiniMap latitude={announcement.latitude} longitude={announcement.longitude} />
-              <Pressable
-                onPress={() => openInGoogleMaps(announcement.latitude!, announcement.longitude!)}
-                style={({ pressed }) => [styles.mapsButton, pressed && styles.pressed]}
-                hitSlop={8}>
-                <MaterialIcons name="directions" size={16} color="#22c55e" />
-                <ThemedText style={styles.mapsButtonText}>
-                  {t('mechanic.feed.openInMaps')}
-                </ThemedText>
-              </Pressable>
+              {/* iOS: două butoane EGALE, unul lângă altul (Apple + Google Maps —
+                  mulți nu folosesc Apple Maps). Android: doar Google, ca înainte. */}
+              <View style={styles.mapsButtonsRow}>
+                <Pressable
+                  onPress={() => openInMaps(announcement.latitude!, announcement.longitude!)}
+                  style={({ pressed }) => [
+                    styles.mapsButton,
+                    Platform.OS === 'ios' && styles.mapsButtonHalf,
+                    pressed && styles.pressed,
+                  ]}
+                  hitSlop={8}>
+                  <MaterialIcons name="directions" size={16} color="#22c55e" />
+                  <ThemedText style={styles.mapsButtonText} numberOfLines={1} adjustsFontSizeToFit>
+                    {t(
+                      Platform.OS === 'ios'
+                        ? 'mechanic.feed.openInMapsIos'
+                        : 'mechanic.feed.openInMaps',
+                    )}
+                  </ThemedText>
+                </Pressable>
+                {Platform.OS === 'ios' ? (
+                  <Pressable
+                    onPress={() =>
+                      openInGoogleMaps(announcement.latitude!, announcement.longitude!)
+                    }
+                    style={({ pressed }) => [
+                      styles.mapsButton,
+                      styles.mapsButtonHalf,
+                      pressed && styles.pressed,
+                    ]}
+                    hitSlop={8}>
+                    <MaterialIcons name="directions" size={16} color="#22c55e" />
+                    <ThemedText style={styles.mapsButtonText} numberOfLines={1} adjustsFontSizeToFit>
+                      {t('mechanic.feed.openInMaps')}
+                    </ThemedText>
+                  </Pressable>
+                ) : null}
+              </View>
             </>
           ) : null}
         </ThemedView>
@@ -336,6 +365,8 @@ const styles = StyleSheet.create({
     borderColor: '#22c55e',
   },
   mapsButtonText: { color: '#22c55e', fontSize: 14, fontWeight: '600' },
+  mapsButtonsRow: { flexDirection: 'row', gap: Spacing.two },
+  mapsButtonHalf: { flex: 1, alignSelf: 'auto', justifyContent: 'center' },
   statusCard: {
     borderRadius: Radius.card,
     padding: Spacing.three,

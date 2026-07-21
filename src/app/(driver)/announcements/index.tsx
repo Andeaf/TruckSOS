@@ -36,6 +36,15 @@ export default function DriverAnnouncementsScreen() {
     }, [refresh])
   );
 
+  // Pull-to-refresh separat de load-ul programatic: pe iOS, `refreshing=true` setat
+  // programatic inserează insetul spinner-ului, care poate rămâne blocat (gol sub antet).
+  const [pullRefreshing, setPullRefreshing] = useState(false);
+  const onPullRefresh = useCallback(async () => {
+    setPullRefreshing(true);
+    await refresh();
+    setPullRefreshing(false);
+  }, [refresh]);
+
   // Ofertele în așteptare, recalculate ori de câte ori se schimbă lista de anunțuri.
   useEffect(() => {
     const openIds = announcements.filter((a) => a.status === 'open').map((a) => a.id);
@@ -121,8 +130,8 @@ export default function DriverAnnouncementsScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
-        refreshing={loading}
-        onRefresh={refresh}
+        refreshing={pullRefreshing}
+        onRefresh={onPullRefresh}
         renderItem={({ item }) => {
           const selectable = isSelectable(item);
           return (

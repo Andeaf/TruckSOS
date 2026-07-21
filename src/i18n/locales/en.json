@@ -190,6 +190,7 @@
       "errorLocationPermission": "Permission denied. You can enter the coordinates manually.",
       "errorLocationUnavailable": "Could not get your location. Check GPS or enter it manually.",
       "openInMaps": "Navigate in Google Maps",
+      "openInMapsIos": "Navigate in Apple Maps",
       "discardTitle": "Discard announcement?",
       "discardMessage": "You have unsaved changes. If you leave, they'll be lost.",
       "discardCancel": "Stay",
@@ -282,6 +283,7 @@
       "alreadyTakenHint": "This announcement has already been accepted by another mechanic.",
       "errorAlreadyAccepted": "This announcement has already been accepted by another mechanic.",
       "openInMaps": "Navigate in Google Maps",
+      "openInMapsIos": "Navigate in Apple Maps",
       "toggleView": "Toggle view"
     },
     "applications": {
@@ -535,6 +537,11 @@
     "download": "Download",
     "downloadOk": "Photo saved to your gallery.",
     "downloadFailed": "The photo could not be saved.",
+    "downloadDeniedTitle": "Gallery access denied",
+    "downloadDeniedBody": "To save the photo, allow the app to add photos to your gallery in your phone's settings.",
+    "cameraDeniedTitle": "Camera access denied",
+    "cameraDeniedBody": "You denied camera access. To take photos, enable the permission in your phone's settings.",
+    "openSettings": "Open Settings",
     "limitReached": "Maximum {{max}} photos",
     "limitReachedTitle": "Limit reached"
   },

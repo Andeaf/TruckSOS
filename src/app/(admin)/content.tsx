@@ -25,8 +25,11 @@ import {
 type Segment = 'announcements' | 'reviews' | 'channel';
 const SEGMENTS: Segment[] = ['announcements', 'reviews', 'channel'];
 
+/** Locale explicit: altfel formatul urmează regiunea dispozitivului, nu limba aplicației. */
+const LOCALE_MAP: Record<string, string> = { ro: 'ro-RO', en: 'en-GB', de: 'de-DE' };
+
 export default function AdminContent() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [segment, setSegment] = useState<Segment>('announcements');
   const [annQuery, setAnnQuery] = useState('');
   const [announcements, setAnnouncements] = useState<AdminAnnouncement[]>([]);
@@ -124,7 +127,7 @@ export default function AdminContent() {
           renderItem={({ item }) => (
             <Card
               title={item.description}
-              subtitle={`${item.driver_name ?? '—'} · ${t(`status.${item.status}`)} · ${new Date(item.created_at).toLocaleDateString()}`}
+              subtitle={`${item.driver_name ?? '—'} · ${t(`status.${item.status}`)} · ${new Date(item.created_at).toLocaleDateString(LOCALE_MAP[i18n.language] ?? 'ro-RO')}`}
               onDelete={() =>
                 confirmDelete(t('admin.content.deleteAnnouncementConfirm'), () =>
                   adminDeleteAnnouncement(item.id)
@@ -142,7 +145,7 @@ export default function AdminContent() {
           renderItem={({ item }) => (
             <Card
               title={item.comment ?? '—'}
-              subtitle={`${'★'.repeat(item.stars)} · ${item.mechanic_name ?? '—'} · ${new Date(item.created_at).toLocaleDateString()}`}
+              subtitle={`${'★'.repeat(item.stars)} · ${item.mechanic_name ?? '—'} · ${new Date(item.created_at).toLocaleDateString(LOCALE_MAP[i18n.language] ?? 'ro-RO')}`}
               onDelete={() =>
                 confirmDelete(t('admin.content.deleteReviewConfirm'), () => adminDeleteReview(item.id))
               }
@@ -164,7 +167,7 @@ export default function AdminContent() {
                     ? `[${t('chat.photo')}]`
                     : item.content
               }
-              subtitle={`${item.sender_name ?? '—'} · ${new Date(item.created_at).toLocaleDateString()}`}
+              subtitle={`${item.sender_name ?? '—'} · ${new Date(item.created_at).toLocaleDateString(LOCALE_MAP[i18n.language] ?? 'ro-RO')}`}
               onDelete={
                 item.deleted_at
                   ? undefined

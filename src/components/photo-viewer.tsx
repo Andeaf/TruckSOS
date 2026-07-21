@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Linking,
   Modal,
   Pressable,
   StyleSheet,
@@ -57,9 +58,19 @@ export function PhotoViewer({
   async function handleDownload() {
     if (!current || downloading) return;
     setDownloading(true);
-    const ok = await downloadToGallery(current.url);
+    const result = await downloadToGallery(current.url);
     setDownloading(false);
-    Alert.alert(t(ok ? 'photos.downloadOk' : 'photos.downloadFailed'));
+    if (result === 'saved') {
+      Alert.alert(t('photos.downloadOk'));
+    } else if (result === 'permission-denied') {
+      // Mesaj distinct de eroarea de rețea: userul poate repara singur, din setările OS.
+      Alert.alert(t('photos.downloadDeniedTitle'), t('photos.downloadDeniedBody'), [
+        { text: t('photos.cancel'), style: 'cancel' },
+        { text: t('photos.openSettings'), onPress: () => Linking.openSettings() },
+      ]);
+    } else {
+      Alert.alert(t('photos.downloadFailed'));
+    }
   }
 
   return (

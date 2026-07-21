@@ -190,6 +190,7 @@
       "errorLocationPermission": "Berechtigung verweigert. Du kannst die Koordinaten manuell eingeben.",
       "errorLocationUnavailable": "Standort konnte nicht ermittelt werden. Prüfe GPS oder gib ihn manuell ein.",
       "openInMaps": "In Google Maps navigieren",
+      "openInMapsIos": "In Apple Maps navigieren",
       "discardTitle": "Anzeige verwerfen?",
       "discardMessage": "Du hast ungespeicherte Änderungen. Wenn du gehst, gehen sie verloren.",
       "discardCancel": "Bleiben",
@@ -282,6 +283,7 @@
       "alreadyTakenHint": "Diese Anzeige wurde bereits von einem anderen Mechaniker angenommen.",
       "errorAlreadyAccepted": "Diese Anzeige wurde bereits von einem anderen Mechaniker angenommen.",
       "openInMaps": "In Google Maps navigieren",
+      "openInMapsIos": "In Apple Maps navigieren",
       "toggleView": "Ansicht wechseln"
     },
     "applications": {
@@ -535,6 +537,11 @@
     "download": "Herunterladen",
     "downloadOk": "Foto in der Galerie gespeichert.",
     "downloadFailed": "Das Foto konnte nicht gespeichert werden.",
+    "downloadDeniedTitle": "Galeriezugriff verweigert",
+    "downloadDeniedBody": "Um das Foto zu speichern, erlaube der App in den Telefoneinstellungen, Fotos zur Galerie hinzuzufügen.",
+    "cameraDeniedTitle": "Kamerazugriff verweigert",
+    "cameraDeniedBody": "Du hast den Kamerazugriff verweigert. Um Fotos aufzunehmen, aktiviere die Berechtigung in den Telefoneinstellungen.",
+    "openSettings": "Einstellungen öffnen",
     "limitReached": "Maximal {{max}} Fotos",
     "limitReachedTitle": "Limit erreicht"
   },

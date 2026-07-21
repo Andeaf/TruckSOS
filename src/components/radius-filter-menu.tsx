@@ -86,11 +86,13 @@ export const RadiusFilterMenu = forwardRef<RadiusFilterMenuHandle>(function Radi
         hitSlop={12}
         accessibilityLabel={t('radiusFilter.title')}
         style={styles.trigger}>
-        <Text style={[styles.label, { color: theme.onHeader }]}>
+        {/* maxFontSizeMultiplier: aliniat cu textele din ScreenHeader (max 1.2x), altfel
+            la fonturi de sistem mari trigger-ul creștea disproporționat față de titlu. */}
+        <Text style={[styles.label, { color: theme.onHeader }]} maxFontSizeMultiplier={1.2}>
           {t('radiusFilter.button')}
         </Text>
         {radiusKm != null ? (
-          <Text style={[styles.value, { color: theme.onHeader }]}>
+          <Text style={[styles.value, { color: theme.onHeader }]} maxFontSizeMultiplier={1.2}>
             {t('radiusFilter.km', { km: radiusKm })}
           </Text>
         ) : null}

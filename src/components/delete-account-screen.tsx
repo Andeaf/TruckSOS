@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
@@ -76,7 +83,10 @@ export function DeleteAccountScreen({ backPath }: { backPath: string }) {
     <ThemedView style={styles.container}>
       <ScreenHeader title={t('settings.deleteAccountScreen.title')} onBack={goBack} />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialIcons name="info-outline" size={18} color="#208AEF" />
@@ -114,12 +124,14 @@ export function DeleteAccountScreen({ backPath }: { backPath: string }) {
           onPress={handleSubmit}
         />
       </ScrollView>
+      </KeyboardAvoidingView>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  flex: { flex: 1 },
   content: { padding: Spacing.four, gap: Spacing.three },
   section: { borderRadius: Radius.card, padding: Spacing.three, gap: Spacing.two },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },

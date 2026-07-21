@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "expoinit",
+    "scheme": "trucksos",
     "userInterfaceStyle": "automatic",
     "android": {
       "adaptiveIcon": {
@@ -21,6 +21,21 @@
       "package": "com.andeaf.trucksos",
       "googleServicesFile": "./google-services.json"
     },
+    "ios": {
+      "bundleIdentifier": "com.andeaf.trucksos",
+      "buildNumber": "1",
+      "supportsTablet": false,
+      "icon": "./assets/images/icon.png",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleAllowMixedLocalizations": true
+      }
+    },
+    "locales": {
+      "en": "./locales/ios/en.json",
+      "ro": "./locales/ios/ro.json",
+      "de": "./locales/ios/de.json"
+    },
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
@@ -32,6 +47,10 @@
         {
           "backgroundColor": "#208AEF",
           "android": {
+            "image": "./assets/images/splash-icon.png",
+            "imageWidth": 200
+          },
+          "ios": {
             "image": "./assets/images/splash-icon.png",
             "imageWidth": 200
           }
@@ -49,22 +68,24 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "TruckSOS folosește locația ta pentru a completa automat coordonatele GPS ale anunțului tău."
+          "locationWhenInUsePermission": "TruckSOS uses your location to attach your truck's position to your breakdown announcement, so nearby mechanics can find you on the map.",
+          "locationAlwaysPermission": false,
+          "locationAlwaysAndWhenInUsePermission": false
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "TruckSOS accesează pozele tale ca să le poți atașa la anunțuri și în conversații.",
-          "cameraPermission": "TruckSOS folosește camera ca să poți fotografia defecțiunea și să o atașezi la anunț sau în chat.",
+          "photosPermission": "TruckSOS accesses your photo library so you can attach photos to your breakdown announcements and conversations.",
+          "cameraPermission": "TruckSOS uses the camera so you can photograph the breakdown and attach the photo to your announcement or send it in a conversation.",
           "microphonePermission": false
         }
       ],
       [
         "expo-media-library",
         {
-          "photosPermission": "TruckSOS accesează galeria foto ca să poți atașa poze la anunțuri și în conversații.",
-          "savePhotosPermission": "TruckSOS salvează în galeria ta pozele primite în conversații.",
+          "photosPermission": "TruckSOS accesses your photo library so you can attach photos to your breakdown announcements and conversations.",
+          "savePhotosPermission": "TruckSOS saves photos received in conversations to your photo library, only when you tap the download button.",
           "isAccessMediaLocationEnabled": false
         }
       ]

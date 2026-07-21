@@ -1,6 +1,9 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import { File, Paths } from 'expo-file-system';
+import { Alert, Linking } from 'react-native';
+
+import i18n from '@/i18n';
 
 /**
  * Wrappere peste image-picker + media-library (PLAN_FAZA9.md §8).
@@ -40,7 +43,18 @@ export async function pickFromLibrary(): Promise<PickedImage[]> {
 /** Captură cu camera — o poză. Cere permisiune de cameră. */
 export async function pickFromCamera(): Promise<PickedImage[]> {
   const perm = await ImagePicker.requestCameraPermissionsAsync();
-  if (!perm.granted) return [];
+  if (!perm.granted) {
+    // Refuz PERSISTENT (canAskAgain=false — pe iOS după primul refuz, mereu): fără
+    // mesaj, butonul „Fă o poză" ar părea mort; singura ieșire e din setările OS
+    // (PLAN_FAZA17.md §1.1). La refuz re-întrebabil (Android) rămânem tăcuți ca înainte.
+    if (!perm.canAskAgain) {
+      Alert.alert(i18n.t('photos.cameraDeniedTitle'), i18n.t('photos.cameraDeniedBody'), [
+        { text: i18n.t('photos.cancel'), style: 'cancel' },
+        { text: i18n.t('photos.openSettings'), onPress: () => Linking.openSettings() },
+      ]);
+    }
+    return [];
+  }
   const result = await ImagePicker.launchCameraAsync({
     mediaTypes: ['images'],
     quality: 1,
@@ -49,20 +63,30 @@ export async function pickFromCamera(): Promise<PickedImage[]> {
   return toPicked(result.assets);
 }
 
+export type GalleryDownloadResult = 'saved' | 'permission-denied' | 'error';
+
 /**
  * Salvează în galeria telefonului o poză de la un URL (semnat) remote.
  * Descarcă întâi în cache (nativ), apoi `saveToLibraryAsync`. Cere permisiune
- * de scriere în galerie. Întoarce `false` la refuz sau eroare.
+ * de scriere în galerie (write-only: pe iOS = „Add Photos Only", suficientă).
+ * Refuzul de permisiune se întoarce distinct de eroare, ca UI-ul să poată
+ * trimite userul la setări (PLAN_FAZA17.md §1.1).
  */
-export async function downloadToGallery(remoteUrl: string): Promise<boolean> {
+export async function downloadToGallery(remoteUrl: string): Promise<GalleryDownloadResult> {
+  let dest: File | null = null;
   try {
     const perm = await MediaLibrary.requestPermissionsAsync(true); // writeOnly
-    if (!perm.granted) return false;
-    const dest = new File(Paths.cache, `trucksos-${Date.now()}.jpg`);
+    if (!perm.granted) return 'permission-denied';
+    dest = new File(Paths.cache, `trucksos-${Date.now()}.jpg`);
     const file = await File.downloadFileAsync(remoteUrl, dest);
     await MediaLibrary.saveToLibraryAsync(file.uri);
-    return true;
+    return 'saved';
   } catch {
-    return false;
+    return 'error';
+  } finally {
+    // Fișierul temp nu mai e necesar după salvarea în galerie — best-effort.
+    try {
+      dest?.delete();
+    } catch {}
   }
 }

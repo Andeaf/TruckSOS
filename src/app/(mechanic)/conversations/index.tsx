@@ -170,6 +170,16 @@ export default function MechanicConversationsScreen() {
     }, [refresh, refreshCounts, refreshChannels])
   );
 
+  // Pull-to-refresh separat de load-ul programatic: pe iOS, `refreshing=true` setat
+  // programatic (la fiecare focus) inserează insetul spinner-ului, care uneori rămâne
+  // blocat → spațiu gol scrollabil sub antet (feedback iPhone real).
+  const [pullRefreshing, setPullRefreshing] = useState(false);
+  const onPullRefresh = useCallback(async () => {
+    setPullRefreshing(true);
+    await refresh();
+    setPullRefreshing(false);
+  }, [refresh]);
+
   function toggleSelect(id: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -234,8 +244,8 @@ export default function MechanicConversationsScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
-        refreshing={loading}
-        onRefresh={refresh}
+        refreshing={pullRefreshing}
+        onRefresh={onPullRefresh}
         ListHeaderComponent={
           channels.length > 0 ? (
             <View style={styles.channelSection}>

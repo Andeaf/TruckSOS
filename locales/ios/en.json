@@ -1,0 +1,6 @@
+{
+  "NSLocationWhenInUseUsageDescription": "TruckSOS uses your location to attach your truck's position to your breakdown announcement, so nearby mechanics can find you on the map.",
+  "NSCameraUsageDescription": "TruckSOS uses the camera so you can photograph the breakdown and attach the photo to your announcement or send it in a conversation.",
+  "NSPhotoLibraryUsageDescription": "TruckSOS accesses your photo library so you can attach photos to your breakdown announcements and conversations.",
+  "NSPhotoLibraryAddUsageDescription": "TruckSOS saves photos received in conversations to your photo library, only when you tap the download button."
+}

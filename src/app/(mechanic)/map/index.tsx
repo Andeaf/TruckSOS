@@ -163,7 +163,16 @@ export default function MechanicMapScreen() {
             showsMyLocationButton
             toolbarEnabled={false}
             customMapStyle={scheme === 'dark' ? DARK_MAP_STYLE : undefined}
-            onPress={() => setSelected(null)}>
+            // customMapStyle e Google-only (ignorat de Apple Maps); pe iOS tema hărții
+            // se leagă de tema aplicației prin userInterfaceStyle (prop Apple Maps-only,
+            // fără efect pe Android) — altfel harta ar urma tema sistemului, nu Setările.
+            userInterfaceStyle={scheme}
+            // iOS (Apple Maps): tap-ul pe un Marker declanșează ȘI onPress-ul hărții,
+            // care ar închide imediat cardul abia deschis — ignorăm evenimentul de tip
+            // marker-press (pe Android nu se emite dublu, ramura e no-op).
+            onPress={(e) => {
+              if (e.nativeEvent.action !== 'marker-press') setSelected(null);
+            }}>
             {/* Raza filtrului, desenată — face vizibil intuitiv de ce lipsesc pin-uri. */}
             {radiusKm != null && coords != null ? (
               <Circle

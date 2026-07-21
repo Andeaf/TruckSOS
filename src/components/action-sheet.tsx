@@ -1,4 +1,5 @@
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { useRef } from 'react';
+import { Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -34,12 +35,27 @@ export function ActionSheet({ visible, title, actions, onClose }: ActionSheetPro
   const theme = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const pendingRef = useRef<(() => void) | null>(null);
 
   // Închidem întâi sheet-ul, apoi rulăm acțiunea: pickerul de poze deschide un ecran
   // nativ, iar un modal încă vizibil dedesubt îl poate bloca pe Android.
+  // Pe iOS nu e suficient: un view controller (pickerul) NU se poate prezenta cât timp
+  // Modalul încă rulează animația de închidere — acțiunea pornea în gol (verificat pe
+  // iPhone real la avatar). Amânăm până la `onDismiss` (prop declanșat doar pe iOS).
   function run(action: SheetAction) {
+    if (Platform.OS === 'ios') {
+      pendingRef.current = action.onPress;
+      onClose();
+      return;
+    }
     onClose();
     action.onPress();
+  }
+
+  function handleDismiss() {
+    const pending = pendingRef.current;
+    pendingRef.current = null;
+    pending?.();
   }
 
   return (
@@ -48,6 +64,7 @@ export function ActionSheet({ visible, title, actions, onClose }: ActionSheetPro
       transparent
       animationType="slide"
       onRequestClose={onClose}
+      onDismiss={handleDismiss}
       statusBarTranslucent>
       <View style={styles.wrapper}>
         <Pressable style={styles.backdrop} onPress={onClose} />

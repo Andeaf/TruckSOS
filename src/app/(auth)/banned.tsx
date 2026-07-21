@@ -10,17 +10,20 @@ import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { deleteAccount } from '@/lib/account';
 
+/** Locale explicit: altfel formatul urmează regiunea dispozitivului, nu limba aplicației. */
+const LOCALE_MAP: Record<string, string> = { ro: 'ro-RO', en: 'en-GB', de: 'de-DE' };
+
 /**
  * Ecranul contului banat (Faza 16). Sesiunea rămâne validă (ban aplicativ) ca să putem
  * arăta un mesaj CLAR (motiv + expirare) și să păstrăm dreptul GDPR de ștergere self-service.
  */
 export default function BannedScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { profile, signOut } = useAuth();
   const [deleting, setDeleting] = useState(false);
 
   const until = profile?.banned_until
-    ? new Date(profile.banned_until).toLocaleDateString()
+    ? new Date(profile.banned_until).toLocaleDateString(LOCALE_MAP[i18n.language] ?? 'ro-RO')
     : null;
 
   function confirmDelete() {

@@ -19,7 +19,12 @@ export function useMyAnnouncements() {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!session) return;
+    // Fără sesiune încă (hidratare): nu lăsa `loading` blocat pe true —
+    // pe iOS asta ținea insetul de RefreshControl inserat (gol sub antet).
+    if (!session) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const { data } = await supabase
       .from('announcements')
@@ -295,7 +300,12 @@ export function useMyApplications() {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!session) return;
+    // Fără sesiune încă (hidratare): nu lăsa `loading` blocat pe true —
+    // pe iOS asta ținea insetul de RefreshControl inserat (gol sub antet).
+    if (!session) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const { data } = await supabase
       .from('applications')

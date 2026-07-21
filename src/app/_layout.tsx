@@ -3,6 +3,8 @@ import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { I18nextProvider } from 'react-i18next';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 import { useLangSync } from '@/hooks/use-lang-sync';
@@ -77,13 +79,22 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  // SafeAreaProvider explicit la rădăcină (PLAN_FAZA17.md L1): până acum insets veneau
+  // doar din providerul intern al navigatoarelor expo-router, iar ecranul de loading de
+  // mai sus era în afara oricărui context de insets.
   return (
-    <SettingsProvider>
-      <I18nextProvider i18n={i18n}>
-        <AuthProvider>
-          <RootLayoutNav />
-        </AuthProvider>
-      </I18nextProvider>
-    </SettingsProvider>
+    // GestureHandlerRootView: cerut de GestureDetector (swipe-to-reply în chat);
+    // expo-router NU îl adaugă singur.
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <SettingsProvider>
+          <I18nextProvider i18n={i18n}>
+            <AuthProvider>
+              <RootLayoutNav />
+            </AuthProvider>
+          </I18nextProvider>
+        </SettingsProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

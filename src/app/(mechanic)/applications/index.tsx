@@ -207,6 +207,16 @@ export default function ApplicationsScreen() {
     }, [refresh])
   );
 
+  // Pull-to-refresh separat de load-ul programatic: pe iOS, `refreshing=true` setat
+  // programatic (la fiecare focus) inserează insetul spinner-ului, care uneori rămâne
+  // blocat → spațiu gol scrollabil sub antet (feedback iPhone real).
+  const [pullRefreshing, setPullRefreshing] = useState(false);
+  const onPullRefresh = useCallback(async () => {
+    setPullRefreshing(true);
+    await refresh();
+    setPullRefreshing(false);
+  }, [refresh]);
+
   return (
     <ThemedView style={styles.container}>
       <ScreenHeader title={t('mechanic.applications.title')} />
@@ -216,8 +226,8 @@ export default function ApplicationsScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
-        refreshing={loading}
-        onRefresh={refresh}
+        refreshing={pullRefreshing}
+        onRefresh={onPullRefresh}
         renderItem={({ item }) => (
           <ApplicationCard
             item={item}

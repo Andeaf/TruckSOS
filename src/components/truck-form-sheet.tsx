@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/themed-text';
@@ -35,6 +36,7 @@ interface TruckFormSheetProps {
 export function TruckFormSheet({ visible, initialData, onSave, onClose }: TruckFormSheetProps) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const [make, setMake] = useState('');
   const [model, setModel] = useState('');
   const [yearStr, setYearStr] = useState('');
@@ -85,7 +87,13 @@ export function TruckFormSheet({ visible, initialData, onSave, onClose }: TruckF
         style={styles.wrapper}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <Pressable style={styles.backdrop} onPress={onClose} />
-        <View style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}>
+        <View
+          style={[
+            styles.sheet,
+            { backgroundColor: theme.backgroundElement },
+            // iOS: home indicator — pattern-ul ActionSheet (PLAN_FAZA17.md L2); Android neatins.
+            Platform.OS === 'ios' && { paddingBottom: insets.bottom + Spacing.three },
+          ]}>
           <View style={[styles.handle, { backgroundColor: theme.backgroundSelected }]} />
           <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
             <ThemedText type="subtitle" style={styles.title}>

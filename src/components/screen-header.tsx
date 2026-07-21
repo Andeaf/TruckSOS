@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View, type TextProps } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View, type TextProps } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,7 +36,12 @@ export function ScreenHeader({ title, subtitle, onBack, right, children }: Scree
     <View
       style={[
         styles.header,
-        { backgroundColor: theme.header, paddingTop: insets.top + Spacing.three },
+        // iOS: insets.top e deja generos (notch/Dynamic Island ~50-60px) — orice padding
+        // în plus împingea titlul vizibil prea jos față de notch (feedback iPhone real).
+        {
+          backgroundColor: theme.header,
+          paddingTop: insets.top + (Platform.OS === 'ios' ? 0 : Spacing.three),
+        },
       ]}>
       <StatusBar style="light" />
       {children ?? (
@@ -48,11 +53,23 @@ export function ScreenHeader({ title, subtitle, onBack, right, children }: Scree
           ) : null}
 
           <View style={styles.titles}>
-            <Text style={[styles.title, { color: theme.onHeader }]} numberOfLines={1}>
+            {/* adjustsFontSizeToFit: la fonturi de sistem mărite (accesibilitate) titlul
+                se micșorează ca să încapă, în loc să se trunchieze — ambele platforme.
+                maxFontSizeMultiplier: textele din antet cresc TOATE cel mult 1.2x, ca să
+                rămână proporționale între ele (feedback pe device: diferențe prea mari). */}
+            <Text
+              style={[styles.title, { color: theme.onHeader }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.65}
+              maxFontSizeMultiplier={1.2}>
               {title}
             </Text>
             {subtitle ? (
-              <Text style={[styles.subtitle, { color: theme.onHeader }]} numberOfLines={1}>
+              <Text
+                style={[styles.subtitle, { color: theme.onHeader }]}
+                numberOfLines={1}
+                maxFontSizeMultiplier={1.2}>
                 {subtitle}
               </Text>
             ) : null}

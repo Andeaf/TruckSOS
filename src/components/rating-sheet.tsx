@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/themed-text';
@@ -48,6 +49,7 @@ export function RatingSheet({
 }: RatingSheetProps) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const [stars, setStars] = useState(0);
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
@@ -89,7 +91,13 @@ export function RatingSheet({
         style={styles.wrapper}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <Pressable style={styles.backdrop} onPress={onClose} />
-        <View style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}>
+        <View
+          style={[
+            styles.sheet,
+            { backgroundColor: theme.backgroundElement },
+            // iOS: home indicator — pattern-ul ActionSheet (PLAN_FAZA17.md L2); Android neatins.
+            Platform.OS === 'ios' && { paddingBottom: insets.bottom + Spacing.three },
+          ]}>
           <View style={[styles.handle, { backgroundColor: theme.backgroundSelected }]} />
 
           <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>

@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,7 +13,13 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 
 
@@ -82,6 +87,8 @@ interface MessageBubbleProps<M extends ChatMessageBase> {
   onPressAvatar?: () => void;
   /** Bife (doar chat privat, mesaj propriu): trimis (✓) / citit (✓✓). Null = fără bife. */
   readState?: 'sent' | 'read' | null;
+  /** Swipe la dreapta pe bulă → reply; absent = gestul e dezactivat (ex. mesaj șters). */
+  onSwipeReply?: () => void;
 }
 
 function MessageBubble<M extends ChatMessageBase>({
@@ -98,6 +105,7 @@ function MessageBubble<M extends ChatMessageBase>({
   onPressQuote,
   onPressAvatar,
   readState,
+  onSwipeReply,
 }: MessageBubbleProps<M>) {
   const theme = useTheme();
   const { t } = useTranslation();
@@ -124,14 +132,58 @@ function MessageBubble<M extends ChatMessageBase>({
         ? t('chat.photo')
         : quote.content
     : '';
+
+  // Swipe la dreapta → reply (ambele platforme). Detectorul stă pe ÎNTREGUL rând al
+  // mesajului, nu doar pe bulă — la mesajele scurte bula e îngustă și degetul nimerea
+  // pe lângă ea; animația se aplică tot doar bulei. Dacă degetul pornește CHIAR pe
+  // bulă (instinctul majorității), pragul e la JUMĂTATE — limitele bulei vin din
+  // onLayout, iar pragul se alege la începutul gestului. Activare DOAR pe orizontală
+  // (activeOffsetX + failOffsetY), ca gestul să nu fure scroll-ul vertical al listei.
+  // Reply-ul se declanșează în onUpdate, la trecerea pragului — NU în onEnd: pe iOS
+  // Pressable-ul interior putea anula gestul înainte de onEnd. onFinalize rulează și
+  // la anulare → resetul animației e garantat.
+  const translateX = useSharedValue(0);
+  const swipeTriggered = useSharedValue(false);
+  const bubbleLeft = useSharedValue(0);
+  const bubbleRight = useSharedValue(0);
+  const swipeThreshold = useSharedValue(40);
+  const swipeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+  const swipeGesture = Gesture.Pan()
+    .enabled(!!onSwipeReply)
+    .activeOffsetX(16)
+    .failOffsetY([-16, 16])
+    .onStart((e) => {
+      swipeTriggered.value = false;
+      swipeThreshold.value =
+        e.x >= bubbleLeft.value && e.x <= bubbleRight.value ? 20 : 40;
+    })
+    .onUpdate((e) => {
+      translateX.value = Math.min(Math.max(e.translationX, 0), 80);
+      if (!swipeTriggered.value && e.translationX > swipeThreshold.value && onSwipeReply) {
+        swipeTriggered.value = true;
+        runOnJS(onSwipeReply)();
+      }
+    })
+    .onFinalize(() => {
+      translateX.value = withSpring(0, { damping: 22, stiffness: 300 });
+    });
+
   return (
+    <GestureDetector gesture={swipeGesture}>
     <View style={[styles.bubbleRow, isMe ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
       {showSenderAvatar && !isMe ? (
         <Pressable onPress={onPressAvatar} disabled={!onPressAvatar}>
           <Avatar url={senderAvatarUrl} name={senderName} size={32} />
         </Pressable>
       ) : null}
-      <View style={styles.bubbleColumn}>
+      <Animated.View
+        style={[styles.bubbleColumn, swipeStyle]}
+        onLayout={(e) => {
+          bubbleLeft.value = e.nativeEvent.layout.x;
+          bubbleRight.value = e.nativeEvent.layout.x + e.nativeEvent.layout.width;
+        }}>
         {senderLabel ? (
           <ThemedText themeColor="textSecondary" type="small" style={styles.senderLabel}>
             {senderLabel}
@@ -219,8 +271,9 @@ function MessageBubble<M extends ChatMessageBase>({
             </>
           )}
         </Pressable>
-      </View>
+      </Animated.View>
     </View>
+    </GestureDetector>
   );
 }
 
@@ -299,12 +352,10 @@ export function ChatScreen<M extends ChatMessageBase>({
 }: ChatScreenProps<M>) {
   const { t } = useTranslation();
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [viewerAt, setViewerAt] = useState<number | null>(null);
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [menuMessage, setMenuMessage] = useState<M | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<M | null>(null);
@@ -360,19 +411,6 @@ export function ChatScreen<M extends ChatMessageBase>({
     },
     [t, onDeleteMessage],
   );
-
-  // Android emite Did*, iOS Will* — ascultăm ambele ca bara să urce la fel pe amândouă.
-  useEffect(() => {
-    const show = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      () => setKeyboardVisible(true),
-    );
-    const hide = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => setKeyboardVisible(false),
-    );
-    return () => { show.remove(); hide.remove(); };
-  }, []);
 
   // Inverted FlatList needs data in descending order (newest first = shown at bottom)
   const reversedMessages = useMemo(() => [...messages].reverse(), [messages]);
@@ -494,6 +532,9 @@ export function ChatScreen<M extends ChatMessageBase>({
         </View>
       ) : null}
 
+      {/* Fără keyboardVerticalOffset: KAV-ul își măsoară poziția relativ la părintele
+          full-screen, deci baza lui e deja fundul ecranului — un offset ar SUPRA-compensa
+          cu înălțimea headerului (gol între bară și tastatură; verificat pe iPhone real). */}
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -548,6 +589,7 @@ export function ChatScreen<M extends ChatMessageBase>({
                   if (index >= 0) setViewerAt(index);
                 }}
                 onLongPress={() => setMenuMessage(item)}
+                onSwipeReply={!item.deleted_at ? () => enterReplyMode(item) : undefined}
                 onPressQuote={
                   item.reply_to_id ? () => scrollToQuoted(item.reply_to_id!) : undefined
                 }
@@ -615,10 +657,11 @@ export function ChatScreen<M extends ChatMessageBase>({
           style={[
             styles.inputBar,
             {
-              // Cu tastatura deschisă, zona de siguranță de jos (bara de navigație)
-              // e acoperită de tastatură — dacă i-am păstra padding-ul, bara de input
-              // ar pluti la câțiva zeci de px deasupra tastelor.
-              paddingBottom: keyboardVisible ? Spacing.one : insets.bottom + Spacing.two,
+              // Fără insets.bottom: sub bara de input e TAB BAR-ul, care ocupă el zona
+              // de siguranță — adăugarea insetului dubla compensarea și lăsa un gol
+              // vizibil între input și tab-uri (feedback pe Samsung + iPhone).
+              // Cu tastatura deschisă padding-ul rămâne minim (bara stă lipită de taste).
+              paddingBottom: Spacing.one,
               backgroundColor: theme.background,
               borderTopColor: theme.backgroundElement,
             },
@@ -735,10 +778,11 @@ const styles = StyleSheet.create({
     borderRadius: Radius.control,
     paddingHorizontal: Spacing.two + 2,
     paddingVertical: Spacing.one + 2,
-    gap: 2,
+    // Fără gap: ora stă imediat sub text (leading-ul liniei de text dă deja ~3px aer);
+    // gap-ul de 2px în plus se citea ca spațiu mort sub mesaj (feedback pe device).
   },
   bubbleText: { fontSize: 15, lineHeight: 21 },
-  bubbleTime: { fontSize: 11, alignSelf: 'flex-end' },
+  bubbleTime: { fontSize: 11, lineHeight: 13, alignSelf: 'flex-end' },
   // paddingRight: Android măsoară textul italic cu lățimea glifelor drepte (o
   // subestimează) → ultimul cuvânt se tăia la marginea bulei („This message was…”).
   // Padding-ul mută zona tăiată pe spațiu gol, nu pe text.

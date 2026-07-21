@@ -1,5 +1,5 @@
 import * as Location from 'expo-location';
-import { Linking } from 'react-native';
+import { Linking, Platform } from 'react-native';
 
 export type CoordsResult =
   | { latitude: number; longitude: number }
@@ -71,18 +71,32 @@ export function distanceKm(lat1: number, lon1: number, lat2: number, lon2: numbe
   return 2 * 6371 * Math.asin(Math.sqrt(a));
 }
 
-/**
- * Deschide Google Maps (app nativă sau browser) cu traseul până la coordonate.
- * Doar `destination` — Google completează originul din locația dispozitivului,
- * deci nu cerem nicio permisiune de locație aici (PLAN_FAZA8.md §4).
- * Întoarce `false` dacă URL-ul nu poate fi deschis.
- */
-export async function openInGoogleMaps(latitude: number, longitude: number): Promise<boolean> {
-  const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+async function openUrl(url: string): Promise<boolean> {
   try {
     await Linking.openURL(url);
     return true;
   } catch {
     return false;
   }
+}
+
+/**
+ * Google Maps cu traseul până la coordonate (app nativă sau browser).
+ * Doar destinația — originul e completat din locația dispozitivului, deci nu
+ * cerem nicio permisiune de locație aici (PLAN_FAZA8.md §4).
+ * Pe iOS e butonul SECUNDAR (mulți preferă Google Maps); fără app-ul instalat cade în Safari.
+ */
+export function openInGoogleMaps(latitude: number, longitude: number): Promise<boolean> {
+  return openUrl(`https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`);
+}
+
+/**
+ * Aplicația de hărți implicită a platformei, cu traseul până la coordonate.
+ * Android: Google Maps. iOS: Apple Maps — e mereu instalat (PLAN_FAZA17.md H3).
+ */
+export function openInMaps(latitude: number, longitude: number): Promise<boolean> {
+  if (Platform.OS === 'ios') {
+    return openUrl(`https://maps.apple.com/?daddr=${latitude},${longitude}`);
+  }
+  return openInGoogleMaps(latitude, longitude);
 }

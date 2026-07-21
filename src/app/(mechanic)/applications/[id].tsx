@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -22,7 +22,7 @@ import {
 } from '@/hooks/use-announcements';
 import { useAnnouncementPhotos } from '@/hooks/use-announcement-photos';
 import type { ApplicationStatus, PriceType } from '@/types/database';
-import { openInGoogleMaps } from '@/lib/location';
+import { openInGoogleMaps, openInMaps } from '@/lib/location';
 
 const STATUS_COLORS: Record<ApplicationStatus, { color: string; bg: string }> = {
   pending:  { color: '#f59e0b', bg: '#f59e0b1A' },
@@ -162,15 +162,44 @@ export default function ApplicationDetailScreen() {
           {announcement.latitude != null && announcement.longitude != null ? (
             <>
               <MiniMap latitude={announcement.latitude} longitude={announcement.longitude} />
-              <Pressable
-                onPress={() => openInGoogleMaps(announcement.latitude!, announcement.longitude!)}
-                style={({ pressed }) => [styles.mapsButton, pressed && styles.pressed]}
-                hitSlop={8}>
-                <MaterialIcons name="directions" size={16} color="#22c55e" />
-                <ThemedText style={styles.mapsButtonText}>
-                  {t('mechanic.feed.openInMaps')}
-                </ThemedText>
-              </Pressable>
+              {/* iOS: două butoane EGALE, unul lângă altul (Apple + Google Maps —
+                  mulți nu folosesc Apple Maps). Android: doar Google, ca înainte. */}
+              <View style={styles.mapsButtonsRow}>
+                <Pressable
+                  onPress={() => openInMaps(announcement.latitude!, announcement.longitude!)}
+                  style={({ pressed }) => [
+                    styles.mapsButton,
+                    Platform.OS === 'ios' && styles.mapsButtonHalf,
+                    pressed && styles.pressed,
+                  ]}
+                  hitSlop={8}>
+                  <MaterialIcons name="directions" size={16} color="#22c55e" />
+                  <ThemedText style={styles.mapsButtonText} numberOfLines={1} adjustsFontSizeToFit>
+                    {t(
+                      Platform.OS === 'ios'
+                        ? 'mechanic.feed.openInMapsIos'
+                        : 'mechanic.feed.openInMaps',
+                    )}
+                  </ThemedText>
+                </Pressable>
+                {Platform.OS === 'ios' ? (
+                  <Pressable
+                    onPress={() =>
+                      openInGoogleMaps(announcement.latitude!, announcement.longitude!)
+                    }
+                    style={({ pressed }) => [
+                      styles.mapsButton,
+                      styles.mapsButtonHalf,
+                      pressed && styles.pressed,
+                    ]}
+                    hitSlop={8}>
+                    <MaterialIcons name="directions" size={16} color="#22c55e" />
+                    <ThemedText style={styles.mapsButtonText} numberOfLines={1} adjustsFontSizeToFit>
+                      {t('mechanic.feed.openInMaps')}
+                    </ThemedText>
+                  </Pressable>
+                ) : null}
+              </View>
             </>
           ) : null}
           <ThemedText themeColor="textSecondary" type="small" style={styles.description}>
@@ -290,6 +319,8 @@ const styles = StyleSheet.create({
     borderColor: '#22c55e',
   },
   mapsButtonText: { color: '#22c55e', fontSize: 14, fontWeight: '600' },
+  mapsButtonsRow: { flexDirection: 'row', gap: Spacing.two },
+  mapsButtonHalf: { flex: 1, alignSelf: 'auto', justifyContent: 'center' },
   description: { lineHeight: 20 },
   price: { color: '#22c55e', fontSize: 15 },
   offerMessage: { fontStyle: 'italic' },

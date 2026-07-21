@@ -1,0 +1,6 @@
+{
+  "NSLocationWhenInUseUsageDescription": "TruckSOS folosește locația ta pentru a atașa poziția camionului la anunțul tău de depanare, ca mecanicii din apropiere să te găsească pe hartă.",
+  "NSCameraUsageDescription": "TruckSOS folosește camera ca să poți fotografia defecțiunea și să atașezi poza la anunț sau să o trimiți într-o conversație.",
+  "NSPhotoLibraryUsageDescription": "TruckSOS accesează galeria ta foto ca să poți atașa poze la anunțurile de depanare și în conversații.",
+  "NSPhotoLibraryAddUsageDescription": "TruckSOS salvează în galeria ta pozele primite în conversații, doar când apeși butonul de descărcare."
+}

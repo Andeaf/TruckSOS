@@ -190,6 +190,7 @@
       "errorLocationPermission": "Permisiune refuzată. Poți introduce coordonatele manual.",
       "errorLocationUnavailable": "Nu am putut obține locația. Verifică GPS-ul sau introdu manual.",
       "openInMaps": "Navighează în Google Maps",
+      "openInMapsIos": "Navighează în Apple Maps",
       "discardTitle": "Renunți la anunț?",
       "discardMessage": "Ai modificări nesalvate. Dacă ieși, se pierd.",
       "discardCancel": "Rămâi",
@@ -282,6 +283,7 @@
       "alreadyTakenHint": "Acest anunț a fost deja acceptat de un alt mecanic.",
       "errorAlreadyAccepted": "Anunțul a fost deja acceptat de un alt mecanic.",
       "openInMaps": "Navighează în Google Maps",
+      "openInMapsIos": "Navighează în Apple Maps",
       "toggleView": "Schimbă vizualizarea"
     },
     "applications": {
@@ -537,6 +539,11 @@
     "download": "Descarcă",
     "downloadOk": "Poza a fost salvată în galerie.",
     "downloadFailed": "Poza nu a putut fi salvată.",
+    "downloadDeniedTitle": "Acces la galerie refuzat",
+    "downloadDeniedBody": "Ca să salvezi poza, permite aplicației să adauge poze în galerie din setările telefonului.",
+    "cameraDeniedTitle": "Acces la cameră refuzat",
+    "cameraDeniedBody": "Ai refuzat accesul la cameră. Ca să faci poze, activează permisiunea din setările telefonului.",
+    "openSettings": "Deschide Setările",
     "limitReached": "Maxim {{max}} poze",
     "limitReachedTitle": "Limită atinsă"
   },

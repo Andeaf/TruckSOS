@@ -121,6 +121,15 @@ export default function DriverHistoryScreen() {
 
   useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
 
+  // Pull-to-refresh separat de load-ul programatic: pe iOS, `refreshing=true` setat
+  // programatic inserează insetul spinner-ului, care poate rămâne blocat (gol sub antet).
+  const [pullRefreshing, setPullRefreshing] = useState(false);
+  const onPullRefresh = useCallback(async () => {
+    setPullRefreshing(true);
+    await refresh();
+    setPullRefreshing(false);
+  }, [refresh]);
+
   function toggleSelect(id: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -197,8 +206,8 @@ export default function DriverHistoryScreen() {
         data={items}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        refreshing={loading}
-        onRefresh={refresh}
+        refreshing={pullRefreshing}
+        onRefresh={onPullRefresh}
         ListEmptyComponent={
           !loading ? (
             <View style={styles.empty}>
