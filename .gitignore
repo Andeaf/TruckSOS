@@ -1,5 +1,14 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
+# ─── Planuri & helpere de test (rămân doar local, nu ajung pe Git) ───────────
+# Planurile de fază sunt documente de lucru; SEED-urile și _TEST_-urile sunt
+# helpere rulate manual în Studio, nu migrări reale. Fișierul *_ALL_* e doar
+# concatenarea migrărilor individuale (care rămân versionate).
+PLAN*.md
+SEED_*.sql
+supabase/migrations/_TEST_*.sql
+supabase/migrations/*_ALL_*.sql
+
 # ─── Dependencies ────────────────────────────────────────────────────────────
 node_modules/
 
