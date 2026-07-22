@@ -1,6 +1,6 @@
-import { View, StyleSheet } from 'react-native';
+import { Text, View, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/hooks/use-theme';
@@ -18,17 +18,26 @@ function TabIcon({
   size,
   dot,
 }: {
-  name: keyof typeof MaterialIcons.glyphMap;
+  name: keyof typeof Feather.glyphMap;
   color: string;
   size: number;
   dot?: boolean;
 }) {
   return (
     <View>
-      <MaterialIcons name={name} size={size} color={color} />
+      <Feather name={name} size={size} color={color} />
       {dot ? <View style={styles.dot} /> : null}
     </View>
   );
+}
+
+/** Eticheta de tab din design: 11px, weight 700 pe activ / 600 pe inactiv. */
+function tabLabel(label: string) {
+  return function TabLabel({ focused, color }: { focused: boolean; color: string }) {
+    return (
+      <Text style={{ fontSize: 11, fontWeight: focused ? '700' : '600', color }}>{label}</Text>
+    );
+  };
 }
 
 export default function MechanicLayout() {
@@ -66,15 +75,20 @@ function MechanicTabs() {
       backBehavior="history"
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#22c55e',
-        tabBarInactiveTintColor: theme.textSecondary,
-        tabBarStyle: { backgroundColor: theme.background },
+        tabBarActiveTintColor: theme.brand,
+        tabBarInactiveTintColor: theme.textTertiary,
+        tabBarStyle: {
+          backgroundColor: theme.barBackground,
+          borderTopWidth: 1,
+          borderTopColor: theme.separator,
+        },
       }}>
       {/* Harta prima, lângă Feed: sunt două vederi peste aceleași anunțuri deschise. */}
       <Tabs.Screen
         name="map"
         options={{
           title: t('mechanic.tabs.map'),
+          tabBarLabel: tabLabel(t('mechanic.tabs.map')),
           tabBarIcon: ({ color, size }) => <TabIcon name="map" size={size} color={color} />,
         }}
         listeners={{
@@ -88,8 +102,9 @@ function MechanicTabs() {
         name="feed"
         options={{
           title: t('mechanic.tabs.feed'),
+          tabBarLabel: tabLabel(t('mechanic.tabs.feed')),
           tabBarIcon: ({ color, size }) => (
-            <TabIcon name="directions-car" size={size} color={color} dot={feedNew} />
+            <TabIcon name="truck" size={size} color={color} dot={feedNew} />
           ),
         }}
         listeners={{
@@ -104,8 +119,9 @@ function MechanicTabs() {
         name="applications"
         options={{
           title: t('mechanic.tabs.applications'),
+          tabBarLabel: tabLabel(t('mechanic.tabs.applications')),
           tabBarIcon: ({ color, size }) => (
-            <TabIcon name="assignment" size={size} color={color} dot={appsNew} />
+            <TabIcon name="clipboard" size={size} color={color} dot={appsNew} />
           ),
         }}
         listeners={{
@@ -119,8 +135,11 @@ function MechanicTabs() {
         name="conversations"
         options={{
           title: t('mechanic.tabs.conversations'),
+          tabBarLabel: tabLabel(t('mechanic.tabs.conversations')),
           tabBarBadge: totalUnread > 0 ? formatBadge(totalUnread) : undefined,
-          tabBarIcon: ({ color, size }) => <TabIcon name="chat" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon name="message-circle" size={size} color={color} />
+          ),
         }}
         listeners={({ navigation }) => ({
           // Tap pe tab-ul Chat → mereu lista de conversații, nu un chat rămas deschis
@@ -136,7 +155,8 @@ function MechanicTabs() {
         name="profile"
         options={{
           title: t('profile.tabTitle'),
-          tabBarIcon: ({ color, size }) => <TabIcon name="person" size={size} color={color} />,
+          tabBarLabel: tabLabel(t('profile.tabTitle')),
+          tabBarIcon: ({ color, size }) => <TabIcon name="user" size={size} color={color} />,
         }}
         listeners={{
           tabPress: () => {

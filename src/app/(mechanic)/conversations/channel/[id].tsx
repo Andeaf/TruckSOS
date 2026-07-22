@@ -42,7 +42,6 @@ export default function MechanicChannelChatScreen() {
   return (
     <ChatScreen
       currentUserId={session.user.id}
-      accentColor="#8B5CF6"
       title={t(`channel.name.${channel.type}`)}
       subtitle={t('channel.subtitle')}
       messages={messages}

@@ -107,5 +107,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.one,
   },
-  link: { color: '#208AEF', fontWeight: '600', fontSize: 16 },
+  link: { color: '#0E3A7D', fontWeight: '600', fontSize: 16 },
 });

@@ -57,7 +57,7 @@ function HistoryCard({
           <MaterialIcons
             name={selected ? 'check-circle' : 'radio-button-unchecked'}
             size={22}
-            color={selected ? '#208AEF' : theme.textSecondary}
+            color={selected ? theme.brand : theme.textSecondary}
           />
         ) : null}
 

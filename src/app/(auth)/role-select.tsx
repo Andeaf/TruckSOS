@@ -22,7 +22,7 @@ import { isValidPhone, isValidVat, normalizePhone, normalizeVat } from '@/lib/pr
 type PickedRole = 'driver' | 'mechanic';
 
 const ROLE_META: Record<PickedRole, { color: string; icon: 'local-shipping' | 'build' }> = {
-  driver: { color: '#208AEF', icon: 'local-shipping' },
+  driver: { color: '#164F9E', icon: 'local-shipping' },
   mechanic: { color: '#22c55e', icon: 'build' },
 };
 

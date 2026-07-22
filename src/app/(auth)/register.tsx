@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.one,
   },
-  link: { color: '#208AEF', fontWeight: '600', fontSize: 16 },
+  link: { color: '#0E3A7D', fontWeight: '600', fontSize: 16 },
   hidden: { display: 'none' },
   emailSentBox: {
     alignItems: 'center',
@@ -150,5 +150,5 @@ const styles = StyleSheet.create({
   },
   emailSentTitle: { fontSize: 24, lineHeight: 32 },
   emailSentDesc: { textAlign: 'center', lineHeight: 22 },
-  emailBold: { fontWeight: '700', color: '#208AEF' },
+  emailBold: { fontWeight: '700', color: '#0E3A7D' },
 });

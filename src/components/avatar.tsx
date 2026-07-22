@@ -10,7 +10,7 @@ import { Radius } from '@/constants/theme';
  */
 
 /** Fundaluri pentru inițiale — contrast suficient cu text alb, în ambele teme. */
-const FALLBACK_COLORS = ['#208AEF', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6'];
+const FALLBACK_COLORS = ['#164F9E', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6'];
 
 export interface AvatarProps {
   /** URL semnat; `undefined` cât timp se semnează sau dacă userul n-are poză. */

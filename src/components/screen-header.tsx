@@ -1,10 +1,12 @@
 import type { ReactNode } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View, type TextProps } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Spacing } from '@/constants/theme';
+import { HeaderGradient, HeaderGradientDirection, Spacing } from '@/constants/theme';
+import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 
 /**
@@ -30,16 +32,19 @@ export interface ScreenHeaderProps {
 
 export function ScreenHeader({ title, subtitle, onBack, right, children }: ScreenHeaderProps) {
   const theme = useTheme();
+  const scheme = useResolvedScheme();
   const insets = useSafeAreaInsets();
 
   return (
-    <View
+    <LinearGradient
+      colors={HeaderGradient[scheme]}
+      start={HeaderGradientDirection.start}
+      end={HeaderGradientDirection.end}
       style={[
         styles.header,
         // iOS: insets.top e deja generos (notch/Dynamic Island ~50-60px) — orice padding
         // în plus împingea titlul vizibil prea jos față de notch (feedback iPhone real).
         {
-          backgroundColor: theme.header,
           paddingTop: insets.top + (Platform.OS === 'ios' ? 0 : Spacing.three),
         },
       ]}>
@@ -78,7 +83,7 @@ export function ScreenHeader({ title, subtitle, onBack, right, children }: Scree
           {right ?? null}
         </>
       )}
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -89,16 +94,17 @@ export function HeaderText({ style, ...rest }: TextProps) {
 }
 
 const styles = StyleSheet.create({
+  // Dimensiunile exacte din design (22px lateral, 20px jos) — nu din scala Spacing.
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
-    paddingHorizontal: Spacing.four,
-    paddingBottom: Spacing.three,
+    paddingHorizontal: 22,
+    paddingBottom: 20,
   },
   titles: { flex: 1 },
   // Nu folosim `ThemedText type="subtitle"` (32px) — prea mare pe o bandă colorată.
-  title: { fontSize: 20, fontWeight: '600', lineHeight: 26 },
-  subtitle: { fontSize: 13, lineHeight: 18, opacity: 0.85 },
+  title: { fontSize: 24, fontWeight: '800', letterSpacing: -0.3, lineHeight: 30 },
+  subtitle: { fontSize: 14, lineHeight: 19, opacity: 0.75, marginTop: 2 },
   headerText: { fontSize: 15, fontWeight: '600' },
 });

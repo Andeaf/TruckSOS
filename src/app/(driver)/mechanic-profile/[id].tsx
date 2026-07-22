@@ -154,7 +154,7 @@ export default function MechanicProfileScreen() {
   if (loading) {
     return (
       <ThemedView style={styles.centered}>
-        <ActivityIndicator size="large" color="#208AEF" />
+        <ActivityIndicator size="large" color={theme.brand} />
       </ThemedView>
     );
   }
@@ -243,7 +243,7 @@ export default function MechanicProfileScreen() {
 
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialIcons name="build" size={16} color="#208AEF" />
+            <MaterialIcons name="build" size={16} color={theme.brand} />
             <ThemedText type="smallBold">{t('profile.specializationLabel')}</ThemedText>
           </View>
           <ThemedText themeColor={profile.specialization ? undefined : 'textSecondary'}>
@@ -253,7 +253,7 @@ export default function MechanicProfileScreen() {
 
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialIcons name="place" size={16} color="#208AEF" />
+            <MaterialIcons name="place" size={16} color={theme.brand} />
             <ThemedText type="smallBold">{t('profile.activityZoneLabel')}</ThemedText>
           </View>
           <ThemedText themeColor={profile.activity_zone ? undefined : 'textSecondary'}>
@@ -263,7 +263,7 @@ export default function MechanicProfileScreen() {
 
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialIcons name="business" size={16} color="#208AEF" />
+            <MaterialIcons name="business" size={16} color={theme.brand} />
             <ThemedText type="smallBold">{t('profile.companyLabel')}</ThemedText>
           </View>
           <ThemedText themeColor={profile.company_name ? undefined : 'textSecondary'}>
@@ -274,7 +274,7 @@ export default function MechanicProfileScreen() {
         {/* Faza 18: adresă + TVA — informații de business, publice la mecanici. */}
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialIcons name="home-work" size={16} color="#208AEF" />
+            <MaterialIcons name="home-work" size={16} color={theme.brand} />
             <ThemedText type="smallBold">{t('profile.addressLabel')}</ThemedText>
           </View>
           <ThemedText themeColor={profile.address ? undefined : 'textSecondary'}>
@@ -284,7 +284,7 @@ export default function MechanicProfileScreen() {
 
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialIcons name="receipt-long" size={16} color="#208AEF" />
+            <MaterialIcons name="receipt-long" size={16} color={theme.brand} />
             <ThemedText type="smallBold">{t('profile.vatLabel')}</ThemedText>
           </View>
           <ThemedText themeColor={profile.vat_number ? undefined : 'textSecondary'}>
@@ -294,7 +294,7 @@ export default function MechanicProfileScreen() {
 
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialIcons name="phone" size={16} color="#208AEF" />
+            <MaterialIcons name="phone" size={16} color={theme.brand} />
             <ThemedText type="smallBold">{t('profile.phoneLabel')}</ThemedText>
           </View>
           {phone ? (
@@ -312,7 +312,7 @@ export default function MechanicProfileScreen() {
         {/* Email de contact — public (spre deosebire de telefon, care e gated). */}
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialIcons name="email" size={16} color="#208AEF" />
+            <MaterialIcons name="email" size={16} color={theme.brand} />
             <ThemedText type="smallBold">{t('profile.emailLabel')}</ThemedText>
           </View>
           <ThemedText themeColor={profile.contact_email ? undefined : 'textSecondary'}>
@@ -325,7 +325,11 @@ export default function MechanicProfileScreen() {
           <Pressable
             onPress={handleContact}
             disabled={contacting}
-            style={({ pressed }) => [styles.contactButton, (pressed || contacting) && styles.pressed]}>
+            style={({ pressed }) => [
+              styles.contactButton,
+              { backgroundColor: theme.primary },
+              (pressed || contacting) && styles.pressed,
+            ]}>
             {contacting ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
@@ -405,7 +409,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     paddingVertical: Spacing.three,
     borderRadius: Radius.control,
-    backgroundColor: '#208AEF',
+    // backgroundColor vine inline din theme.primary.
     marginTop: Spacing.two,
   },
   contactButtonText: { color: '#ffffff', fontSize: 15, fontWeight: '600' },

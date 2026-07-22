@@ -170,6 +170,9 @@
     },
     "announcements": {
       "listTitle": "Meine Anzeigen",
+      "filterAll": "Alle",
+      "filterActive": "Aktive",
+      "filterResolved": "Gelöste",
       "emptyTitle": "Noch keine Anzeigen",
       "emptyDescription": "Tippe + um eine Panne zu melden",
       "newTitle": "Neue Anzeige",
@@ -350,6 +353,8 @@
   "chat": {
     "emptyMessages": "Keine Nachrichten. Schreibe als Erster!",
     "inputPlaceholder": "Nachricht schreiben...",
+    "today": "Heute",
+    "yesterday": "Gestern",
     "resolvedBanner": "Die Anzeige wurde als gelöst markiert.",
     "attach": "Foto senden",
     "messageActions": "Nachrichtenaktionen",

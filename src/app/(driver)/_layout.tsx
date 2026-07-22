@@ -1,5 +1,6 @@
+import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/hooks/use-theme';
@@ -7,6 +8,15 @@ import { useAuth } from '@/hooks/use-auth';
 import { useUnreadCounts } from '@/hooks/use-chat';
 import { useChannels, useChannelUnreadCount } from '@/hooks/use-channel-chat';
 import { formatBadge } from '@/lib/badge';
+
+/** Eticheta de tab din design: 11px, weight 700 pe activ / 600 pe inactiv. */
+function tabLabel(label: string) {
+  return function TabLabel({ focused, color }: { focused: boolean; color: string }) {
+    return (
+      <Text style={{ fontSize: 11, fontWeight: focused ? '700' : '600', color }}>{label}</Text>
+    );
+  };
+}
 
 export default function DriverLayout() {
   const theme = useTheme();
@@ -25,26 +35,30 @@ export default function DriverLayout() {
       backBehavior="history"
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#208AEF',
-        tabBarInactiveTintColor: theme.textSecondary,
-        tabBarStyle: { backgroundColor: theme.background },
+        tabBarActiveTintColor: theme.brand,
+        tabBarInactiveTintColor: theme.textTertiary,
+        tabBarStyle: {
+          backgroundColor: theme.barBackground,
+          borderTopWidth: 1,
+          borderTopColor: theme.separator,
+        },
       }}>
       <Tabs.Screen
         name="announcements"
         options={{
           title: t('driver.tabs.announcements'),
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="list-alt" size={size} color={color} />
-          ),
+          tabBarLabel: tabLabel(t('driver.tabs.announcements')),
+          tabBarIcon: ({ color, size }) => <Feather name="list" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="conversations"
         options={{
           title: t('driver.tabs.conversations'),
+          tabBarLabel: tabLabel(t('driver.tabs.conversations')),
           tabBarBadge: totalUnread > 0 ? formatBadge(totalUnread) : undefined,
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="chat" size={size} color={color} />
+            <Feather name="message-circle" size={size} color={color} />
           ),
         }}
         listeners={({ navigation }) => ({
@@ -59,18 +73,16 @@ export default function DriverLayout() {
         name="search"
         options={{
           title: t('search.tabTitle'),
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="search" size={size} color={color} />
-          ),
+          tabBarLabel: tabLabel(t('search.tabTitle')),
+          tabBarIcon: ({ color, size }) => <Feather name="search" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: t('profile.tabTitle'),
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="person" size={size} color={color} />
-          ),
+          tabBarLabel: tabLabel(t('profile.tabTitle')),
+          tabBarIcon: ({ color, size }) => <Feather name="user" size={size} color={color} />,
         }}
       />
       <Tabs.Screen name="mechanic-profile" options={{ href: null }} />

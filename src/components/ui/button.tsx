@@ -1,6 +1,7 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 
 import { Radius, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 interface ButtonProps {
   title: string;
@@ -17,21 +18,23 @@ export function Button({
   disabled = false,
   variant = 'primary',
 }: ButtonProps) {
+  const theme = useTheme();
   const isDisabled = disabled || loading;
 
   function variantStyle() {
     if (variant === 'danger') return styles.danger;
-    if (variant === 'secondary') return styles.secondary;
-    return styles.primary;
+    if (variant === 'secondary')
+      return { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: theme.brand };
+    return { backgroundColor: theme.primary };
   }
 
   function indicatorColor() {
-    if (variant === 'secondary') return '#208AEF';
+    if (variant === 'secondary') return theme.brand;
     return '#fff';
   }
 
   function labelStyle() {
-    if (variant === 'secondary') return styles.labelSecondary;
+    if (variant === 'secondary') return { color: theme.brand };
     return undefined;
   }
 
@@ -61,14 +64,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.four,
   },
-  primary: {
-    backgroundColor: '#208AEF',
-  },
-  secondary: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: '#208AEF',
-  },
   danger: {
     backgroundColor: '#ef4444',
   },
@@ -79,8 +74,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  labelSecondary: {
-    color: '#208AEF',
   },
 });

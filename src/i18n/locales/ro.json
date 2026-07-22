@@ -170,6 +170,9 @@
     },
     "announcements": {
       "listTitle": "Anunțurile mele",
+      "filterAll": "Toate",
+      "filterActive": "Active",
+      "filterResolved": "Rezolvate",
       "emptyTitle": "Niciun anunț încă",
       "emptyDescription": "Apasă + pentru a raporta o defecțiune",
       "newTitle": "Anunț nou",
@@ -352,6 +355,8 @@
   "chat": {
     "emptyMessages": "Niciun mesaj. Scrie primul!",
     "inputPlaceholder": "Scrie un mesaj...",
+    "today": "Astăzi",
+    "yesterday": "Ieri",
     "resolvedBanner": "Anunțul a fost marcat ca rezolvat.",
     "attach": "Trimite o poză",
     "messageActions": "Acțiuni mesaj",

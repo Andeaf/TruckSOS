@@ -133,9 +133,11 @@ export function TruckPickerSheet({
               <MaterialIcons
                 name={addFormOpen ? 'expand-less' : 'add'}
                 size={18}
-                color="#208AEF"
+                color={theme.brand}
               />
-              <ThemedText style={styles.addToggleText}>{t('truck.addNewInPicker')}</ThemedText>
+              <ThemedText style={[styles.addToggleText, { color: theme.brand }]}>
+                {t('truck.addNewInPicker')}
+              </ThemedText>
             </Pressable>
 
             {addFormOpen ? (
@@ -230,7 +232,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingVertical: Spacing.one,
   },
-  addToggleText: { color: '#208AEF', fontSize: 14, fontWeight: '500' },
+  addToggleText: { fontSize: 14, fontWeight: '500' },
   miniForm: { gap: Spacing.three },
   fieldBlock: { gap: Spacing.one },
   label: { marginBottom: Spacing.one },

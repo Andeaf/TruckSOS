@@ -66,7 +66,7 @@ export async function registerPushToken(userId: string): Promise<string | null> 
         name: 'TruckSOS',
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#208AEF',
+        lightColor: '#0E3A7D',
       });
     }
 

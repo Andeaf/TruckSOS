@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Radius, Spacing } from '@/constants/theme';
+import { Radius, Shadows, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Announcement } from '@/types/database';
 
@@ -97,7 +97,7 @@ export function AnnouncementCard({ announcement, onPress, driverName, compact = 
           <View style={styles.cardContent}>
             <View style={styles.header}>
               <View style={styles.locationRow}>
-                <MaterialIcons name="location-on" size={14} color={theme.textSecondary} />
+                <MaterialIcons name="location-pin" size={16} color={theme.brand} />
                 <ThemedText type="smallBold" style={styles.location} numberOfLines={1}>
                   {announcement.location}
                 </ThemedText>
@@ -124,13 +124,13 @@ export function AnnouncementCard({ announcement, onPress, driverName, compact = 
             <View style={styles.footer}>
               {driverName ? (
                 <View style={styles.driverRow}>
-                  <MaterialIcons name="person" size={12} color={theme.textSecondary} />
-                  <ThemedText themeColor="textSecondary" type="small" style={styles.driverName}>
+                  <MaterialIcons name="person" size={12} color={theme.textTertiary} />
+                  <ThemedText themeColor="textTertiary" type="small" style={styles.driverName}>
                     {driverName}
                   </ThemedText>
                 </View>
               ) : null}
-              <ThemedText themeColor="textSecondary" type="small" numberOfLines={1} style={styles.time}>
+              <ThemedText themeColor="textTertiary" type="small" numberOfLines={1} style={styles.time}>
                 {timeAgo(announcement.created_at)}
               </ThemedText>
             </View>
@@ -172,14 +172,20 @@ export function AnnouncementCard({ announcement, onPress, driverName, compact = 
 }
 
 const styles = StyleSheet.create({
+  // Dimensiunile exacte din design: padding 16×18, titlu 16/700, descriere 14,
+  // timestamp 12/600; gap 6 + marginTop 4 = cei 10px dintre descriere și timp.
   card: {
     borderRadius: Radius.card,
-    padding: Spacing.three,
-    gap: Spacing.two,
+    paddingVertical: Spacing.three,
+    paddingHorizontal: 18,
+    gap: 6,
+    ...Shadows.card,
   },
   cardSelected: { borderWidth: 1.5, borderColor: '#22c55e' },
   cardRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  cardContent: { flex: 1 },
+  // gap-ul dintre rândurile cardului stă AICI (cardRow are un singur copil,
+  // un gap pe `card` n-ar avea niciun efect).
+  cardContent: { flex: 1, gap: 6 },
   dimmed: { opacity: 0.4 },
   header: {
     flexDirection: 'row',
@@ -190,23 +196,24 @@ const styles = StyleSheet.create({
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
     flex: 1,
   },
-  location: { flex: 1 },
-  description: { lineHeight: 20 },
+  location: { flex: 1, fontSize: 16, fontWeight: '700', lineHeight: 21 },
+  description: { fontSize: 14, lineHeight: 20 },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 4,
   },
   driverRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
   },
-  driverName: { fontSize: 12 },
-  time: { flexShrink: 0 },
+  driverName: { fontSize: 12, fontWeight: '600' },
+  time: { flexShrink: 0, fontSize: 12, fontWeight: '600' },
   distanceRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -98,7 +98,7 @@ export function PublicProfileScreen() {
   if (loading) {
     return (
       <ThemedView style={styles.centered}>
-        <ActivityIndicator size="large" color="#208AEF" />
+        <ActivityIndicator size="large" color={theme.brand} />
       </ThemedView>
     );
   }
@@ -166,7 +166,7 @@ export function PublicProfileScreen() {
 
             <ThemedView type="backgroundElement" style={styles.section}>
               <View style={styles.sectionHeader}>
-                <MaterialIcons name="build" size={16} color="#208AEF" />
+                <MaterialIcons name="build" size={16} color={theme.brand} />
                 <ThemedText type="smallBold">{t('profile.specializationLabel')}</ThemedText>
               </View>
               <ThemedText themeColor={profile.specialization ? undefined : 'textSecondary'}>
@@ -176,7 +176,7 @@ export function PublicProfileScreen() {
 
             <ThemedView type="backgroundElement" style={styles.section}>
               <View style={styles.sectionHeader}>
-                <MaterialIcons name="place" size={16} color="#208AEF" />
+                <MaterialIcons name="place" size={16} color={theme.brand} />
                 <ThemedText type="smallBold">{t('profile.activityZoneLabel')}</ThemedText>
               </View>
               <ThemedText themeColor={profile.activity_zone ? undefined : 'textSecondary'}>
@@ -187,7 +187,7 @@ export function PublicProfileScreen() {
             {/* Faza 18: adresă + TVA — publice DOAR la mecanici (informații de prestator). */}
             <ThemedView type="backgroundElement" style={styles.section}>
               <View style={styles.sectionHeader}>
-                <MaterialIcons name="home-work" size={16} color="#208AEF" />
+                <MaterialIcons name="home-work" size={16} color={theme.brand} />
                 <ThemedText type="smallBold">{t('profile.addressLabel')}</ThemedText>
               </View>
               <ThemedText themeColor={profile.address ? undefined : 'textSecondary'}>
@@ -197,7 +197,7 @@ export function PublicProfileScreen() {
 
             <ThemedView type="backgroundElement" style={styles.section}>
               <View style={styles.sectionHeader}>
-                <MaterialIcons name="receipt-long" size={16} color="#208AEF" />
+                <MaterialIcons name="receipt-long" size={16} color={theme.brand} />
                 <ThemedText type="smallBold">{t('profile.vatLabel')}</ThemedText>
               </View>
               <ThemedText themeColor={profile.vat_number ? undefined : 'textSecondary'}>
@@ -210,7 +210,7 @@ export function PublicProfileScreen() {
         {/* Firmă + email de contact — publice, la ambele roluri. */}
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialIcons name="business" size={16} color="#208AEF" />
+            <MaterialIcons name="business" size={16} color={theme.brand} />
             <ThemedText type="smallBold">{t('profile.companyLabel')}</ThemedText>
           </View>
           <ThemedText themeColor={profile.company_name ? undefined : 'textSecondary'}>
@@ -220,7 +220,7 @@ export function PublicProfileScreen() {
 
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialIcons name="email" size={16} color="#208AEF" />
+            <MaterialIcons name="email" size={16} color={theme.brand} />
             <ThemedText type="smallBold">{t('profile.emailLabel')}</ThemedText>
           </View>
           <ThemedText themeColor={profile.contact_email ? undefined : 'textSecondary'}>

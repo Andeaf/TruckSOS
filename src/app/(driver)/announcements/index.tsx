@@ -1,15 +1,24 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { AnnouncementCard } from '@/components/announcement-card';
 import { EmptyState } from '@/components/empty-state';
 import { HeaderText, ScreenHeader } from '@/components/screen-header';
+import { FilterChips } from '@/components/ui/filter-chips';
 import { ThemedView } from '@/components/themed-view';
-import { Radius, Spacing } from '@/constants/theme';
+import {
+  HeaderGradient,
+  HeaderGradientDirection,
+  Radius,
+  Shadows,
+  Spacing,
+} from '@/constants/theme';
+import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import {
@@ -19,16 +28,27 @@ import {
 } from '@/hooks/use-announcements';
 import type { Announcement } from '@/types/database';
 
+type StatusFilter = 'all' | 'active' | 'resolved';
+
 export default function DriverAnnouncementsScreen() {
   const { profile } = useAuth();
   const { t } = useTranslation();
   const theme = useTheme();
+  const scheme = useResolvedScheme();
   const { announcements, loading, refresh } = useMyAnnouncements();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [applicantCounts, setApplicantCounts] = useState<Record<string, number>>({});
+  // Filtru pur vizual (redesign): nu atinge query-ul, doar ce se afișează.
+  const [filter, setFilter] = useState<StatusFilter>('all');
+  const filtered = useMemo(() => {
+    if (filter === 'active')
+      return announcements.filter((a) => a.status === 'open' || a.status === 'accepted');
+    if (filter === 'resolved') return announcements.filter((a) => a.status === 'resolved');
+    return announcements;
+  }, [announcements, filter]);
 
   useFocusEffect(
     useCallback(() => {
@@ -125,8 +145,20 @@ export default function DriverAnnouncementsScreen() {
         />
       )}
 
+      {!selectionMode ? (
+        <FilterChips
+          options={[
+            { key: 'all', label: t('driver.announcements.filterAll') },
+            { key: 'active', label: t('driver.announcements.filterActive') },
+            { key: 'resolved', label: t('driver.announcements.filterResolved') },
+          ]}
+          value={filter}
+          onChange={setFilter}
+        />
+      ) : null}
+
       <FlatList
-        data={announcements}
+        data={filtered}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -165,9 +197,19 @@ export default function DriverAnnouncementsScreen() {
 
       {!selectionMode ? (
         <Pressable
-          style={[styles.fab, { bottom: insets.bottom + Spacing.three }]}
+          style={({ pressed }) => [
+            styles.fab,
+            { bottom: insets.bottom + Spacing.three },
+            pressed && styles.fabPressed,
+          ]}
           onPress={() => router.push('/(driver)/announcements/new')}>
-          <MaterialIcons name="add" size={28} color="#fff" />
+          <LinearGradient
+            colors={HeaderGradient[scheme]}
+            start={HeaderGradientDirection.start}
+            end={HeaderGradientDirection.end}
+            style={styles.fabGradient}>
+            <MaterialIcons name="add" size={30} color="#fff" />
+          </LinearGradient>
         </Pressable>
       ) : null}
     </ThemedView>
@@ -183,26 +225,28 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   deleteTextDisabled: { opacity: 0.4 },
+  // Padding-ul listei + gap-ul dintre carduri: valorile exacte din design.
   list: {
     flexGrow: 1,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.four,
+    paddingHorizontal: 18,
+    paddingTop: 12,
     paddingBottom: Spacing.six + Spacing.four,
   },
-  separator: { height: Spacing.two },
+  separator: { height: 12 },
+  // FAB squircle 58×58 cu gradientul principal (nu cerc — decizie de design).
   fab: {
     position: 'absolute',
-    right: Spacing.four,
-    width: 56,
-    height: 56,
-    borderRadius: Radius.circle,
-    backgroundColor: '#208AEF',
+    right: 18,
+    width: 58,
+    height: 58,
+    borderRadius: Radius.fab,
+    ...Shadows.fab,
+  },
+  fabPressed: { opacity: 0.85 },
+  fabGradient: {
+    flex: 1,
+    borderRadius: Radius.fab,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
   },
 });

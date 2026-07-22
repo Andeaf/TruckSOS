@@ -170,6 +170,9 @@
     },
     "announcements": {
       "listTitle": "My announcements",
+      "filterAll": "All",
+      "filterActive": "Active",
+      "filterResolved": "Resolved",
       "emptyTitle": "No announcements yet",
       "emptyDescription": "Tap + to report a breakdown",
       "newTitle": "New announcement",
@@ -350,6 +353,8 @@
   "chat": {
     "emptyMessages": "No messages. Be the first to write!",
     "inputPlaceholder": "Write a message...",
+    "today": "Today",
+    "yesterday": "Yesterday",
     "resolvedBanner": "The announcement has been marked as resolved.",
     "attach": "Send a photo",
     "messageActions": "Message actions",

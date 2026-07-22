@@ -18,6 +18,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
+import { useTheme } from '@/hooks/use-theme';
 import { deleteAccount } from '@/lib/account';
 import { supabase } from '@/lib/supabase';
 
@@ -28,6 +29,7 @@ import { supabase } from '@/lib/supabase';
  */
 export function DeleteAccountScreen({ backPath }: { backPath: string }) {
   const { t } = useTranslation();
+  const theme = useTheme();
   const goBack = useBack(backPath);
   const { session, signOut } = useAuth();
   const [password, setPassword] = useState('');
@@ -89,7 +91,7 @@ export function DeleteAccountScreen({ backPath }: { backPath: string }) {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialIcons name="info-outline" size={18} color="#208AEF" />
+            <MaterialIcons name="info-outline" size={18} color={theme.brand} />
             <ThemedText type="smallBold">{t('settings.deleteAccountScreen.explainTitle')}</ThemedText>
           </View>
           <ThemedText themeColor="textSecondary" type="small">

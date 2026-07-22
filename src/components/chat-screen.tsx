@@ -12,7 +12,8 @@ import {
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Feather, MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
@@ -31,8 +32,15 @@ import { Toast } from '@/components/toast';
 import { HeaderText, ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Radius, Spacing } from '@/constants/theme';
+import {
+  ActiveGradient,
+  HeaderGradientDirection,
+  Radius,
+  Shadows,
+  Spacing,
+} from '@/constants/theme';
 import { useBlocked } from '@/hooks/use-blocked';
+import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { useSignedUrls } from '@/hooks/use-signed-urls';
 import { MAX_PHOTOS, pickFromCamera, pickFromLibrary, type PickedImage } from '@/lib/media';
@@ -69,10 +77,44 @@ function formatTime(dateStr: string) {
   });
 }
 
+/** Cheie de zi locală (nu UTC) — decide unde apar separatoarele de dată. */
+function dayKey(dateStr: string) {
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+/**
+ * Suprafața bulei: gradientul „element activ" la mesajele proprii, suprafață
+ * simplă la cele primite — același interior, ambele teme.
+ */
+function BubbleSurface({
+  isMe,
+  scheme,
+  style,
+  children,
+}: {
+  isMe: boolean;
+  scheme: 'light' | 'dark';
+  style: React.ComponentProps<typeof View>['style'];
+  children: React.ReactNode;
+}) {
+  if (isMe) {
+    return (
+      <LinearGradient
+        colors={ActiveGradient[scheme]}
+        start={HeaderGradientDirection.start}
+        end={HeaderGradientDirection.end}
+        style={style}>
+        {children}
+      </LinearGradient>
+    );
+  }
+  return <View style={style}>{children}</View>;
+}
+
 interface MessageBubbleProps<M extends ChatMessageBase> {
   message: M;
   isMe: boolean;
-  accentColor: string;
   senderLabel?: string | null;
   /** URL semnat, când mesajul e o poză; lipsește cât timp se semnează sau dacă RLS refuză. */
   imageUrl?: string;
@@ -95,7 +137,6 @@ interface MessageBubbleProps<M extends ChatMessageBase> {
 function MessageBubble<M extends ChatMessageBase>({
   message,
   isMe,
-  accentColor,
   senderLabel,
   imageUrl,
   senderName,
@@ -109,15 +150,17 @@ function MessageBubble<M extends ChatMessageBase>({
   onSwipeReply,
 }: MessageBubbleProps<M>) {
   const theme = useTheme();
+  const scheme = useResolvedScheme();
   const { t } = useTranslation();
   const isDeleted = !!message.deleted_at;
   const isImage = !isDeleted && !!message.image_path;
-  const secondaryColor = isMe ? 'rgba(255,255,255,0.7)' : theme.textSecondary;
+  // Design 22 iul: timp/bife pe bula trimisă = alb 70%; pe cea primită = text terțiar.
+  const secondaryColor = isMe ? 'rgba(255,255,255,0.7)' : theme.textTertiary;
   const tick = readState ? (
     <MaterialIcons
       name={readState === 'read' ? 'done-all' : 'check'}
       size={14}
-      color={readState === 'read' ? '#5EC5FF' : secondaryColor}
+      color={secondaryColor}
     />
   ) : null;
   // PostgREST întoarce embed-ul self-join `reply_to` ca ARRAY ([] pentru non-reply),
@@ -190,13 +233,18 @@ function MessageBubble<M extends ChatMessageBase>({
             {senderLabel}
           </ThemedText>
         ) : null}
-        <Pressable
-          onLongPress={onLongPress}
-          delayLongPress={300}
+        <Pressable onLongPress={onLongPress} delayLongPress={300}>
+        <BubbleSurface
+          isMe={isMe}
+          scheme={scheme}
           style={[
             styles.bubble,
+            isMe ? styles.bubbleMe : styles.bubbleOther,
+            // Umbra stă pe suprafața cu fundal (altfel Android nu desenează elevation);
+            // în dark, bulele primite rămân plate — decizie de design.
+            isMe && (scheme === 'light' ? styles.sentShadowLight : styles.sentShadowDark),
             isImage && styles.bubbleImage,
-            { backgroundColor: isMe ? accentColor : theme.backgroundElement },
+            !isMe && { backgroundColor: theme.backgroundElement },
           ]}>
           {isDeleted ? (
             // Tombstone (Faza 14): bula rămâne, textul e discret (italic/gri).
@@ -242,12 +290,12 @@ function MessageBubble<M extends ChatMessageBase>({
                     styles.quote,
                     {
                       backgroundColor: isMe ? 'rgba(255,255,255,0.16)' : theme.background,
-                      borderLeftColor: isMe ? '#ffffff' : accentColor,
+                      borderLeftColor: isMe ? '#ffffff' : theme.brand,
                     },
                   ]}>
                   <Text
                     numberOfLines={1}
-                    style={[styles.quoteName, { color: isMe ? '#ffffff' : accentColor }]}>
+                    style={[styles.quoteName, { color: isMe ? '#ffffff' : theme.brand }]}>
                     {quote.sender?.full_name ?? ''}
                   </Text>
                   <Text numberOfLines={1} style={[styles.quoteSnippet, { color: secondaryColor }]}>
@@ -271,6 +319,7 @@ function MessageBubble<M extends ChatMessageBase>({
               </View>
             </>
           )}
+        </BubbleSurface>
         </Pressable>
       </Animated.View>
     </View>
@@ -280,7 +329,6 @@ function MessageBubble<M extends ChatMessageBase>({
 
 interface ChatScreenProps<M extends ChatMessageBase> {
   currentUserId: string;
-  accentColor: string;
   title: string;
   subtitle: string;
   subtitleIcon?: keyof typeof MaterialIcons.glyphMap;
@@ -326,7 +374,6 @@ interface ChatScreenProps<M extends ChatMessageBase> {
 
 export function ChatScreen<M extends ChatMessageBase>({
   currentUserId,
-  accentColor,
   title,
   subtitle,
   subtitleIcon,
@@ -351,8 +398,9 @@ export function ChatScreen<M extends ChatMessageBase>({
   readReceipts,
   readCursor,
 }: ChatScreenProps<M>) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
+  const scheme = useResolvedScheme();
   const { blockedIds, block, unblock } = useBlocked();
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
@@ -447,6 +495,24 @@ export function ChatScreen<M extends ChatMessageBase>({
   // Inverted FlatList needs data in descending order (newest first = shown at bottom)
   const reversedMessages = useMemo(() => [...messages].reverse(), [messages]);
 
+  // Eticheta pastilei de dată: Astăzi / Ieri / dată în limba aplicației.
+  const dateLabel = useCallback(
+    (dateStr: string) => {
+      const now = new Date();
+      const yesterday = new Date(now);
+      yesterday.setDate(now.getDate() - 1);
+      if (dayKey(dateStr) === dayKey(now.toISOString())) return t('chat.today');
+      if (dayKey(dateStr) === dayKey(yesterday.toISOString())) return t('chat.yesterday');
+      const d = new Date(dateStr);
+      return d.toLocaleDateString(i18n.language, {
+        day: 'numeric',
+        month: 'long',
+        ...(d.getFullYear() !== now.getFullYear() ? { year: 'numeric' as const } : {}),
+      });
+    },
+    [t, i18n.language],
+  );
+
   // Tap pe citat → derulează la mesajul original, dacă e în pagina încărcată.
   // Dacă e mai vechi decât paginarea (canal, 50/pagină) → no-op discret.
   const scrollToQuoted = useCallback(
@@ -531,21 +597,24 @@ export function ChatScreen<M extends ChatMessageBase>({
     <ThemedView style={styles.container}>
       <ScreenHeader>
         <Pressable onPress={onBack} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={24} color={theme.onHeader} />
+          <Feather name="chevron-left" size={26} color={theme.onHeader} />
         </Pressable>
         {headerAvatarPath !== undefined ? (
           <Pressable
             onPress={onPressUser && headerUserId ? () => onPressUser(headerUserId) : undefined}
-            disabled={!onPressUser || !headerUserId}>
+            disabled={!onPressUser || !headerUserId}
+            style={styles.headerAvatarRing}>
             <Avatar
               url={headerAvatarPath ? urls[headerAvatarPath] : undefined}
               name={title}
-              size={36}
+              size={38}
             />
           </Pressable>
         ) : null}
         <View style={styles.headerInfo}>
-          <HeaderText numberOfLines={1}>{title}</HeaderText>
+          <HeaderText numberOfLines={1} style={styles.headerName}>
+            {title}
+          </HeaderText>
           <View style={styles.locationRow}>
             {subtitleIcon ? (
               <MaterialIcons name={subtitleIcon} size={11} color={theme.onHeader} />
@@ -573,7 +642,7 @@ export function ChatScreen<M extends ChatMessageBase>({
 
         {loading ? (
           <View style={styles.centered}>
-            <ActivityIndicator size="large" color={accentColor} />
+            <ActivityIndicator size="large" color={theme.brand} />
           </View>
         ) : messages.length === 0 ? (
           <View style={styles.centered}>
@@ -600,13 +669,31 @@ export function ChatScreen<M extends ChatMessageBase>({
                 </View>
               ) : null
             }
-            renderItem={({ item }) => {
+            renderItem={({ item, index }) => {
               const avatarPath = renderSenderAvatarPath?.(item) ?? null;
+              // Lista e inversată: item-ul următor din array e mesajul mai VECHI.
+              // Primul mesaj al fiecărei zile primește pastila de dată deasupra.
+              const older = reversedMessages[index + 1];
+              const showDate = !older || dayKey(older.created_at) !== dayKey(item.created_at);
               return (
+              <View>
+              {showDate ? (
+                <View style={styles.dateRow}>
+                  <View
+                    style={[
+                      styles.datePill,
+                      { backgroundColor: theme.backgroundElement },
+                      scheme === 'light' && Shadows.chip,
+                    ]}>
+                    <Text style={[styles.datePillText, { color: theme.textTertiary }]}>
+                      {dateLabel(item.created_at)}
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
               <MessageBubble
                 message={item}
                 isMe={item.sender_id === currentUserId}
-                accentColor={accentColor}
                 senderLabel={
                   item.sender_id !== currentUserId && renderSenderLabel
                     ? renderSenderLabel(item)
@@ -637,6 +724,7 @@ export function ChatScreen<M extends ChatMessageBase>({
                     : null
                 }
               />
+              </View>
               );
             }}
           />
@@ -644,9 +732,9 @@ export function ChatScreen<M extends ChatMessageBase>({
 
         {replyTarget && !editTarget ? (
           <View style={[styles.editBanner, { backgroundColor: theme.backgroundElement }]}>
-            <MaterialIcons name="reply" size={16} color={accentColor} />
+            <MaterialIcons name="reply" size={16} color={theme.brand} />
             <View style={styles.editBannerInfo}>
-              <Text style={[styles.editBannerTitle, { color: accentColor }]} numberOfLines={1}>
+              <Text style={[styles.editBannerTitle, { color: theme.brand }]} numberOfLines={1}>
                 {renderSenderName?.(replyTarget) ??
                   (replyTarget.sender_id === currentUserId ? t('chat.you') : title)}
               </Text>
@@ -668,9 +756,9 @@ export function ChatScreen<M extends ChatMessageBase>({
 
         {editTarget ? (
           <View style={[styles.editBanner, { backgroundColor: theme.backgroundElement }]}>
-            <MaterialIcons name="edit" size={16} color={accentColor} />
+            <MaterialIcons name="edit" size={16} color={theme.brand} />
             <View style={styles.editBannerInfo}>
-              <Text style={[styles.editBannerTitle, { color: accentColor }]}>
+              <Text style={[styles.editBannerTitle, { color: theme.brand }]}>
                 {t('chat.editingMessage')}
               </Text>
               <Text
@@ -690,14 +778,14 @@ export function ChatScreen<M extends ChatMessageBase>({
           <View
             style={[
               styles.blockedBar,
-              { backgroundColor: theme.background, borderTopColor: theme.backgroundElement },
+              { backgroundColor: theme.barBackground, borderTopColor: theme.separator },
             ]}>
             <MaterialIcons name="block" size={16} color={theme.textSecondary} />
             <Text style={[styles.blockedBarText, { color: theme.textSecondary }]}>
               {t('block.bannerText')}
             </Text>
             <Pressable onPress={handleUnblockPeer} hitSlop={8}>
-              <Text style={[styles.blockedBarAction, { color: accentColor }]}>
+              <Text style={[styles.blockedBarAction, { color: theme.brand }]}>
                 {t('block.unblock')}
               </Text>
             </Pressable>
@@ -712,51 +800,56 @@ export function ChatScreen<M extends ChatMessageBase>({
               // vizibil între input și tab-uri (feedback pe Samsung + iPhone).
               // Cu tastatura deschisă padding-ul rămâne minim (bara stă lipită de taste).
               paddingBottom: Spacing.one,
-              backgroundColor: theme.background,
-              borderTopColor: theme.backgroundElement,
+              backgroundColor: theme.barBackground,
+              borderTopColor: theme.separator,
             },
           ]}>
           {onSendImage && !editTarget ? (
             <Pressable
               onPress={handleAttach}
               disabled={uploading}
-              style={styles.attachButton}
+              style={[styles.attachButton, { backgroundColor: theme.brandSoft }]}
               hitSlop={8}
               accessibilityLabel={t('chat.attach')}>
               {uploading ? (
-                <ActivityIndicator size="small" color={accentColor} />
+                <ActivityIndicator size="small" color={theme.brand} />
               ) : (
-                <MaterialIcons name="add-a-photo" size={22} color={theme.textSecondary} />
+                <Feather name="camera" size={19} color={theme.brand} />
               )}
             </Pressable>
           ) : null}
           <TextInput
             style={[
               styles.input,
-              { color: theme.text, backgroundColor: theme.backgroundElement },
+              { color: theme.text, backgroundColor: theme.background },
             ]}
             value={text}
             onChangeText={setText}
             placeholder={t('chat.inputPlaceholder')}
-            placeholderTextColor={theme.textSecondary}
+            placeholderTextColor={theme.textTertiary}
             multiline
             maxLength={1000}
           />
           <Pressable
             onPress={handleSend}
             disabled={!text.trim() || sending}
-            style={[
-              styles.sendButton,
-              {
-                backgroundColor: accentColor,
-                opacity: text.trim() && !sending ? 1 : 0.4,
-              },
-            ]}>
-            {sending ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <MaterialIcons name={editTarget ? 'check' : 'send'} size={20} color="#fff" />
-            )}
+            style={{ opacity: text.trim() && !sending ? 1 : 0.4 }}>
+            <LinearGradient
+              colors={ActiveGradient[scheme]}
+              start={HeaderGradientDirection.start}
+              end={HeaderGradientDirection.end}
+              style={[
+                styles.sendButton,
+                scheme === 'light' ? styles.sendShadowLight : styles.sendShadowDark,
+              ]}>
+              {sending ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : editTarget ? (
+                <Feather name="check" size={20} color="#fff" />
+              ) : (
+                <Feather name="send" size={19} color="#fff" />
+              )}
+            </LinearGradient>
           </Pressable>
         </View>
         )}
@@ -811,8 +904,23 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   flex: { flex: 1 },
   headerInfo: { flex: 1, gap: 2 },
-  headerSubtitle: { fontSize: 13, lineHeight: 18, opacity: 0.85 },
+  // Design 22 iul: nume 17/800, subtitlu 12/600 la 75%, avatar cu inel alb translucid.
+  headerName: { fontSize: 17, fontWeight: '800' },
+  headerSubtitle: { fontSize: 12, fontWeight: '600', lineHeight: 17, opacity: 0.75 },
+  headerAvatarRing: {
+    borderRadius: Radius.circle,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.35)',
+    padding: 1,
+  },
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  dateRow: { alignItems: 'center', marginVertical: Spacing.two },
+  datePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: Radius.badge,
+  },
+  datePillText: { fontSize: 11, fontWeight: '700' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.two },
   emptyText: { textAlign: 'center' },
   messageList: {
@@ -825,17 +933,48 @@ const styles = StyleSheet.create({
   bubbleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.one, marginVertical: 2 },
   bubbleRowRight: { justifyContent: 'flex-end' },
   bubbleRowLeft: { justifyContent: 'flex-start' },
-  bubbleColumn: { maxWidth: '78%' },
+  bubbleColumn: { maxWidth: '75%' },
   senderLabel: { marginBottom: 2, marginLeft: 4, fontSize: 11 },
+  // Colțurile-„coadă" (4px jos, pe partea expeditorului) vin din bubbleMe/bubbleOther.
   bubble: {
-    borderRadius: Radius.control,
-    paddingHorizontal: Spacing.two + 2,
-    paddingVertical: Spacing.one + 2,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     // Fără gap: ora stă imediat sub text (leading-ul liniei de text dă deja ~3px aer);
     // gap-ul de 2px în plus se citea ca spațiu mort sub mesaj (feedback pe device).
   },
-  bubbleText: { fontSize: 15, lineHeight: 21 },
-  bubbleTime: { fontSize: 11, lineHeight: 13, alignSelf: 'flex-end' },
+  bubbleMe: { borderBottomRightRadius: 4 },
+  bubbleOther: { borderBottomLeftRadius: 4 },
+  sentShadowLight: {
+    shadowColor: '#0E3A7D',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  sentShadowDark: {
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    elevation: 4,
+  },
+  sendShadowLight: {
+    shadowColor: '#0E3A7D',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    elevation: 5,
+  },
+  sendShadowDark: {
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 14,
+    elevation: 5,
+  },
+  bubbleText: { fontSize: 14, lineHeight: 20 },
+  bubbleTime: { fontSize: 11, lineHeight: 14, fontWeight: '600', alignSelf: 'flex-end' },
   // paddingRight: Android măsoară textul italic cu lățimea glifelor drepte (o
   // subestimează) → ultimul cuvânt se tăia la marginea bulei („This message was…”).
   // Padding-ul mută zona tăiată pe spațiu gol, nu pe text.
@@ -852,10 +991,10 @@ const styles = StyleSheet.create({
   },
   quoteName: { fontSize: 12, fontWeight: '700' },
   quoteSnippet: { fontSize: 13 },
-  // Bula-imagine: fără padding, poza umple bula.
-  bubbleImage: { padding: 0, overflow: 'hidden' },
-  imageWrap: { width: 220, height: 220 },
-  imageThumb: { width: '100%', height: '100%' },
+  // Bula-imagine: padding 6, poza rotunjită 12 înăuntru (design 22 iul).
+  bubbleImage: { paddingHorizontal: 6, paddingVertical: 6, overflow: 'hidden' },
+  imageWrap: { width: 220, height: 150 },
+  imageThumb: { width: '100%', height: '100%', borderRadius: 12 },
   imagePlaceholder: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -875,8 +1014,8 @@ const styles = StyleSheet.create({
   },
   imageTimeText: { fontSize: 11, color: '#fff' },
   attachButton: {
-    width: 42,
-    height: 42,
+    width: 40,
+    height: 40,
     borderRadius: Radius.circle,
     justifyContent: 'center',
     alignItems: 'center',
@@ -885,22 +1024,22 @@ const styles = StyleSheet.create({
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: Spacing.three,
-    paddingTop: Spacing.two,
-    gap: Spacing.two,
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    gap: 10,
     borderTopWidth: 1,
   },
   input: {
     flex: 1,
-    borderRadius: Radius.control,
-    paddingHorizontal: Spacing.two + 2,
-    paddingVertical: Spacing.two,
-    fontSize: 15,
+    borderRadius: Radius.badge,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    fontSize: 14,
     maxHeight: 120,
   },
   sendButton: {
-    width: 42,
-    height: 42,
+    width: 44,
+    height: 44,
     borderRadius: Radius.circle,
     justifyContent: 'center',
     alignItems: 'center',

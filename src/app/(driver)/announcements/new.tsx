@@ -215,7 +215,7 @@ export default function NewAnnouncementScreen() {
             </ThemedText>
             {/* Coordonatele rămân opționale — dar fără ele anunțul lipsește de pe hartă. */}
             <View style={styles.mapHint}>
-              <MaterialIcons name="map" size={14} color="#208AEF" />
+              <MaterialIcons name="map" size={14} color={theme.brand} />
               <ThemedText themeColor="textSecondary" type="small" style={styles.mapHintText}>
                 {t('driver.announcements.coordsMapHint')}
               </ThemedText>
@@ -223,14 +223,18 @@ export default function NewAnnouncementScreen() {
             <Pressable
               onPress={handleUseMyLocation}
               disabled={gpsLoading}
-              style={({ pressed }) => [styles.gpsButton, pressed && styles.pressed]}
+              style={({ pressed }) => [
+                styles.gpsButton,
+                { borderColor: theme.brand },
+                pressed && styles.pressed,
+              ]}
               hitSlop={8}>
               {gpsLoading ? (
-                <ActivityIndicator size="small" color="#208AEF" />
+                <ActivityIndicator size="small" color={theme.brand} />
               ) : (
-                <MaterialIcons name="my-location" size={16} color="#208AEF" />
+                <MaterialIcons name="my-location" size={16} color={theme.brand} />
               )}
-              <ThemedText style={styles.gpsButtonText}>
+              <ThemedText style={[styles.gpsButtonText, { color: theme.brand }]}>
                 {t('driver.announcements.useMyLocation')}
               </ThemedText>
             </Pressable>
@@ -284,8 +288,10 @@ export default function NewAnnouncementScreen() {
 
           {trucks.length > 0 ? (
             <Pressable onPress={() => setShowPicker(true)} style={styles.selectSavedButton} hitSlop={8}>
-              <MaterialIcons name="local-shipping" size={16} color="#208AEF" />
-              <ThemedText style={styles.selectSavedText}>{t('truck.selectSaved')}</ThemedText>
+              <MaterialIcons name="local-shipping" size={16} color={theme.brand} />
+              <ThemedText style={[styles.selectSavedText, { color: theme.brand }]}>
+                {t('truck.selectSaved')}
+              </ThemedText>
             </Pressable>
           ) : null}
 
@@ -378,7 +384,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingVertical: Spacing.one,
   },
-  selectSavedText: { color: '#208AEF', fontSize: 14, fontWeight: '500' },
+  selectSavedText: { fontSize: 14, fontWeight: '500' },
   coordsSection: { gap: Spacing.two },
   mapHint: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.one },
   mapHintText: { flex: 1 },
@@ -393,9 +399,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     borderRadius: Radius.control,
     borderWidth: 1.5,
-    borderColor: '#208AEF',
+    // borderColor vine inline din theme.brand.
   },
-  gpsButtonText: { color: '#208AEF', fontSize: 14, fontWeight: '600' },
+  gpsButtonText: { fontSize: 14, fontWeight: '600' },
   coordsRow: { flexDirection: 'row', gap: Spacing.two },
   coordsField: { flex: 1 },
   pressed: { opacity: 0.7 },

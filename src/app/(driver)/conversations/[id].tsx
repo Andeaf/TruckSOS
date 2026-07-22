@@ -51,7 +51,6 @@ export default function DriverChatScreen() {
   return (
     <ChatScreen
       currentUserId={session.user.id}
-      accentColor="#208AEF"
       title={displayName(conv.mechanic, t)}
       headerAvatarPath={conv.mechanic.avatar_path}
       headerUserId={conv.mechanic_id}

@@ -1,13 +1,23 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@/hooks/use-theme';
 import { fetchPendingReportsCount } from '@/hooks/use-admin';
 import { formatBadge } from '@/lib/badge';
 
-/** Grupul admin (Faza 16). Paralel cu (driver)/(mechanic); tint indigo, distinct vizual. */
+/** Eticheta de tab din design: 11px, weight 700 pe activ / 600 pe inactiv. */
+function tabLabel(label: string) {
+  return function TabLabel({ focused, color }: { focused: boolean; color: string }) {
+    return (
+      <Text style={{ fontSize: 11, fontWeight: focused ? '700' : '600', color }}>{label}</Text>
+    );
+  };
+}
+
+/** Grupul admin (Faza 16). Paralel cu (driver)/(mechanic). */
 export default function AdminLayout() {
   const theme = useTheme();
   const { t } = useTranslation();
@@ -27,17 +37,20 @@ export default function AdminLayout() {
       backBehavior="history"
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#6366f1',
-        tabBarInactiveTintColor: theme.textSecondary,
-        tabBarStyle: { backgroundColor: theme.background },
+        tabBarActiveTintColor: theme.brand,
+        tabBarInactiveTintColor: theme.textTertiary,
+        tabBarStyle: {
+          backgroundColor: theme.barBackground,
+          borderTopWidth: 1,
+          borderTopColor: theme.separator,
+        },
       }}>
       <Tabs.Screen
         name="dashboard"
         options={{
           title: t('admin.tabs.dashboard'),
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="dashboard" size={size} color={color} />
-          ),
+          tabBarLabel: tabLabel(t('admin.tabs.dashboard')),
+          tabBarIcon: ({ color, size }) => <Feather name="grid" size={size} color={color} />,
         }}
         listeners={{ tabPress: refreshPending }}
       />
@@ -45,10 +58,9 @@ export default function AdminLayout() {
         name="reports"
         options={{
           title: t('admin.tabs.reports'),
+          tabBarLabel: tabLabel(t('admin.tabs.reports')),
           tabBarBadge: pending > 0 ? formatBadge(pending) : undefined,
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="report" size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <Feather name="flag" size={size} color={color} />,
         }}
         listeners={{ tabPress: refreshPending }}
       />
@@ -56,9 +68,8 @@ export default function AdminLayout() {
         name="users"
         options={{
           title: t('admin.tabs.users'),
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="people" size={size} color={color} />
-          ),
+          tabBarLabel: tabLabel(t('admin.tabs.users')),
+          tabBarIcon: ({ color, size }) => <Feather name="users" size={size} color={color} />,
         }}
         listeners={{ tabPress: refreshPending }}
       />
@@ -66,9 +77,8 @@ export default function AdminLayout() {
         name="content"
         options={{
           title: t('admin.tabs.content'),
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="article" size={size} color={color} />
-          ),
+          tabBarLabel: tabLabel(t('admin.tabs.content')),
+          tabBarIcon: ({ color, size }) => <Feather name="file-text" size={size} color={color} />,
         }}
         listeners={{ tabPress: refreshPending }}
       />

@@ -71,6 +71,7 @@ function ApplicantCard({
   onReject: (appId: string) => Promise<void>;
 }) {
   const { t } = useTranslation();
+  const theme = useTheme();
   const router = useRouter();
   const [accepting, setAccepting] = useState(false);
   const [rejecting, setRejecting] = useState(false);
@@ -89,7 +90,7 @@ function ApplicantCard({
   }
 
   return (
-    <ThemedView type="background" style={styles.applicantCard}>
+    <ThemedView type="background" style={[styles.applicantCard, { borderColor: `${theme.brand}22` }]}>
       <View style={styles.applicantHeader}>
         <Avatar url={avatarUrl} name={app.mechanic.full_name} size={36} />
         <ThemedText type="smallBold" style={styles.applicantName}>
@@ -118,8 +119,8 @@ function ApplicantCard({
           })
         }
         style={styles.profileLink}>
-        <MaterialIcons name="open-in-new" size={13} color="#208AEF" />
-        <ThemedText type="small" style={styles.profileLinkText}>
+        <MaterialIcons name="open-in-new" size={13} color={theme.brand} />
+        <ThemedText type="small" themeColor="brand">
           {t('driver.announcements.viewProfile')}
         </ThemedText>
       </Pressable>
@@ -283,7 +284,7 @@ export default function AnnouncementDetailScreen() {
   if (loading) {
     return (
       <ThemedView style={styles.centered}>
-        <ActivityIndicator size="large" color="#208AEF" />
+        <ActivityIndicator size="large" color={theme.brand} />
       </ThemedView>
     );
   }
@@ -322,7 +323,7 @@ export default function AnnouncementDetailScreen() {
 
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialIcons name="location-on" size={16} color="#208AEF" />
+            <MaterialIcons name="location-on" size={16} color={theme.brand} />
             <ThemedText type="smallBold">{t('driver.announcements.sectionLocation')}</ThemedText>
           </View>
           <ThemedText>{announcement.location}</ThemedText>
@@ -336,12 +337,16 @@ export default function AnnouncementDetailScreen() {
                   onPress={() => openInMaps(announcement.latitude!, announcement.longitude!)}
                   style={({ pressed }) => [
                     styles.mapsButton,
+                    { borderColor: theme.brand },
                     Platform.OS === 'ios' && styles.mapsButtonHalf,
                     pressed && styles.pressed,
                   ]}
                   hitSlop={8}>
-                  <MaterialIcons name="directions" size={16} color="#208AEF" />
-                  <ThemedText style={styles.mapsButtonText} numberOfLines={1} adjustsFontSizeToFit>
+                  <MaterialIcons name="directions" size={16} color={theme.brand} />
+                  <ThemedText
+                    style={[styles.mapsButtonText, { color: theme.brand }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit>
                     {t(
                       Platform.OS === 'ios'
                         ? 'driver.announcements.openInMapsIos'
@@ -356,12 +361,16 @@ export default function AnnouncementDetailScreen() {
                     }
                     style={({ pressed }) => [
                       styles.mapsButton,
+                      { borderColor: theme.brand },
                       styles.mapsButtonHalf,
                       pressed && styles.pressed,
                     ]}
                     hitSlop={8}>
-                    <MaterialIcons name="directions" size={16} color="#208AEF" />
-                    <ThemedText style={styles.mapsButtonText} numberOfLines={1} adjustsFontSizeToFit>
+                    <MaterialIcons name="directions" size={16} color={theme.brand} />
+                    <ThemedText
+                      style={[styles.mapsButtonText, { color: theme.brand }]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit>
                       {t('driver.announcements.openInMaps')}
                     </ThemedText>
                   </Pressable>
@@ -374,7 +383,7 @@ export default function AnnouncementDetailScreen() {
         {truckInfo || announcement.plate_number ? (
           <ThemedView type="backgroundElement" style={styles.section}>
             <View style={styles.sectionHeader}>
-              <MaterialIcons name="local-shipping" size={16} color="#208AEF" />
+              <MaterialIcons name="local-shipping" size={16} color={theme.brand} />
               <ThemedText type="smallBold">{t('truck.sectionTitle')}</ThemedText>
             </View>
             {truckInfo ? <ThemedText>{truckInfo}</ThemedText> : null}
@@ -388,7 +397,7 @@ export default function AnnouncementDetailScreen() {
 
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialIcons name="build" size={16} color="#208AEF" />
+            <MaterialIcons name="build" size={16} color={theme.brand} />
             <ThemedText type="smallBold">{t('driver.announcements.sectionDescription')}</ThemedText>
           </View>
           <ThemedText style={styles.descriptionText}>{announcement.description}</ThemedText>
@@ -397,7 +406,7 @@ export default function AnnouncementDetailScreen() {
         {photos.length > 0 ? (
           <ThemedView type="backgroundElement" style={styles.section}>
             <View style={styles.sectionHeader}>
-              <MaterialIcons name="photo-library" size={16} color="#208AEF" />
+              <MaterialIcons name="photo-library" size={16} color={theme.brand} />
               <ThemedText type="smallBold">{t('photos.sectionTitle')}</ThemedText>
               <ThemedText themeColor="textSecondary" type="small">
                 ({photos.length})
@@ -432,7 +441,7 @@ export default function AnnouncementDetailScreen() {
         {announcement.status === 'open' ? (
           <ThemedView type="backgroundElement" style={styles.section}>
             <View style={styles.sectionHeader}>
-              <MaterialIcons name="people" size={16} color="#208AEF" />
+              <MaterialIcons name="people" size={16} color={theme.brand} />
               <ThemedText type="smallBold">
                 {t('driver.announcements.sectionApplicants')}
               </ThemedText>
@@ -563,9 +572,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     borderRadius: Radius.control,
     borderWidth: 1.5,
-    borderColor: '#208AEF',
+    // borderColor vine inline din theme.brand (temă light/dark).
   },
-  mapsButtonText: { color: '#208AEF', fontSize: 14, fontWeight: '600' },
+  mapsButtonText: { fontSize: 14, fontWeight: '600' },
   mapsButtonsRow: { flexDirection: 'row', gap: Spacing.two },
   mapsButtonHalf: { flex: 1, alignSelf: 'auto', justifyContent: 'center' },
   rateButton: {
@@ -587,9 +596,6 @@ const styles = StyleSheet.create({
     gap: 3,
     alignSelf: 'flex-start',
   },
-  profileLinkText: {
-    color: '#208AEF',
-  },
   applicantActions: {
     flexDirection: 'row',
     gap: Spacing.two,
@@ -601,7 +607,7 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     gap: Spacing.one,
     borderWidth: 1,
-    borderColor: '#208AEF22',
+    // borderColor vine inline (theme.brand + '22').
   },
   applicantHeader: {
     flexDirection: 'row',
