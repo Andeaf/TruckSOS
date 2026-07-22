@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 import { hasChatV14, replyEmbed } from '@/lib/chat-schema';
+import { emitReadsChanged, onReadsChanged } from '@/lib/read-events';
+import { useBlocked } from '@/hooks/use-blocked';
 import { uploadPhoto } from '@/lib/storage';
 import type { PickedImage } from '@/lib/media';
 import type { Channel, ChannelMessage, PublicUser, Role } from '@/types/database';
@@ -39,6 +42,11 @@ export async function fetchChannel(channelId: string): Promise<Channel | null> {
 }
 
 export function useChannelMessages(channelId: string) {
+  // Faza 18: mesajele utilizatorilor pe care I-AM blocat se ascund CLIENT-SIDE
+  // (confort, nu securitate — mesajele globale sunt publice prin definiție).
+  // Filtrăm doar la afișare: starea internă și cursorul de paginare rămân pe
+  // lista brută, ca `loadOlder` să nu sară pagini.
+  const { blockedIds } = useBlocked();
   const [messages, setMessages] = useState<ChannelMessageWithSender[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -161,7 +169,12 @@ export function useChannelMessages(channelId: string) {
     setLoadingMore(false);
   }, [channelId, hasMore, loadingMore]);
 
-  return { messages, loading, loadingMore, hasMore, loadOlder, addMessage, patchMessage };
+  const visibleMessages = useMemo(
+    () => messages.filter((m) => !blockedIds.has(m.sender_id)),
+    [messages, blockedIds]
+  );
+
+  return { messages: visibleMessages, loading, loadingMore, hasMore, loadOlder, addMessage, patchMessage };
 }
 
 export async function sendChannelMessage(
@@ -207,28 +220,33 @@ export async function sendChannelImageMessage(
   return sendChannelMessage(channelId, senderId, '', path);
 }
 
-export async function markChannelRead(channelId: string): Promise<void> {
+export async function markChannelRead(
+  channelId: string,
+  newestCreatedAt?: string | null
+): Promise<void> {
   const {
     data: { session },
   } = await supabase.auth.getSession();
   if (!session?.user) return;
+  // Ceasul telefonului poate fi în urma serverului → cursorul acoperă explicit cel
+  // mai nou mesaj afișat (+1ms), altfel badge-ul îl număra „necitit" pe veci.
+  // Simetric cu markConversationRead (chat privat).
+  const newest = newestCreatedAt ? new Date(newestCreatedAt).getTime() + 1 : 0;
   await supabase.from('channel_reads').upsert(
     {
       channel_id: channelId,
       user_id: session.user.id,
-      last_read_at: new Date().toISOString(),
+      last_read_at: new Date(Math.max(Date.now(), newest)).toISOString(),
     } as never,
     { onConflict: 'channel_id,user_id' }
   );
+  emitReadsChanged();
 }
 
 // Separat de useUnreadCounts (chat privat): abonare Realtime FILTRATĂ pe channel_id,
 // nu recompute global la orice mesaj din aplicație — vezi PLAN_CHAT_GLOBAL.md secțiunea 5.
 export function useChannelUnreadCount(userId: string | undefined, channelId: string | undefined) {
   const [count, setCount] = useState(0);
-  // Nume unic per instanță: același hook rulează simultan pe badge-ul de tab ȘI pe
-  // ChannelCard din listă — un topic Realtime comun ar declanșa „add callbacks after subscribe".
-  const channelName = useState(() => `channel-unread:${Math.random()}`)[0];
 
   const fetchCount = useCallback(async () => {
     if (!userId || !channelId) {
@@ -259,8 +277,24 @@ export function useChannelUnreadCount(userId: string | undefined, channelId: str
     fetchCount();
   }, [fetchCount]);
 
+  // Citirile făcute pe ACEST device sting badge-ul imediat — vezi lib/read-events.
+  useEffect(() => onReadsChanged(fetchCount), [fetchCount]);
+
+  // Plasă de siguranță (simetric cu useUnreadCounts): evenimentele ratate în fundal
+  // nu mai pot fi „prinse" — recalculăm la revenirea în prim-plan.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') fetchCount();
+    });
+    return () => sub.remove();
+  }, [fetchCount]);
+
   useEffect(() => {
     if (!channelId) return;
+    // Nume unic per (RE)abonare, nu per instanță: hook-ul rulează simultan pe badge-ul
+    // de tab ȘI pe ChannelCard, iar efectul se poate re-executa — un topic refolosit
+    // imediat după removeChannel ar întoarce canalul vechi și abonarea ar muri tăcut.
+    const channelName = `channel-unread:${Math.random()}`;
     const channel = supabase
       .channel(channelName)
       .on(
@@ -298,7 +332,7 @@ export function useChannelUnreadCount(userId: string | undefined, channelId: str
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [channelId, fetchCount, channelName]);
+  }, [channelId, fetchCount]);
 
   return { count, refresh: fetchCount };
 }

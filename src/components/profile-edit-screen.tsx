@@ -11,6 +11,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
+import { isValidPhone, isValidVat, normalizePhone, normalizeVat } from '@/lib/profile-validation';
 
 /**
  * Editarea profilului, ecran propriu (PLAN_FAZA10.md §4) — înlocuiește modul
@@ -29,6 +30,8 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
   const [phone, setPhone] = useState(profile?.phone ?? '');
   const [companyName, setCompanyName] = useState(profile?.company_name ?? '');
   const [contactEmail, setContactEmail] = useState(profile?.contact_email ?? '');
+  const [address, setAddress] = useState(profile?.address ?? '');
+  const [vatNumber, setVatNumber] = useState(profile?.vat_number ?? '');
   const [specialization, setSpecialization] = useState(profile?.specialization ?? '');
   const [activityZone, setActivityZone] = useState(profile?.activity_zone ?? '');
   const [saving, setSaving] = useState(false);
@@ -42,6 +45,8 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
     phone !== (profile?.phone ?? '') ||
     companyName !== (profile?.company_name ?? '') ||
     contactEmail !== (profile?.contact_email ?? '') ||
+    address !== (profile?.address ?? '') ||
+    vatNumber !== (profile?.vat_number ?? '') ||
     (isMechanic &&
       (specialization !== (profile?.specialization ?? '') ||
         activityZone !== (profile?.activity_zone ?? '')));
@@ -66,6 +71,32 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
       setError(t('profile.errorNameRequired'));
       return;
     }
+    // Faza 18: telefonul e OBLIGATORIU la ambele roluri (aplicație de urgență —
+    // contactul telefonic e funcția centrală). Obligativitatea se impune AICI,
+    // aplicativ: conturile vechi cu telefon gol sunt forțate abia la prima editare.
+    if (!phone.trim()) {
+      setError(t('profile.errorPhoneRequired'));
+      return;
+    }
+    if (!isValidPhone(phone)) {
+      setError(t('profile.errorPhoneInvalid'));
+      return;
+    }
+    // Adresă + TVA: obligatorii la mecanici (prestatori, afișate public),
+    // opționale la transportatori. Formatul TVA se verifică oriunde e completat.
+    if (isMechanic && !address.trim()) {
+      setError(t('profile.errorAddressRequired'));
+      return;
+    }
+    const vat = normalizeVat(vatNumber);
+    if (isMechanic && !vat) {
+      setError(t('profile.errorVatRequired'));
+      return;
+    }
+    if (vat && !isValidVat(vatNumber)) {
+      setError(t('profile.errorVatInvalid'));
+      return;
+    }
     const email = contactEmail.trim();
     // Validare minimă de format: ceva@ceva.ceva, fără spații. Câmpul e opțional.
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -77,9 +108,11 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
 
     const err = await updateProfile({
       full_name: fullName.trim(),
-      phone: phone.trim() || null,
+      phone: normalizePhone(phone),
       company_name: companyName.trim() || null,
       contact_email: email || null,
+      address: address.trim() || null,
+      vat_number: vat || null,
       ...(isMechanic
         ? {
             specialization: specialization.trim() || null,
@@ -143,9 +176,34 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
             </>
           ) : null}
 
+          {/* Faza 18: adresă + TVA — obligatorii la mecanic (afișate public), opționale la șofer. */}
           <View>
             <Input
-              label={t('profile.phoneLabelOptional')}
+              label={isMechanic ? t('profile.addressLabel') : t('profile.addressLabelOptional')}
+              value={address}
+              onChangeText={setAddress}
+              placeholder={t('profile.addressPlaceholder')}
+              autoCapitalize="sentences"
+            />
+            {isMechanic ? (
+              <ThemedText themeColor="textSecondary" type="small" style={styles.phoneHint}>
+                {t('profile.addressHint')}
+              </ThemedText>
+            ) : null}
+          </View>
+
+          <Input
+            label={isMechanic ? t('profile.vatLabel') : t('profile.vatLabelOptional')}
+            value={vatNumber}
+            onChangeText={setVatNumber}
+            placeholder={t('profile.vatPlaceholder')}
+            autoCapitalize="characters"
+            autoCorrect={false}
+          />
+
+          <View>
+            <Input
+              label={t('profile.phoneLabel')}
               value={phone}
               onChangeText={setPhone}
               placeholder={t('profile.phonePlaceholder')}

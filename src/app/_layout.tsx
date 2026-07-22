@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
+import { BlockedProvider } from '@/hooks/use-blocked';
 import { useLangSync } from '@/hooks/use-lang-sync';
 import { usePushNavigation } from '@/hooks/use-push-navigation';
 import { SettingsProvider, useSettings } from '@/hooks/use-settings';
@@ -90,7 +91,9 @@ export default function RootLayout() {
         <SettingsProvider>
           <I18nextProvider i18n={i18n}>
             <AuthProvider>
-              <RootLayoutNav />
+              <BlockedProvider>
+                <RootLayoutNav />
+              </BlockedProvider>
             </AuthProvider>
           </I18nextProvider>
         </SettingsProvider>

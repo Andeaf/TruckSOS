@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 import { hasChatV14, replyEmbed } from '@/lib/chat-schema';
+import { emitReadsChanged, onReadsChanged } from '@/lib/read-events';
 import { uploadPhoto } from '@/lib/storage';
 import type { PickedImage } from '@/lib/media';
 import type { Announcement, Conversation, Message, PublicUser } from '@/types/database';
@@ -264,15 +265,31 @@ export function useAnnouncementStatus(
   return status;
 }
 
-export async function markConversationRead(conversationId: string): Promise<void> {
+/**
+ * Cursorul de citire NU se ia doar din ceasul telefonului: mesajele au `created_at`
+ * de pe SERVER, iar un ceas local rămas în urmă ar lăsa ultimul mesaj „necitit" pe
+ * badge oricâte deschideri (bug văzut pe Android). Acoperim explicit cel mai nou
+ * mesaj afișat: +1ms ca `.gt(created_at)` din badge să-l excludă, iar comparația
+ * strictă `>` a bifelor ✓✓ să-l includă.
+ */
+function readCursorValue(newestCreatedAt?: string | null): string {
+  const newest = newestCreatedAt ? new Date(newestCreatedAt).getTime() + 1 : 0;
+  return new Date(Math.max(Date.now(), newest)).toISOString();
+}
+
+export async function markConversationRead(
+  conversationId: string,
+  newestCreatedAt?: string | null
+): Promise<void> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) return;
   await supabase
     .from('message_reads')
     .upsert(
-      { conversation_id: conversationId, user_id: session.user.id, last_read_at: new Date().toISOString() } as never,
+      { conversation_id: conversationId, user_id: session.user.id, last_read_at: readCursorValue(newestCreatedAt) } as never,
       { onConflict: 'conversation_id,user_id' }
     );
+  emitReadsChanged();
 }
 
 /**
@@ -334,8 +351,6 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
   // — filtrat, cu RLS trivial — funcționa (verificat pe device: badge-ul se aprindea
   // doar pentru canal). Filtrul `in.(...)` readuce livrarea pe tiparul care merge.
   const [convIdsKey, setConvIdsKey] = useState('');
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const channelName = useState(() => `unread-counts-${Math.random()}`)[0];
 
   const fetchCounts = useCallback(async () => {
     if (!userId) return;
@@ -393,6 +408,9 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
 
   useEffect(() => { fetchCounts(); }, [fetchCounts]);
 
+  // Citirile făcute pe ACEST device sting badge-ul imediat — vezi lib/read-events.
+  useEffect(() => onReadsChanged(fetchCounts), [fetchCounts]);
+
   // Plasă de siguranță: evenimentele Realtime ratate cât timp aplicația a stat în
   // fundal nu mai pot fi „prinse" — recalculăm la revenirea în prim-plan.
   useEffect(() => {
@@ -404,6 +422,13 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
 
   useEffect(() => {
     if (!userId) return;
+    // Nume UNIC per (RE)abonare, nu per instanță de hook: efectul se re-execută la
+    // fiecare schimbare a convIdsKey (cel puțin o dată, '' → ids reale), iar
+    // recrearea unui canal cu ACELAȘI topic imediat după removeChannel (teardown
+    // asincron) poate întoarce canalul vechi — abonarea moare tăcut și badge-ul
+    // nu se mai actualizează live (bulina nu dispărea după citire, pe Android).
+    // Același motiv pentru care useMessages/useReadCursor au nume per abonare.
+    const channelName = `unread-counts:${Math.random()}`;
     let channel = supabase.channel(channelName);
     if (convIdsKey) {
       const filter = `conversation_id=in.(${convIdsKey})`;
@@ -427,7 +452,7 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [userId, fetchCounts, channelName, convIdsKey]);
+  }, [userId, fetchCounts, convIdsKey]);
 
   return { counts, refresh: fetchCounts };
 }

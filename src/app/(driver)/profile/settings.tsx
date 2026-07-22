@@ -6,6 +6,7 @@ export default function Settings() {
       editPath="/(driver)/profile/edit"
       backPath="/(driver)/profile"
       deletePath="/(driver)/profile/delete-account"
+      blockedPath="/(driver)/profile/blocked"
     />
   );
 }

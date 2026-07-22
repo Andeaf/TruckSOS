@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { Alert, FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -29,7 +29,12 @@ export default function AdminReports() {
   const router = useRouter();
   const [filter, setFilter] = useState<ReportStatus | 'all'>('pending');
   const [reports, setReports] = useState<AdminReport[]>([]);
-  const [context, setContext] = useState<AdminContextMessage[] | null>(null);
+  // F18.6: pe lângă mesaje ținem și id-ul mesajului RAPORTAT — cu fereastra 25+25
+  // el nu mai e reperabil vizual fără evidențiere + scroll pe poziție.
+  const [context, setContext] = useState<{
+    messages: AdminContextMessage[];
+    reportedId: string;
+  } | null>(null);
 
   const load = useCallback(
     (f: ReportStatus | 'all') => {
@@ -71,7 +76,7 @@ export default function AdminReports() {
     if (!r.message_id || !r.message_table) return;
     fetchReportContext(r.message_table, r.message_id).then(({ data, error }) => {
       if (error) Alert.alert(t('admin.common.error'), error);
-      else setContext(data);
+      else setContext({ messages: data, reportedId: r.message_id! });
     });
   }
 
@@ -123,7 +128,7 @@ export default function AdminReports() {
         )}
       />
 
-      <ContextModal messages={context} onClose={() => setContext(null)} />
+      <ContextModal context={context} onClose={() => setContext(null)} />
     </ThemedView>
   );
 }
@@ -206,36 +211,59 @@ function ActionBtn({ label, onPress, danger }: { label: string; onPress: () => v
 }
 
 function ContextModal({
-  messages,
+  context,
   onClose,
 }: {
-  messages: AdminContextMessage[] | null;
+  context: { messages: AdminContextMessage[]; reportedId: string } | null;
   onClose: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
+  // F18.6: fereastra e acum 25+25 → lista devine scrollabilă, mesajul raportat e
+  // evidențiat și scroll-ul pornește centrat pe el (onLayout ne dă y-ul lui).
+  const scrollRef = useRef<ScrollView>(null);
+  const messages = context?.messages ?? null;
   return (
-    <Modal visible={messages !== null} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={context !== null} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={[styles.modal, { backgroundColor: theme.background }]} onPress={() => {}}>
           <ThemedText type="subtitle" style={styles.modalTitle}>
             {t('admin.reports.contextTitle')}
           </ThemedText>
           {messages && messages.length > 0 ? (
-            messages.map((m) => (
-              <View key={m.id} style={[styles.ctxRow, { borderColor: theme.backgroundElement }]}>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {new Date(m.created_at).toLocaleTimeString(LOCALE_MAP[i18n.language] ?? 'ro-RO')}
-                </ThemedText>
-                <ThemedText>
-                  {m.deleted_at
-                    ? `[${t('chat.deletedMessage')}]`
-                    : m.image_path
-                      ? `[${t('chat.photo')}]`
-                      : m.content}
-                </ThemedText>
-              </View>
-            ))
+            <ScrollView ref={scrollRef} style={styles.ctxScroll}>
+              {messages.map((m) => {
+                const isReported = m.id === context?.reportedId;
+                return (
+                  <View
+                    key={m.id}
+                    onLayout={
+                      isReported
+                        ? (e) => {
+                            const y = e.nativeEvent.layout.y;
+                            scrollRef.current?.scrollTo({ y: Math.max(y - 120, 0), animated: false });
+                          }
+                        : undefined
+                    }
+                    style={[
+                      styles.ctxRow,
+                      { borderColor: theme.backgroundElement },
+                      isReported && styles.ctxRowReported,
+                    ]}>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {new Date(m.created_at).toLocaleTimeString(LOCALE_MAP[i18n.language] ?? 'ro-RO')}
+                    </ThemedText>
+                    <ThemedText>
+                      {m.deleted_at
+                        ? `[${t('chat.deletedMessage')}]`
+                        : m.image_path
+                          ? `[${t('chat.photo')}]`
+                          : m.content}
+                    </ThemedText>
+                  </View>
+                );
+              })}
+            </ScrollView>
           ) : (
             <ThemedText themeColor="textSecondary">{t('admin.reports.contextEmpty')}</ThemedText>
           )}
@@ -265,5 +293,13 @@ const styles = StyleSheet.create({
   modal: { borderRadius: Radius.card, padding: Spacing.four, gap: Spacing.two, maxHeight: '80%' },
   modalTitle: { marginBottom: Spacing.two },
   ctxRow: { gap: 2, paddingVertical: Spacing.two, borderBottomWidth: StyleSheet.hairlineWidth },
+  ctxScroll: { flexGrow: 0 },
+  // Evidențierea mesajului raportat: tentă indigo (accentul admin) + bară laterală.
+  ctxRowReported: {
+    backgroundColor: '#6366f11A',
+    borderLeftWidth: 3,
+    borderLeftColor: '#6366f1',
+    paddingLeft: Spacing.two,
+  },
   closeBtn: { alignSelf: 'flex-end', marginTop: Spacing.two, padding: Spacing.two },
 });

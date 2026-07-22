@@ -27,6 +27,9 @@ interface MessageActionSheetProps<M extends ChatMessageBase> {
   onEdit?: (m: M) => void;
   onDelete?: (m: M) => void;
   onReport?: (m: M) => void;
+  /** Faza 18: blochează expeditorul. Ascuns dacă expeditorul e deja blocat. */
+  onBlock?: (m: M) => void;
+  senderBlocked?: boolean;
 }
 
 export function MessageActionSheet<M extends ChatMessageBase>({
@@ -39,6 +42,8 @@ export function MessageActionSheet<M extends ChatMessageBase>({
   onEdit,
   onDelete,
   onReport,
+  onBlock,
+  senderBlocked,
 }: MessageActionSheetProps<M>) {
   const { t } = useTranslation();
 
@@ -70,6 +75,14 @@ export function MessageActionSheet<M extends ChatMessageBase>({
         icon: 'flag',
         destructive: true,
         onPress: () => onReport(message),
+      });
+    }
+    if (onBlock && !isMe && !senderBlocked) {
+      actions.push({
+        label: t('block.action'),
+        icon: 'block',
+        destructive: true,
+        onPress: () => onBlock(message),
       });
     }
   }

@@ -154,7 +154,13 @@
       "mechanicTitle": "Mecanic",
       "adminTitle": "Administrator",
       "mechanicDescription": "Vezi anunțuri de la transportatori și oferă ajutor tehnic",
-      "loading": "Se incarca..."
+      "loading": "Se incarca...",
+      "detailsTitle": "Încă un pas",
+      "detailsSubtitleDriver": "Completează numărul de telefon — mecanicul ales te poate suna direct la nevoie.",
+      "detailsSubtitleMechanic": "Completează datele tale de prestator — transportatorii le văd în profilul tău public.",
+      "mechanicFieldsHint": "Adresa și numărul TVA apar în profilul tău public și construiesc încredere.",
+      "changeRole": "Alege alt rol",
+      "continueButton": "Continuă"
     }
   },
   "driver": {
@@ -388,6 +394,24 @@
     "errorGeneric": "Raportul nu a putut fi trimis. Încearcă din nou.",
     "alreadyReported": "Ai raportat deja acest mesaj."
   },
+  "block": {
+    "action": "Blochează utilizatorul",
+    "unblockAction": "Deblochează utilizatorul",
+    "confirmTitle": "Blochezi acest utilizator?",
+    "confirmBody": "Nu vă veți mai putea trimite mesaje, iar anunțurile voastre nu vor mai fi vizibile între voi. Utilizatorul nu va fi notificat.",
+    "confirm": "Blochează",
+    "cancel": "Anulează",
+    "done": "Utilizator blocat",
+    "error": "Acțiunea nu a reușit. Încearcă din nou.",
+    "bannerText": "Ai blocat acest utilizator",
+    "unblock": "Deblochează",
+    "unblockConfirmTitle": "Deblochezi acest utilizator?",
+    "unblockConfirmBody": "Veți putea din nou să vă trimiteți mesaje și să vă vedeți anunțurile.",
+    "empty": "Nu ai blocat pe niciun utilizator.",
+    "blockedOn": "Blocat pe {{date}}",
+    "blockedByYouTitle": "Utilizator blocat",
+    "blockedByYou": "Ai blocat acest utilizator. Deblochează-l pentru a-l putea contacta."
+  },
   "channel": {
     "name": {
       "global": "Comunitate TruckSOS"
@@ -461,6 +485,18 @@
     "emailLabel": "Email de contact",
     "emailPlaceholder": "ex: nume@firma.ro",
     "emailHint": "Vizibil în profilul tău public, la fel ca specializarea.",
+    "addressLabel": "Adresă",
+    "addressLabelOptional": "Adresă (opțional)",
+    "addressPlaceholder": "ex: Str. Depoului 12, Suceava",
+    "addressHint": "Vizibilă în profilul tău public — informație de business.",
+    "vatLabel": "Număr TVA / CUI",
+    "vatLabelOptional": "Număr TVA / CUI (opțional)",
+    "vatPlaceholder": "ex: RO12345678",
+    "errorPhoneRequired": "Numărul de telefon este obligatoriu.",
+    "errorPhoneInvalid": "Numărul de telefon nu pare valid.",
+    "errorAddressRequired": "Adresa este obligatorie pentru mecanici.",
+    "errorVatRequired": "Numărul TVA / CUI este obligatoriu pentru mecanici.",
+    "errorVatInvalid": "Numărul TVA / CUI nu pare valid.",
     "errorEmailInvalid": "Adresa de email nu este validă.",
     "emptyField": "Necompletat",
     "savedSuccess": "Profilul a fost salvat.",
@@ -590,6 +626,8 @@
     "positionLoading": "Se caută…",
     "positionError": "Poziția nu a putut fi setată.",
     "radiusNeedsPosition": "Ai setat o rază, dar nu și poziția ta — până o setezi, nu primești notificări pentru anunțuri noi.",
+    "privacySection": "Confidențialitate",
+    "blockedUsers": "Utilizatori blocați",
     "deleteAccount": "Șterge contul",
     "deleteAccountScreen": {
       "title": "Șterge contul",
@@ -609,14 +647,93 @@
     }
   },
   "legal": {
-    "draftNotice": "Conținut în lucru — text provizoriu.",
     "terms": {
       "title": "Termeni și condiții",
-      "body": "TruckSOS pune în legătură transportatori de camion aflați în pană cu mecanici disponibili. Aplicația facilitează contactul; înțelegerile privind prețul, execuția reparației și plata se fac direct între transportator și mecanic. Ne rezervăm dreptul de a suspenda conturile care publică anunțuri false sau conținut abuziv."
+      "updated": "Ultima actualizare: 21 iulie 2026",
+      "sections": [
+        {
+          "heading": "1. Acceptarea termenilor",
+          "body": "Prin crearea unui cont și folosirea aplicației TruckSOS accepți acești termeni. Dacă nu ești de acord cu ei, te rugăm să nu folosești serviciul."
+        },
+        {
+          "heading": "2. Ce este TruckSOS",
+          "body": "TruckSOS pune în legătură transportatori de camioane aflate în pană cu mecanici disponibili. Aplicația facilitează doar contactul: prețul, execuția lucrării și plata se stabilesc direct între transportator și mecanic. TruckSOS nu este parte în contractul dintre ei și nu garantează calitatea, disponibilitatea sau rezultatul serviciilor prestate."
+        },
+        {
+          "heading": "3. Contul tău",
+          "body": "Îți creezi contul cu date reale și îl folosești personal. Ești responsabil de păstrarea în siguranță a datelor de autentificare și de tot ce se întâmplă din contul tău. Un cont corespunde unei singure persoane sau firme."
+        },
+        {
+          "heading": "4. Conținutul tău",
+          "body": "Rămâi proprietarul conținutului pe care îl publici (anunțuri, poze, mesaje, evaluări). Ne acorzi o licență limitată de a-l stoca și afișa în aplicație, strict pentru funcționarea serviciului. Sunt interzise conținutul ilegal, înșelător sau ofensator, anunțurile false și spam-ul."
+        },
+        {
+          "heading": "5. Conduită și moderare",
+          "body": "Poți raporta conținut sau utilizatori și poți bloca orice utilizator. Moderarea este reactivă: analizăm rapoartele primite și putem șterge conținut sau suspenda, temporar ori permanent, conturile care încalcă acești termeni."
+        },
+        {
+          "heading": "6. Limitarea răspunderii",
+          "body": "Serviciul este oferit „ca atare\", fără garanții. În limitele permise de lege, TruckSOS nu răspunde pentru pagube rezultate din relația dintre transportator și mecanic, din indisponibilitatea temporară a serviciului sau din conținutul publicat de utilizatori."
+        },
+        {
+          "heading": "7. Încetarea",
+          "body": "Îți poți șterge contul oricând, direct din aplicație (Profil → Setări → Șterge contul) sau prin e-mail. Ne rezervăm dreptul de a suspenda conturile care încalcă acești termeni."
+        },
+        {
+          "heading": "8. Datele tale",
+          "body": "Prelucrarea datelor personale este descrisă în Politica de confidențialitate, care face parte din acești termeni."
+        },
+        {
+          "heading": "9. Legea aplicabilă și contact",
+          "body": "Acești termeni sunt guvernați de legea română. Pentru orice întrebare ne poți scrie la trucksos.support@gmail.com."
+        }
+      ]
     },
     "privacy": {
       "title": "Politica de confidențialitate",
-      "body": "Colectăm datele de cont (nume, e-mail, telefon, rol) și conținutul pe care îl publici (anunțuri, poze, mesaje, evaluări). Numărul de telefon este vizibil doar mecanicului cu care ai o conversație deschisă. Poza de profil este vizibilă celorlalți utilizatori autentificați. Datele se păstrează cât timp contul este activ."
+      "updated": "Ultima actualizare: 21 iulie 2026",
+      "sections": [
+        {
+          "heading": "1. Cine suntem",
+          "body": "TruckSOS este o aplicație mobilă care pune în legătură transportatori de camioane aflate în pană cu mecanici disponibili. Operatorul datelor este dezvoltatorul aplicației TruckSOS; ne poți contacta oricând la trucksos.support@gmail.com."
+        },
+        {
+          "heading": "2. Ce date colectăm",
+          "body": "Date de cont: adresa de e-mail și parola (parola este gestionată criptat de furnizorul de autentificare; nu o vedem niciodată). Date de profil: nume, rol, număr de telefon, firmă, e-mail de contact, adresă, număr TVA/CUI, specializare, zonă de activitate, poză de profil și limba aleasă. Conținut publicat: anunțuri de depanare (descriere, locație, detalii camion, număr de înmatriculare, poze și — doar dacă alegi să o atașezi — poziția GPS), mesaje private, mesaje în canalul public, evaluări și rapoarte. Date tehnice: token-ul de notificări push al dispozitivului și, la mecanici, poziția de referință dacă e setată pentru filtrul de rază."
+        },
+        {
+          "heading": "3. Cine vede ce",
+          "body": "Numărul de telefon NU este public: îl vede doar utilizatorul cu care ai o conversație deschisă. Numele, poza de profil, firma și e-mailul de contact sunt vizibile utilizatorilor autentificați. Adresa și numărul TVA ale mecanicilor sunt afișate în profilul lor public, ca informații de prestator. Mesajele private se văd doar de participanții conversației; mesajele din canalul public se văd de toți utilizatorii autentificați. Anunțurile deschise sunt vizibile mecanicilor."
+        },
+        {
+          "heading": "4. Unde sunt stocate datele",
+          "body": "Datele sunt stocate pe infrastructura Supabase, în Uniunea Europeană (Irlanda, regiunea AWS eu-west-1). Subprocesatori: Supabase (bază de date, autentificare, stocare fișiere), Expo (livrarea notificărilor push) și Google (afișarea hărților pe Android)."
+        },
+        {
+          "heading": "5. Moderare și acces administrativ",
+          "body": "Poți raporta mesaje sau utilizatori și poți bloca orice utilizator. Administratorii NU au acces general la conversațiile tale private: pot vedea doar o fereastră limitată de mesaje din jurul unui mesaj raportat, iar fiecare astfel de acces este înregistrat într-un jurnal de audit. Conturile care încalcă regulile pot fi suspendate."
+        },
+        {
+          "heading": "6. Cât păstrăm datele și cum îți ștergi contul",
+          "body": "Datele se păstrează cât timp contul tău este activ. Îți poți șterge contul direct din aplicație (Profil → Setări → Șterge contul) sau prin e-mail; ștergerea este imediată și ireversibilă. Mesajele text trimise în conversațiile altora rămân vizibile anonimizat, marcate ca provenind de la un utilizator șters — restul datelor (profil, anunțuri, poze, evaluări, favorite) se șterg definitiv."
+        },
+        {
+          "heading": "7. Temeiurile legale",
+          "body": "Prelucrăm datele pentru executarea contractului (furnizarea serviciului oferit de aplicație) și în interes legitim (moderare, siguranța utilizatorilor, prevenirea abuzurilor)."
+        },
+        {
+          "heading": "8. Drepturile tale",
+          "body": "Ai dreptul de acces, rectificare (direct din aplicație), ștergere, restricționare, opoziție și portabilitate. Pentru orice cerere scrie-ne la trucksos.support@gmail.com. Poți depune oricând o plângere la autoritatea de supraveghere — în România, ANSPDCP (www.dataprotection.ro)."
+        },
+        {
+          "heading": "9. Cui se adresează serviciul",
+          "body": "TruckSOS este destinat profesioniștilor din transportul rutier. Serviciul nu se adresează minorilor."
+        },
+        {
+          "heading": "10. Modificări",
+          "body": "Putem actualiza această politică; la schimbări importante te vom anunța în aplicație. Data ultimei actualizări este afișată mai sus."
+        }
+      ]
     }
   }
 }

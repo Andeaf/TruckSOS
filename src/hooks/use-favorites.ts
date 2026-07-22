@@ -1,7 +1,8 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
+import { useBlocked } from '@/hooks/use-blocked';
 import type { MechanicSearchResult } from '@/hooks/use-mechanic-search';
 
 /**
@@ -14,6 +15,9 @@ type FavoriteRow = { mechanic_id: string; mechanic: MechanicSearchResult | null 
 
 export function useFavorites() {
   const { session } = useAuth();
+  // Faza 18: mecanicii blocați (de mine) nu apar în lista de favoriți — simetric cu
+  // dispariția lor din search_mechanics (acolo filtrul e server-side).
+  const { blockedIds } = useBlocked();
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [favorites, setFavorites] = useState<MechanicSearchResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,5 +66,10 @@ export function useFavorites() {
     [session, favoriteIds, refresh]
   );
 
-  return { favoriteIds, favorites, loading, toggleFavorite, refresh };
+  const visibleFavorites = useMemo(
+    () => favorites.filter((m) => !blockedIds.has(m.id)),
+    [favorites, blockedIds]
+  );
+
+  return { favoriteIds, favorites: visibleFavorites, loading, toggleFavorite, refresh };
 }

@@ -32,6 +32,7 @@ import { HeaderText, ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
+import { useBlocked } from '@/hooks/use-blocked';
 import { useTheme } from '@/hooks/use-theme';
 import { useSignedUrls } from '@/hooks/use-signed-urls';
 import { MAX_PHOTOS, pickFromCamera, pickFromLibrary, type PickedImage } from '@/lib/media';
@@ -352,6 +353,7 @@ export function ChatScreen<M extends ChatMessageBase>({
 }: ChatScreenProps<M>) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const { blockedIds, block, unblock } = useBlocked();
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -400,6 +402,36 @@ export function ChatScreen<M extends ChatMessageBase>({
     [t],
   );
   const hideToast = useCallback(() => setToast(null), []);
+
+  // Blocarea (Faza 18): confirmare + RPC; efectele server-side (îngheț, feed) sunt
+  // instant, iar în chatul global mesajele expeditorului dispar prin filtrul din hook.
+  const handleBlock = useCallback(
+    (m: M) => {
+      Alert.alert(t('block.confirmTitle'), t('block.confirmBody'), [
+        { text: t('block.cancel'), style: 'cancel' },
+        {
+          text: t('block.confirm'),
+          style: 'destructive',
+          onPress: async () => {
+            const err = await block(m.sender_id);
+            setToast(err ? t('block.error') : t('block.done'));
+          },
+        },
+      ]);
+    },
+    [t, block],
+  );
+
+  // Doar blockerul își vede starea (propriile blocări) — pentru chat 1-la-1 înghețăm
+  // compozitorul cu banner + Deblochează. Blocatul nu primește niciun indicator.
+  const peerBlocked = !!headerUserId && blockedIds.has(headerUserId);
+  const handleUnblockPeer = useCallback(() => {
+    if (!headerUserId) return;
+    Alert.alert(t('block.unblockConfirmTitle'), t('block.unblockConfirmBody'), [
+      { text: t('block.cancel'), style: 'cancel' },
+      { text: t('block.unblock'), onPress: () => unblock(headerUserId) },
+    ]);
+  }, [t, unblock, headerUserId]);
 
   // Confirmarea de ștergere e centralizată aici (nu duplicată în cele 4 ecrane).
   const handleDelete = useCallback(
@@ -653,6 +685,24 @@ export function ChatScreen<M extends ChatMessageBase>({
           </View>
         ) : null}
 
+        {peerBlocked ? (
+          // Compozitor înghețat (doar la blocker): fără input, cu ieșire directă din blocare.
+          <View
+            style={[
+              styles.blockedBar,
+              { backgroundColor: theme.background, borderTopColor: theme.backgroundElement },
+            ]}>
+            <MaterialIcons name="block" size={16} color={theme.textSecondary} />
+            <Text style={[styles.blockedBarText, { color: theme.textSecondary }]}>
+              {t('block.bannerText')}
+            </Text>
+            <Pressable onPress={handleUnblockPeer} hitSlop={8}>
+              <Text style={[styles.blockedBarAction, { color: accentColor }]}>
+                {t('block.unblock')}
+              </Text>
+            </Pressable>
+          </View>
+        ) : (
         <View
           style={[
             styles.inputBar,
@@ -709,6 +759,7 @@ export function ChatScreen<M extends ChatMessageBase>({
             )}
           </Pressable>
         </View>
+        )}
       </KeyboardAvoidingView>
 
       {viewerAt !== null ? (
@@ -731,6 +782,8 @@ export function ChatScreen<M extends ChatMessageBase>({
         onEdit={onEditMessage ? enterEditMode : undefined}
         onDelete={onDeleteMessage ? handleDelete : undefined}
         onReport={messageTable ? setReportTarget : undefined}
+        onBlock={handleBlock}
+        senderBlocked={menuMessage ? blockedIds.has(menuMessage.sender_id) : false}
       />
 
       {reportTarget && messageTable ? (
@@ -852,6 +905,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  blockedBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.three,
+    borderTopWidth: 1,
+  },
+  blockedBarText: { flex: 1, fontSize: 13 },
+  blockedBarAction: { fontSize: 14, fontWeight: '700' },
   resolvedBanner: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -85,7 +85,10 @@ export async function registerPushToken(userId: string): Promise<string | null> 
     // NU poate muta un token de pe alt cont (RLS UPDATE cere user_id = auth.uid() pe
     // rândul VECHI) → tokenul ar rămâne legat de contul precedent și notificările ar
     // ajunge pe dispozitivul greșit. Vezi 20260715_faza14_fix_push_token_claim.sql.
-    await supabase.rpc('claim_push_token', { p_token: token } as never);
+    // Supabase NU aruncă la eșec (întoarce {error}) — netratat, tokenul ar părea
+    // înregistrat deși n-a intrat în DB (bug găsit 22 iul: RPC-ul lipsea din Studio).
+    const { error } = await supabase.rpc('claim_push_token', { p_token: token } as never);
+    if (error) return null;
 
     return token;
   } catch {

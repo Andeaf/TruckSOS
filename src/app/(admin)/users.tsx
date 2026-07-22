@@ -6,6 +6,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
@@ -20,6 +21,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
+  adminUpdateProfile,
   banUser,
   fetchUserDetail,
   searchUsers,
@@ -28,6 +30,7 @@ import {
   type AdminUserRow,
 } from '@/hooks/use-admin';
 import { isBanned } from '@/lib/ban';
+import { isValidPhone, isValidVat, normalizePhone, normalizeVat } from '@/lib/profile-validation';
 
 /** Locale explicit: altfel formatul urmează regiunea dispozitivului, nu limba aplicației. */
 const LOCALE_MAP: Record<string, string> = { ro: 'ro-RO', en: 'en-GB', de: 'de-DE' };
@@ -154,6 +157,7 @@ function UserDetailModal({
   const { t, i18n } = useTranslation();
   const theme = useTheme();
   const [banOpen, setBanOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const banned = isBanned(detail);
 
@@ -190,11 +194,22 @@ function UserDetailModal({
               <Field label={t('admin.users.applications')} value={String(detail.applications_count)} />
               <Field label={t('admin.users.reportsReceived')} value={String(detail.reports_received)} />
               <Field label={t('admin.users.reportsMade')} value={String(detail.reports_made)} />
+              <Field label={t('profile.phoneLabel')} value={detail.phone} />
+              <Field label={t('profile.addressLabel')} value={detail.address} />
+              <Field label={t('profile.vatLabel')} value={detail.vat_number} />
               {banned ? (
                 <Field label={t('admin.users.banReasonLabel')} value={detail.ban_reason} highlight />
               ) : null}
 
               <View style={styles.detailActions}>
+                {/* F18.5: editarea datelor de profil (whitelist server-side). Nu pe conturi șterse. */}
+                {detail.deleted_at ? null : (
+                  <Button
+                    title={t('profile.editTitle')}
+                    onPress={() => setEditOpen(true)}
+                    variant="secondary"
+                  />
+                )}
                 {banned ? (
                   <Button title={t('admin.users.unban')} onPress={doUnban} variant="secondary" />
                 ) : detail.deleted_at ? null : (
@@ -202,6 +217,16 @@ function UserDetailModal({
                 )}
                 <Button title={t('admin.common.close')} onPress={onClose} variant="secondary" />
               </View>
+
+              <EditProfileModal
+                visible={editOpen}
+                detail={detail}
+                onClose={() => setEditOpen(false)}
+                onDone={() => {
+                  setEditOpen(false);
+                  onChanged();
+                }}
+              />
 
               <BanModal
                 visible={banOpen}
@@ -325,6 +350,164 @@ function BanModal({
   );
 }
 
+/**
+ * F18.5: formularul admin de editare a profilului. Aceleași validări ca în
+ * formularele utilizatorului (profile-validation) — inclusiv obligativitatea pe
+ * rol; whitelist-ul e impus ORICUM server-side (admin_update_profile respinge
+ * zgomotos orice cheie nepermisă), formularul doar nu-i dă ocazia.
+ */
+function EditProfileModal({
+  visible,
+  detail,
+  onClose,
+  onDone,
+}: {
+  visible: boolean;
+  detail: AdminUserDetail;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const isMechanic = detail.role === 'mechanic';
+  const [fullName, setFullName] = useState(detail.full_name ?? '');
+  const [phone, setPhone] = useState(detail.phone ?? '');
+  const [address, setAddress] = useState(detail.address ?? '');
+  const [vatNumber, setVatNumber] = useState(detail.vat_number ?? '');
+  const [companyName, setCompanyName] = useState(detail.company_name ?? '');
+  const [contactEmail, setContactEmail] = useState(detail.contact_email ?? '');
+  const [specialization, setSpecialization] = useState(detail.specialization ?? '');
+  const [activityZone, setActivityZone] = useState(detail.activity_zone ?? '');
+  const [saving, setSaving] = useState(false);
+
+  function submit() {
+    if (!fullName.trim()) {
+      Alert.alert(t('profile.errorNameRequired'));
+      return;
+    }
+    if (!phone.trim()) {
+      Alert.alert(t('profile.errorPhoneRequired'));
+      return;
+    }
+    if (!isValidPhone(phone)) {
+      Alert.alert(t('profile.errorPhoneInvalid'));
+      return;
+    }
+    const vat = normalizeVat(vatNumber);
+    if (isMechanic && !address.trim()) {
+      Alert.alert(t('profile.errorAddressRequired'));
+      return;
+    }
+    if (isMechanic && !vat) {
+      Alert.alert(t('profile.errorVatRequired'));
+      return;
+    }
+    if (vat && !isValidVat(vatNumber)) {
+      Alert.alert(t('profile.errorVatInvalid'));
+      return;
+    }
+    const email = contactEmail.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      Alert.alert(t('profile.errorEmailInvalid'));
+      return;
+    }
+
+    setSaving(true);
+    adminUpdateProfile(detail.id, {
+      full_name: fullName.trim(),
+      phone: normalizePhone(phone),
+      address: address.trim() || null,
+      vat_number: vat || null,
+      company_name: companyName.trim() || null,
+      contact_email: email || null,
+      ...(isMechanic
+        ? {
+            specialization: specialization.trim() || null,
+            activity_zone: activityZone.trim() || null,
+          }
+        : {}),
+    }).then((err) => {
+      setSaving(false);
+      if (err) Alert.alert(t('admin.common.error'), err);
+      else onDone();
+    });
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      {/* KAV la rădăcina Modalului, ca la BanModal (PLAN_FAZA17.md K3). */}
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <Pressable style={styles.backdrop} onPress={onClose}>
+          <Pressable style={[styles.modal, { backgroundColor: theme.background }]} onPress={() => {}}>
+            <ThemedText type="subtitle" style={styles.modalName}>
+              {t('profile.editTitle')}
+            </ThemedText>
+            <ScrollView
+              contentContainerStyle={styles.editForm}
+              keyboardShouldPersistTaps="handled">
+              <Input label={t('profile.nameLabel')} value={fullName} onChangeText={setFullName} />
+              <Input
+                label={t('profile.phoneLabel')}
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+              />
+              <Input
+                label={isMechanic ? t('profile.addressLabel') : t('profile.addressLabelOptional')}
+                value={address}
+                onChangeText={setAddress}
+                autoCapitalize="sentences"
+              />
+              <Input
+                label={isMechanic ? t('profile.vatLabel') : t('profile.vatLabelOptional')}
+                value={vatNumber}
+                onChangeText={setVatNumber}
+                autoCapitalize="characters"
+                autoCorrect={false}
+              />
+              <Input
+                label={t('profile.companyLabel')}
+                value={companyName}
+                onChangeText={setCompanyName}
+                autoCapitalize="words"
+              />
+              <Input
+                label={t('profile.emailLabel')}
+                value={contactEmail}
+                onChangeText={setContactEmail}
+                keyboardType="email-address"
+                autoCorrect={false}
+              />
+              {isMechanic ? (
+                <>
+                  <Input
+                    label={t('profile.specializationLabel')}
+                    value={specialization}
+                    onChangeText={setSpecialization}
+                    autoCapitalize="sentences"
+                  />
+                  <Input
+                    label={t('profile.activityZoneLabel')}
+                    value={activityZone}
+                    onChangeText={setActivityZone}
+                    autoCapitalize="sentences"
+                  />
+                </>
+              ) : null}
+            </ScrollView>
+            <Button title={t('profile.saveButton')} onPress={submit} loading={saving} />
+            <Pressable onPress={onClose} style={styles.closeBtn}>
+              <ThemedText style={{ color: '#6366f1' }}>{t('admin.common.cancel')}</ThemedText>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
 const styles = StyleSheet.create({
   searchRow: { paddingHorizontal: Spacing.three, paddingTop: Spacing.three, paddingBottom: Spacing.two },
   list: { padding: Spacing.three, gap: Spacing.two, flexGrow: 1 },
@@ -348,4 +531,5 @@ const styles = StyleSheet.create({
   durations: { flexDirection: 'row', gap: Spacing.two, flexWrap: 'wrap' },
   chip: { paddingVertical: Spacing.one, paddingHorizontal: Spacing.three, borderRadius: Radius.badge, borderWidth: 1 },
   closeBtn: { alignSelf: 'center', marginTop: Spacing.two, padding: Spacing.two },
+  editForm: { gap: Spacing.two, paddingBottom: Spacing.two },
 });

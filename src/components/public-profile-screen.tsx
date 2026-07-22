@@ -14,6 +14,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
+import { useBlocked } from '@/hooks/use-blocked';
 import { useTheme } from '@/hooks/use-theme';
 import { useSignedUrl } from '@/hooks/use-signed-urls';
 import { displayName, isDeletedUser } from '@/lib/display-name';
@@ -32,13 +33,13 @@ import type { Profile } from '@/types/database';
 
 type PublicProfile = Pick<
   Profile,
-  'full_name' | 'role' | 'avatar_path' | 'specialization' | 'activity_zone' | 'company_name' | 'contact_email' | 'rating_avg' | 'rating_count' | 'deleted_at'
+  'full_name' | 'role' | 'avatar_path' | 'specialization' | 'activity_zone' | 'company_name' | 'contact_email' | 'address' | 'vat_number' | 'rating_avg' | 'rating_count' | 'deleted_at'
 >;
 
 async function fetchPublicProfile(userId: string): Promise<PublicProfile | null> {
   const { data } = await supabase
     .from('profiles')
-    .select('full_name, role, avatar_path, specialization, activity_zone, company_name, contact_email, rating_avg, rating_count, deleted_at')
+    .select('full_name, role, avatar_path, specialization, activity_zone, company_name, contact_email, address, vat_number, rating_avg, rating_count, deleted_at')
     .eq('id', userId)
     .single();
   return (data as unknown as PublicProfile) ?? null;
@@ -56,8 +57,33 @@ export function PublicProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [reportVisible, setReportVisible] = useState(false);
   const avatarUrl = useSignedUrl(profile?.avatar_path);
+  const { blockedIds, block, unblock } = useBlocked();
+  const isBlocked = blockedIds.has(id);
   // Nu te poți raporta pe tine însuți — și nici un cont deja șters (nu mai are ce modera).
+  // Aceleași condiții valorează și pentru blocare.
   const canReport = !!session && session.user.id !== id && !isDeletedUser(profile);
+
+  // Blochează/Deblochează (Faza 18) — starea vine din propriile blocări (useBlocked).
+  const handleToggleBlock = useCallback(() => {
+    if (isBlocked) {
+      Alert.alert(t('block.unblockConfirmTitle'), t('block.unblockConfirmBody'), [
+        { text: t('block.cancel'), style: 'cancel' },
+        { text: t('block.unblock'), onPress: () => unblock(id) },
+      ]);
+    } else {
+      Alert.alert(t('block.confirmTitle'), t('block.confirmBody'), [
+        { text: t('block.cancel'), style: 'cancel' },
+        {
+          text: t('block.confirm'),
+          style: 'destructive',
+          onPress: async () => {
+            const err = await block(id);
+            if (err) Alert.alert(t('block.error'));
+          },
+        },
+      ]);
+    }
+  }, [isBlocked, id, t, block, unblock]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -97,12 +123,24 @@ export function PublicProfileScreen() {
         onBack={goBack}
         right={
           canReport ? (
-            <Pressable
-              onPress={() => setReportVisible(true)}
-              hitSlop={12}
-              accessibilityLabel={t('report.title')}>
-              <MaterialIcons name="flag" size={24} color={theme.onHeader} />
-            </Pressable>
+            <View style={styles.headerActions}>
+              <Pressable
+                onPress={() => setReportVisible(true)}
+                hitSlop={12}
+                accessibilityLabel={t('report.title')}>
+                <MaterialIcons name="flag" size={24} color={theme.onHeader} />
+              </Pressable>
+              <Pressable
+                onPress={handleToggleBlock}
+                hitSlop={12}
+                accessibilityLabel={isBlocked ? t('block.unblockAction') : t('block.action')}>
+                <MaterialIcons
+                  name={isBlocked ? 'person-off' : 'block'}
+                  size={24}
+                  color={theme.onHeader}
+                />
+              </Pressable>
+            </View>
           ) : undefined
         }
       />
@@ -143,6 +181,27 @@ export function PublicProfileScreen() {
               </View>
               <ThemedText themeColor={profile.activity_zone ? undefined : 'textSecondary'}>
                 {profile.activity_zone || t('profile.emptyField')}
+              </ThemedText>
+            </ThemedView>
+
+            {/* Faza 18: adresă + TVA — publice DOAR la mecanici (informații de prestator). */}
+            <ThemedView type="backgroundElement" style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <MaterialIcons name="home-work" size={16} color="#208AEF" />
+                <ThemedText type="smallBold">{t('profile.addressLabel')}</ThemedText>
+              </View>
+              <ThemedText themeColor={profile.address ? undefined : 'textSecondary'}>
+                {profile.address || t('profile.emptyField')}
+              </ThemedText>
+            </ThemedView>
+
+            <ThemedView type="backgroundElement" style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <MaterialIcons name="receipt-long" size={16} color="#208AEF" />
+                <ThemedText type="smallBold">{t('profile.vatLabel')}</ThemedText>
+              </View>
+              <ThemedText themeColor={profile.vat_number ? undefined : 'textSecondary'}>
+                {profile.vat_number || t('profile.emptyField')}
               </ThemedText>
             </ThemedView>
           </>
@@ -192,4 +251,5 @@ const styles = StyleSheet.create({
   content: { padding: Spacing.four, gap: Spacing.three },
   section: { borderRadius: Radius.card, padding: Spacing.three, gap: Spacing.two },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
 });

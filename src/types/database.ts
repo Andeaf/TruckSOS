@@ -15,6 +15,10 @@ export interface Profile {
   company_name: string | null;
   /** Email de contact ales de utilizator (separat de auth.users.email). Public. */
   contact_email: string | null;
+  /** Faza 18: obligatorie aplicativ la mecanici (afișată public), opțională la șoferi. */
+  address: string | null;
+  /** Faza 18: TVA/CUI, normalizat uppercase fără spații. Aceleași reguli de rol ca address. */
+  vat_number: string | null;
   /** Path în bucketul `photos`: `avatars/{user_id}/{uuid}.jpg`. NULL = fallback pe inițiale. */
   avatar_path: string | null;
   /** Medie denormalizată (1 zecimală), întreținută de trigger. 0 = fără evaluări. */
@@ -266,6 +270,12 @@ export interface Database {
         Insert: { conversation_id: string; user_id: string };
         Update: never;
       };
+      blocked_users: {
+        Row: { blocker_id: string; blocked_id: string; created_at: string };
+        // Blocarea se face prin RPC-ul block_user (are efecte secundare); doar DELETE e direct.
+        Insert: never;
+        Update: never;
+      };
       message_reads: {
         Row: { conversation_id: string; user_id: string; last_read_at: string };
         Insert: { conversation_id: string; user_id: string; last_read_at?: string };
@@ -306,6 +316,10 @@ export interface Database {
       start_direct_conversation: {
         Args: { p_mechanic_id: string };
         Returns: string;
+      };
+      block_user: {
+        Args: { p_target: string };
+        Returns: void;
       };
       set_announcements_hidden: {
         /** `p_ids` null/absent = ascunde tot istoricul șoferului. */

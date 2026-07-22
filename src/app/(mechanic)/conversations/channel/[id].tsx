@@ -32,7 +32,9 @@ export default function MechanicChannelChatScreen() {
   }, [id]);
 
   useEffect(() => {
-    if (!loading) markChannelRead(id);
+    // Cursorul acoperă cel mai nou mesaj AFIȘAT (nu doar ceasul local) — vezi markChannelRead.
+    if (!loading) markChannelRead(id, messages[messages.length - 1]?.created_at ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length, loading, id]);
 
   if (!channel || !session) return <ThemedView style={{ flex: 1 }} />;

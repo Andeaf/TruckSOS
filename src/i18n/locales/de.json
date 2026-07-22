@@ -154,7 +154,13 @@
       "mechanicTitle": "Mechaniker",
       "adminTitle": "Administrator",
       "mechanicDescription": "Anzeigen von Transporteuren sehen und technische Hilfe anbieten",
-      "loading": "Lädt..."
+      "loading": "Lädt...",
+      "detailsTitle": "Noch ein Schritt",
+      "detailsSubtitleDriver": "Gib deine Telefonnummer an — der gewählte Mechaniker kann dich bei Bedarf direkt anrufen.",
+      "detailsSubtitleMechanic": "Gib deine Anbieterdaten an — Transporteure sehen sie auf deinem öffentlichen Profil.",
+      "mechanicFieldsHint": "Adresse und USt-IdNr. erscheinen auf deinem öffentlichen Profil und schaffen Vertrauen.",
+      "changeRole": "Andere Rolle wählen",
+      "continueButton": "Weiter"
     }
   },
   "driver": {
@@ -386,6 +392,24 @@
     "errorGeneric": "Die Meldung konnte nicht gesendet werden. Versuche es erneut.",
     "alreadyReported": "Du hast diese Nachricht bereits gemeldet."
   },
+  "block": {
+    "action": "Nutzer blockieren",
+    "unblockAction": "Blockierung aufheben",
+    "confirmTitle": "Diesen Nutzer blockieren?",
+    "confirmBody": "Ihr könnt euch keine Nachrichten mehr senden und eure Anzeigen sind füreinander nicht mehr sichtbar. Der Nutzer wird nicht benachrichtigt.",
+    "confirm": "Blockieren",
+    "cancel": "Abbrechen",
+    "done": "Nutzer blockiert",
+    "error": "Aktion fehlgeschlagen. Bitte erneut versuchen.",
+    "bannerText": "Du hast diesen Nutzer blockiert",
+    "unblock": "Blockierung aufheben",
+    "unblockConfirmTitle": "Blockierung dieses Nutzers aufheben?",
+    "unblockConfirmBody": "Ihr könnt euch wieder Nachrichten senden und eure Anzeigen gegenseitig sehen.",
+    "empty": "Du hast niemanden blockiert.",
+    "blockedOn": "Blockiert am {{date}}",
+    "blockedByYouTitle": "Nutzer blockiert",
+    "blockedByYou": "Du hast diesen Nutzer blockiert. Hebe die Blockierung auf, um Kontakt aufzunehmen."
+  },
   "channel": {
     "name": {
       "global": "TruckSOS Gemeinschaft"
@@ -424,6 +448,18 @@
     "emailLabel": "Kontakt-E-Mail",
     "emailPlaceholder": "z.B.: name@firma.de",
     "emailHint": "Auf deinem öffentlichen Profil sichtbar, wie die Spezialisierung.",
+    "addressLabel": "Adresse",
+    "addressLabelOptional": "Adresse (optional)",
+    "addressPlaceholder": "z. B. Depotstraße 12, Suceava",
+    "addressHint": "Auf deinem öffentlichen Profil sichtbar — Geschäftsinformation.",
+    "vatLabel": "USt-IdNr.",
+    "vatLabelOptional": "USt-IdNr. (optional)",
+    "vatPlaceholder": "z. B. DE123456789",
+    "errorPhoneRequired": "Die Telefonnummer ist erforderlich.",
+    "errorPhoneInvalid": "Die Telefonnummer scheint ungültig zu sein.",
+    "errorAddressRequired": "Die Adresse ist für Mechaniker erforderlich.",
+    "errorVatRequired": "Die USt-IdNr. ist für Mechaniker erforderlich.",
+    "errorVatInvalid": "Die USt-IdNr. scheint ungültig zu sein.",
     "errorEmailInvalid": "Die E-Mail-Adresse ist ungültig.",
     "emptyField": "Nicht angegeben",
     "savedSuccess": "Profil gespeichert.",
@@ -588,6 +624,8 @@
     "positionLoading": "Wird gesucht…",
     "positionError": "Der Standort konnte nicht festgelegt werden.",
     "radiusNeedsPosition": "Du hast einen Radius, aber keinen Standort festgelegt — bis dahin erhältst du keine Benachrichtigungen für neue Anzeigen.",
+    "privacySection": "Datenschutz",
+    "blockedUsers": "Blockierte Nutzer",
     "deleteAccount": "Konto löschen",
     "deleteAccountScreen": {
       "title": "Konto löschen",
@@ -607,14 +645,93 @@
     }
   },
   "legal": {
-    "draftNotice": "In Arbeit — vorläufiger Text.",
     "terms": {
       "title": "Nutzungsbedingungen",
-      "body": "TruckSOS verbindet liegengebliebene Transporteure mit verfügbaren Mechanikern. Die App vermittelt den Kontakt; Preis, Reparatur und Zahlung werden direkt zwischen Transporteur und Mechaniker vereinbart. Konten mit falschen Anzeigen oder missbräuchlichen Inhalten können gesperrt werden."
+      "updated": "Zuletzt aktualisiert: 21. Juli 2026",
+      "sections": [
+        {
+          "heading": "1. Annahme der Bedingungen",
+          "body": "Mit der Erstellung eines Kontos und der Nutzung der TruckSOS-App akzeptierst du diese Bedingungen. Wenn du nicht einverstanden bist, nutze den Dienst bitte nicht."
+        },
+        {
+          "heading": "2. Was TruckSOS ist",
+          "body": "TruckSOS verbindet Transporteure liegengebliebener Lkw mit verfügbaren Mechanikern. Die App vermittelt nur den Kontakt: Preis, Ausführung der Arbeit und Zahlung werden direkt zwischen Transporteur und Mechaniker vereinbart. TruckSOS ist nicht Partei ihres Vertrags und garantiert weder Qualität noch Verfügbarkeit oder Ergebnis der erbrachten Leistungen."
+        },
+        {
+          "heading": "3. Dein Konto",
+          "body": "Du erstellst dein Konto mit echten Daten und nutzt es persönlich. Du bist für die sichere Aufbewahrung deiner Zugangsdaten und für alles verantwortlich, was über dein Konto geschieht. Ein Konto entspricht einer Person oder Firma."
+        },
+        {
+          "heading": "4. Deine Inhalte",
+          "body": "Du bleibst Eigentümer der von dir veröffentlichten Inhalte (Anzeigen, Fotos, Nachrichten, Bewertungen). Du gewährst uns eine begrenzte Lizenz, sie in der App zu speichern und anzuzeigen, ausschließlich für den Betrieb des Dienstes. Illegale, irreführende oder beleidigende Inhalte, falsche Anzeigen und Spam sind verboten."
+        },
+        {
+          "heading": "5. Verhalten und Moderation",
+          "body": "Du kannst Inhalte oder Nutzer melden und jeden Nutzer blockieren. Die Moderation ist reaktiv: Wir prüfen eingehende Meldungen und können Inhalte entfernen oder Konten, die gegen diese Bedingungen verstoßen, vorübergehend oder dauerhaft sperren."
+        },
+        {
+          "heading": "6. Haftungsbeschränkung",
+          "body": "Der Dienst wird „wie besehen\" ohne Garantien bereitgestellt. Soweit gesetzlich zulässig, haftet TruckSOS nicht für Schäden aus der Beziehung zwischen Transporteur und Mechaniker, aus vorübergehender Nichtverfügbarkeit des Dienstes oder aus von Nutzern veröffentlichten Inhalten."
+        },
+        {
+          "heading": "7. Beendigung",
+          "body": "Du kannst dein Konto jederzeit löschen, direkt in der App (Profil → Einstellungen → Konto löschen) oder per E-Mail. Wir behalten uns vor, Konten zu sperren, die gegen diese Bedingungen verstoßen."
+        },
+        {
+          "heading": "8. Deine Daten",
+          "body": "Die Verarbeitung personenbezogener Daten ist in der Datenschutzerklärung beschrieben, die Teil dieser Bedingungen ist."
+        },
+        {
+          "heading": "9. Anwendbares Recht und Kontakt",
+          "body": "Diese Bedingungen unterliegen rumänischem Recht. Bei Fragen erreichst du uns unter trucksos.support@gmail.com."
+        }
+      ]
     },
     "privacy": {
       "title": "Datenschutzerklärung",
-      "body": "Wir erfassen Kontodaten (Name, E-Mail, Telefon, Rolle) und die von dir veröffentlichten Inhalte (Anzeigen, Fotos, Nachrichten, Bewertungen). Deine Telefonnummer sieht nur ein Mechaniker mit offener Konversation. Dein Profilfoto ist für andere angemeldete Nutzer sichtbar. Die Daten bleiben gespeichert, solange dein Konto aktiv ist."
+      "updated": "Zuletzt aktualisiert: 21. Juli 2026",
+      "sections": [
+        {
+          "heading": "1. Wer wir sind",
+          "body": "TruckSOS ist eine mobile App, die Transporteure liegengebliebener Lkw mit verfügbaren Mechanikern verbindet. Verantwortlicher für die Daten ist der Entwickler von TruckSOS; du erreichst uns jederzeit unter trucksos.support@gmail.com."
+        },
+        {
+          "heading": "2. Welche Daten wir erfassen",
+          "body": "Kontodaten: E-Mail-Adresse und Passwort (das Passwort wird von unserem Authentifizierungsanbieter verschlüsselt verwaltet; wir sehen es nie). Profildaten: Name, Rolle, Telefonnummer, Firma, Kontakt-E-Mail, Adresse, USt-IdNr., Spezialisierung, Einsatzgebiet, Profilfoto und gewählte Sprache. Veröffentlichte Inhalte: Pannen-Anzeigen (Beschreibung, Ort, Lkw-Details, Kennzeichen, Fotos und — nur wenn du sie anhängst — die GPS-Position), private Nachrichten, Nachrichten im öffentlichen Kanal, Bewertungen und Meldungen. Technische Daten: das Push-Token deines Geräts und bei Mechanikern die Referenzposition, falls für den Radiusfilter gesetzt."
+        },
+        {
+          "heading": "3. Wer was sieht",
+          "body": "Deine Telefonnummer ist NICHT öffentlich: Nur der Nutzer, mit dem du eine offene Konversation hast, sieht sie. Name, Profilfoto, Firma und Kontakt-E-Mail sind für angemeldete Nutzer sichtbar. Adresse und USt-IdNr. von Mechanikern werden als Anbieterinformation auf ihrem öffentlichen Profil angezeigt. Private Nachrichten sehen nur die Gesprächsteilnehmer; Nachrichten im öffentlichen Kanal alle angemeldeten Nutzer. Offene Anzeigen sind für Mechaniker sichtbar."
+        },
+        {
+          "heading": "4. Wo die Daten gespeichert werden",
+          "body": "Die Daten werden auf der Infrastruktur von Supabase gespeichert, in der Europäischen Union (Irland, AWS-Region eu-west-1). Unterauftragsverarbeiter: Supabase (Datenbank, Authentifizierung, Dateispeicher), Expo (Zustellung von Push-Benachrichtigungen) und Google (Kartendarstellung auf Android)."
+        },
+        {
+          "heading": "5. Moderation und administrativer Zugriff",
+          "body": "Du kannst Nachrichten oder Nutzer melden und jeden Nutzer blockieren. Administratoren haben KEINEN allgemeinen Zugriff auf deine privaten Konversationen: Sie sehen nur ein begrenztes Nachrichtenfenster um eine gemeldete Nachricht, und jeder solche Zugriff wird in einem Audit-Protokoll erfasst. Konten, die gegen die Regeln verstoßen, können gesperrt werden."
+        },
+        {
+          "heading": "6. Speicherdauer und Kontolöschung",
+          "body": "Die Daten bleiben gespeichert, solange dein Konto aktiv ist. Du kannst dein Konto direkt in der App löschen (Profil → Einstellungen → Konto löschen) oder per E-Mail; die Löschung ist sofortig und unwiderruflich. Textnachrichten in den Konversationen anderer bleiben anonymisiert sichtbar, markiert als von einem gelöschten Nutzer — alles andere (Profil, Anzeigen, Fotos, Bewertungen, Favoriten) wird endgültig gelöscht."
+        },
+        {
+          "heading": "7. Rechtsgrundlagen",
+          "body": "Wir verarbeiten Daten zur Vertragserfüllung (Bereitstellung des Dienstes der App) und auf Grundlage berechtigten Interesses (Moderation, Nutzersicherheit, Missbrauchsprävention)."
+        },
+        {
+          "heading": "8. Deine Rechte",
+          "body": "Du hast das Recht auf Auskunft, Berichtigung (direkt in der App), Löschung, Einschränkung, Widerspruch und Datenübertragbarkeit. Für Anfragen schreib uns an trucksos.support@gmail.com. Du kannst jederzeit Beschwerde bei deiner Aufsichtsbehörde einlegen — in Rumänien der ANSPDCP (www.dataprotection.ro)."
+        },
+        {
+          "heading": "9. An wen sich der Dienst richtet",
+          "body": "TruckSOS richtet sich an Profis im Straßentransport. Der Dienst richtet sich nicht an Minderjährige."
+        },
+        {
+          "heading": "10. Änderungen",
+          "body": "Wir können diese Erklärung aktualisieren; über wichtige Änderungen informieren wir dich in der App. Das Datum der letzten Aktualisierung steht oben."
+        }
+      ]
     }
   }
 }

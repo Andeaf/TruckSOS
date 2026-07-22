@@ -13,8 +13,11 @@ interface AuthContextValue {
   signIn: (email: string, password: string) => Promise<string | null>;
   signUp: (email: string, password: string, fullName: string) => Promise<string | null>;
   signOut: () => Promise<void>;
-  createProfile: (role: 'driver' | 'mechanic') => Promise<string | null>;
-  updateProfile: (updates: { full_name?: string; specialization?: string | null; activity_zone?: string | null; phone?: string | null; company_name?: string | null; contact_email?: string | null; avatar_path?: string | null; push_enabled?: boolean; notify_radius_km?: number | null; latitude?: number | null; longitude?: number | null; lang?: string }) => Promise<string | null>;
+  createProfile: (
+    role: 'driver' | 'mechanic',
+    details: { phone: string; address?: string | null; vat_number?: string | null }
+  ) => Promise<string | null>;
+  updateProfile: (updates: { full_name?: string; specialization?: string | null; activity_zone?: string | null; phone?: string | null; company_name?: string | null; contact_email?: string | null; address?: string | null; vat_number?: string | null; avatar_path?: string | null; push_enabled?: boolean; notify_radius_km?: number | null; latitude?: number | null; longitude?: number | null; lang?: string }) => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -117,6 +120,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     phone?: string | null;
     company_name?: string | null;
     contact_email?: string | null;
+    address?: string | null;
+    vat_number?: string | null;
     avatar_path?: string | null;
     push_enabled?: boolean;
     notify_radius_km?: number | null;
@@ -126,22 +131,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }): Promise<string | null> {
     const userId = session?.user.id;
     if (!userId) return i18n.t('common.noSession');
+    // Optimist: comutatoarele din Setări răspund instant, fără să aștepte serverul.
+    // Refetch-ul de după rămâne sursa adevărului — pe eroare readuce valorile reale
+    // (revert), pe succes doar confirmă ce s-a afișat deja.
+    setProfile((prev) => (prev ? ({ ...prev, ...updates } as Profile) : prev));
     const { error } = await supabase
       .from('profiles')
       .update(updates as never)
       .eq('id', userId);
-    if (!error) await fetchProfile(userId);
+    await fetchProfile(userId);
     return error?.message ?? null;
   }
 
-  async function createProfile(role: 'driver' | 'mechanic'): Promise<string | null> {
+  async function createProfile(
+    role: 'driver' | 'mechanic',
+    // Faza 18: telefonul e obligatoriu la AMBELE roluri încă de la crearea profilului;
+    // adresa + TVA vin doar de la mecanici (prestatori). Validate în role-select.
+    details: { phone: string; address?: string | null; vat_number?: string | null }
+  ): Promise<string | null> {
     const userId = session?.user.id;
     const fullName = (session?.user.user_metadata?.full_name as string) ?? i18n.t('common.defaultUser');
     if (!userId) return i18n.t('common.noSession');
 
-    const { error } = await supabase
-      .from('profiles')
-      .insert({ id: userId, full_name: fullName, role });
+    const { error } = await supabase.from('profiles').insert({
+      id: userId,
+      full_name: fullName,
+      role,
+      phone: details.phone,
+      address: details.address ?? null,
+      vat_number: details.vat_number ?? null,
+    });
 
     if (!error) await fetchProfile(userId);
     return error?.message ?? null;

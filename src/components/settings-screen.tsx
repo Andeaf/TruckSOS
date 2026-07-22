@@ -14,6 +14,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
 import { useSettings } from '@/hooks/use-settings';
 import { getCurrentCoords } from '@/lib/location';
+import { registerPushToken } from '@/lib/push';
 import type { LangPref, ThemePref } from '@/lib/preferences';
 
 /**
@@ -30,16 +31,18 @@ export function SettingsScreen({
   editPath,
   backPath,
   deletePath,
+  blockedPath,
 }: {
   editPath: string;
   backPath: string;
   deletePath: string;
+  blockedPath: string;
 }) {
   const { t } = useTranslation();
   const router = useRouter();
   const goBack = useBack(backPath);
   const { lang, setLang, theme, setTheme } = useSettings();
-  const { profile, updateProfile } = useAuth();
+  const { session, profile, updateProfile } = useAuth();
   const [sheet, setSheet] = useState<'lang' | 'theme' | 'radius' | null>(null);
   const [locating, setLocating] = useState(false);
 
@@ -122,7 +125,13 @@ export function SettingsScreen({
             icon="notifications"
             label={t('settings.pushEnabled')}
             value={profile?.push_enabled ?? true}
-            onValueChange={(next) => updateProfile({ push_enabled: next })}
+            onValueChange={(next) => {
+              updateProfile({ push_enabled: next });
+              // Pornirea comutatorului repară și un token lipsă (ex. permisiunea de
+              // notificări acordată ABIA DUPĂ login, din setările Android) — altfel
+              // înregistrarea rulează doar la pornirea aplicației. În Expo Go iese tăcut.
+              if (next && session) void registerPushToken(session.user.id);
+            }}
           />
 
           {/* Raza și poziția au sens doar pentru mecanic: el primește anunțurile noi. */}
@@ -155,6 +164,16 @@ export function SettingsScreen({
             {t('settings.radiusNeedsPosition')}
           </ThemedText>
         ) : null}
+
+        {/* Faza 18: gestionarea blocărilor — cerință Apple (Guideline 1.2 UGC). */}
+        <SectionLabel>{t('settings.privacySection')}</SectionLabel>
+        <RowGroup>
+          <ListRow
+            icon="block"
+            label={t('settings.blockedUsers')}
+            onPress={() => router.push(blockedPath as never)}
+          />
+        </RowGroup>
 
         <ThemedText themeColor="textSecondary" type="small" style={styles.version}>
           {t('settings.version', { version: Constants.expoConfig?.version ?? '—' })}

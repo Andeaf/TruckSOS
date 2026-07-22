@@ -6,6 +6,7 @@ export default function Settings() {
       editPath="/(mechanic)/profile/edit"
       backPath="/(mechanic)/profile"
       deletePath="/(mechanic)/profile/delete-account"
+      blockedPath="/(mechanic)/profile/blocked"
     />
   );
 }

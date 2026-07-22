@@ -40,6 +40,10 @@ export interface AdminUserDetail extends AdminUserRow {
   activity_zone: string | null;
   company_name: string | null;
   contact_email: string | null;
+  /** Faza 18.1: prezente în admin_user_detail (phone — necesar formularului F18.5). */
+  address: string | null;
+  vat_number: string | null;
+  phone: string | null;
   rating_avg: number;
   rating_count: number;
   ban_reason: string | null;
@@ -166,6 +170,22 @@ export function banUser(uid: string, reason: string, until: string | null) {
 
 export function unbanUser(uid: string) {
   return rpcVoid('admin_unban_user', { p_uid: uid });
+}
+
+/** Faza 18.5: câmpurile editabile de admin — whitelist-ul e impus și SERVER-side. */
+export interface AdminProfileFields {
+  full_name?: string;
+  phone?: string | null;
+  address?: string | null;
+  vat_number?: string | null;
+  specialization?: string | null;
+  activity_zone?: string | null;
+  company_name?: string | null;
+  contact_email?: string | null;
+}
+
+export function adminUpdateProfile(uid: string, fields: AdminProfileFields) {
+  return rpcVoid('admin_update_profile', { p_uid: uid, p_fields: fields });
 }
 
 // ── Conținut ─────────────────────────────────────────────────────────────────

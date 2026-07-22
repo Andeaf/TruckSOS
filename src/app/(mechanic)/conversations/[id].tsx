@@ -36,7 +36,9 @@ export default function MechanicChatScreen() {
   }, [id]);
 
   useEffect(() => {
-    if (!loading) markConversationRead(id);
+    // Cursorul acoperă cel mai nou mesaj AFIȘAT (nu doar ceasul local) — vezi markConversationRead.
+    if (!loading) markConversationRead(id, messages[messages.length - 1]?.created_at ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length, loading, id]);
 
   const announcementStatus = useAnnouncementStatus(

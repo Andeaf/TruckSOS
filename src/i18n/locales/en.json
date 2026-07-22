@@ -154,7 +154,13 @@
       "mechanicTitle": "Mechanic",
       "adminTitle": "Administrator",
       "mechanicDescription": "View announcements from carriers and offer technical assistance",
-      "loading": "Loading..."
+      "loading": "Loading...",
+      "detailsTitle": "One more step",
+      "detailsSubtitleDriver": "Add your phone number — the mechanic you choose can call you directly when needed.",
+      "detailsSubtitleMechanic": "Add your provider details — transporters see them on your public profile.",
+      "mechanicFieldsHint": "Your address and VAT number appear on your public profile and build trust.",
+      "changeRole": "Choose another role",
+      "continueButton": "Continue"
     }
   },
   "driver": {
@@ -386,6 +392,24 @@
     "errorGeneric": "The report couldn't be sent. Try again.",
     "alreadyReported": "You've already reported this message."
   },
+  "block": {
+    "action": "Block user",
+    "unblockAction": "Unblock user",
+    "confirmTitle": "Block this user?",
+    "confirmBody": "You will no longer be able to message each other, and your announcements will be hidden from each other. The user will not be notified.",
+    "confirm": "Block",
+    "cancel": "Cancel",
+    "done": "User blocked",
+    "error": "The action failed. Please try again.",
+    "bannerText": "You have blocked this user",
+    "unblock": "Unblock",
+    "unblockConfirmTitle": "Unblock this user?",
+    "unblockConfirmBody": "You will be able to message each other and see each other's announcements again.",
+    "empty": "You haven't blocked anyone.",
+    "blockedOn": "Blocked on {{date}}",
+    "blockedByYouTitle": "User blocked",
+    "blockedByYou": "You have blocked this user. Unblock them to get in touch."
+  },
   "channel": {
     "name": {
       "global": "TruckSOS Community"
@@ -424,6 +448,18 @@
     "emailLabel": "Contact email",
     "emailPlaceholder": "e.g.: name@company.com",
     "emailHint": "Visible on your public profile, like your specialisation.",
+    "addressLabel": "Address",
+    "addressLabelOptional": "Address (optional)",
+    "addressPlaceholder": "e.g. 12 Depot St, Suceava",
+    "addressHint": "Visible on your public profile — business information.",
+    "vatLabel": "VAT number",
+    "vatLabelOptional": "VAT number (optional)",
+    "vatPlaceholder": "e.g. RO12345678",
+    "errorPhoneRequired": "The phone number is required.",
+    "errorPhoneInvalid": "The phone number does not look valid.",
+    "errorAddressRequired": "The address is required for mechanics.",
+    "errorVatRequired": "The VAT number is required for mechanics.",
+    "errorVatInvalid": "The VAT number does not look valid.",
     "errorEmailInvalid": "The email address is not valid.",
     "emptyField": "Not set",
     "savedSuccess": "Profile saved.",
@@ -588,6 +624,8 @@
     "positionLoading": "Locating…",
     "positionError": "The position could not be set.",
     "radiusNeedsPosition": "You set a radius but not your position — until you do, you will not get notifications for new announcements.",
+    "privacySection": "Privacy",
+    "blockedUsers": "Blocked users",
     "deleteAccount": "Delete account",
     "deleteAccountScreen": {
       "title": "Delete account",
@@ -607,14 +645,93 @@
     }
   },
   "legal": {
-    "draftNotice": "Work in progress — placeholder text.",
     "terms": {
       "title": "Terms and conditions",
-      "body": "TruckSOS connects broken-down truck carriers with available mechanics. The app facilitates contact; price, repair and payment are agreed directly between carrier and mechanic. We may suspend accounts that post false listings or abusive content."
+      "updated": "Last updated: 21 July 2026",
+      "sections": [
+        {
+          "heading": "1. Accepting the terms",
+          "body": "By creating an account and using the TruckSOS app you accept these terms. If you do not agree with them, please do not use the service."
+        },
+        {
+          "heading": "2. What TruckSOS is",
+          "body": "TruckSOS connects carriers with broken-down trucks to available mechanics. The app only facilitates contact: the price, the work itself and the payment are agreed directly between carrier and mechanic. TruckSOS is not a party to their contract and does not guarantee the quality, availability or outcome of the services provided."
+        },
+        {
+          "heading": "3. Your account",
+          "body": "You create your account with real details and use it personally. You are responsible for keeping your credentials safe and for everything done from your account. One account corresponds to one person or company."
+        },
+        {
+          "heading": "4. Your content",
+          "body": "You remain the owner of the content you publish (announcements, photos, messages, reviews). You grant us a limited licence to store and display it in the app, strictly to operate the service. Illegal, misleading or offensive content, false announcements and spam are forbidden."
+        },
+        {
+          "heading": "5. Conduct and moderation",
+          "body": "You can report content or users and you can block any user. Moderation is reactive: we review incoming reports and may remove content or suspend, temporarily or permanently, accounts that break these terms."
+        },
+        {
+          "heading": "6. Limitation of liability",
+          "body": "The service is provided \"as is\", without warranties. To the extent permitted by law, TruckSOS is not liable for damages arising from the relationship between carrier and mechanic, from temporary unavailability of the service or from user-published content."
+        },
+        {
+          "heading": "7. Termination",
+          "body": "You can delete your account at any time, directly from the app (Profile → Settings → Delete account) or by email. We reserve the right to suspend accounts that break these terms."
+        },
+        {
+          "heading": "8. Your data",
+          "body": "How we process personal data is described in the Privacy policy, which is part of these terms."
+        },
+        {
+          "heading": "9. Governing law and contact",
+          "body": "These terms are governed by Romanian law. For any question you can write to us at trucksos.support@gmail.com."
+        }
+      ]
     },
     "privacy": {
       "title": "Privacy policy",
-      "body": "We collect account data (name, email, phone, role) and the content you publish (listings, photos, messages, reviews). Your phone number is visible only to a mechanic you have an open conversation with. Your profile photo is visible to other signed-in users. Data is kept while your account is active."
+      "updated": "Last updated: 21 July 2026",
+      "sections": [
+        {
+          "heading": "1. Who we are",
+          "body": "TruckSOS is a mobile app that connects carriers with broken-down trucks to available mechanics. The data controller is the developer of TruckSOS; you can contact us any time at trucksos.support@gmail.com."
+        },
+        {
+          "heading": "2. What data we collect",
+          "body": "Account data: your email address and password (the password is handled encrypted by our authentication provider; we never see it). Profile data: name, role, phone number, company, contact email, address, VAT number, specialisation, activity zone, profile photo and chosen language. Published content: breakdown announcements (description, location, truck details, plate number, photos and — only if you choose to attach it — the GPS position), private messages, public-channel messages, reviews and reports. Technical data: your device's push notification token and, for mechanics, the reference position if set for the radius filter."
+        },
+        {
+          "heading": "3. Who sees what",
+          "body": "Your phone number is NOT public: only the user you have an open conversation with can see it. Your name, profile photo, company and contact email are visible to signed-in users. Mechanics' address and VAT number are shown on their public profile as provider information. Private messages are visible only to the conversation participants; public-channel messages are visible to all signed-in users. Open announcements are visible to mechanics."
+        },
+        {
+          "heading": "4. Where the data is stored",
+          "body": "Data is stored on Supabase infrastructure, in the European Union (Ireland, AWS region eu-west-1). Sub-processors: Supabase (database, authentication, file storage), Expo (push notification delivery) and Google (map display on Android)."
+        },
+        {
+          "heading": "5. Moderation and administrative access",
+          "body": "You can report messages or users and you can block any user. Administrators do NOT have general access to your private conversations: they can only see a limited window of messages around a reported message, and every such access is recorded in an audit log. Accounts that break the rules may be suspended."
+        },
+        {
+          "heading": "6. Retention and deleting your account",
+          "body": "Data is kept while your account is active. You can delete your account directly from the app (Profile → Settings → Delete account) or by email; deletion is immediate and irreversible. Text messages you sent in other people's conversations remain visible anonymised, marked as coming from a deleted user — everything else (profile, announcements, photos, reviews, favourites) is permanently deleted."
+        },
+        {
+          "heading": "7. Legal bases",
+          "body": "We process data to perform the contract (providing the service the app offers) and on the basis of legitimate interest (moderation, user safety, abuse prevention)."
+        },
+        {
+          "heading": "8. Your rights",
+          "body": "You have the right of access, rectification (directly in the app), erasure, restriction, objection and portability. For any request write to us at trucksos.support@gmail.com. You can also lodge a complaint with your supervisory authority — in Romania, ANSPDCP (www.dataprotection.ro)."
+        },
+        {
+          "heading": "9. Who the service is for",
+          "body": "TruckSOS is intended for road transport professionals. The service is not directed at minors."
+        },
+        {
+          "heading": "10. Changes",
+          "body": "We may update this policy; we will notify you in the app about important changes. The date of the last update is shown above."
+        }
+      ]
     }
   }
 }

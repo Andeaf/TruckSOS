@@ -1,6 +1,8 @@
 {
-  "NSLocationWhenInUseUsageDescription": "TruckSOS verwendet deinen Standort, um die Position deines Lkw an deine Pannenmeldung anzuhängen, damit Mechaniker in der Nähe dich auf der Karte finden können.",
-  "NSCameraUsageDescription": "TruckSOS verwendet die Kamera, damit du die Panne fotografieren und das Foto an deine Meldung anhängen oder in einer Unterhaltung senden kannst.",
-  "NSPhotoLibraryUsageDescription": "TruckSOS greift auf deine Fotogalerie zu, damit du Fotos an Pannenmeldungen und in Unterhaltungen anhängen kannst.",
-  "NSPhotoLibraryAddUsageDescription": "TruckSOS speichert in Unterhaltungen empfangene Fotos in deiner Fotogalerie, nur wenn du auf die Download-Taste tippst."
+  "ios": {
+    "NSLocationWhenInUseUsageDescription": "TruckSOS verwendet deinen Standort, um die Position deines Lkw an deine Pannenmeldung anzuhängen, damit Mechaniker in der Nähe dich auf der Karte finden können.",
+    "NSCameraUsageDescription": "TruckSOS verwendet die Kamera, damit du die Panne fotografieren und das Foto an deine Meldung anhängen oder in einer Unterhaltung senden kannst.",
+    "NSPhotoLibraryUsageDescription": "TruckSOS greift auf deine Fotogalerie zu, damit du Fotos an Pannenmeldungen und in Unterhaltungen anhängen kannst.",
+    "NSPhotoLibraryAddUsageDescription": "TruckSOS speichert in Unterhaltungen empfangene Fotos in deiner Fotogalerie, nur wenn du auf die Download-Taste tippst."
+  }
 }
