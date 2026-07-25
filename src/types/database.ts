@@ -101,11 +101,16 @@ export interface AnnouncementPhoto {
 export interface Conversation {
   id: string;
   announcement_id: string | null; // NULL = conversație directă (fără anunț), Faza 7
+  /** Faza 19 (Opțiunea C): semantic = INIȚIATORUL conversației (la market: cumpărătorul,
+   * indiferent de rolul lui real). Numele coloanei e istoric, nu o garanție de rol. */
   driver_id: string;
+  /** Faza 19: semantic = DESTINATARUL (la market: vânzătorul, indiferent de rol). */
   mechanic_id: string;
   /** Faza 15: true = conversație directă autentică (start_direct_conversation); false = pe anunț
    * SAU orfanată de un anunț șters. Indexul unic de perechi directe se aplică doar celor true. */
   is_direct: boolean;
+  /** Faza 19: conversație de MARKET (NOT NULL) — contextul e anunțul de vânzare; SET NULL la ștergere. */
+  listing_id: string | null;
   created_at: string;
 }
 
@@ -125,6 +130,9 @@ export interface Message {
   reply_to_id: string | null;
   /** Faza 16: true = tombstone pus de un moderator (marcaj distinct „Șters de moderator"). */
   deleted_by_admin: boolean;
+  /** Faza 19.4: contextul de anunț de market atașat mesajului („Sunt interesat" cu
+   * cardul anunțului deasupra); SET NULL dacă anunțul dispare. */
+  listing_id: string | null;
   created_at: string;
 }
 
@@ -156,18 +164,48 @@ export interface Truck {
 export type ReportReason = 'spam' | 'harassment' | 'inappropriate' | 'scam' | 'other';
 export type ReportStatus = 'pending' | 'reviewed' | 'dismissed';
 
-/** Raport pe mesaj (cu snapshot) sau pe utilizator (message_id null). Faza 14.5. */
+/** Raport pe mesaj (cu snapshot), pe utilizator (message_id null) sau pe anunț de market
+ * (listing_id, Faza 19). Faza 14.5. */
 export interface Report {
   id: string;
   reporter_id: string;
   reported_user_id: string;
   message_id: string | null;
   message_table: 'messages' | 'channel_messages' | null;
+  /** Faza 19: raport pe anunț de market; SET NULL dacă anunțul dispare (snapshot-ul rămâne). */
+  listing_id: string | null;
   reason: ReportReason;
   details: string | null;
   content_snapshot: string | null;
   image_path_snapshot: string | null;
   status: ReportStatus;
+  created_at: string;
+}
+
+/** Faza 19 — Market: anunț de vânzare (ambele roluri postează). */
+export type MarketCategory = 'tires' | 'parts' | 'trucks' | 'trailers' | 'accessories' | 'other';
+export type MarketListingStatus = 'active' | 'sold';
+
+export interface MarketListing {
+  id: string;
+  seller_id: string;
+  title: string;
+  description: string;
+  price: number;
+  currency: string;
+  category: MarketCategory;
+  status: MarketListingStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Poză de anunț market. Spre deosebire de announcement_photos, are `position`:
+ * cover = poziția 0, editabilă (anunțul de market se poate edita, cel de depanare nu). */
+export interface MarketListingPhoto {
+  id: string;
+  listing_id: string;
+  storage_path: string;
+  position: number;
   created_at: string;
 }
 

@@ -14,7 +14,7 @@ const BUCKET = 'photos';
 /** Valabilitate URL semnat: 1h. Cache-uit apoi de `expo-image` per ecran. */
 const SIGNED_URL_TTL = 3600;
 
-export type PhotoFolder = 'announcements' | 'chat' | 'channel' | 'avatars';
+export type PhotoFolder = 'announcements' | 'chat' | 'channel' | 'avatars' | 'market';
 
 /** Avatarele se afișează la 40–96px — 512px e amplu, la ~30–60 KB per poză. */
 const AVATAR_MAX_EDGE = 512;

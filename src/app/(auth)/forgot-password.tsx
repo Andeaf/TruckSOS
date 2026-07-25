@@ -1,0 +1,213 @@
+import { useEffect, useState } from 'react';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
+import { Link } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { Spacing } from '@/constants/theme';
+import { translateAuthError } from '@/lib/auth-errors';
+import { supabase } from '@/lib/supabase';
+
+/**
+ * Resetare parolă prin cod de 6 cifre (fără deep links — merge identic în Expo Go
+ * și în build-urile de store). Pasul 1: emailul → `resetPasswordForEmail` trimite
+ * codul (template-ul „Reset Password" trebuie să conțină {{ .Token }}). Pasul 2:
+ * cod + parolă nouă → `verifyOtp(recovery)` deschide sesiunea, `updateUser` schimbă
+ * parola, iar nav guard-ul duce userul direct în aplicație, deja autentificat.
+ */
+export default function ForgotPasswordScreen() {
+  const { t } = useTranslation();
+  const [step, setStep] = useState<'email' | 'code'>('email');
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown === 0) return;
+    const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
+
+  async function sendCode() {
+    const mail = email.trim();
+    if (!mail) {
+      setError(t('auth.forgot.errorEmail'));
+      return;
+    }
+    setLoading(true);
+    setError('');
+    const { error: err } = await supabase.auth.resetPasswordForEmail(mail);
+    setLoading(false);
+    if (err) {
+      setError(translateAuthError(err) ?? '');
+      return;
+    }
+    setStep('code');
+    setCooldown(60);
+  }
+
+  async function handleReset() {
+    if (code.trim().length !== 6) {
+      setError(t('auth.otp.errorCode'));
+      return;
+    }
+    if (password.length < 6) {
+      setError(t('auth.register.errorPasswordLength'));
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError(t('auth.register.errorPasswordMismatch'));
+      return;
+    }
+    setLoading(true);
+    setError('');
+    const { error: verifyErr } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: code.trim(),
+      type: 'recovery',
+    });
+    if (verifyErr) {
+      setLoading(false);
+      setError(translateAuthError(verifyErr) ?? '');
+      return;
+    }
+    // verifyOtp a deschis sesiunea → guard-ul poate demonta ecranul oricând de aici
+    // încolo, deci raportăm prin Alert (global), nu prin state local.
+    const { error: updateErr } = await supabase.auth.updateUser({ password });
+    setLoading(false);
+    if (updateErr) {
+      Alert.alert(t('auth.forgot.updateErrorTitle'), translateAuthError(updateErr) ?? '');
+      return;
+    }
+    Alert.alert(t('auth.forgot.successTitle'), t('auth.forgot.successBody'));
+  }
+
+  return (
+    <ThemedView style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled">
+          <View style={styles.header}>
+            <ThemedText type="title">{t('auth.appName')}</ThemedText>
+            <ThemedText themeColor="textSecondary" style={styles.subtitle}>
+              {step === 'email' ? t('auth.forgot.subtitle') : t('auth.forgot.codeSentBody', { email: email.trim() })}
+            </ThemedText>
+          </View>
+
+          {step === 'email' ? (
+            <View style={styles.form}>
+              <Input
+                label={t('auth.login.emailLabel')}
+                value={email}
+                onChangeText={setEmail}
+                placeholder={t('auth.login.emailPlaceholder')}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+              />
+
+              {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
+
+              <Button title={t('auth.forgot.sendButton')} onPress={sendCode} loading={loading} />
+            </View>
+          ) : (
+            <View style={styles.form}>
+              <Input
+                label={t('auth.otp.codeLabel')}
+                value={code}
+                onChangeText={setCode}
+                placeholder={t('auth.otp.codePlaceholder')}
+                keyboardType="number-pad"
+                maxLength={6}
+                autoComplete="one-time-code"
+                textContentType="oneTimeCode"
+              />
+              <Input
+                label={t('auth.forgot.newPasswordLabel')}
+                value={password}
+                onChangeText={setPassword}
+                placeholder={t('auth.register.passwordPlaceholder')}
+                secureTextEntry
+              />
+              <Input
+                label={t('auth.forgot.confirmPasswordLabel')}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder={t('auth.register.passwordPlaceholder')}
+                secureTextEntry
+              />
+
+              {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
+
+              <Button title={t('auth.forgot.resetButton')} onPress={handleReset} loading={loading} />
+
+              <Pressable onPress={sendCode} disabled={cooldown > 0}>
+                <ThemedText
+                  style={[styles.link, styles.centered, cooldown > 0 && styles.dimmed]}>
+                  {cooldown > 0
+                    ? t('auth.otp.resendCooldown', { s: cooldown })
+                    : t('auth.otp.resend')}
+                </ThemedText>
+              </Pressable>
+
+              <ThemedText themeColor="textSecondary" style={styles.spamHint}>
+                {t('auth.otp.spamHint')}
+              </ThemedText>
+            </View>
+          )}
+
+          <View style={styles.footer}>
+            <Link href="/(auth)/login" asChild>
+              <Pressable>
+                <ThemedText style={styles.link}>{t('auth.forgot.backToLogin')}</ThemedText>
+              </Pressable>
+            </Link>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ThemedView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  flex: { flex: 1 },
+  scroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: Spacing.four,
+    gap: Spacing.five,
+  },
+  header: { alignItems: 'center', gap: Spacing.two },
+  subtitle: { textAlign: 'center', lineHeight: 22 },
+  form: { gap: Spacing.three },
+  error: { color: '#ef4444', textAlign: 'center', fontSize: 14 },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.one,
+  },
+  link: { color: '#0E3A7D', fontWeight: '600', fontSize: 16 },
+  centered: { textAlign: 'center' },
+  dimmed: { opacity: 0.5 },
+  spamHint: { fontSize: 13, textAlign: 'center' },
+});

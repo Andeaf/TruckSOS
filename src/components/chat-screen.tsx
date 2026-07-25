@@ -1,8 +1,10 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,6 +15,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
+import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -67,6 +70,16 @@ export interface ChatMessageBase {
     sender_id: string;
     deleted_at: string | null;
     sender?: { full_name: string } | null;
+  } | null;
+  /** Faza 19.4: contextul de anunț de market atașat mesajului („Sunt interesat"). */
+  listing_id?: string | null;
+  /** NULL și când anunțul a fost șters (SET NULL) — cardul pur și simplu nu se randează. */
+  listing?: {
+    id: string;
+    title: string;
+    price: number;
+    currency: string;
+    status: string;
   } | null;
 }
 
@@ -132,6 +145,8 @@ interface MessageBubbleProps<M extends ChatMessageBase> {
   readState?: 'sent' | 'read' | null;
   /** Swipe la dreapta pe bulă → reply; absent = gestul e dezactivat (ex. mesaj șters). */
   onSwipeReply?: () => void;
+  /** Faza 19.4: tap pe cardul de anunț atașat mesajului → detaliul anunțului. */
+  onPressListing?: (listingId: string) => void;
 }
 
 function MessageBubble<M extends ChatMessageBase>({
@@ -148,6 +163,7 @@ function MessageBubble<M extends ChatMessageBase>({
   onPressAvatar,
   readState,
   onSwipeReply,
+  onPressListing,
 }: MessageBubbleProps<M>) {
   const theme = useTheme();
   const scheme = useResolvedScheme();
@@ -169,6 +185,9 @@ function MessageBubble<M extends ChatMessageBase>({
   const rawReply = message.reply_to as unknown;
   const rt = (Array.isArray(rawReply) ? rawReply[0] : rawReply) as ChatMessageBase['reply_to'];
   const quote = !isDeleted && rt && rt.id ? rt : null;
+  // reply_to_id există dar embed-ul vine gol: originalul e invizibil prin RLS (chat
+  // global — mesaj dinaintea creării contului) sau șters definitiv → „Mesaj indisponibil".
+  const quoteUnavailable = !isDeleted && !!message.reply_to_id && !quote;
   const quoteSnippet = quote
     ? quote.deleted_at
       ? t('chat.deletedMessage')
@@ -283,6 +302,36 @@ function MessageBubble<M extends ChatMessageBase>({
             </Pressable>
           ) : (
             <>
+              {/* Faza 19.4: cardul anunțului de market, DEASUPRA textului („Sunt interesat"). */}
+              {message.listing ? (
+                <Pressable
+                  onPress={
+                    onPressListing ? () => onPressListing(message.listing!.id) : undefined
+                  }
+                  style={[
+                    styles.listingCard,
+                    {
+                      backgroundColor: isMe ? 'rgba(255,255,255,0.16)' : theme.background,
+                      borderLeftColor: isMe ? '#ffffff' : theme.price,
+                    },
+                  ]}>
+                  <MaterialIcons name="sell" size={16} color={isMe ? '#fff' : theme.price} />
+                  <View style={styles.listingInfo}>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.listingTitle, { color: isMe ? '#fff' : theme.text }]}>
+                      {message.listing.title}
+                    </Text>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.listingPrice, { color: isMe ? '#fff' : theme.price }]}>
+                      {`${Number(message.listing.price).toLocaleString()} ${message.listing.currency}`}
+                      {message.listing.status === 'sold' ? ` · ${t('market.soldBadge')}` : ''}
+                    </Text>
+                  </View>
+                  <MaterialIcons name="chevron-right" size={18} color={secondaryColor} />
+                </Pressable>
+              ) : null}
               {quote ? (
                 <Pressable
                   onPress={onPressQuote}
@@ -302,6 +351,22 @@ function MessageBubble<M extends ChatMessageBase>({
                     {quoteSnippet}
                   </Text>
                 </Pressable>
+              ) : quoteUnavailable ? (
+                // Fără Pressable: nu există mesaj la care să derulăm.
+                <View
+                  style={[
+                    styles.quote,
+                    {
+                      backgroundColor: isMe ? 'rgba(255,255,255,0.16)' : theme.background,
+                      borderLeftColor: isMe ? '#ffffff' : theme.brand,
+                    },
+                  ]}>
+                  <Text
+                    numberOfLines={1}
+                    style={[styles.quoteSnippet, styles.deletedText, { color: secondaryColor }]}>
+                    {t('chat.unavailableMessage')}
+                  </Text>
+                </View>
               ) : null}
               <Text style={[styles.bubbleText, { color: isMe ? '#ffffff' : theme.text }]}>
                 {message.content}
@@ -354,6 +419,16 @@ interface ChatScreenProps<M extends ChatMessageBase> {
   headerUserId?: string;
   /** Tap pe avatar (antet sau bulă) → profilul acelui utilizator. Rutarea o decide ecranul. */
   onPressUser?: (userId: string) => void;
+  /** Faza 19.4: tap pe cardul de anunț atașat unui mesaj → detaliul anunțului. */
+  onPressListing?: (listingId: string) => void;
+  /**
+   * Anunțul de market care se va atașa URMĂTORULUI mesaj trimis („Contactează
+   * vânzătorul"). Afișat ca banner deasupra casetei text; × îl scoate — mesajul
+   * devine unul obișnuit, fără card (Faza 19.4).
+   */
+  pendingListing?: { id: string; title: string; price: number; currency: string } | null;
+  /** × pe bannerul anunțului atașat. Fără handler, bannerul nu are ×. */
+  onClearPendingListing?: () => void;
   onBack: () => void;
   /**
    * Acțiuni din meniul contextual (tap lung pe bulă), toate opționale — o acțiune
@@ -390,6 +465,9 @@ export function ChatScreen<M extends ChatMessageBase>({
   headerAvatarPath,
   headerUserId,
   onPressUser,
+  onPressListing,
+  pendingListing,
+  onClearPendingListing,
   onBack,
   onEditMessage,
   onDeleteMessage,
@@ -412,6 +490,36 @@ export function ChatScreen<M extends ChatMessageBase>({
   const [replyTarget, setReplyTarget] = useState<M | null>(null);
   const [reportTarget, setReportTarget] = useState<M | null>(null);
   const listRef = useRef<FlatList<M>>(null);
+
+  // Android (SDK 54, edge-to-edge): fereastra NU se redimensionează la tastatură, iar
+  // KeyboardAvoidingView e defect în ambele moduri ('height' nu-și revine la închidere,
+  // 'padding' lasă padding rezidual). Măsurătorile de poziție (measureInWindow) sunt și
+  // ele capcană: pe unele device-uri fereastra exclude status bar-ul, iar evenimentul de
+  // tastatură raportează de la vârful ecranului → inputul rămânea SUB tastatură cu exact
+  // înălțimea status bar-ului (măsurat pe Samsung, din screenshot-uri). Deci FĂRĂ
+  // poziții: tastatura acoperă din containerul nostru exact (înălțimea ei − ce stă SUB
+  // container = tab bar-ul, cu tot cu insetul de sistem inclus în el). Fiecare mărime
+  // vine dintr-o singură sursă → nu există spații de coordonate de dez-aliniat.
+  // La închidere: 0 garantat. iOS rămâne pe KAV 'padding' (corect, testat pe iPhone).
+  // Formula folosește DOAR valori ancorate la ecranul fizic complet: `screen.height`
+  // (documentat: include barele de sistem) și `endCoordinates.screenY` (vârful
+  // tastaturii — verificat numeric pe device că e ancorat la vârful ecranului, spre
+  // deosebire de `endCoordinates.height` și `measureInWindow`, care variază între
+  // OEM-uri cu/fără insetele de sistem). containerBottom = screen − tabBar.
+  const tabBarHeight = useContext(BottomTabBarHeightContext) ?? 0;
+  const [kbOverlap, setKbOverlap] = useState(0);
+  useEffect(() => {
+    if (Platform.OS === 'ios') return;
+    const show = Keyboard.addListener('keyboardDidShow', (e) => {
+      const screenH = Dimensions.get('screen').height;
+      setKbOverlap(Math.max(screenH - tabBarHeight - e.endCoordinates.screenY, 0));
+    });
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKbOverlap(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, [tabBarHeight]);
 
   // „Editează" din meniu → intrăm în mod editare: input precompletat + banner cu anulare.
   // Editarea și reply-ul se exclud reciproc în compozitor.
@@ -633,12 +741,14 @@ export function ChatScreen<M extends ChatMessageBase>({
         </View>
       ) : null}
 
-      {/* Fără keyboardVerticalOffset: KAV-ul își măsoară poziția relativ la părintele
-          full-screen, deci baza lui e deja fundul ecranului — un offset ar SUPRA-compensa
-          cu înălțimea headerului (gol între bară și tastatură; verificat pe iPhone real). */}
+      {/* iOS: KAV 'padding' fără keyboardVerticalOffset (KAV-ul își măsoară poziția
+          relativ la părintele full-screen; un offset ar SUPRA-compensa cu înălțimea
+          headerului — verificat pe iPhone real). Android: behavior INERT — tastatura
+          e gestionată de distanțierul kbOverlap (vezi efectul de mai sus); atât
+          'height' cât și 'padding' lăsau spațiu rezidual la închidere pe edge-to-edge. */}
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 
         {loading ? (
           <View style={styles.centered}>
@@ -715,6 +825,7 @@ export function ChatScreen<M extends ChatMessageBase>({
                 onPressAvatar={
                   onPressUser ? () => onPressUser(item.sender_id) : undefined
                 }
+                onPressListing={onPressListing}
                 readState={
                   readReceipts && item.sender_id === currentUserId && !item.deleted_at
                     ? readCursor &&
@@ -729,6 +840,32 @@ export function ChatScreen<M extends ChatMessageBase>({
             }}
           />
         )}
+
+        {/* Bannerul „anunț atașat" (Faza 19.4): stă deasupra celor de reply/editare —
+            atașarea privește următorul mesaj trimis, indiferent dacă e și reply. */}
+        {pendingListing && !editTarget ? (
+          <View style={[styles.editBanner, { backgroundColor: theme.backgroundElement }]}>
+            <MaterialIcons name="sell" size={16} color={theme.price} />
+            <View style={styles.editBannerInfo}>
+              <Text style={[styles.editBannerTitle, { color: theme.price }]} numberOfLines={1}>
+                {t('market.composerAttached')}
+              </Text>
+              <Text
+                style={[styles.editBannerText, { color: theme.textSecondary }]}
+                numberOfLines={1}>
+                {`${pendingListing.title} · ${Number(pendingListing.price).toLocaleString()} ${pendingListing.currency}`}
+              </Text>
+            </View>
+            {onClearPendingListing ? (
+              <Pressable
+                onPress={onClearPendingListing}
+                hitSlop={8}
+                accessibilityLabel={t('market.composerAttachedRemove')}>
+                <MaterialIcons name="close" size={20} color={theme.textSecondary} />
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
 
         {replyTarget && !editTarget ? (
           <View style={[styles.editBanner, { backgroundColor: theme.backgroundElement }]}>
@@ -840,7 +977,12 @@ export function ChatScreen<M extends ChatMessageBase>({
               end={HeaderGradientDirection.end}
               style={[
                 styles.sendButton,
-                scheme === 'light' ? styles.sendShadowLight : styles.sendShadowDark,
+                // Umbra DOAR pe starea activă: elevation sub un părinte cu opacity<1 se
+                // vede PRIN suprafața translucidă ca o pată poligonală decalată (Android)
+                // — sursa „octagonului" semitransparent de pe butonul dezactivat.
+                !!text.trim() &&
+                  !sending &&
+                  (scheme === 'light' ? styles.sendShadowLight : styles.sendShadowDark),
               ]}>
               {sending ? (
                 <ActivityIndicator size="small" color="#fff" />
@@ -853,6 +995,8 @@ export function ChatScreen<M extends ChatMessageBase>({
           </Pressable>
         </View>
         )}
+        {/* Distanțierul de tastatură (doar Android — vezi efectul kbOverlap). */}
+        {Platform.OS !== 'ios' ? <View style={{ height: kbOverlap }} /> : null}
       </KeyboardAvoidingView>
 
       {viewerAt !== null ? (
@@ -981,6 +1125,21 @@ const styles = StyleSheet.create({
   deletedText: { fontStyle: 'italic', paddingRight: 3 },
   metaRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-end', gap: Spacing.one },
   editedLabel: { fontStyle: 'italic', paddingRight: 2 }, // italic: același clip ca deletedText
+  // Faza 19.4: cardul anunțului atașat mesajului (deasupra textului).
+  listingCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    borderLeftWidth: 3,
+    borderRadius: 10,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.two,
+    marginBottom: 6,
+    minWidth: 190,
+  },
+  listingInfo: { flex: 1 },
+  listingTitle: { fontSize: 13, fontWeight: '700' },
+  listingPrice: { fontSize: 13, fontWeight: '800', marginTop: 1 },
   quote: {
     borderLeftWidth: 3,
     borderRadius: Radius.badge,

@@ -3,10 +3,14 @@ import { Platform, Pressable, StyleSheet, Text, View, type TextProps } from 'rea
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
+import { useRouter, useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { HeaderGradient, HeaderGradientDirection, Spacing } from '@/constants/theme';
+import { Avatar } from '@/components/avatar';
+import { HeaderGradient, HeaderGradientDirection, Radius, Spacing } from '@/constants/theme';
+import { useAuth } from '@/hooks/use-auth';
 import { useResolvedScheme } from '@/hooks/use-settings';
+import { useSignedUrl } from '@/hooks/use-signed-urls';
 import { useTheme } from '@/hooks/use-theme';
 
 /**
@@ -26,11 +30,40 @@ export interface ScreenHeaderProps {
   onBack?: () => void;
   /** Acțiuni în dreapta (folosesc `theme.onHeader` pentru culoare). */
   right?: ReactNode;
+  /** Faza 19: buton-avatar circular la EXTREMA dreaptă (după `right`) — tap → Profil.
+   * Activat DOAR pe rădăcinile de tab; ecranele push-uite au back, nu avatar. */
+  profileButton?: boolean;
   /** Înlocuiește complet conținutul benzii (ex. modul de selecție). */
   children?: ReactNode;
 }
 
-export function ScreenHeader({ title, subtitle, onBack, right, children }: ScreenHeaderProps) {
+/**
+ * Butonul-avatar din antet (Faza 19 — profilul a ieșit din tab bar). Ținta se derivă
+ * din GRUPUL curent de rute (nu din profile.role): un admin în „viewing-as" pe (driver)
+ * trebuie să ajungă la /(driver)/profile, nu la grupul rolului lui real.
+ * Exportat: headerele custom (ex. Market, cu search integrat) îl refolosesc.
+ */
+export function HeaderProfileButton({ size = 34 }: { size?: number }) {
+  const { profile } = useAuth();
+  const router = useRouter();
+  const segments = useSegments();
+  const avatarUrl = useSignedUrl(profile?.avatar_path);
+
+  const group = segments[0] as string | undefined;
+  if (group !== '(driver)' && group !== '(mechanic)') return null;
+
+  return (
+    <Pressable
+      onPress={() => router.push(`/${group}/profile` as never)}
+      hitSlop={8}
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.profileRing, pressed && styles.profilePressed]}>
+      <Avatar url={avatarUrl} name={profile?.full_name} size={size} />
+    </Pressable>
+  );
+}
+
+export function ScreenHeader({ title, subtitle, onBack, right, profileButton, children }: ScreenHeaderProps) {
   const theme = useTheme();
   const scheme = useResolvedScheme();
   const insets = useSafeAreaInsets();
@@ -81,6 +114,8 @@ export function ScreenHeader({ title, subtitle, onBack, right, children }: Scree
           </View>
 
           {right ?? null}
+
+          {profileButton ? <HeaderProfileButton /> : null}
         </>
       )}
     </LinearGradient>
@@ -107,4 +142,11 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: '800', letterSpacing: -0.3, lineHeight: 30 },
   subtitle: { fontSize: 14, lineHeight: 19, opacity: 0.75, marginTop: 2 },
   headerText: { fontSize: 15, fontWeight: '600' },
+  // Inelul alb discret al avatarului din antet (precedentul: chat-screen headerAvatarRing).
+  profileRing: {
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.85)',
+    borderRadius: Radius.circle,
+  },
+  profilePressed: { opacity: 0.8 },
 });

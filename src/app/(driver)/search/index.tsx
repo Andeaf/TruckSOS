@@ -62,6 +62,7 @@ export default function DriverSearchScreen() {
     <ThemedView style={styles.container}>
       <ScreenHeader
         title={t('search.title')}
+        profileButton
         right={
           <Pressable
             onPress={() => router.push('/(driver)/search/favorites' as never)}

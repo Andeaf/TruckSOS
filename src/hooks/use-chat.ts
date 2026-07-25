@@ -6,15 +6,72 @@ import { hasChatV14, replyEmbed } from '@/lib/chat-schema';
 import { emitReadsChanged, onReadsChanged } from '@/lib/read-events';
 import { uploadPhoto } from '@/lib/storage';
 import type { PickedImage } from '@/lib/media';
-import type { Announcement, Conversation, Message, PublicUser } from '@/types/database';
-import type { AnnouncementStatus } from '@/types/database';
+import type { Announcement, Conversation, Message, PublicUser, Role } from '@/types/database';
+import type { AnnouncementStatus, MarketListingStatus } from '@/types/database';
+
+/** Participant la conversație — cu rolul REAL (Faza 19: rutarea către profilul public
+ * se face pe rolul lui, nu pe rolul privitorului). */
+export type ChatParticipant = PublicUser & { role: Role };
 
 export type ConversationWithDetails = Conversation & {
   // null pentru conversații directe (fără anunț)
   announcement: { location: string; status: AnnouncementStatus; description: string } | null;
-  driver: PublicUser;
-  mechanic: PublicUser;
+  /** Faza 19: contextul de market (null pt. conversațiile de depanare/directe SAU
+   * dacă anunțul a fost șters — SET NULL, degradează vizual la „directă"). */
+  listing: { title: string; status: MarketListingStatus } | null;
+  driver: ChatParticipant;
+  mechanic: ChatParticipant;
 };
+
+/**
+ * Faza 19 (Opțiunea C): „celălalt participant" se determină prin ID, NU prin rol —
+ * pe market cumpărătorul și vânzătorul pot avea același rol. Pentru toate conversațiile
+ * istorice rezultatul e identic cu vechea logică pe roluri (șoferul era mereu pe
+ * driver_id), deci refactorul e echivalent-comportamental pe datele existente.
+ */
+export function otherParticipant(
+  conv: ConversationWithDetails,
+  myId: string,
+): { id: string; profile: ChatParticipant } {
+  return conv.driver_id === myId
+    ? { id: conv.mechanic_id, profile: conv.mechanic }
+    : { id: conv.driver_id, profile: conv.driver };
+}
+
+/** Faza 19.4: contextul de anunț atașat unui MESAJ (cardul de deasupra textului). */
+export interface MessageListingContext {
+  id: string;
+  title: string;
+  price: number;
+  currency: string;
+  status: 'active' | 'sold';
+}
+
+/** Embed-ul de context pe mesaje — cere migrarea etapa194 (messages.listing_id). */
+const MESSAGE_LISTING_EMBED = ', listing:market_listings!listing_id(id,title,price,currency,status)';
+
+/**
+ * Contextul de anunț după id — null dacă anunțul nu mai există (șters). Folosit de
+ * handlerul Realtime (payload-ul nu aduce embed-uri) și de bannerul „anunț atașat"
+ * din compozitor (ecranul are doar listingId din parametrii rutei).
+ */
+export async function fetchMessageListingContext(
+  listingId: string
+): Promise<MessageListingContext | null> {
+  const { data } = await supabase
+    .from('market_listings')
+    .select('id,title,price,currency,status')
+    .eq('id', listingId)
+    .maybeSingle();
+  return (data as unknown as MessageListingContext) ?? null;
+}
+
+/** Selectul comun al listei/detaliului de conversație (embeds pe ambele sloturi + contexte). */
+const CONVERSATION_SELECT =
+  '*, announcement:announcements!announcement_id(location,status,description), ' +
+  'listing:market_listings!listing_id(title,status), ' +
+  'driver:profiles!driver_id(full_name,avatar_path,deleted_at,role), ' +
+  'mechanic:profiles!mechanic_id(full_name,avatar_path,deleted_at,role)';
 
 export function useConversations(userId: string | undefined) {
   const [conversations, setConversations] = useState<ConversationWithDetails[]>([]);
@@ -37,16 +94,12 @@ export function useConversations(userId: string | undefined) {
 
     let query = supabase
       .from('conversations')
-      .select(
-        '*, announcement:announcements!announcement_id(location,status,description), driver:profiles!driver_id(full_name,avatar_path,deleted_at), mechanic:profiles!mechanic_id(full_name,avatar_path,deleted_at)'
-      )
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .or(`driver_id.eq.${userId},mechanic_id.eq.${userId}` as any)
+      .select(CONVERSATION_SELECT)
+      .or(`driver_id.eq.${userId},mechanic_id.eq.${userId}` as never)
       .order('created_at', { ascending: false });
 
     if (deletedIds.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      query = query.not('id', 'in', `(${deletedIds.join(',')})`) as any;
+      query = query.not('id', 'in', `(${deletedIds.join(',')})`) as never;
     }
 
     const { data } = await query;
@@ -78,7 +131,7 @@ export function useMessages(conversationId: string) {
       const v14 = await hasChatV14();
       const { data } = await supabase
         .from('messages')
-        .select('*' + (v14 ? replyEmbed('messages') : ''))
+        .select('*' + (v14 ? replyEmbed('messages') : '') + MESSAGE_LISTING_EMBED)
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
       if (active) {
@@ -101,14 +154,20 @@ export function useMessages(conversationId: string) {
           table: 'messages',
           filter: `conversation_id=eq.${conversationId}`,
         },
-        (payload) => {
-          if (active) {
-            const incoming = payload.new as Message;
-            // Deduplicates: own messages added optimistically have the same ID
-            setMessages((prev) =>
-              prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming]
-            );
+        async (payload) => {
+          if (!active) return;
+          const incoming = payload.new as Message & { listing?: MessageListingContext | null };
+          // Faza 19.4: payload-ul Realtime nu aduce embed-uri — cardul anunțului
+          // se completează cu un fetch scurt (doar la mesajele cu context).
+          if (incoming.listing_id) {
+            const listing = await fetchMessageListingContext(incoming.listing_id);
+            if (!active) return;
+            incoming.listing = listing;
           }
+          // Deduplicates: own messages added optimistically have the same ID
+          setMessages((prev) =>
+            prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming]
+          );
         }
       )
       .on(
@@ -194,7 +253,8 @@ export async function sendMessage(
   senderId: string,
   content: string,
   imagePath: string | null = null,
-  replyToId: string | null = null
+  replyToId: string | null = null,
+  listingId: string | null = null
 ): Promise<{ message: Message | null; error: string | null }> {
   const v14 = await hasChatV14();
   const row: Record<string, unknown> = {
@@ -205,11 +265,13 @@ export async function sendMessage(
   };
   // reply_to_id doar dacă schema îl are (altfel insert-ul ar eșua pe schema veche).
   if (v14) row.reply_to_id = replyToId;
+  // Faza 19.4: contextul de anunț („Sunt interesat" din market) — cardul de deasupra.
+  if (listingId) row.listing_id = listingId;
   const { data, error } = await supabase
     .from('messages')
     .insert(row as never)
-    // Returnăm și citatul, ca bula proprie să afișeze reply-ul instant (optimist).
-    .select('*' + (v14 ? replyEmbed('messages') : ''))
+    // Returnăm și citatul + contextul, ca bula proprie să le afișeze instant (optimist).
+    .select('*' + (v14 ? replyEmbed('messages') : '') + MESSAGE_LISTING_EMBED)
     .single();
   return { message: (data as unknown as Message) ?? null, error: error?.message ?? null };
 }
@@ -266,15 +328,17 @@ export function useAnnouncementStatus(
 }
 
 /**
- * Cursorul de citire NU se ia doar din ceasul telefonului: mesajele au `created_at`
- * de pe SERVER, iar un ceas local rămas în urmă ar lăsa ultimul mesaj „necitit" pe
- * badge oricâte deschideri (bug văzut pe Android). Acoperim explicit cel mai nou
- * mesaj afișat: +1ms ca `.gt(created_at)` din badge să-l excludă, iar comparația
- * strictă `>` a bifelor ✓✓ să-l includă.
+ * Cursorul de citire NU se ia din ceasul telefonului: mesajele au `created_at` de pe
+ * SERVER, deci cursorul = cel mai nou mesaj AFIȘAT +1ms — `.gt(created_at)` din badge
+ * îl exclude, iar comparația strictă `>` a bifelor ✓✓ îl include. Un ceas local rămas
+ * în urmă lăsa ultimul mesaj „necitit" pe veci (bug vechi, Android); invers, vechiul
+ * `max(Date.now(), ...)` cu un ceas local ÎNAINTE scria un cursor din viitor care
+ * marca „citite" mesaje încă neprimite (✓✓ false văzute la testarea Market).
+ * Ceasul local rămâne DOAR fallback pentru conversații fără niciun mesaj.
  */
 function readCursorValue(newestCreatedAt?: string | null): string {
-  const newest = newestCreatedAt ? new Date(newestCreatedAt).getTime() + 1 : 0;
-  return new Date(Math.max(Date.now(), newest)).toISOString();
+  if (newestCreatedAt) return new Date(new Date(newestCreatedAt).getTime() + 1).toISOString();
+  return new Date().toISOString();
 }
 
 export async function markConversationRead(
@@ -445,9 +509,17 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
       .on('postgres_changes', { event: '*', schema: 'public', table: 'message_reads', filter: `user_id=eq.${userId}` }, () => {
         fetchCounts();
       })
-      // Conversație nouă (poate cu primul mesaj deja trimis): reintră în calcul —
+      // Conversație nouă (ex. „Contactează vânzătorul" din Market): reintră în calcul —
       // filtrul in.(...) de mai sus nu o acoperă până nu refacem lista de ids.
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations' }, () => {
+      // Două abonări FILTRATE, câte una per slotul în care putem apărea: abonarea
+      // nefiltrată nu livra (vezi nota convIdsKey), iar tabelul trebuie să fie în
+      // publicația supabase_realtime (migrarea 20260725 — lipsea, deci handlerul
+      // vechi nu primea NICIODATĂ evenimente și bulina nu se aprindea la prima
+      // conversație cu cineva).
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations', filter: `driver_id=eq.${userId}` }, () => {
+        fetchCounts();
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations', filter: `mechanic_id=eq.${userId}` }, () => {
         fetchCounts();
       })
       .subscribe();
@@ -462,9 +534,7 @@ export async function fetchConversationDetails(
 ): Promise<ConversationWithDetails | null> {
   const { data } = await supabase
     .from('conversations')
-    .select(
-      '*, announcement:announcements!announcement_id(location,status,description), driver:profiles!driver_id(full_name,avatar_path,deleted_at), mechanic:profiles!mechanic_id(full_name,avatar_path,deleted_at)'
-    )
+    .select(CONVERSATION_SELECT)
     .eq('id', conversationId)
     .single();
   return (data as unknown as ConversationWithDetails) ?? null;

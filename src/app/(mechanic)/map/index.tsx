@@ -145,6 +145,7 @@ export default function MechanicMapScreen() {
         title={t('mechanic.map.title')}
         subtitle={t('mechanic.map.pinCount', { count: visible.length })}
         right={<RadiusFilterMenu ref={rangeMenuRef} />}
+        profileButton
       />
 
       {region ? (

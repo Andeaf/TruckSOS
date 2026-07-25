@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -26,16 +27,20 @@ export default function DriverChannelChatScreen() {
   const [channel, setChannel] = useState<Channel | null>(null);
   const { messages, loading, loadingMore, loadOlder, addMessage, patchMessage } =
     useChannelMessages(id);
+  const isFocused = useIsFocused();
 
   useEffect(() => {
     fetchChannel(id).then(setChannel);
   }, [id]);
 
   useEffect(() => {
-    // Cursorul acoperă cel mai nou mesaj AFIȘAT (nu doar ceasul local) — vezi markChannelRead.
-    if (!loading) markChannelRead(id, messages[messages.length - 1]?.created_at ?? null);
+    // Cursorul acoperă cel mai nou mesaj AFIȘAT (vezi markChannelRead) — dar DOAR cu
+    // ecranul în față: tab-urile păstrează stack-ul montat, iar fără garda de focus
+    // mesajele sosite cât timp userul e pe alt tab se marcau singure „citite" și
+    // bulina de pe tabul Chat nu se mai aprindea.
+    if (!loading && isFocused) markChannelRead(id, messages[messages.length - 1]?.created_at ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages.length, loading, id]);
+  }, [messages.length, loading, id, isFocused]);
 
   if (!channel || !session) return <ThemedView style={{ flex: 1 }} />;
 

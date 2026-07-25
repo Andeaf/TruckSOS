@@ -11,6 +11,7 @@ import { ThemedView } from '@/components/themed-view';
 import { TruckFormSheet } from '@/components/truck-form-sheet';
 import { ListRow, RowGroup, SectionLabel } from '@/components/ui/list-row';
 import { Radius, Spacing } from '@/constants/theme';
+import { useBack } from '@/hooks/use-back';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useSettings } from '@/hooks/use-settings';
@@ -27,6 +28,8 @@ export default function DriverProfileScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
   const router = useRouter();
+  // Faza 19: profilul nu mai e tab — se deschide push-uit din butonul-avatar al antetului.
+  const goBack = useBack('/(driver)/announcements');
   const { trucks, refresh } = useSavedTrucks();
 
   const [showTruckForm, setShowTruckForm] = useState(false);
@@ -91,7 +94,7 @@ export default function DriverProfileScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScreenHeader title={t('profile.myProfileTitle')} />
+      <ScreenHeader title={t('profile.myProfileTitle')} onBack={goBack} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedView type="backgroundElement" style={styles.identityCard}>

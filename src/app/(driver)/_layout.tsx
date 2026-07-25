@@ -77,14 +77,17 @@ export default function DriverLayout() {
           tabBarIcon: ({ color, size }) => <Feather name="search" size={size} color={color} />,
         }}
       />
+      {/* Faza 19: Market ia locul Profilului în bară (strict — restul ordinii neatins). */}
       <Tabs.Screen
-        name="profile"
+        name="market"
         options={{
-          title: t('profile.tabTitle'),
-          tabBarLabel: tabLabel(t('profile.tabTitle')),
-          tabBarIcon: ({ color, size }) => <Feather name="user" size={size} color={color} />,
+          title: t('market.tabTitle'),
+          tabBarLabel: tabLabel(t('market.tabTitle')),
+          tabBarIcon: ({ color, size }) => <Feather name="shopping-bag" size={size} color={color} />,
         }}
       />
+      {/* Profilul se deschide din butonul-avatar al antetului (ScreenHeader.profileButton). */}
+      <Tabs.Screen name="profile" options={{ href: null }} />
       <Tabs.Screen name="mechanic-profile" options={{ href: null }} />
       <Tabs.Screen name="public-profile" options={{ href: null }} />
       {/* Istoricul se deschide din Profil, nu are tab propriu. */}

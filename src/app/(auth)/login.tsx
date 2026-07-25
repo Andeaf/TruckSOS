@@ -68,6 +68,12 @@ export default function LoginScreen() {
               secureTextEntry
             />
 
+            <Link href="/(auth)/forgot-password" asChild>
+              <Pressable style={styles.forgotWrap}>
+                <ThemedText style={styles.forgotLink}>{t('auth.login.forgotPassword')}</ThemedText>
+              </Pressable>
+            </Link>
+
             {error ? (
               <ThemedText style={styles.error}>{error}</ThemedText>
             ) : null}
@@ -108,4 +114,6 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
   },
   link: { color: '#0E3A7D', fontWeight: '600', fontSize: 16 },
+  forgotWrap: { alignSelf: 'flex-end' },
+  forgotLink: { color: '#0E3A7D', fontWeight: '600', fontSize: 14 },
 });

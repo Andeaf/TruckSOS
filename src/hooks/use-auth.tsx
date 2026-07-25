@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 
+import { translateAuthError } from '@/lib/auth-errors';
 import { supabase } from '@/lib/supabase';
 import { registerPushToken, unregisterPushToken } from '@/lib/push';
 import type { Profile } from '@/types/database';
@@ -11,7 +12,11 @@ interface AuthContextValue {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<string | null>;
-  signUp: (email: string, password: string, fullName: string) => Promise<string | null>;
+  signUp: (
+    email: string,
+    password: string,
+    fullName: string
+  ) => Promise<{ error: string | null; needsConfirmation: boolean }>;
   signOut: () => Promise<void>;
   createProfile: (
     role: 'driver' | 'mechanic',
@@ -77,20 +82,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signIn(email: string, password: string): Promise<string | null> {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return error?.message ?? null;
+    return translateAuthError(error);
   }
 
   async function signUp(
     email: string,
     password: string,
     fullName: string
-  ): Promise<string | null> {
-    const { error } = await supabase.auth.signUp({
+  ): Promise<{ error: string | null; needsConfirmation: boolean }> {
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { full_name: fullName } },
     });
-    return error?.message ?? null;
+    if (error) return { error: translateAuthError(error), needsConfirmation: false };
+    // Anti-enumerare: pentru un email deja confirmat Supabase întoarce un user „fals"
+    // fără identities și NU trimite nimic — altfel omul ar aștepta degeaba un cod.
+    if (data.user && data.user.identities?.length === 0) {
+      return { error: i18n.t('authErrors.user_already_exists'), needsConfirmation: false };
+    }
+    // Fără sesiune = confirmarea emailului e activă → ecranul cere codul primit pe mail.
+    return { error: null, needsConfirmation: !data.session };
   }
 
   // Înregistrăm tokenul de fiecare dată când avem sesiune (login sau repornire).

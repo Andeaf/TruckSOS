@@ -65,6 +65,21 @@ export interface AdminAnnouncement {
   photo_count: number;
 }
 
+/** Faza 19: anunț de market în moderare (admin_list_recent_listings). */
+export interface AdminListing {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  currency: string;
+  category: string;
+  status: string;
+  created_at: string;
+  seller_id: string;
+  seller_name: string | null;
+  photo_count: number;
+}
+
 export interface AdminReview {
   id: string;
   stars: number;
@@ -199,6 +214,14 @@ export function searchAnnouncements(query: string) {
 
 export function adminDeleteAnnouncement(id: string) {
   return rpcVoid('admin_delete_announcement', { p_id: id });
+}
+
+export function fetchRecentListings() {
+  return rpcData<AdminListing[]>('admin_list_recent_listings', {}, []);
+}
+
+export function adminDeleteListing(id: string) {
+  return rpcVoid('admin_delete_listing', { p_id: id });
 }
 
 export function fetchRecentReviews() {

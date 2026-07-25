@@ -7,6 +7,8 @@ export default function Settings() {
       backPath="/(mechanic)/profile"
       deletePath="/(mechanic)/profile/delete-account"
       blockedPath="/(mechanic)/profile/blocked"
+      changePasswordPath="/(mechanic)/profile/change-password"
+      changeEmailPath="/(mechanic)/profile/change-email"
     />
   );
 }

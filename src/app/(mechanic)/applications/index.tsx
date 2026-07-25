@@ -219,7 +219,7 @@ export default function ApplicationsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScreenHeader title={t('mechanic.applications.title')} />
+      <ScreenHeader title={t('mechanic.applications.title')} profileButton />
 
       <FlatList
         data={applications}

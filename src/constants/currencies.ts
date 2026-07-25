@@ -6,7 +6,8 @@ export interface Currency {
 
 export const SUPPORTED_CURRENCIES: Currency[] = [
   { code: 'EUR', symbol: '€', label: 'Euro' },
-  // { code: 'RON', symbol: 'lei', label: 'Leu românesc' },
+  // Faza 19: RON reactivat pentru Market (anvelopele/piesele se vând des în lei).
+  { code: 'RON', symbol: 'lei', label: 'Leu românesc' },
   // { code: 'USD', symbol: '$', label: 'US Dollar' },
 ];
 

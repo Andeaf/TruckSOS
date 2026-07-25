@@ -7,18 +7,20 @@ import { useTranslation } from 'react-i18next';
 import { Avatar } from '@/components/avatar';
 import { EmptyState } from '@/components/empty-state';
 import { HeaderText, ScreenHeader } from '@/components/screen-header';
+import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
-import { useConversations, deleteConversations, useUnreadCounts, type ConversationWithDetails } from '@/hooks/use-chat';
+import { useConversations, deleteConversations, otherParticipant, useUnreadCounts, type ChatParticipant, type ConversationWithDetails } from '@/hooks/use-chat';
 import { useChannels, useChannelUnreadCount } from '@/hooks/use-channel-chat';
 import { useSignedUrls } from '@/hooks/use-signed-urls';
 import { useTimeAgo } from '@/hooks/use-time-ago';
 import { formatBadge } from '@/lib/badge';
 import { displayName } from '@/lib/display-name';
+import { matchesSearch } from '@/lib/search';
 import type { Channel } from '@/types/database';
 
 function ChannelCard({
@@ -64,6 +66,7 @@ function ChannelCard({
 
 function ConversationCard({
   item,
+  other,
   avatarUrl,
   onPress,
   onLongPress,
@@ -73,6 +76,8 @@ function ConversationCard({
   unreadCount,
 }: {
   item: ConversationWithDetails;
+  /** Faza 19: interlocutorul, rezolvat prin ID (poate avea ORICE rol pe market). */
+  other: ChatParticipant;
   avatarUrl?: string;
   onPress: () => void;
   onLongPress: () => void;
@@ -98,11 +103,11 @@ function ConversationCard({
               color={selected ? '#22c55e' : theme.textSecondary}
             />
           ) : null}
-          <Avatar url={avatarUrl} name={displayName(item.mechanic, t)} size={44} />
+          <Avatar url={avatarUrl} name={displayName(other, t)} size={44} />
           <View style={styles.cardContent}>
             <View style={styles.cardTop}>
               <ThemedText type="smallBold" numberOfLines={1} style={styles.name}>
-                {displayName(item.mechanic, t)}
+                {displayName(other, t)}
               </ThemedText>
               <View style={styles.timeRow}>
                 {unreadCount > 0 && !selectionMode ? (
@@ -128,6 +133,16 @@ function ConversationCard({
                   </View>
                   <StatusBadge status={item.announcement.status} />
                 </>
+              ) : item.listing ? (
+                // Faza 19: conversație de market — contextul e anunțul de vânzare.
+                <View style={styles.locationRow}>
+                  <MaterialIcons name="sell" size={12} color={theme.textSecondary} />
+                  <ThemedText themeColor="textSecondary" type="small" numberOfLines={1} style={styles.location}>
+                    {item.listing.status === 'sold'
+                      ? `${item.listing.title} · ${t('market.soldBadge')}`
+                      : item.listing.title}
+                  </ThemedText>
+                </View>
               ) : (
                 <View style={styles.locationRow}>
                   <MaterialIcons name="forum" size={12} color={theme.textSecondary} />
@@ -155,10 +170,33 @@ export default function DriverConversationsScreen() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Un singur apel batch pentru avatarele tuturor mecanicilor din listă.
+  const me = session?.user.id ?? '';
+
+  // Căutare după numele interlocutorului — locală, peste lista deja încărcată.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const searchActive = searchOpen && query.trim().length > 0;
+  const visible = useMemo(() => {
+    if (!searchActive) return conversations;
+    return conversations.filter((c) =>
+      matchesSearch(query, [displayName(otherParticipant(c, me).profile, t)])
+    );
+  }, [conversations, searchActive, query, t, me]);
+
+  function toggleSearch() {
+    setSearchOpen((prev) => {
+      if (prev) setQuery('');
+      return !prev;
+    });
+  }
+
+  // Un singur apel batch pentru avatarele tuturor interlocutorilor din listă.
   const avatarPaths = useMemo(
-    () => conversations.map((c) => c.mechanic.avatar_path).filter((p): p is string => !!p),
-    [conversations]
+    () =>
+      conversations
+        .map((c) => otherParticipant(c, me).profile.avatar_path)
+        .filter((p): p is string => !!p),
+    [conversations, me]
   );
   const avatarUrls = useSignedUrls(avatarPaths);
 
@@ -236,18 +274,46 @@ export default function DriverConversationsScreen() {
           </View>
         </ScreenHeader>
       ) : (
-        <ScreenHeader title={t('driver.conversations.title')} />
+        <ScreenHeader
+          title={t('driver.conversations.title')}
+          profileButton
+          right={
+            <Pressable onPress={toggleSearch} hitSlop={12} accessibilityLabel={t('conversations.searchToggle')}>
+              <MaterialIcons name="search" size={24} color={theme.onHeader} />
+            </Pressable>
+          }
+        />
       )}
 
+      {searchOpen && !selectionMode ? (
+        <View style={styles.searchRow}>
+          <View style={styles.searchInput}>
+            <Input
+              value={query}
+              onChangeText={setQuery}
+              placeholder={t('conversations.searchPlaceholder')}
+              autoFocus
+              returnKeyType="search"
+              autoCorrect={false}
+            />
+          </View>
+          <Pressable onPress={toggleSearch} hitSlop={12} accessibilityLabel={t('conversations.searchClose')}>
+            <MaterialIcons name="close" size={22} color={theme.textSecondary} />
+          </Pressable>
+        </View>
+      ) : null}
+
       <FlatList
-        data={conversations}
+        data={visible}
+        keyboardShouldPersistTaps="handled"
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         refreshing={pullRefreshing}
         onRefresh={onPullRefresh}
         ListHeaderComponent={
-          channels.length > 0 ? (
+          // Canalele nu au nume de persoană — le ascundem cât timp se caută.
+          channels.length > 0 && !searchActive ? (
             <View style={styles.channelSection}>
               {channels.map((channel) => (
                 <ChannelCard
@@ -265,10 +331,13 @@ export default function DriverConversationsScreen() {
             </View>
           ) : null
         }
-        renderItem={({ item }) => (
+        renderItem={({ item }) => {
+          const other = otherParticipant(item, me).profile;
+          return (
           <ConversationCard
             item={item}
-            avatarUrl={item.mechanic.avatar_path ? avatarUrls[item.mechanic.avatar_path] : undefined}
+            other={other}
+            avatarUrl={other.avatar_path ? avatarUrls[other.avatar_path] : undefined}
             selectionMode={selectionMode}
             selected={selectedIds.has(item.id)}
             onPress={() =>
@@ -281,14 +350,23 @@ export default function DriverConversationsScreen() {
             onToggleSelect={() => toggleSelect(item.id)}
             unreadCount={unreadCounts[item.id] ?? 0}
           />
-        )}
+          );
+        }}
         ListEmptyComponent={
           !loading ? (
-            <EmptyState
-              icon="chat"
-              title={t('driver.conversations.emptyTitle')}
-              description={t('driver.conversations.emptyDescription')}
-            />
+            searchActive ? (
+              <EmptyState
+                icon="search-off"
+                title={t('conversations.searchEmptyTitle')}
+                description={t('conversations.searchEmptyDescription')}
+              />
+            ) : (
+              <EmptyState
+                icon="chat"
+                title={t('driver.conversations.emptyTitle')}
+                description={t('driver.conversations.emptyDescription')}
+              />
+            )
           ) : null
         }
       />
@@ -305,6 +383,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   deleteTextDisabled: { opacity: 0.4 },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.two,
+  },
+  searchInput: { flex: 1 },
   list: {
     flexGrow: 1,
     paddingHorizontal: Spacing.four,

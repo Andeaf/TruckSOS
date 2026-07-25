@@ -21,6 +21,8 @@ export interface SubmitReportParams {
   reportedUserId: string;
   messageId?: string | null;
   messageTable?: 'messages' | 'channel_messages' | null;
+  /** Faza 19: raport pe un anunț de market (a treia formă de țintă). */
+  listingId?: string | null;
   reason: ReportReason;
   details?: string | null;
   contentSnapshot?: string | null;
@@ -41,6 +43,7 @@ export async function submitReport(
     reported_user_id: params.reportedUserId,
     message_id: params.messageId ?? null,
     message_table: params.messageTable ?? null,
+    listing_id: params.listingId ?? null,
     reason: params.reason,
     details: params.details?.trim() || null,
     content_snapshot: params.contentSnapshot ?? null,

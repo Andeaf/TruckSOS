@@ -30,6 +30,8 @@ interface ReportSheetProps {
   reportedUserId: string;
   messageId?: string | null;
   messageTable?: 'messages' | 'channel_messages' | null;
+  /** Faza 19: raport pe un anunț de market (snapshot-ul = titlu+descriere, cover-ul). */
+  listingId?: string | null;
   contentSnapshot?: string | null;
   imagePathSnapshot?: string | null;
   onClose: () => void;
@@ -42,6 +44,7 @@ export function ReportSheet({
   reportedUserId,
   messageId,
   messageTable,
+  listingId,
   contentSnapshot,
   imagePathSnapshot,
   onClose,
@@ -74,6 +77,7 @@ export function ReportSheet({
       reportedUserId,
       messageId,
       messageTable,
+      listingId,
       reason,
       details,
       contentSnapshot,

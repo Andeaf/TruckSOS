@@ -93,6 +93,7 @@
     "content": {
       "title": "Conținut",
       "tab_announcements": "Anunțuri",
+      "tab_market": "Market",
       "tab_reviews": "Recenzii",
       "tab_channel": "Chat global",
       "empty": "Nimic de afișat.",
@@ -100,6 +101,7 @@
       "noResults": "Niciun rezultat.",
       "deleteConfirmTitle": "Ștergi conținutul?",
       "deleteAnnouncementConfirm": "Anunțul și pozele lui vor fi șterse definitiv. Continui?",
+      "deleteListingConfirm": "Anunțul de vânzare și pozele lui vor fi șterse definitiv. Continui?",
       "deleteReviewConfirm": "Recenzia va fi ștearsă și media recalculată. Continui?",
       "deleteMessageConfirm": "Mesajul devine „șters de moderator”. Continui?"
     }
@@ -127,7 +129,8 @@
       "button": "Sign in",
       "noAccount": "Don't have an account?",
       "registerLink": "Sign up",
-      "errorEmpty": "Please enter your email and password."
+      "errorEmpty": "Please enter your email and password.",
+      "forgotPassword": "Forgot your password?"
     },
     "register": {
       "subtitle": "Create your account",
@@ -137,11 +140,14 @@
       "emailPlaceholder": "email@example.com",
       "passwordLabel": "Password",
       "passwordPlaceholder": "Minimum 6 characters",
+      "confirmPasswordLabel": "Confirm password",
       "button": "Sign up",
       "errorEmpty": "Please fill in all fields.",
       "errorPasswordLength": "Password must be at least 6 characters.",
+      "errorPasswordMismatch": "Passwords don't match.",
       "verifyEmailTitle": "Verify your email",
-      "verifyEmailMessage": "We sent a confirmation link to\n{{email}}\n\nClick the link in the email, then come back and sign in.",
+      "verifyEmailMessage": "We sent a 6-digit code to\n{{email}}\n\nEnter it below to confirm your account.",
+      "verifyButton": "Confirm email",
       "goToLogin": "Go to sign in",
       "hasAccount": "Already have an account?",
       "loginLink": "Sign in"
@@ -161,7 +167,42 @@
       "mechanicFieldsHint": "Your address and VAT number appear on your public profile and build trust.",
       "changeRole": "Choose another role",
       "continueButton": "Continue"
+    },
+    "otp": {
+      "codeLabel": "Verification code",
+      "codePlaceholder": "123456",
+      "resend": "Resend code",
+      "resendCooldown": "Resend code ({{s}}s)",
+      "errorCode": "Enter the 6-digit code from the email.",
+      "spamHint": "Can't find the email? Check your Spam folder too.",
+      "changeEmail": "Wrong email address? Fix it"
+    },
+    "forgot": {
+      "subtitle": "Enter your account email — we'll send you a password reset code.",
+      "sendButton": "Send code",
+      "codeSentBody": "We sent a 6-digit code to {{email}}. Enter it below along with your new password.",
+      "newPasswordLabel": "New password",
+      "confirmPasswordLabel": "Confirm new password",
+      "resetButton": "Reset password",
+      "errorEmail": "Please enter your email address.",
+      "successTitle": "Password changed",
+      "successBody": "Your password has been changed and you are signed in.",
+      "updateErrorTitle": "Password could not be changed",
+      "backToLogin": "Back to sign in"
     }
+  },
+  "authErrors": {
+    "invalid_credentials": "Incorrect email or password.",
+    "email_not_confirmed": "Your email is not confirmed yet. Check your inbox.",
+    "user_already_exists": "An account with this email already exists.",
+    "email_exists": "An account with this email already exists.",
+    "otp_expired": "The code is wrong or has expired. Request a new one.",
+    "over_email_send_rate_limit": "Too many emails sent. Please wait a bit and try again.",
+    "over_request_rate_limit": "Too many attempts. Please wait a bit and try again.",
+    "same_password": "The new password must be different from the old one.",
+    "weak_password": "The password is too weak. Choose a longer one.",
+    "email_address_invalid": "The email address is not valid.",
+    "validation_failed": "The entered data is not valid."
   },
   "driver": {
     "tabs": {
@@ -293,7 +334,12 @@
       "errorAlreadyAccepted": "This announcement has already been accepted by another mechanic.",
       "openInMaps": "Navigate in Google Maps",
       "openInMapsIos": "Navigate in Apple Maps",
-      "toggleView": "Toggle view"
+      "toggleView": "Toggle view",
+      "searchToggle": "Search announcements",
+      "searchClose": "Close search",
+      "searchPlaceholder": "Search: driver, location, issue, truck…",
+      "searchEmptyTitle": "No results",
+      "searchEmptyDescription": "No announcement matches your search. Try different words."
     },
     "applications": {
       "title": "My applications",
@@ -366,6 +412,7 @@
     "report": "Report",
     "deletedMessage": "This message was deleted",
     "deletedByModerator": "Removed by a moderator",
+    "unavailableMessage": "Message unavailable",
     "deleteConfirmTitle": "Delete message?",
     "deleteConfirmBody": "The message will be deleted for everyone. This can't be undone.",
     "edited": "edited",
@@ -547,7 +594,83 @@
     "deletedUser": "Deleted user",
     "noSession": "No active session",
     "signOut": "Sign out",
-    "error": "Error"
+    "error": "Error",
+    "cancel": "Cancel"
+  },
+  "market": {
+    "tabTitle": "Market",
+    "title": "Market",
+    "tabAll": "All",
+    "tabMine": "My listings",
+    "searchPlaceholder": "Search the Market...",
+    "sortTitle": "Sort by",
+    "sortRecent": "Most recent",
+    "sortPriceAsc": "Price: low to high",
+    "sortPriceDesc": "Price: high to low",
+    "categoryAll": "All",
+    "categories": {
+      "tires": "Tires",
+      "parts": "Parts",
+      "trucks": "Trucks",
+      "trailers": "Trailers",
+      "accessories": "Accessories",
+      "other": "Other"
+    },
+    "emptyTitle": "No listings yet",
+    "emptyDescription": "Be the first to sell something — tap + to publish a listing.",
+    "emptyMineTitle": "You have no listings",
+    "emptyMineDescription": "Your sale listings will appear here.",
+    "emptySearchTitle": "No results",
+    "emptySearchDescription": "Try different words or another category.",
+    "soldBadge": "Sold",
+    "soldBanner": "This listing has been sold.",
+    "composerAttached": "Attached listing",
+    "composerAttachedRemove": "Remove listing from message",
+    "detailTitle": "Listing",
+    "notFound": "This listing doesn't exist or is no longer available.",
+    "descriptionLabel": "Description",
+    "sellerDriver": "Carrier",
+    "contactButton": "Contact the seller",
+    "contactBlockedTitle": "Blocked user",
+    "contactBlockedMessage": "You have blocked this user. Unblock them from their profile to get in touch.",
+    "editButton": "Edit listing",
+    "markSoldButton": "Mark as sold",
+    "relistButton": "Relist",
+    "soldConfirmTitle": "Mark as sold?",
+    "soldConfirmMessage": "The listing disappears from the feed but stays visible in existing conversations.",
+    "soldConfirmOk": "Mark sold",
+    "relistConfirmTitle": "Relist this item?",
+    "relistConfirmMessage": "The listing becomes visible in the Market again.",
+    "relistConfirmOk": "Relist",
+    "deleteButton": "Delete listing",
+    "deleteConfirmTitle": "Delete this listing?",
+    "deleteConfirmMessage": "The listing and its photos are deleted permanently. Existing conversations remain.",
+    "deleteConfirmOk": "Delete",
+    "newTitle": "New listing",
+    "editTitle": "Edit listing",
+    "titleLabel": "Title",
+    "titlePlaceholder": "e.g. Set of 4 tires 315/70 R22.5",
+    "categoryLabel": "Category",
+    "priceLabel": "Price",
+    "descriptionFieldLabel": "Description",
+    "descriptionPlaceholder": "Condition, dimensions, compatibility, delivery details...",
+    "photosLabel": "Photos (max 10)",
+    "photosHint": "The first photo is the listing cover. Long-press a photo to make it the cover.",
+    "coverBadge": "Cover",
+    "coverSetTitle": "Cover changed",
+    "coverSetMessage": "The selected photo will be the listing cover.",
+    "errorTitle": "The title must be at least 3 characters long.",
+    "errorDescription": "Add a description.",
+    "errorPrice": "Enter a valid price.",
+    "errorCategory": "Choose a category.",
+    "limitReachedMessage": "You've reached the limit of 20 active listings. Mark one as sold or delete it.",
+    "photosFailedTitle": "Some photos didn't upload",
+    "photosFailedMessage": "{{count}} photos could not be uploaded. You can add them by editing the listing.",
+    "publishButton": "Publish listing",
+    "saveButton": "Save changes",
+    "discardTitle": "Discard changes?",
+    "discardMessage": "What you've entered will be lost.",
+    "discardOk": "Discard"
   },
   "conversations": {
     "selectedCount": "{{count}} selected",
@@ -556,7 +679,12 @@
     "deleteConfirmMessage": "They will only disappear from your list.",
     "deleteConfirmOk": "Yes, delete",
     "cancelSelection": "Cancel",
-    "directLabel": "Direct conversation"
+    "directLabel": "Direct conversation",
+    "searchToggle": "Search chats",
+    "searchClose": "Close search",
+    "searchPlaceholder": "Search by name…",
+    "searchEmptyTitle": "No results",
+    "searchEmptyDescription": "No chat matches your search."
   },
   "status": {
     "open": "Open",
@@ -603,6 +731,34 @@
   "settings": {
     "title": "Settings",
     "editProfile": "Edit profile",
+    "changePassword": "Change password",
+    "changeEmail": "Sign-in email",
+    "changePasswordScreen": {
+      "title": "Change password",
+      "currentLabel": "Current password",
+      "newLabel": "New password",
+      "confirmLabel": "Confirm new password",
+      "submit": "Save password",
+      "errorEmpty": "Please fill in all fields.",
+      "errorMismatch": "The new passwords don't match.",
+      "errorWrongCurrent": "The current password is incorrect.",
+      "successTitle": "Password changed",
+      "successBody": "Your password has been updated."
+    },
+    "changeEmailScreen": {
+      "title": "Change email",
+      "explainBody": "Your sign-in email is {{email}}. We'll send a confirmation code to the new address — after confirming, you'll sign in with it.",
+      "newEmailLabel": "New email",
+      "passwordLabel": "Your password",
+      "sendButton": "Send code",
+      "codeSentBody": "We sent a 6-digit code to {{email}}.",
+      "submit": "Confirm email",
+      "errorEmpty": "Please enter the new email and your password.",
+      "errorSame": "The new address is the same as the current one.",
+      "errorWrongPassword": "Incorrect password.",
+      "successTitle": "Email changed",
+      "successBody": "From now on you sign in with the new address."
+    },
     "appearance": "Appearance",
     "language": "Language",
     "version": "Version {{version}}",
@@ -668,7 +824,7 @@
         },
         {
           "heading": "4. Your content",
-          "body": "You remain the owner of the content you publish (announcements, photos, messages, reviews). You grant us a limited licence to store and display it in the app, strictly to operate the service. Illegal, misleading or offensive content, false announcements and spam are forbidden."
+          "body": "You remain the owner of the content you publish (announcements, Market sale listings, photos, messages, reviews). You grant us a limited licence to store and display it in the app, strictly to operate the service. Illegal, misleading or offensive content, false announcements and spam are forbidden. Market transactions are concluded directly between users; TruckSOS is not a party to the sale, does not process payments and does not guarantee the listed items."
         },
         {
           "heading": "5. Conduct and moderation",
@@ -694,7 +850,7 @@
     },
     "privacy": {
       "title": "Privacy policy",
-      "updated": "Last updated: 21 July 2026",
+      "updated": "Last updated: 23 July 2026",
       "sections": [
         {
           "heading": "1. Who we are",
@@ -702,15 +858,15 @@
         },
         {
           "heading": "2. What data we collect",
-          "body": "Account data: your email address and password (the password is handled encrypted by our authentication provider; we never see it). Profile data: name, role, phone number, company, contact email, address, VAT number, specialisation, activity zone, profile photo and chosen language. Published content: breakdown announcements (description, location, truck details, plate number, photos and — only if you choose to attach it — the GPS position), private messages, public-channel messages, reviews and reports. Technical data: your device's push notification token and, for mechanics, the reference position if set for the radius filter."
+          "body": "Account data: your email address and password (the password is handled encrypted by our authentication provider; we never see it). Profile data: name, role, phone number, company, contact email, address, VAT number, specialisation, activity zone, profile photo and chosen language. Published content: breakdown announcements (description, location, truck details, plate number, photos and — only if you choose to attach it — the GPS position), Market sale listings (title, description, price, category, photos), private messages, public-channel messages, reviews and reports. Technical data: your device's push notification token and, for mechanics, the reference position if set for the radius filter."
         },
         {
           "heading": "3. Who sees what",
-          "body": "Your phone number is NOT public: only the user you have an open conversation with can see it. Your name, profile photo, company and contact email are visible to signed-in users. Mechanics' address and VAT number are shown on their public profile as provider information. Private messages are visible only to the conversation participants; public-channel messages are visible to all signed-in users. Open announcements are visible to mechanics."
+          "body": "Your phone number is NOT public: only the user you have an open conversation with can see it. Your name, profile photo, company and contact email are visible to signed-in users. Mechanics' address and VAT number are shown on their public profile as provider information. Private messages are visible only to the conversation participants; public-channel messages are visible to signed-in users — each user sees the messages sent after their account was created, and administrators can view the entire channel for moderation. Open announcements are visible to mechanics. Active Market sale listings are visible to all signed-in users."
         },
         {
           "heading": "4. Where the data is stored",
-          "body": "Data is stored on Supabase infrastructure, in the European Union (Ireland, AWS region eu-west-1). Sub-processors: Supabase (database, authentication, file storage), Expo (push notification delivery) and Google (map display on Android)."
+          "body": "Data is stored on Supabase infrastructure, in the European Union (Ireland, AWS region eu-west-1). Sub-processors: Supabase (database, authentication, file storage), Expo (push notification delivery), Google (map display on Android) and Brevo (sending authentication emails — confirmation and password-reset codes; EU-based company)."
         },
         {
           "heading": "5. Moderation and administrative access",
@@ -718,7 +874,7 @@
         },
         {
           "heading": "6. Retention and deleting your account",
-          "body": "Data is kept while your account is active. You can delete your account directly from the app (Profile → Settings → Delete account) or by email; deletion is immediate and irreversible. Text messages you sent in other people's conversations remain visible anonymised, marked as coming from a deleted user — everything else (profile, announcements, photos, reviews, favourites) is permanently deleted."
+          "body": "Data is kept while your account is active. You can delete your account directly from the app (Profile → Settings → Delete account) or by email; deletion is immediate and irreversible. Text messages you sent in other people's conversations remain visible anonymised, marked as coming from a deleted user — everything else (profile, announcements, Market sale listings, photos, reviews, favourites) is permanently deleted."
         },
         {
           "heading": "7. Legal bases",

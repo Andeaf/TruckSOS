@@ -34,6 +34,8 @@ export const Colors = {
     barBackground: '#FFFFFF',
     /** Fundal discret pentru butoane-accent (ex. camera din chat). */
     brandSoft: '#E8EEFB',
+    /** Prețurile din Market (Faza 19, design 23 iul). */
+    price: '#1C9E4F',
   },
   dark: {
     text: '#E8EDF4',
@@ -52,6 +54,7 @@ export const Colors = {
     neutralBg: '#222D3C',
     barBackground: '#141D2C',
     brandSoft: '#1E2A40',
+    price: '#4ECB7D',
   },
 } as const;
 

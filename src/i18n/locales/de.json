@@ -93,6 +93,7 @@
     "content": {
       "title": "Conținut",
       "tab_announcements": "Anunțuri",
+      "tab_market": "Market",
       "tab_reviews": "Recenzii",
       "tab_channel": "Chat global",
       "empty": "Nimic de afișat.",
@@ -100,6 +101,7 @@
       "noResults": "Niciun rezultat.",
       "deleteConfirmTitle": "Ștergi conținutul?",
       "deleteAnnouncementConfirm": "Anunțul și pozele lui vor fi șterse definitiv. Continui?",
+      "deleteListingConfirm": "Anunțul de vânzare și pozele lui vor fi șterse definitiv. Continui?",
       "deleteReviewConfirm": "Recenzia va fi ștearsă și media recalculată. Continui?",
       "deleteMessageConfirm": "Mesajul devine „șters de moderator”. Continui?"
     }
@@ -127,7 +129,8 @@
       "button": "Anmelden",
       "noAccount": "Noch kein Konto?",
       "registerLink": "Registrieren",
-      "errorEmpty": "Bitte E-Mail und Passwort eingeben."
+      "errorEmpty": "Bitte E-Mail und Passwort eingeben.",
+      "forgotPassword": "Passwort vergessen?"
     },
     "register": {
       "subtitle": "Erstelle dein Konto",
@@ -137,11 +140,14 @@
       "emailPlaceholder": "email@beispiel.com",
       "passwordLabel": "Passwort",
       "passwordPlaceholder": "Mindestens 6 Zeichen",
+      "confirmPasswordLabel": "Passwort bestätigen",
       "button": "Registrieren",
       "errorEmpty": "Bitte alle Felder ausfüllen.",
       "errorPasswordLength": "Das Passwort muss mindestens 6 Zeichen lang sein.",
+      "errorPasswordMismatch": "Die Passwörter stimmen nicht überein.",
       "verifyEmailTitle": "E-Mail bestätigen",
-      "verifyEmailMessage": "Wir haben einen Bestätigungslink an\n{{email}}\ngesendet.\n\nKlicke auf den Link in der E-Mail und melde dich dann an.",
+      "verifyEmailMessage": "Wir haben einen 6-stelligen Code an\n{{email}}\ngesendet.\n\nGib ihn unten ein, um dein Konto zu bestätigen.",
+      "verifyButton": "E-Mail bestätigen",
       "goToLogin": "Zur Anmeldung",
       "hasAccount": "Schon ein Konto?",
       "loginLink": "Anmelden"
@@ -161,7 +167,42 @@
       "mechanicFieldsHint": "Adresse und USt-IdNr. erscheinen auf deinem öffentlichen Profil und schaffen Vertrauen.",
       "changeRole": "Andere Rolle wählen",
       "continueButton": "Weiter"
+    },
+    "otp": {
+      "codeLabel": "Bestätigungscode",
+      "codePlaceholder": "123456",
+      "resend": "Code erneut senden",
+      "resendCooldown": "Code erneut senden ({{s}}s)",
+      "errorCode": "Gib den 6-stelligen Code aus der E-Mail ein.",
+      "spamHint": "E-Mail nicht gefunden? Sieh auch im Spam-Ordner nach.",
+      "changeEmail": "Falsche E-Mail-Adresse? Korrigieren"
+    },
+    "forgot": {
+      "subtitle": "Gib die E-Mail deines Kontos ein — wir senden dir einen Code zum Zurücksetzen des Passworts.",
+      "sendButton": "Code senden",
+      "codeSentBody": "Wir haben einen 6-stelligen Code an {{email}} gesendet. Gib ihn unten zusammen mit deinem neuen Passwort ein.",
+      "newPasswordLabel": "Neues Passwort",
+      "confirmPasswordLabel": "Neues Passwort bestätigen",
+      "resetButton": "Passwort zurücksetzen",
+      "errorEmail": "Bitte gib deine E-Mail-Adresse ein.",
+      "successTitle": "Passwort geändert",
+      "successBody": "Dein Passwort wurde geändert und du bist angemeldet.",
+      "updateErrorTitle": "Passwort konnte nicht geändert werden",
+      "backToLogin": "Zurück zur Anmeldung"
     }
+  },
+  "authErrors": {
+    "invalid_credentials": "E-Mail oder Passwort falsch.",
+    "email_not_confirmed": "Deine E-Mail ist noch nicht bestätigt. Sieh in deinem Posteingang nach.",
+    "user_already_exists": "Es existiert bereits ein Konto mit dieser E-Mail.",
+    "email_exists": "Es existiert bereits ein Konto mit dieser E-Mail.",
+    "otp_expired": "Der Code ist falsch oder abgelaufen. Fordere einen neuen an.",
+    "over_email_send_rate_limit": "Zu viele E-Mails gesendet. Bitte warte kurz und versuche es erneut.",
+    "over_request_rate_limit": "Zu viele Versuche. Bitte warte kurz und versuche es erneut.",
+    "same_password": "Das neue Passwort muss sich vom alten unterscheiden.",
+    "weak_password": "Das Passwort ist zu schwach. Wähle ein längeres.",
+    "email_address_invalid": "Die E-Mail-Adresse ist ungültig.",
+    "validation_failed": "Die eingegebenen Daten sind ungültig."
   },
   "driver": {
     "tabs": {
@@ -293,7 +334,12 @@
       "errorAlreadyAccepted": "Diese Anzeige wurde bereits von einem anderen Mechaniker angenommen.",
       "openInMaps": "In Google Maps navigieren",
       "openInMapsIos": "In Apple Maps navigieren",
-      "toggleView": "Ansicht wechseln"
+      "toggleView": "Ansicht wechseln",
+      "searchToggle": "Anzeigen durchsuchen",
+      "searchClose": "Suche schließen",
+      "searchPlaceholder": "Suche: Fahrer, Ort, Problem, Lkw…",
+      "searchEmptyTitle": "Keine Ergebnisse",
+      "searchEmptyDescription": "Keine Anzeige entspricht deiner Suche. Versuche andere Wörter."
     },
     "applications": {
       "title": "Meine Bewerbungen",
@@ -366,6 +412,7 @@
     "report": "Melden",
     "deletedMessage": "Diese Nachricht wurde gelöscht",
     "deletedByModerator": "Von einem Moderator entfernt",
+    "unavailableMessage": "Nachricht nicht verfügbar",
     "deleteConfirmTitle": "Nachricht löschen?",
     "deleteConfirmBody": "Die Nachricht wird für alle gelöscht. Das kann nicht rückgängig gemacht werden.",
     "edited": "bearbeitet",
@@ -521,7 +568,12 @@
     "deleteConfirmMessage": "Sie verschwinden nur aus deiner Liste.",
     "deleteConfirmOk": "Ja, löschen",
     "cancelSelection": "Abbrechen",
-    "directLabel": "Direktes Gespräch"
+    "directLabel": "Direktes Gespräch",
+    "searchToggle": "Gespräche durchsuchen",
+    "searchClose": "Suche schließen",
+    "searchPlaceholder": "Nach Name suchen…",
+    "searchEmptyTitle": "Keine Ergebnisse",
+    "searchEmptyDescription": "Kein Gespräch entspricht deiner Suche."
   },
   "favorites": {
     "toggle": "Favorit",
@@ -556,7 +608,83 @@
     "deletedUser": "Gelöschter Benutzer",
     "noSession": "Keine aktive Sitzung",
     "signOut": "Abmelden",
-    "error": "Fehler"
+    "error": "Fehler",
+    "cancel": "Abbrechen"
+  },
+  "market": {
+    "tabTitle": "Markt",
+    "title": "Markt",
+    "tabAll": "Alle",
+    "tabMine": "Meine Anzeigen",
+    "searchPlaceholder": "Im Markt suchen...",
+    "sortTitle": "Sortieren nach",
+    "sortRecent": "Neueste zuerst",
+    "sortPriceAsc": "Preis aufsteigend",
+    "sortPriceDesc": "Preis absteigend",
+    "categoryAll": "Alle",
+    "categories": {
+      "tires": "Reifen",
+      "parts": "Ersatzteile",
+      "trucks": "Lkw",
+      "trailers": "Anhänger",
+      "accessories": "Zubehör",
+      "other": "Sonstiges"
+    },
+    "emptyTitle": "Noch keine Anzeigen",
+    "emptyDescription": "Verkaufe als Erster etwas — tippe auf +, um eine Anzeige zu veröffentlichen.",
+    "emptyMineTitle": "Du hast keine Anzeigen",
+    "emptyMineDescription": "Deine Verkaufsanzeigen erscheinen hier.",
+    "emptySearchTitle": "Keine Ergebnisse",
+    "emptySearchDescription": "Versuche andere Wörter oder eine andere Kategorie.",
+    "soldBadge": "Verkauft",
+    "soldBanner": "Diese Anzeige wurde verkauft.",
+    "composerAttached": "Angehängte Anzeige",
+    "composerAttachedRemove": "Anzeige aus der Nachricht entfernen",
+    "detailTitle": "Anzeige",
+    "notFound": "Diese Anzeige existiert nicht oder ist nicht mehr verfügbar.",
+    "descriptionLabel": "Beschreibung",
+    "sellerDriver": "Transporteur",
+    "contactButton": "Verkäufer kontaktieren",
+    "contactBlockedTitle": "Blockierter Nutzer",
+    "contactBlockedMessage": "Du hast diesen Nutzer blockiert. Entblocke ihn über sein Profil, um ihn zu kontaktieren.",
+    "editButton": "Anzeige bearbeiten",
+    "markSoldButton": "Als verkauft markieren",
+    "relistButton": "Erneut einstellen",
+    "soldConfirmTitle": "Als verkauft markieren?",
+    "soldConfirmMessage": "Die Anzeige verschwindet aus der Liste, bleibt aber in bestehenden Unterhaltungen sichtbar.",
+    "soldConfirmOk": "Als verkauft markieren",
+    "relistConfirmTitle": "Anzeige erneut einstellen?",
+    "relistConfirmMessage": "Die Anzeige wird wieder im Markt sichtbar.",
+    "relistConfirmOk": "Erneut einstellen",
+    "deleteButton": "Anzeige löschen",
+    "deleteConfirmTitle": "Anzeige löschen?",
+    "deleteConfirmMessage": "Die Anzeige und ihre Fotos werden endgültig gelöscht. Bestehende Unterhaltungen bleiben.",
+    "deleteConfirmOk": "Löschen",
+    "newTitle": "Neue Anzeige",
+    "editTitle": "Anzeige bearbeiten",
+    "titleLabel": "Titel",
+    "titlePlaceholder": "z. B. Satz 4 Reifen 315/70 R22.5",
+    "categoryLabel": "Kategorie",
+    "priceLabel": "Preis",
+    "descriptionFieldLabel": "Beschreibung",
+    "descriptionPlaceholder": "Zustand, Maße, Kompatibilität, Lieferdetails...",
+    "photosLabel": "Fotos (max. 10)",
+    "photosHint": "Das erste Foto ist das Titelbild. Halte ein Foto gedrückt, um es zum Titelbild zu machen.",
+    "coverBadge": "Titelbild",
+    "coverSetTitle": "Titelbild geändert",
+    "coverSetMessage": "Das gewählte Foto wird das Titelbild der Anzeige.",
+    "errorTitle": "Der Titel muss mindestens 3 Zeichen lang sein.",
+    "errorDescription": "Füge eine Beschreibung hinzu.",
+    "errorPrice": "Gib einen gültigen Preis ein.",
+    "errorCategory": "Wähle eine Kategorie.",
+    "limitReachedMessage": "Du hast das Limit von 20 aktiven Anzeigen erreicht. Markiere eine als verkauft oder lösche sie.",
+    "photosFailedTitle": "Einige Fotos wurden nicht hochgeladen",
+    "photosFailedMessage": "{{count}} Fotos konnten nicht hochgeladen werden. Du kannst sie beim Bearbeiten hinzufügen.",
+    "publishButton": "Anzeige veröffentlichen",
+    "saveButton": "Änderungen speichern",
+    "discardTitle": "Änderungen verwerfen?",
+    "discardMessage": "Deine Eingaben gehen verloren.",
+    "discardOk": "Verwerfen"
   },
   "status": {
     "open": "Offen",
@@ -603,6 +731,34 @@
   "settings": {
     "title": "Einstellungen",
     "editProfile": "Profil bearbeiten",
+    "changePassword": "Passwort ändern",
+    "changeEmail": "Anmelde-E-Mail",
+    "changePasswordScreen": {
+      "title": "Passwort ändern",
+      "currentLabel": "Aktuelles Passwort",
+      "newLabel": "Neues Passwort",
+      "confirmLabel": "Neues Passwort bestätigen",
+      "submit": "Passwort speichern",
+      "errorEmpty": "Bitte alle Felder ausfüllen.",
+      "errorMismatch": "Die neuen Passwörter stimmen nicht überein.",
+      "errorWrongCurrent": "Das aktuelle Passwort ist falsch.",
+      "successTitle": "Passwort geändert",
+      "successBody": "Dein Passwort wurde aktualisiert."
+    },
+    "changeEmailScreen": {
+      "title": "E-Mail ändern",
+      "explainBody": "Deine Anmelde-E-Mail ist {{email}}. An die neue Adresse senden wir einen Bestätigungscode — nach der Bestätigung meldest du dich mit ihr an.",
+      "newEmailLabel": "Neue E-Mail",
+      "passwordLabel": "Dein Passwort",
+      "sendButton": "Code senden",
+      "codeSentBody": "Wir haben einen 6-stelligen Code an {{email}} gesendet.",
+      "submit": "E-Mail bestätigen",
+      "errorEmpty": "Bitte neue E-Mail und Passwort eingeben.",
+      "errorSame": "Die neue Adresse ist identisch mit der aktuellen.",
+      "errorWrongPassword": "Falsches Passwort.",
+      "successTitle": "E-Mail geändert",
+      "successBody": "Ab jetzt meldest du dich mit der neuen Adresse an."
+    },
     "appearance": "Darstellung",
     "language": "Sprache",
     "version": "Version {{version}}",
@@ -668,7 +824,7 @@
         },
         {
           "heading": "4. Deine Inhalte",
-          "body": "Du bleibst Eigentümer der von dir veröffentlichten Inhalte (Anzeigen, Fotos, Nachrichten, Bewertungen). Du gewährst uns eine begrenzte Lizenz, sie in der App zu speichern und anzuzeigen, ausschließlich für den Betrieb des Dienstes. Illegale, irreführende oder beleidigende Inhalte, falsche Anzeigen und Spam sind verboten."
+          "body": "Du bleibst Eigentümer der von dir veröffentlichten Inhalte (Anzeigen, Markt-Verkaufsanzeigen, Fotos, Nachrichten, Bewertungen). Du gewährst uns eine begrenzte Lizenz, sie in der App zu speichern und anzuzeigen, ausschließlich für den Betrieb des Dienstes. Illegale, irreführende oder beleidigende Inhalte, falsche Anzeigen und Spam sind verboten. Markt-Transaktionen kommen direkt zwischen Nutzern zustande; TruckSOS ist nicht Partei des Verkaufs, wickelt keine Zahlungen ab und übernimmt keine Gewähr für die angebotenen Artikel."
         },
         {
           "heading": "5. Verhalten und Moderation",
@@ -694,7 +850,7 @@
     },
     "privacy": {
       "title": "Datenschutzerklärung",
-      "updated": "Zuletzt aktualisiert: 21. Juli 2026",
+      "updated": "Zuletzt aktualisiert: 23. Juli 2026",
       "sections": [
         {
           "heading": "1. Wer wir sind",
@@ -702,15 +858,15 @@
         },
         {
           "heading": "2. Welche Daten wir erfassen",
-          "body": "Kontodaten: E-Mail-Adresse und Passwort (das Passwort wird von unserem Authentifizierungsanbieter verschlüsselt verwaltet; wir sehen es nie). Profildaten: Name, Rolle, Telefonnummer, Firma, Kontakt-E-Mail, Adresse, USt-IdNr., Spezialisierung, Einsatzgebiet, Profilfoto und gewählte Sprache. Veröffentlichte Inhalte: Pannen-Anzeigen (Beschreibung, Ort, Lkw-Details, Kennzeichen, Fotos und — nur wenn du sie anhängst — die GPS-Position), private Nachrichten, Nachrichten im öffentlichen Kanal, Bewertungen und Meldungen. Technische Daten: das Push-Token deines Geräts und bei Mechanikern die Referenzposition, falls für den Radiusfilter gesetzt."
+          "body": "Kontodaten: E-Mail-Adresse und Passwort (das Passwort wird von unserem Authentifizierungsanbieter verschlüsselt verwaltet; wir sehen es nie). Profildaten: Name, Rolle, Telefonnummer, Firma, Kontakt-E-Mail, Adresse, USt-IdNr., Spezialisierung, Einsatzgebiet, Profilfoto und gewählte Sprache. Veröffentlichte Inhalte: Pannen-Anzeigen (Beschreibung, Ort, Lkw-Details, Kennzeichen, Fotos und — nur wenn du sie anhängst — die GPS-Position), Markt-Verkaufsanzeigen (Titel, Beschreibung, Preis, Kategorie, Fotos), private Nachrichten, Nachrichten im öffentlichen Kanal, Bewertungen und Meldungen. Technische Daten: das Push-Token deines Geräts und bei Mechanikern die Referenzposition, falls für den Radiusfilter gesetzt."
         },
         {
           "heading": "3. Wer was sieht",
-          "body": "Deine Telefonnummer ist NICHT öffentlich: Nur der Nutzer, mit dem du eine offene Konversation hast, sieht sie. Name, Profilfoto, Firma und Kontakt-E-Mail sind für angemeldete Nutzer sichtbar. Adresse und USt-IdNr. von Mechanikern werden als Anbieterinformation auf ihrem öffentlichen Profil angezeigt. Private Nachrichten sehen nur die Gesprächsteilnehmer; Nachrichten im öffentlichen Kanal alle angemeldeten Nutzer. Offene Anzeigen sind für Mechaniker sichtbar."
+          "body": "Deine Telefonnummer ist NICHT öffentlich: Nur der Nutzer, mit dem du eine offene Konversation hast, sieht sie. Name, Profilfoto, Firma und Kontakt-E-Mail sind für angemeldete Nutzer sichtbar. Adresse und USt-IdNr. von Mechanikern werden als Anbieterinformation auf ihrem öffentlichen Profil angezeigt. Private Nachrichten sehen nur die Gesprächsteilnehmer; Nachrichten im öffentlichen Kanal sehen angemeldete Nutzer — jeder Nutzer sieht die Nachrichten, die nach Erstellung seines Kontos gesendet wurden, und Administratoren sehen den gesamten Kanal zur Moderation. Offene Anzeigen sind für Mechaniker sichtbar. Aktive Markt-Verkaufsanzeigen sind für alle angemeldeten Nutzer sichtbar."
         },
         {
           "heading": "4. Wo die Daten gespeichert werden",
-          "body": "Die Daten werden auf der Infrastruktur von Supabase gespeichert, in der Europäischen Union (Irland, AWS-Region eu-west-1). Unterauftragsverarbeiter: Supabase (Datenbank, Authentifizierung, Dateispeicher), Expo (Zustellung von Push-Benachrichtigungen) und Google (Kartendarstellung auf Android)."
+          "body": "Die Daten werden auf der Infrastruktur von Supabase gespeichert, in der Europäischen Union (Irland, AWS-Region eu-west-1). Unterauftragsverarbeiter: Supabase (Datenbank, Authentifizierung, Dateispeicher), Expo (Zustellung von Push-Benachrichtigungen), Google (Kartendarstellung auf Android) und Brevo (Versand der Authentifizierungs-E-Mails — Bestätigungs- und Passwort-Reset-Codes; Unternehmen mit Sitz in der EU)."
         },
         {
           "heading": "5. Moderation und administrativer Zugriff",
@@ -718,7 +874,7 @@
         },
         {
           "heading": "6. Speicherdauer und Kontolöschung",
-          "body": "Die Daten bleiben gespeichert, solange dein Konto aktiv ist. Du kannst dein Konto direkt in der App löschen (Profil → Einstellungen → Konto löschen) oder per E-Mail; die Löschung ist sofortig und unwiderruflich. Textnachrichten in den Konversationen anderer bleiben anonymisiert sichtbar, markiert als von einem gelöschten Nutzer — alles andere (Profil, Anzeigen, Fotos, Bewertungen, Favoriten) wird endgültig gelöscht."
+          "body": "Die Daten bleiben gespeichert, solange dein Konto aktiv ist. Du kannst dein Konto direkt in der App löschen (Profil → Einstellungen → Konto löschen) oder per E-Mail; die Löschung ist sofortig und unwiderruflich. Textnachrichten in den Konversationen anderer bleiben anonymisiert sichtbar, markiert als von einem gelöschten Nutzer — alles andere (Profil, Anzeigen, Markt-Verkaufsanzeigen, Fotos, Bewertungen, Favoriten) wird endgültig gelöscht."
         },
         {
           "heading": "7. Rechtsgrundlagen",

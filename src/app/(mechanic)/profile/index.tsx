@@ -11,6 +11,7 @@ import { ThemedView } from '@/components/themed-view';
 import { ListRow, RowGroup, SectionLabel } from '@/components/ui/list-row';
 import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
+import { useBack } from '@/hooks/use-back';
 import { useSettings } from '@/hooks/use-settings';
 
 /**
@@ -23,6 +24,8 @@ export default function MechanicProfileScreen() {
   const { setAdminViewAs } = useSettings();
   const { t } = useTranslation();
   const router = useRouter();
+  // Faza 19: profilul nu mai e tab — se deschide push-uit din butonul-avatar al antetului.
+  const goBack = useBack('/(mechanic)/feed');
 
   function detail(icon: keyof typeof MaterialIcons.glyphMap, label: string, value: string | null) {
     return (
@@ -40,7 +43,7 @@ export default function MechanicProfileScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScreenHeader title={t('profile.myProfileTitle')} />
+      <ScreenHeader title={t('profile.myProfileTitle')} onBack={goBack} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedView type="backgroundElement" style={styles.identityCard}>

@@ -11,6 +11,7 @@ import { RadiusFilterMenu } from '@/components/radius-filter-menu';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Input } from '@/components/ui/input';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
@@ -18,6 +19,7 @@ import { useOpenAnnouncements, fetchRejectedAnnouncementIds } from '@/hooks/use-
 import { applyRadiusFilter, useRadiusFilter } from '@/hooks/use-radius-filter';
 import { useViewedAnnouncements } from '@/hooks/use-viewed-announcements';
 import { distanceKm } from '@/lib/location';
+import { matchesSearch } from '@/lib/search';
 
 const VIEW_MODE_KEY = 'mechanic_feed_view_mode';
 type ViewMode = 'compact' | 'extended';
@@ -39,6 +41,32 @@ export default function MechanicFeedScreen() {
     () => applyRadiusFilter(announcements, radiusKm, coords),
     [announcements, radiusKm, coords]
   );
+
+  // Căutarea filtrează local peste lista deja filtrată de rază (toate anunțurile
+  // deschise sunt oricum în memorie) — instant, fără query-uri suplimentare.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const searchActive = searchOpen && query.trim().length > 0;
+  const visible = useMemo(() => {
+    if (!searchActive) return filtered;
+    return filtered.filter((a) =>
+      matchesSearch(query, [
+        a.driver?.full_name,
+        a.location,
+        a.description,
+        a.truck_make,
+        a.truck_model,
+        a.plate_number,
+      ])
+    );
+  }, [filtered, searchActive, query]);
+
+  function toggleSearch() {
+    setSearchOpen((prev) => {
+      if (prev) setQuery('');
+      return !prev;
+    });
+  }
 
   useEffect(() => {
     AsyncStorage.getItem(VIEW_MODE_KEY).then((stored) => {
@@ -85,6 +113,7 @@ export default function MechanicFeedScreen() {
         title={t('mechanic.feed.title')}
         subtitle={profile?.full_name}
         right={<RadiusFilterMenu />}
+        profileButton
       />
 
       {/* Raza e setată, dar n-avem poziția (permisiune refuzată / GPS indisponibil):
@@ -102,7 +131,15 @@ export default function MechanicFeedScreen() {
         </ThemedView>
       ) : null}
 
+      {/* Lupa stă în stânga, pe același rând cu comutatorul de aspect (dreapta). */}
       <View style={styles.listToolbar}>
+        <Pressable onPress={toggleSearch} hitSlop={12} accessibilityLabel={t('mechanic.feed.searchToggle')}>
+          <MaterialIcons
+            name="search"
+            size={22}
+            color={searchOpen ? theme.brand : theme.textSecondary}
+          />
+        </Pressable>
         <Pressable onPress={toggleViewMode} hitSlop={12} accessibilityLabel={t('mechanic.feed.toggleView')}>
           <MaterialIcons
             name={viewMode === 'extended' ? 'view-list' : 'view-agenda'}
@@ -112,8 +149,27 @@ export default function MechanicFeedScreen() {
         </Pressable>
       </View>
 
+      {searchOpen ? (
+        <View style={styles.searchRow}>
+          <View style={styles.searchInput}>
+            <Input
+              value={query}
+              onChangeText={setQuery}
+              placeholder={t('mechanic.feed.searchPlaceholder')}
+              autoFocus
+              returnKeyType="search"
+              autoCorrect={false}
+            />
+          </View>
+          <Pressable onPress={toggleSearch} hitSlop={12} accessibilityLabel={t('mechanic.feed.searchClose')}>
+            <MaterialIcons name="close" size={22} color={theme.textSecondary} />
+          </Pressable>
+        </View>
+      ) : null}
+
       <FlatList
-        data={filtered}
+        data={visible}
+        keyboardShouldPersistTaps="handled"
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={viewMode === 'compact' ? styles.separatorCompact : styles.separator} />}
@@ -143,7 +199,14 @@ export default function MechanicFeedScreen() {
         )}
         ListEmptyComponent={
           !loading ? (
-            announcements.length > 0 && radiusKm != null ? (
+            searchActive ? (
+              // Căutarea n-a găsit nimic — mesaj dedicat, înaintea celui de rază.
+              <EmptyState
+                icon="search-off"
+                title={t('mechanic.feed.searchEmptyTitle')}
+                description={t('mechanic.feed.searchEmptyDescription')}
+              />
+            ) : announcements.length > 0 && radiusKm != null ? (
               // Filtrul a ascuns tot — altă cauză decât „nu există anunțuri".
               <EmptyState
                 icon="filter-alt"
@@ -176,10 +239,19 @@ const styles = StyleSheet.create({
   separatorCompact: { height: Spacing.one },
   listToolbar: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.two,
   },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.two,
+  },
+  searchInput: { flex: 1 },
   locationBanner: {
     flexDirection: 'row',
     alignItems: 'center',

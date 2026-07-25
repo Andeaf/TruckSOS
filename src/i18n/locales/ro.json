@@ -93,6 +93,7 @@
     "content": {
       "title": "Conținut",
       "tab_announcements": "Anunțuri",
+      "tab_market": "Market",
       "tab_reviews": "Recenzii",
       "tab_channel": "Chat global",
       "empty": "Nimic de afișat.",
@@ -100,6 +101,7 @@
       "noResults": "Niciun rezultat.",
       "deleteConfirmTitle": "Ștergi conținutul?",
       "deleteAnnouncementConfirm": "Anunțul și pozele lui vor fi șterse definitiv. Continui?",
+      "deleteListingConfirm": "Anunțul de vânzare și pozele lui vor fi șterse definitiv. Continui?",
       "deleteReviewConfirm": "Recenzia va fi ștearsă și media recalculată. Continui?",
       "deleteMessageConfirm": "Mesajul devine „șters de moderator”. Continui?"
     }
@@ -127,7 +129,8 @@
       "button": "Autentifică-te",
       "noAccount": "Nu ai cont?",
       "registerLink": "Înregistrează-te",
-      "errorEmpty": "Completează email-ul și parola."
+      "errorEmpty": "Completează email-ul și parola.",
+      "forgotPassword": "Ai uitat parola?"
     },
     "register": {
       "subtitle": "Creează-ți contul",
@@ -137,11 +140,14 @@
       "emailPlaceholder": "email@exemplu.com",
       "passwordLabel": "Parolă",
       "passwordPlaceholder": "Minim 6 caractere",
+      "confirmPasswordLabel": "Confirmă parola",
       "button": "Înregistrează-te",
       "errorEmpty": "Completează toate câmpurile.",
       "errorPasswordLength": "Parola trebuie să aibă cel puțin 6 caractere.",
+      "errorPasswordMismatch": "Parolele nu coincid.",
       "verifyEmailTitle": "Verifică email-ul",
-      "verifyEmailMessage": "Am trimis un link de confirmare la\n{{email}}\n\nApasă linkul din email, apoi întoarce-te și autentifică-te.",
+      "verifyEmailMessage": "Ți-am trimis un cod de 6 cifre la\n{{email}}\n\nIntrodu-l mai jos ca să-ți confirmi contul.",
+      "verifyButton": "Confirmă email-ul",
       "goToLogin": "Mergi la autentificare",
       "hasAccount": "Ai deja cont?",
       "loginLink": "Autentifică-te"
@@ -161,7 +167,42 @@
       "mechanicFieldsHint": "Adresa și numărul TVA apar în profilul tău public și construiesc încredere.",
       "changeRole": "Alege alt rol",
       "continueButton": "Continuă"
+    },
+    "otp": {
+      "codeLabel": "Cod de verificare",
+      "codePlaceholder": "123456",
+      "resend": "Retrimite codul",
+      "resendCooldown": "Retrimite codul ({{s}}s)",
+      "errorCode": "Introdu codul de 6 cifre primit pe email.",
+      "spamHint": "Nu găsești emailul? Verifică și folderul Spam.",
+      "changeEmail": "Adresă de email greșită? Corecteaz-o"
+    },
+    "forgot": {
+      "subtitle": "Introdu email-ul contului — îți trimitem un cod de resetare a parolei.",
+      "sendButton": "Trimite codul",
+      "codeSentBody": "Am trimis un cod de 6 cifre la {{email}}. Introdu-l mai jos împreună cu parola nouă.",
+      "newPasswordLabel": "Parolă nouă",
+      "confirmPasswordLabel": "Confirmă parola nouă",
+      "resetButton": "Resetează parola",
+      "errorEmail": "Introdu adresa de email.",
+      "successTitle": "Parolă schimbată",
+      "successBody": "Parola a fost schimbată și ești autentificat.",
+      "updateErrorTitle": "Parola nu a putut fi schimbată",
+      "backToLogin": "Înapoi la autentificare"
     }
+  },
+  "authErrors": {
+    "invalid_credentials": "Email sau parolă incorecte.",
+    "email_not_confirmed": "Email-ul nu e confirmat încă. Verifică-ți inbox-ul.",
+    "user_already_exists": "Există deja un cont cu acest email.",
+    "email_exists": "Există deja un cont cu acest email.",
+    "otp_expired": "Codul e greșit sau a expirat. Cere unul nou.",
+    "over_email_send_rate_limit": "Prea multe email-uri trimise. Așteaptă puțin și încearcă din nou.",
+    "over_request_rate_limit": "Prea multe încercări. Așteaptă puțin și încearcă din nou.",
+    "same_password": "Parola nouă trebuie să difere de cea veche.",
+    "weak_password": "Parola e prea slabă. Alege una mai lungă.",
+    "email_address_invalid": "Adresa de email nu e validă.",
+    "validation_failed": "Datele introduse nu sunt valide."
   },
   "driver": {
     "tabs": {
@@ -293,7 +334,12 @@
       "errorAlreadyAccepted": "Anunțul a fost deja acceptat de un alt mecanic.",
       "openInMaps": "Navighează în Google Maps",
       "openInMapsIos": "Navighează în Apple Maps",
-      "toggleView": "Schimbă vizualizarea"
+      "toggleView": "Schimbă vizualizarea",
+      "searchToggle": "Caută anunțuri",
+      "searchClose": "Închide căutarea",
+      "searchPlaceholder": "Caută: șofer, locație, problemă, camion…",
+      "searchEmptyTitle": "Niciun rezultat",
+      "searchEmptyDescription": "Niciun anunț nu se potrivește căutării. Încearcă alte cuvinte."
     },
     "applications": {
       "title": "Candidaturile mele",
@@ -368,6 +414,7 @@
     "report": "Raportează",
     "deletedMessage": "Acest mesaj a fost șters",
     "deletedByModerator": "Șters de moderator",
+    "unavailableMessage": "Mesaj indisponibil",
     "deleteConfirmTitle": "Ștergi mesajul?",
     "deleteConfirmBody": "Mesajul va fi șters pentru toți. Această acțiune nu poate fi anulată.",
     "edited": "editat",
@@ -467,7 +514,83 @@
     "deletedUser": "Utilizator șters",
     "noSession": "Sesiune inexistentă",
     "signOut": "Deconectare",
-    "error": "Eroare"
+    "error": "Eroare",
+    "cancel": "Anulează"
+  },
+  "market": {
+    "tabTitle": "Market",
+    "title": "Market",
+    "tabAll": "Toate",
+    "tabMine": "Ale mele",
+    "searchPlaceholder": "Caută în Market...",
+    "sortTitle": "Sortează",
+    "sortRecent": "Cele mai recente",
+    "sortPriceAsc": "Preț crescător",
+    "sortPriceDesc": "Preț descrescător",
+    "categoryAll": "Toate",
+    "categories": {
+      "tires": "Anvelope",
+      "parts": "Piese",
+      "trucks": "Camioane",
+      "trailers": "Remorci",
+      "accessories": "Accesorii",
+      "other": "Altele"
+    },
+    "emptyTitle": "Niciun anunț încă",
+    "emptyDescription": "Fii primul care vinde ceva — apasă + ca să publici un anunț.",
+    "emptyMineTitle": "Nu ai anunțuri",
+    "emptyMineDescription": "Anunțurile tale de vânzare vor apărea aici.",
+    "emptySearchTitle": "Niciun rezultat",
+    "emptySearchDescription": "Încearcă alte cuvinte sau altă categorie.",
+    "soldBadge": "Vândut",
+    "soldBanner": "Acest anunț a fost vândut.",
+    "composerAttached": "Anunț atașat",
+    "composerAttachedRemove": "Elimină anunțul din mesaj",
+    "detailTitle": "Anunț",
+    "notFound": "Anunțul nu există sau nu mai este disponibil.",
+    "descriptionLabel": "Descriere",
+    "sellerDriver": "Transportator",
+    "contactButton": "Contactează vânzătorul",
+    "contactBlockedTitle": "Utilizator blocat",
+    "contactBlockedMessage": "Ai blocat acest utilizator. Deblochează-l din profilul lui ca să-l poți contacta.",
+    "editButton": "Editează anunțul",
+    "markSoldButton": "Marchează ca vândut",
+    "relistButton": "Republică anunțul",
+    "soldConfirmTitle": "Marchezi ca vândut?",
+    "soldConfirmMessage": "Anunțul dispare din listă, dar rămâne vizibil în conversațiile existente.",
+    "soldConfirmOk": "Marchează vândut",
+    "relistConfirmTitle": "Republici anunțul?",
+    "relistConfirmMessage": "Anunțul redevine vizibil în Market.",
+    "relistConfirmOk": "Republică",
+    "deleteButton": "Șterge anunțul",
+    "deleteConfirmTitle": "Ștergi anunțul?",
+    "deleteConfirmMessage": "Anunțul și pozele lui se șterg definitiv. Conversațiile existente rămân.",
+    "deleteConfirmOk": "Șterge",
+    "newTitle": "Anunț nou",
+    "editTitle": "Editează anunțul",
+    "titleLabel": "Titlu",
+    "titlePlaceholder": "ex: Set 4 anvelope 315/70 R22.5",
+    "categoryLabel": "Categorie",
+    "priceLabel": "Preț",
+    "descriptionFieldLabel": "Descriere",
+    "descriptionPlaceholder": "Stare, dimensiuni, compatibilitate, detalii de livrare...",
+    "photosLabel": "Poze (max 10)",
+    "photosHint": "Prima poză e coperta anunțului. Ține apăsat pe o poză ca să o faci copertă.",
+    "coverBadge": "Copertă",
+    "coverSetTitle": "Copertă schimbată",
+    "coverSetMessage": "Poza aleasă va fi coperta anunțului.",
+    "errorTitle": "Titlul trebuie să aibă cel puțin 3 caractere.",
+    "errorDescription": "Adaugă o descriere.",
+    "errorPrice": "Introdu un preț valid.",
+    "errorCategory": "Alege o categorie.",
+    "limitReachedMessage": "Ai atins limita de 20 de anunțuri active. Marchează ca vândut sau șterge unul existent.",
+    "photosFailedTitle": "Unele poze nu s-au încărcat",
+    "photosFailedMessage": "{{count}} poze nu au putut fi încărcate. Le poți adăuga din editare.",
+    "publishButton": "Publică anunțul",
+    "saveButton": "Salvează modificările",
+    "discardTitle": "Renunți la modificări?",
+    "discardMessage": "Ce ai completat se va pierde.",
+    "discardOk": "Renunță"
   },
   "profile": {
     "tabTitle": "Profil",
@@ -558,7 +681,12 @@
     "deleteConfirmMessage": "Vor dispărea doar din lista ta.",
     "deleteConfirmOk": "Da, șterge",
     "cancelSelection": "Anulează",
-    "directLabel": "Conversație directă"
+    "directLabel": "Conversație directă",
+    "searchToggle": "Caută conversații",
+    "searchClose": "Închide căutarea",
+    "searchPlaceholder": "Caută după nume…",
+    "searchEmptyTitle": "Niciun rezultat",
+    "searchEmptyDescription": "Nicio conversație nu se potrivește căutării."
   },
   "status": {
     "open": "Deschis",
@@ -605,6 +733,34 @@
   "settings": {
     "title": "Setări",
     "editProfile": "Editare profil",
+    "changePassword": "Schimbă parola",
+    "changeEmail": "Email autentificare",
+    "changePasswordScreen": {
+      "title": "Schimbă parola",
+      "currentLabel": "Parola curentă",
+      "newLabel": "Parolă nouă",
+      "confirmLabel": "Confirmă parola nouă",
+      "submit": "Salvează parola",
+      "errorEmpty": "Completează toate câmpurile.",
+      "errorMismatch": "Parolele noi nu coincid.",
+      "errorWrongCurrent": "Parola curentă e incorectă.",
+      "successTitle": "Parolă schimbată",
+      "successBody": "Parola a fost actualizată."
+    },
+    "changeEmailScreen": {
+      "title": "Schimbă email-ul",
+      "explainBody": "Email-ul tău de autentificare este {{email}}. Pe adresa nouă primești un cod de confirmare — după confirmare te autentifici cu ea.",
+      "newEmailLabel": "Email nou",
+      "passwordLabel": "Parola ta",
+      "sendButton": "Trimite codul",
+      "codeSentBody": "Am trimis un cod de 6 cifre la {{email}}.",
+      "submit": "Confirmă email-ul",
+      "errorEmpty": "Completează email-ul nou și parola.",
+      "errorSame": "Adresa nouă e identică cu cea curentă.",
+      "errorWrongPassword": "Parolă incorectă.",
+      "successTitle": "Email schimbat",
+      "successBody": "De acum te autentifici cu noua adresă."
+    },
     "appearance": "Aspect",
     "language": "Limbă",
     "version": "Versiunea {{version}}",
@@ -670,7 +826,7 @@
         },
         {
           "heading": "4. Conținutul tău",
-          "body": "Rămâi proprietarul conținutului pe care îl publici (anunțuri, poze, mesaje, evaluări). Ne acorzi o licență limitată de a-l stoca și afișa în aplicație, strict pentru funcționarea serviciului. Sunt interzise conținutul ilegal, înșelător sau ofensator, anunțurile false și spam-ul."
+          "body": "Rămâi proprietarul conținutului pe care îl publici (anunțuri, anunțuri de vânzare în Market, poze, mesaje, evaluări). Ne acorzi o licență limitată de a-l stoca și afișa în aplicație, strict pentru funcționarea serviciului. Sunt interzise conținutul ilegal, înșelător sau ofensator, anunțurile false și spam-ul. Tranzacțiile din Market se încheie direct între utilizatori; TruckSOS nu este parte în vânzare, nu procesează plăți și nu garantează produsele listate."
         },
         {
           "heading": "5. Conduită și moderare",
@@ -696,7 +852,7 @@
     },
     "privacy": {
       "title": "Politica de confidențialitate",
-      "updated": "Ultima actualizare: 21 iulie 2026",
+      "updated": "Ultima actualizare: 23 iulie 2026",
       "sections": [
         {
           "heading": "1. Cine suntem",
@@ -704,15 +860,15 @@
         },
         {
           "heading": "2. Ce date colectăm",
-          "body": "Date de cont: adresa de e-mail și parola (parola este gestionată criptat de furnizorul de autentificare; nu o vedem niciodată). Date de profil: nume, rol, număr de telefon, firmă, e-mail de contact, adresă, număr TVA/CUI, specializare, zonă de activitate, poză de profil și limba aleasă. Conținut publicat: anunțuri de depanare (descriere, locație, detalii camion, număr de înmatriculare, poze și — doar dacă alegi să o atașezi — poziția GPS), mesaje private, mesaje în canalul public, evaluări și rapoarte. Date tehnice: token-ul de notificări push al dispozitivului și, la mecanici, poziția de referință dacă e setată pentru filtrul de rază."
+          "body": "Date de cont: adresa de e-mail și parola (parola este gestionată criptat de furnizorul de autentificare; nu o vedem niciodată). Date de profil: nume, rol, număr de telefon, firmă, e-mail de contact, adresă, număr TVA/CUI, specializare, zonă de activitate, poză de profil și limba aleasă. Conținut publicat: anunțuri de depanare (descriere, locație, detalii camion, număr de înmatriculare, poze și — doar dacă alegi să o atașezi — poziția GPS), anunțuri de vânzare în Market (titlu, descriere, preț, categorie, poze), mesaje private, mesaje în canalul public, evaluări și rapoarte. Date tehnice: token-ul de notificări push al dispozitivului și, la mecanici, poziția de referință dacă e setată pentru filtrul de rază."
         },
         {
           "heading": "3. Cine vede ce",
-          "body": "Numărul de telefon NU este public: îl vede doar utilizatorul cu care ai o conversație deschisă. Numele, poza de profil, firma și e-mailul de contact sunt vizibile utilizatorilor autentificați. Adresa și numărul TVA ale mecanicilor sunt afișate în profilul lor public, ca informații de prestator. Mesajele private se văd doar de participanții conversației; mesajele din canalul public se văd de toți utilizatorii autentificați. Anunțurile deschise sunt vizibile mecanicilor."
+          "body": "Numărul de telefon NU este public: îl vede doar utilizatorul cu care ai o conversație deschisă. Numele, poza de profil, firma și e-mailul de contact sunt vizibile utilizatorilor autentificați. Adresa și numărul TVA ale mecanicilor sunt afișate în profilul lor public, ca informații de prestator. Mesajele private se văd doar de participanții conversației; mesajele din canalul public se văd de utilizatorii autentificați — fiecare utilizator vede mesajele trimise după crearea contului său, iar administratorii văd întregul canal, pentru moderare. Anunțurile deschise sunt vizibile mecanicilor. Anunțurile de vânzare active din Market sunt vizibile tuturor utilizatorilor autentificați."
         },
         {
           "heading": "4. Unde sunt stocate datele",
-          "body": "Datele sunt stocate pe infrastructura Supabase, în Uniunea Europeană (Irlanda, regiunea AWS eu-west-1). Subprocesatori: Supabase (bază de date, autentificare, stocare fișiere), Expo (livrarea notificărilor push) și Google (afișarea hărților pe Android)."
+          "body": "Datele sunt stocate pe infrastructura Supabase, în Uniunea Europeană (Irlanda, regiunea AWS eu-west-1). Subprocesatori: Supabase (bază de date, autentificare, stocare fișiere), Expo (livrarea notificărilor push), Google (afișarea hărților pe Android) și Brevo (trimiterea emailurilor de autentificare — coduri de confirmare și de resetare a parolei; companie din UE)."
         },
         {
           "heading": "5. Moderare și acces administrativ",
@@ -720,7 +876,7 @@
         },
         {
           "heading": "6. Cât păstrăm datele și cum îți ștergi contul",
-          "body": "Datele se păstrează cât timp contul tău este activ. Îți poți șterge contul direct din aplicație (Profil → Setări → Șterge contul) sau prin e-mail; ștergerea este imediată și ireversibilă. Mesajele text trimise în conversațiile altora rămân vizibile anonimizat, marcate ca provenind de la un utilizator șters — restul datelor (profil, anunțuri, poze, evaluări, favorite) se șterg definitiv."
+          "body": "Datele se păstrează cât timp contul tău este activ. Îți poți șterge contul direct din aplicație (Profil → Setări → Șterge contul) sau prin e-mail; ștergerea este imediată și ireversibilă. Mesajele text trimise în conversațiile altora rămân vizibile anonimizat, marcate ca provenind de la un utilizator șters — restul datelor (profil, anunțuri, anunțuri de vânzare din Market, poze, evaluări, favorite) se șterg definitiv."
         },
         {
           "heading": "7. Temeiurile legale",

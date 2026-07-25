@@ -142,6 +142,7 @@ export default function DriverAnnouncementsScreen() {
         <ScreenHeader
           title={t('driver.announcements.listTitle')}
           subtitle={profile?.full_name}
+          profileButton
         />
       )}
 

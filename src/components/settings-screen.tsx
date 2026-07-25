@@ -32,11 +32,15 @@ export function SettingsScreen({
   backPath,
   deletePath,
   blockedPath,
+  changePasswordPath,
+  changeEmailPath,
 }: {
   editPath: string;
   backPath: string;
   deletePath: string;
   blockedPath: string;
+  changePasswordPath: string;
+  changeEmailPath: string;
 }) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -100,6 +104,17 @@ export function SettingsScreen({
             icon="person"
             label={t('settings.editProfile')}
             onPress={() => router.push(editPath as never)}
+          />
+          <ListRow
+            icon="lock-outline"
+            label={t('settings.changePassword')}
+            onPress={() => router.push(changePasswordPath as never)}
+          />
+          <ListRow
+            icon="alternate-email"
+            label={t('settings.changeEmail')}
+            value={session?.user.email ?? undefined}
+            onPress={() => router.push(changeEmailPath as never)}
           />
         </RowGroup>
 

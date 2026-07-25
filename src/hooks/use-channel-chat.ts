@@ -230,7 +230,12 @@ export async function markChannelRead(
   if (!session?.user) return;
   // Ceasul telefonului poate fi în urma serverului → cursorul acoperă explicit cel
   // mai nou mesaj afișat (+1ms), altfel badge-ul îl număra „necitit" pe veci.
-  // Simetric cu markConversationRead (chat privat).
+  // AICI păstrăm intenționat și Date.now() (spre deosebire de markConversationRead,
+  // devenit strict server-side): lista canalului ASCUNDE mesajele utilizatorilor
+  // blocați, deci „cel mai nou afișat" poate fi mai vechi decât ultimul mesaj real —
+  // fără componenta de ceas, un mesaj de la un blocat ar ține badge-ul aprins fără
+  // nicio cale de a-l stinge. Canalul nu are bife ✓✓, deci un cursor ușor „din
+  // viitor" nu produce citiri false vizibile altcuiva.
   const newest = newestCreatedAt ? new Date(newestCreatedAt).getTime() + 1 : 0;
   await supabase.from('channel_reads').upsert(
     {

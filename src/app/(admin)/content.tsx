@@ -11,19 +11,22 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
   adminDeleteAnnouncement,
+  adminDeleteListing,
   adminDeleteMessage,
   adminDeleteReview,
   fetchChannelMessages,
   fetchRecentAnnouncements,
+  fetchRecentListings,
   fetchRecentReviews,
   searchAnnouncements,
   type AdminAnnouncement,
   type AdminChannelMessage,
+  type AdminListing,
   type AdminReview,
 } from '@/hooks/use-admin';
 
-type Segment = 'announcements' | 'reviews' | 'channel';
-const SEGMENTS: Segment[] = ['announcements', 'reviews', 'channel'];
+type Segment = 'announcements' | 'market' | 'reviews' | 'channel';
+const SEGMENTS: Segment[] = ['announcements', 'market', 'reviews', 'channel'];
 
 /** Locale explicit: altfel formatul urmează regiunea dispozitivului, nu limba aplicației. */
 const LOCALE_MAP: Record<string, string> = { ro: 'ro-RO', en: 'en-GB', de: 'de-DE' };
@@ -33,6 +36,7 @@ export default function AdminContent() {
   const [segment, setSegment] = useState<Segment>('announcements');
   const [annQuery, setAnnQuery] = useState('');
   const [announcements, setAnnouncements] = useState<AdminAnnouncement[]>([]);
+  const [listings, setListings] = useState<AdminListing[]>([]);
   const [reviews, setReviews] = useState<AdminReview[]>([]);
   const [channel, setChannel] = useState<AdminChannelMessage[]>([]);
   // Reîncărcare la focus / după o ștergere: bump-ul re-declanșează efectele de mai jos.
@@ -64,6 +68,7 @@ export default function AdminContent() {
   useEffect(() => {
     if (segment === 'reviews') fetchRecentReviews().then(({ data }) => setReviews(data));
     else if (segment === 'channel') fetchChannelMessages().then(({ data }) => setChannel(data));
+    else if (segment === 'market') fetchRecentListings().then(({ data }) => setListings(data));
   }, [segment, tick]);
 
   function confirmDelete(message: string, action: () => Promise<string | null>) {
@@ -131,6 +136,24 @@ export default function AdminContent() {
               onDelete={() =>
                 confirmDelete(t('admin.content.deleteAnnouncementConfirm'), () =>
                   adminDeleteAnnouncement(item.id)
+                )
+              }
+            />
+          )}
+        />
+      ) : segment === 'market' ? (
+        <FlatList
+          data={listings}
+          keyExtractor={(l) => l.id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={<Empty />}
+          renderItem={({ item }) => (
+            <Card
+              title={item.title}
+              subtitle={`${item.seller_name ?? '—'} · ${Number(item.price).toLocaleString()} ${item.currency} · ${t(`market.categories.${item.category}`)}${item.status === 'sold' ? ` · ${t('market.soldBadge')}` : ''} · ${new Date(item.created_at).toLocaleDateString(LOCALE_MAP[i18n.language] ?? 'ro-RO')}`}
+              onDelete={() =>
+                confirmDelete(t('admin.content.deleteListingConfirm'), () =>
+                  adminDeleteListing(item.id)
                 )
               }
             />
