@@ -15,7 +15,11 @@ import { Input } from '@/components/ui/input';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
-import { useOpenAnnouncements, fetchRejectedAnnouncementIds } from '@/hooks/use-announcements';
+import {
+  useOpenAnnouncements,
+  fetchPendingApplicationAnnouncementIds,
+  fetchRejectedAnnouncementIds,
+} from '@/hooks/use-announcements';
 import { applyRadiusFilter, useRadiusFilter } from '@/hooks/use-radius-filter';
 import { useViewedAnnouncements } from '@/hooks/use-viewed-announcements';
 import { distanceKm } from '@/lib/location';
@@ -32,6 +36,8 @@ export default function MechanicFeedScreen() {
   const router = useRouter();
   const [viewMode, setViewMode] = useState<ViewMode>('extended');
   const [rejectedIds, setRejectedIds] = useState<Set<string>>(new Set());
+  // 26 iul: anunțurile cu candidatura mea în așteptare → badge „În așteptare".
+  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
   const { viewed, refresh: refreshViewed } = useViewedAnnouncements(session?.user.id);
   const { radiusKm, coords, locationError, refreshCoords } = useRadiusFilter();
 
@@ -91,6 +97,7 @@ export default function MechanicFeedScreen() {
       refreshCoords();
       if (session?.user.id) {
         fetchRejectedAnnouncementIds(session.user.id).then(setRejectedIds);
+        fetchPendingApplicationAnnouncementIds(session.user.id).then(setAppliedIds);
       }
     }, [refresh, refreshViewed, refreshCoords, session?.user.id])
   );
@@ -181,6 +188,7 @@ export default function MechanicFeedScreen() {
             driverName={item.driver?.full_name}
             compact={viewMode === 'compact'}
             rejectedByUser={rejectedIds.has(item.id)}
+            appliedByUser={appliedIds.has(item.id)}
             isNew={!viewed.has(item.id)}
             distanceKm={
               !filterActive

@@ -50,6 +50,8 @@ logs/
 # ─── Certificate & Key files ─────────────────────────────────────────────────
 # Cheia de serviciu Firebase (push FCM V1) e SECRETĂ — trăiește doar în EAS.
 # `google-services.json` NU e secret și rămâne versionat.
+# Cheia service account-ului Google Play (eas submit) e SECRETĂ — doar local.
+google-play-service-account.json
 *-adminsdk-*.json
 *.jks
 *.p8

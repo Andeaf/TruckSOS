@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -14,12 +14,15 @@ import { PhotoGallery } from '@/components/photo-gallery';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { UserPickerSheet } from '@/components/user-picker-sheet';
 import { Radius, Spacing } from '@/constants/theme';
 import {
   fetchOpenAnnouncementById,
   fetchMyApplicationForAnnouncement,
   type AnnouncementWithDriver,
 } from '@/hooks/use-announcements';
+import { startDirectConversation } from '@/hooks/use-chat';
+import { useTheme } from '@/hooks/use-theme';
 import { useAnnouncementPhotos } from '@/hooks/use-announcement-photos';
 import { markAnnouncementViewed } from '@/hooks/use-viewed-announcements';
 import { useAuth } from '@/hooks/use-auth';
@@ -111,6 +114,30 @@ export default function MechanicAnnouncementDetailScreen() {
   const { t, i18n } = useTranslation();
   const { session } = useAuth();
   const goBack = useBack('/(mechanic)/feed');
+  const router = useRouter();
+  const theme = useTheme();
+  // Faza 19.6: share — trimite anunțul unui alt utilizator (card pe primul mesaj).
+  const [shareOpen, setShareOpen] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const handleShareTo = async (targetId: string) => {
+    if (sharing) return;
+    setSharing(true);
+    const { conversationId, error } = await startDirectConversation(targetId);
+    setSharing(false);
+    setShareOpen(false);
+    if (error === 'blocked_by_you') {
+      Alert.alert(t('newConversation.blockedTitle'), t('newConversation.blockedBody'));
+      return;
+    }
+    if (error || !conversationId) {
+      Alert.alert(t('common.error'));
+      return;
+    }
+    router.push({
+      pathname: '/(mechanic)/conversations/[id]' as never,
+      params: { id: conversationId, announcementId: id },
+    });
+  };
   const insets = useSafeAreaInsets();
 
   const [announcement, setAnnouncement] = useState<AnnouncementWithDriver | null>(null);
@@ -175,7 +202,19 @@ export default function MechanicAnnouncementDetailScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScreenHeader title={t('mechanic.feed.detailTitle')} onBack={goBack} />
+      <ScreenHeader
+        title={t('mechanic.feed.detailTitle')}
+        onBack={goBack}
+        right={
+          // Faza 19.6: share — trimite anunțul unui mecanic sau șofer.
+          <Pressable
+            onPress={() => setShareOpen(true)}
+            hitSlop={12}
+            accessibilityLabel={t('attach.shareTitle')}>
+            <MaterialIcons name="share" size={22} color={theme.onHeader} />
+          </Pressable>
+        }
+      />
 
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedText themeColor="textSecondary" type="small" style={styles.date}>
@@ -319,6 +358,15 @@ export default function MechanicAnnouncementDetailScreen() {
           message: myApplication.message || '',
         } : undefined}
       />
+
+      {shareOpen ? (
+        <UserPickerSheet
+          visible
+          title={t('attach.shareTitle')}
+          onClose={() => setShareOpen(false)}
+          onPick={(user) => handleShareTo(user.id)}
+        />
+      ) : null}
     </ThemedView>
   );
 }

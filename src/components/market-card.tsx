@@ -21,17 +21,58 @@ interface MarketCardProps {
   listing: MarketListing;
   coverUrl?: string;
   onPress: () => void;
+  /** 26 iul: aspectul „dreptunghi" (listă pe un rând: poză pătrată stânga + detalii). */
+  horizontal?: boolean;
 }
 
 export function formatListingPrice(listing: Pick<MarketListing, 'price' | 'currency'>): string {
   return `${Number(listing.price).toLocaleString()} ${listing.currency}`;
 }
 
-export function MarketCard({ listing, coverUrl, onPress }: MarketCardProps) {
+export function MarketCard({ listing, coverUrl, onPress, horizontal = false }: MarketCardProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const scheme = useResolvedScheme();
   const sold = listing.status === 'sold';
+
+  if (horizontal) {
+    return (
+      <Pressable onPress={onPress} style={({ pressed }) => [pressed && styles.pressed]}>
+        <ThemedView
+          type="backgroundElement"
+          style={[styles.card, styles.rowCard, scheme === 'light' && Shadows.card]}>
+          <View style={styles.rowCoverWrap}>
+            {coverUrl ? (
+              <Image source={{ uri: coverUrl }} style={styles.rowCover} contentFit="cover" transition={150} />
+            ) : (
+              <View style={[styles.rowCover, styles.coverFallback, { backgroundColor: theme.backgroundSelected }]}>
+                <Feather name="image" size={22} color={theme.textTertiary} />
+              </View>
+            )}
+            {sold ? (
+              <View style={styles.soldBadge}>
+                <ThemedText style={styles.soldText}>{t('market.soldBadge')}</ThemedText>
+              </View>
+            ) : null}
+          </View>
+          <View style={styles.rowBody}>
+            <View>
+              <ThemedText numberOfLines={2} style={styles.rowTitle}>
+                {listing.title}
+              </ThemedText>
+              <ThemedText numberOfLines={1} style={[styles.rowCategory, { color: theme.textTertiary }]}>
+                {t(`market.categories.${listing.category}`)}
+              </ThemedText>
+            </View>
+            {/* Prețul: dreapta-jos (spec 26 iul). */}
+            <ThemedText numberOfLines={1} style={[styles.rowPrice, { color: theme.price }]}>
+              {formatListingPrice(listing)}
+            </ThemedText>
+          </View>
+        </ThemedView>
+      </Pressable>
+    );
+  }
 
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.wrap, pressed && styles.pressed]}>
@@ -106,4 +147,21 @@ const styles = StyleSheet.create({
   title: { fontSize: 13, fontWeight: '700', lineHeight: 17, minHeight: 34 },
   category: { fontSize: 11, fontWeight: '600', marginTop: 2 },
   price: { fontSize: 14, fontWeight: '800', marginTop: 6 },
+  // Aspectul „dreptunghi" (26 iul): rând orizontal, poza 96 lățime pe TOATĂ înălțimea.
+  // Poza e strat ABSOLUT în caseta de 96: `height:'100%'` pe expo-image cădea pe
+  // dimensiunea intrinsecă a pozei (card uriaș + listă blocată) când părintele era
+  // dimensionat prin stretch. Înălțimea rândului o dă DOAR corpul (minHeight 96).
+  rowCard: { flexDirection: 'row', alignItems: 'stretch', minHeight: 96 },
+  rowCoverWrap: { width: 96, position: 'relative', overflow: 'hidden' },
+  rowCover: { ...StyleSheet.absoluteFillObject },
+  rowBody: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    justifyContent: 'space-between',
+    gap: 6,
+  },
+  rowTitle: { fontSize: 15, fontWeight: '700', lineHeight: 19 },
+  rowCategory: { fontSize: 12, fontWeight: '600', marginTop: 2 },
+  rowPrice: { fontSize: 16, fontWeight: '800', alignSelf: 'flex-end' },
 });

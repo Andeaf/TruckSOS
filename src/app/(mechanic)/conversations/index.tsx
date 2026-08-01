@@ -1,8 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
 import { EmptyState } from '@/components/empty-state';
@@ -11,10 +13,12 @@ import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Radius, Spacing } from '@/constants/theme';
+import { UserPickerSheet } from '@/components/user-picker-sheet';
+import { HeaderGradient, HeaderGradientDirection, Radius, Shadows, Spacing } from '@/constants/theme';
+import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
-import { useConversations, deleteConversations, otherParticipant, useUnreadCounts, type ChatParticipant, type ConversationWithDetails } from '@/hooks/use-chat';
+import { useConversations, deleteConversations, otherParticipant, startDirectConversation, useUnreadCounts, type ChatParticipant, type ConversationWithDetails } from '@/hooks/use-chat';
 import { useChannels, useChannelUnreadCount } from '@/hooks/use-channel-chat';
 import { useSignedUrls } from '@/hooks/use-signed-urls';
 import { useTimeAgo } from '@/hooks/use-time-ago';
@@ -167,10 +171,38 @@ export default function MechanicConversationsScreen() {
   const { counts: unreadCounts, refresh: refreshCounts } = useUnreadCounts(session?.user.id);
   const { channels, refresh: refreshChannels } = useChannels();
   const router = useRouter();
+  const scheme = useResolvedScheme();
+  const insets = useSafeAreaInsets();
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // Faza 19.6: „Începe o conversație nouă" — cu ORICE utilizator (inclusiv același rol).
+  const [newConvOpen, setNewConvOpen] = useState(false);
+  const [startingConv, setStartingConv] = useState(false);
 
   const me = session?.user.id ?? '';
+
+  const handleStartConversation = useCallback(
+    async (targetId: string) => {
+      if (startingConv) return;
+      setStartingConv(true);
+      const { conversationId, error } = await startDirectConversation(targetId);
+      setStartingConv(false);
+      setNewConvOpen(false);
+      if (error === 'blocked_by_you') {
+        Alert.alert(t('newConversation.blockedTitle'), t('newConversation.blockedBody'));
+        return;
+      }
+      if (error || !conversationId) {
+        Alert.alert(t('common.error'));
+        return;
+      }
+      router.push({
+        pathname: '/(mechanic)/conversations/[id]' as never,
+        params: { id: conversationId },
+      });
+    },
+    [startingConv, t, router]
+  );
 
   // Căutare după numele interlocutorului — locală, peste lista deja încărcată.
   const [searchOpen, setSearchOpen] = useState(false);
@@ -370,6 +402,35 @@ export default function MechanicConversationsScreen() {
           ) : null
         }
       />
+
+      {/* Faza 19.6: FAB „Începe o conversație nouă" (dreapta jos, stilul Market). */}
+      {!selectionMode ? (
+        <Pressable
+          style={({ pressed }) => [
+            styles.fab,
+            { bottom: insets.bottom + Spacing.three },
+            pressed && styles.fabPressed,
+          ]}
+          accessibilityLabel={t('newConversation.fab')}
+          onPress={() => setNewConvOpen(true)}>
+          <LinearGradient
+            colors={HeaderGradient[scheme]}
+            start={HeaderGradientDirection.start}
+            end={HeaderGradientDirection.end}
+            style={styles.fabGradient}>
+            <MaterialIcons name="add-comment" size={26} color="#fff" />
+          </LinearGradient>
+        </Pressable>
+      ) : null}
+
+      {newConvOpen ? (
+        <UserPickerSheet
+          visible
+          title={t('newConversation.title')}
+          onClose={() => setNewConvOpen(false)}
+          onPick={(user) => handleStartConversation(user.id)}
+        />
+      ) : null}
     </ThemedView>
   );
 }
@@ -445,4 +506,19 @@ const styles = StyleSheet.create({
   location: { flex: 1 },
   time: { flexShrink: 0 },
   pressed: { opacity: 0.7 },
+  fab: {
+    position: 'absolute',
+    right: 18,
+    width: 58,
+    height: 58,
+    borderRadius: Radius.fab,
+    ...Shadows.fab,
+  },
+  fabPressed: { opacity: 0.85 },
+  fabGradient: {
+    flex: 1,
+    borderRadius: Radius.fab,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });

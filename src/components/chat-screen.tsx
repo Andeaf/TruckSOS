@@ -14,6 +14,9 @@ import {
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
+import * as DocumentPicker from 'expo-document-picker';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,6 +30,7 @@ import Animated, {
 import { useTranslation } from 'react-i18next';
 
 
+import { AttachSheet } from '@/components/attach-sheet';
 import { Avatar } from '@/components/avatar';
 import { MessageActionSheet } from '@/components/message-action-sheet';
 import { PhotoViewer } from '@/components/photo-viewer';
@@ -46,7 +50,16 @@ import { useBlocked } from '@/hooks/use-blocked';
 import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { useSignedUrls } from '@/hooks/use-signed-urls';
+import { displayName } from '@/lib/display-name';
 import { MAX_PHOTOS, pickFromCamera, pickFromLibrary, type PickedImage } from '@/lib/media';
+import {
+  BLOCKED_FILE_EXTENSIONS,
+  MAX_FILE_SIZE,
+  MAX_FILE_SIZE_MB,
+  fileExtension,
+  signedUrl,
+  type PickedFile,
+} from '@/lib/storage';
 
 export interface ChatMessageBase {
   id: string;
@@ -80,7 +93,133 @@ export interface ChatMessageBase {
     price: number;
     currency: string;
     status: string;
+    category?: string | null;
+    description?: string | null;
+    market_listing_photos?: { storage_path: string; position: number }[];
   } | null;
+  /** Faza 19.5/19.6: utilizatorul recomandat atașat mesajului (mecanic SAU transportator). */
+  recommended_mechanic_id?: string | null;
+  mechanic?: {
+    id: string;
+    full_name: string;
+    avatar_path: string | null;
+    deleted_at: string | null;
+    /** Rolul REAL — decide rutarea cardului (numele câmpului rămâne istoric). */
+    role?: string;
+    rating_avg: number;
+    rating_count: number;
+    specialization?: string | null;
+    activity_zone?: string | null;
+  } | null;
+  /** Faza 19.5: mesaj-fișier (un fișier = o bulă; content=''). */
+  file_path?: string | null;
+  file_name?: string | null;
+  file_size?: number | null;
+  /** Faza 19.6: anunțul de depanare distribuit (share). NULL = șters/invizibil prin RLS. */
+  announcement_id?: string | null;
+  announcement?: {
+    id: string;
+    location: string;
+    status: string;
+    description?: string | null;
+  } | null;
+}
+
+/** Cover-ul unui anunț de market din embed-ul de poze (poziția minimă = cover). */
+function listingCoverPath(
+  listing: NonNullable<ChatMessageBase['listing']> | null | undefined,
+): string | null {
+  const photos = listing?.market_listing_photos;
+  if (!photos || photos.length === 0) return null;
+  return [...photos].sort((a, b) => a.position - b.position)[0].storage_path;
+}
+
+/** Mărimea fișierului, lizibilă: sub 1 MB în KB, altfel în MB cu o zecimală. */
+function formatFileSize(bytes: number | null | undefined): string {
+  if (!bytes || bytes <= 0) return '';
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/**
+ * Stil 6b (26 iul, spec user): „atașament etichetat" — tokens semantici dedicați
+ * cardurilor de context, comutați de temă. Cardul NU stă în bula navy: e o suprafață
+ * proprie (alb/dark) direct pe fundalul conversației, cu bandă de tip sus și CTA jos.
+ */
+const CARD_TOKENS = {
+  light: {
+    surface: '#FFFFFF',
+    bandBg: '#E8EEFB',
+    label: '#0E3A7D',
+    textPrimary: '#1C2635',
+    textSecondary: '#5B6472',
+    textTertiary: '#98A1AD',
+    price: '#1C9E4F',
+    star: '#F5A623',
+    separator: '#EEF1F5',
+    photoBg: '#E3E9F1',
+  },
+  dark: {
+    surface: '#1A2333',
+    bandBg: '#1E2A40',
+    label: '#7BA7E0',
+    textPrimary: '#E8EDF4',
+    textSecondary: '#96A1B1',
+    textTertiary: '#7D8899',
+    price: '#4ECB7D',
+    star: '#F5A623',
+    separator: '#202B3E',
+    photoBg: '#212C40',
+  },
+} as const;
+
+interface AttachmentCardProps {
+  isMe: boolean;
+  scheme: 'light' | 'dark';
+  icon: keyof typeof Feather.glyphMap;
+  bandLabel: string;
+  cta: string;
+  onPress?: () => void;
+  onLongPress?: () => void;
+  children: React.ReactNode;
+}
+
+/** Scheletul cardului 6b: bandă de tip → corp (children) → CTA. Tot cardul e tappabil. */
+function AttachmentCard({
+  isMe,
+  scheme,
+  icon,
+  bandLabel,
+  cta,
+  onPress,
+  onLongPress,
+  children,
+}: AttachmentCardProps) {
+  const tk = CARD_TOKENS[scheme];
+  return (
+    <Pressable
+      onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={300}
+      disabled={!onPress && !onLongPress}
+      style={[
+        styles.attachCard,
+        { backgroundColor: tk.surface },
+        isMe ? styles.attachCardMe : styles.attachCardOther,
+        scheme === 'light' && styles.attachCardShadow,
+      ]}>
+      <View style={[styles.attachBand, { backgroundColor: tk.bandBg }]}>
+        <Feather name={icon} size={14} color={tk.label} />
+        <Text style={[styles.attachBandText, { color: tk.label }]} numberOfLines={1}>
+          {bandLabel}
+        </Text>
+      </View>
+      <View style={styles.attachBody}>{children}</View>
+      <View style={[styles.attachCta, { borderTopColor: tk.separator }]}>
+        <Text style={[styles.attachCtaText, { color: tk.label }]}>{cta}</Text>
+      </View>
+    </Pressable>
+  );
 }
 
 function formatTime(dateStr: string) {
@@ -147,6 +286,18 @@ interface MessageBubbleProps<M extends ChatMessageBase> {
   onSwipeReply?: () => void;
   /** Faza 19.4: tap pe cardul de anunț atașat mesajului → detaliul anunțului. */
   onPressListing?: (listingId: string) => void;
+  /** Faza 19.5/19.6: tap pe cardul utilizatorului recomandat → profilul lui public
+   * (rolul REAL însoțește id-ul, pentru rutarea corectă la screen). */
+  onPressMechanic?: (mechanicId: string, role: string) => void;
+  /** Avatarul (semnat) al utilizatorului recomandat din card. */
+  mechanicAvatarUrl?: string;
+  /** Cover-ul (semnat) al anunțului de market din card (26 iul, carduri detaliate). */
+  listingCoverUrl?: string;
+  /** Faza 19.5: tap pe bula-fișier → descarcă + deschide; spinner cât timp descarcă. */
+  onPressFile?: () => void;
+  downloadingFile?: boolean;
+  /** Faza 19.6: tap pe cardul de anunț de depanare distribuit → detaliul lui. */
+  onPressAnnouncement?: (announcementId: string) => void;
 }
 
 function MessageBubble<M extends ChatMessageBase>({
@@ -164,12 +315,48 @@ function MessageBubble<M extends ChatMessageBase>({
   readState,
   onSwipeReply,
   onPressListing,
+  onPressMechanic,
+  mechanicAvatarUrl,
+  listingCoverUrl,
+  onPressFile,
+  downloadingFile,
+  onPressAnnouncement,
 }: MessageBubbleProps<M>) {
   const theme = useTheme();
   const scheme = useResolvedScheme();
   const { t } = useTranslation();
   const isDeleted = !!message.deleted_at;
   const isImage = !isDeleted && !!message.image_path;
+  const isFile = !isDeleted && !isImage && !!message.file_path;
+  // Stil 6b: contextele se randează ca AttachmentCard ÎN AFARA bulei; bula apare doar
+  // dacă mesajul mai are și altceva de arătat (text/poză/fișier/tombstone).
+  const hasContext =
+    !isDeleted && !!(message.listing || message.mechanic || message.announcement);
+  const showBubble = isDeleted || isImage || isFile || message.content !== '' || !hasContext;
+  const tk = CARD_TOKENS[scheme];
+  const recExtra = message.mechanic
+    ? (message.mechanic.activity_zone ?? message.mechanic.specialization ?? null)
+    : null;
+  const listingMeta = message.listing
+    ? [
+        message.listing.category ? t(`market.categories.${message.listing.category}`) : null,
+        message.listing.status === 'sold'
+          ? t('market.soldBadge')
+          : message.listing.description?.trim() || null,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : '';
+  const announcementMeta = message.announcement
+    ? [
+        t(`attach.status.${message.announcement.status}`, {
+          defaultValue: message.announcement.status,
+        }),
+        message.announcement.description?.trim() || null,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : '';
   // Design 22 iul: timp/bife pe bula trimisă = alb 70%; pe cea primită = text terțiar.
   const secondaryColor = isMe ? 'rgba(255,255,255,0.7)' : theme.textTertiary;
   const tick = readState ? (
@@ -252,6 +439,139 @@ function MessageBubble<M extends ChatMessageBase>({
             {senderLabel}
           </ThemedText>
         ) : null}
+
+        {/* Stil 6b: „atașament etichetat" — recomandare de persoană. */}
+        {!isDeleted && message.mechanic ? (
+          <AttachmentCard
+            isMe={isMe}
+            scheme={scheme}
+            icon={message.mechanic.role === 'driver' ? 'truck' : 'tool'}
+            bandLabel={t(
+              message.mechanic.role === 'driver' ? 'attach.bandDriver' : 'attach.bandMechanic'
+            )}
+            cta={t('attach.cardCtaProfile')}
+            onPress={
+              onPressMechanic && !message.mechanic.deleted_at
+                ? () =>
+                    onPressMechanic(message.mechanic!.id, message.mechanic!.role ?? 'mechanic')
+                : undefined
+            }
+            onLongPress={onLongPress}>
+            <Avatar url={mechanicAvatarUrl} name={message.mechanic.full_name} size={44} />
+            <View style={styles.attachInfo}>
+              <Text
+                numberOfLines={1}
+                style={[styles.attachName, { color: tk.textPrimary }]}>
+                {displayName(message.mechanic, t)}
+              </Text>
+              <Text
+                numberOfLines={1}
+                style={[styles.attachMeta, { color: tk.textSecondary }]}>
+                {message.mechanic.rating_count > 0 ? (
+                  <>
+                    <Text style={{ color: tk.star }}>{'★ '}</Text>
+                    {message.mechanic.rating_avg.toFixed(1)}
+                    {recExtra ? ` · ${recExtra}` : ''}
+                  </>
+                ) : (
+                  (recExtra ??
+                    t(`auth.roleSelect.${message.mechanic.role ?? 'mechanic'}Title`))
+                )}
+              </Text>
+            </View>
+            <Feather name="chevron-right" size={16} color={tk.textTertiary} />
+          </AttachmentCard>
+        ) : null}
+
+        {/* Stil 6b: „atașament etichetat" — produs din Market. */}
+        {!isDeleted && message.listing ? (
+          <AttachmentCard
+            isMe={isMe}
+            scheme={scheme}
+            icon="tag"
+            bandLabel={t('attach.bandMarket')}
+            cta={t('attach.cardCtaListing')}
+            onPress={onPressListing ? () => onPressListing(message.listing!.id) : undefined}
+            onLongPress={onLongPress}>
+            {listingCoverUrl ? (
+              <Image
+                source={{ uri: listingCoverUrl }}
+                style={styles.attachThumb}
+                contentFit="cover"
+                transition={100}
+              />
+            ) : (
+              <View
+                style={[
+                  styles.attachThumb,
+                  styles.attachThumbFallback,
+                  { backgroundColor: tk.photoBg },
+                ]}>
+                <Feather name="image" size={20} color={tk.textTertiary} />
+              </View>
+            )}
+            <View style={styles.attachInfo}>
+              <Text
+                numberOfLines={1}
+                style={[styles.attachName, { color: tk.textPrimary }]}>
+                {message.listing.title}
+              </Text>
+              {listingMeta ? (
+                <Text
+                  numberOfLines={1}
+                  style={[styles.attachMeta, { color: tk.textTertiary }]}>
+                  {listingMeta}
+                </Text>
+              ) : null}
+              <Text numberOfLines={1} style={[styles.attachPrice, { color: tk.price }]}>
+                {`${Number(message.listing.price).toLocaleString()} ${message.listing.currency}`}
+              </Text>
+            </View>
+            <Feather name="chevron-right" size={16} color={tk.textTertiary} />
+          </AttachmentCard>
+        ) : null}
+
+        {/* Stil 6b: „atașament etichetat" — anunț de depanare distribuit. */}
+        {!isDeleted && message.announcement ? (
+          <AttachmentCard
+            isMe={isMe}
+            scheme={scheme}
+            icon="map-pin"
+            bandLabel={t('attach.bandAnnouncement')}
+            cta={t('attach.cardCtaListing')}
+            onPress={
+              onPressAnnouncement
+                ? () => onPressAnnouncement(message.announcement!.id)
+                : undefined
+            }
+            onLongPress={onLongPress}>
+            <View
+              style={[
+                styles.attachThumb,
+                styles.attachThumbFallback,
+                { backgroundColor: tk.bandBg },
+              ]}>
+              <Feather name="map-pin" size={20} color={tk.label} />
+            </View>
+            <View style={styles.attachInfo}>
+              <Text
+                numberOfLines={1}
+                style={[styles.attachName, { color: tk.textPrimary }]}>
+                {message.announcement.location}
+              </Text>
+              {announcementMeta ? (
+                <Text
+                  numberOfLines={1}
+                  style={[styles.attachMeta, { color: tk.textSecondary }]}>
+                  {announcementMeta}
+                </Text>
+              ) : null}
+            </View>
+            <Feather name="chevron-right" size={16} color={tk.textTertiary} />
+          </AttachmentCard>
+        ) : null}
+
+        {showBubble ? (
         <Pressable onLongPress={onLongPress} delayLongPress={300}>
         <BubbleSurface
           isMe={isMe}
@@ -300,41 +620,56 @@ function MessageBubble<M extends ChatMessageBase>({
                 {tick}
               </View>
             </Pressable>
+          ) : isFile ? (
+            // Faza 19.5: bula-fișier — icon + nume + mărime; tap = descarcă + deschide.
+            <>
+              <Pressable
+                onPress={onPressFile}
+                onLongPress={onLongPress}
+                delayLongPress={300}
+                disabled={!onPressFile || downloadingFile}
+                style={styles.fileRow}>
+                <View
+                  style={[
+                    styles.fileIconWrap,
+                    { backgroundColor: isMe ? 'rgba(255,255,255,0.16)' : theme.brandSoft },
+                  ]}>
+                  {downloadingFile ? (
+                    <ActivityIndicator size="small" color={isMe ? '#ffffff' : theme.brand} />
+                  ) : (
+                    <MaterialIcons
+                      name="insert-drive-file"
+                      size={22}
+                      color={isMe ? '#ffffff' : theme.brand}
+                    />
+                  )}
+                </View>
+                <View style={styles.fileInfo}>
+                  <Text
+                    numberOfLines={1}
+                    style={[styles.fileName, { color: isMe ? '#ffffff' : theme.text }]}>
+                    {message.file_name ?? ''}
+                  </Text>
+                  <Text style={[styles.fileSize, { color: secondaryColor }]}>
+                    {formatFileSize(message.file_size)}
+                  </Text>
+                </View>
+                <MaterialIcons name="file-download" size={18} color={secondaryColor} />
+              </Pressable>
+              <View style={styles.metaRow}>
+                <Text style={[styles.bubbleTime, { color: secondaryColor }]}>
+                  {formatTime(message.created_at)}
+                </Text>
+                {tick}
+              </View>
+            </>
           ) : (
             <>
-              {/* Faza 19.4: cardul anunțului de market, DEASUPRA textului („Sunt interesat"). */}
-              {message.listing ? (
-                <Pressable
-                  onPress={
-                    onPressListing ? () => onPressListing(message.listing!.id) : undefined
-                  }
-                  style={[
-                    styles.listingCard,
-                    {
-                      backgroundColor: isMe ? 'rgba(255,255,255,0.16)' : theme.background,
-                      borderLeftColor: isMe ? '#ffffff' : theme.price,
-                    },
-                  ]}>
-                  <MaterialIcons name="sell" size={16} color={isMe ? '#fff' : theme.price} />
-                  <View style={styles.listingInfo}>
-                    <Text
-                      numberOfLines={1}
-                      style={[styles.listingTitle, { color: isMe ? '#fff' : theme.text }]}>
-                      {message.listing.title}
-                    </Text>
-                    <Text
-                      numberOfLines={1}
-                      style={[styles.listingPrice, { color: isMe ? '#fff' : theme.price }]}>
-                      {`${Number(message.listing.price).toLocaleString()} ${message.listing.currency}`}
-                      {message.listing.status === 'sold' ? ` · ${t('market.soldBadge')}` : ''}
-                    </Text>
-                  </View>
-                  <MaterialIcons name="chevron-right" size={18} color={secondaryColor} />
-                </Pressable>
-              ) : null}
               {quote ? (
                 <Pressable
                   onPress={onPressQuote}
+                  onLongPress={onLongPress}
+                  delayLongPress={300}
                   style={[
                     styles.quote,
                     {
@@ -368,9 +703,12 @@ function MessageBubble<M extends ChatMessageBase>({
                   </Text>
                 </View>
               ) : null}
-              <Text style={[styles.bubbleText, { color: isMe ? '#ffffff' : theme.text }]}>
-                {message.content}
-              </Text>
+              {/* 19.6: mesaj doar-atașament (fără text) → nu randa un rând de text gol. */}
+              {message.content !== '' ? (
+                <Text style={[styles.bubbleText, { color: isMe ? '#ffffff' : theme.text }]}>
+                  {message.content}
+                </Text>
+              ) : null}
               <View style={styles.metaRow}>
                 {message.edited_at ? (
                   <Text style={[styles.bubbleTime, styles.editedLabel, { color: secondaryColor }]}>
@@ -386,6 +724,25 @@ function MessageBubble<M extends ChatMessageBase>({
           )}
         </BubbleSurface>
         </Pressable>
+        ) : (
+          // Mesaj doar-card (spec 6b §4): ora + bifele stau SUB card, în afara lui.
+          <View
+            style={[
+              styles.attachExternalMeta,
+              isMe ? styles.attachMetaRight : styles.attachMetaLeft,
+            ]}>
+            <Text style={[styles.bubbleTime, { color: theme.textTertiary }]}>
+              {formatTime(message.created_at)}
+            </Text>
+            {readState ? (
+              <MaterialIcons
+                name={readState === 'read' ? 'done-all' : 'check'}
+                size={14}
+                color={theme.textTertiary}
+              />
+            ) : null}
+          </View>
+        )}
       </Animated.View>
     </View>
     </GestureDetector>
@@ -429,6 +786,32 @@ interface ChatScreenProps<M extends ChatMessageBase> {
   pendingListing?: { id: string; title: string; price: number; currency: string } | null;
   /** × pe bannerul anunțului atașat. Fără handler, bannerul nu are ×. */
   onClearPendingListing?: () => void;
+  /** Faza 19.5/19.6: utilizatorul care se va atașa următorului mesaj — rolul decide
+   * eticheta bannerului („Mecanic recomandat" vs „Transportator recomandat"). */
+  pendingMechanic?: {
+    id: string;
+    full_name: string;
+    deleted_at: string | null;
+    role?: string;
+    rating_avg: number;
+    rating_count: number;
+  } | null;
+  onClearPendingMechanic?: () => void;
+  /** Faza 19.6: anunțul de DEPANARE care se va atașa următorului mesaj (share). */
+  pendingAnnouncement?: { id: string; location: string } | null;
+  onClearPendingAnnouncement?: () => void;
+  /** Faza 19.5: meniul „+" — fiecare opțiune apare doar dacă ecranul o furnizează. */
+  onAttachListing?: () => void;
+  onAttachMechanic?: () => void;
+  /** Faza 19.6: „Recomandă un transportator" — aceleași sisteme ca la mecanic. */
+  onAttachDriver?: () => void;
+  /** Trimite fișierul ales (validat deja: mărime + blocklist). Un fișier = o bulă. */
+  onSendFile?: (file: PickedFile) => Promise<void>;
+  /** Tap pe cardul utilizatorului recomandat → profilul lui public; rolul REAL vine
+   * cu id-ul, ca ecranul să rutueze corect (mecanic vs transportator). */
+  onPressMechanic?: (mechanicId: string, role: string) => void;
+  /** Faza 19.6: tap pe cardul de anunț de depanare → detaliul lui (rutare per rol). */
+  onPressAnnouncement?: (announcementId: string) => void;
   onBack: () => void;
   /**
    * Acțiuni din meniul contextual (tap lung pe bulă), toate opționale — o acțiune
@@ -468,6 +851,16 @@ export function ChatScreen<M extends ChatMessageBase>({
   onPressListing,
   pendingListing,
   onClearPendingListing,
+  pendingMechanic,
+  onClearPendingMechanic,
+  pendingAnnouncement,
+  onClearPendingAnnouncement,
+  onAttachListing,
+  onAttachMechanic,
+  onAttachDriver,
+  onSendFile,
+  onPressMechanic,
+  onPressAnnouncement,
   onBack,
   onEditMessage,
   onDeleteMessage,
@@ -489,6 +882,9 @@ export function ChatScreen<M extends ChatMessageBase>({
   const [editTarget, setEditTarget] = useState<M | null>(null);
   const [replyTarget, setReplyTarget] = useState<M | null>(null);
   const [reportTarget, setReportTarget] = useState<M | null>(null);
+  // Faza 19.5: meniul „+" + descărcarea de fișiere (un singur download odată).
+  const [attachOpen, setAttachOpen] = useState(false);
+  const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
   const listRef = useRef<FlatList<M>>(null);
 
   // Android (SDK 54, edge-to-edge): fereastra NU se redimensionează la tastatură, iar
@@ -633,14 +1029,84 @@ export function ChatScreen<M extends ChatMessageBase>({
     [reversedMessages],
   );
 
-  // URL-uri semnate pt. poze ȘI avatare, într-un singur batch care crește pe măsură
-  // ce sosesc mesaje noi (`useSignedUrls` cere doar path-urile încă nesemnate).
+  // URL-uri semnate pt. poze, avatare ȘI avatarele mecanicilor recomandați (19.5),
+  // într-un singur batch care crește pe măsură ce sosesc mesaje noi
+  // (`useSignedUrls` cere doar path-urile încă nesemnate).
   const paths = useMemo(() => {
     const imagePaths = messages.map((m) => m.image_path);
     const avatarPaths = renderSenderAvatarPath ? messages.map(renderSenderAvatarPath) : [];
-    return [...imagePaths, ...avatarPaths, headerAvatarPath].filter((p): p is string => !!p);
+    const mechanicAvatars = messages.map((m) => m.mechanic?.avatar_path);
+    const listingCovers = messages.map((m) => listingCoverPath(m.listing));
+    return [
+      ...imagePaths,
+      ...avatarPaths,
+      ...mechanicAvatars,
+      ...listingCovers,
+      headerAvatarPath,
+    ].filter((p): p is string => !!p);
   }, [messages, renderSenderAvatarPath, headerAvatarPath]);
   const urls = useSignedUrls(paths);
+
+  // Faza 19.5: alegerea + validarea fișierului (mărime, blocklist) se fac AICI —
+  // ecranul primește fișierul deja valid și doar îl urcă în tabelul lui.
+  const handlePickFile = useCallback(async () => {
+    if (!onSendFile || uploading) return;
+    const result = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
+    if (result.canceled || !result.assets?.[0]) return;
+    const asset = result.assets[0];
+    if (BLOCKED_FILE_EXTENSIONS.includes(fileExtension(asset.name))) {
+      Alert.alert(t('attach.fileBlockedTitle'), t('attach.fileBlockedBody'));
+      return;
+    }
+    // Pickerul poate omite mărimea — o citim atunci direct de pe fișierul din cache.
+    let size = asset.size ?? 0;
+    if (!size) {
+      try {
+        size = new File(asset.uri).size ?? 0;
+      } catch {
+        size = 0;
+      }
+    }
+    if (size > MAX_FILE_SIZE) {
+      Alert.alert(
+        t('attach.fileTooLargeTitle'),
+        t('attach.fileTooLargeBody', { max: MAX_FILE_SIZE_MB }),
+      );
+      return;
+    }
+    setUploading(true);
+    await onSendFile({ uri: asset.uri, name: asset.name, size, mimeType: asset.mimeType });
+    setUploading(false);
+  }, [onSendFile, uploading, t]);
+
+  // Descarcă fișierul (URL semnat → cache) și îl deschide prin share sheet-ul nativ —
+  // de acolo utilizatorul îl poate vizualiza sau salva. Numele original e păstrat.
+  const handleOpenFile = useCallback(
+    async (m: M) => {
+      if (!m.file_path || downloadingFileId) return;
+      setDownloadingFileId(m.id);
+      try {
+        const url = await signedUrl(m.file_path);
+        if (!url) throw new Error('no_signed_url');
+        const safeName = (m.file_name ?? 'file').replace(/[\\/:*?"<>|]/g, '_');
+        const target = new File(Paths.cache, `${m.id}-${safeName}`);
+        try {
+          if (target.exists) target.delete();
+        } catch {
+          // Rămășiță coruptă în cache — downloadFileAsync o suprascrie oricum.
+        }
+        const downloaded = await File.downloadFileAsync(url, target);
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(downloaded.uri, { dialogTitle: m.file_name ?? undefined });
+        }
+      } catch {
+        setToast(t('attach.downloadError'));
+      } finally {
+        setDownloadingFileId(null);
+      }
+    },
+    [downloadingFileId, t],
+  );
 
   // Pozele conversației, în ordine cronologică: viewer-ul le parcurge pe toate,
   // nu doar pe cea atinsă.
@@ -652,17 +1118,25 @@ export function ChatScreen<M extends ChatMessageBase>({
     [messages, urls],
   );
 
+  // 19.6: un atașament în așteptare se poate trimite și FĂRĂ text — mesajul e doar
+  // cardul (CHECK-ul din DB acceptă asta prin migrarea 196b).
+  const hasPendingAttach = !!(pendingListing || pendingMechanic || pendingAnnouncement);
+  const sendEnabled = (!!text.trim() || (hasPendingAttach && !editTarget)) && !sending;
+
   async function handleSend() {
     const trimmed = text.trim();
-    if (!trimmed || sending) return;
-    setSending(true);
+    if (sending) return;
     if (editTarget && onEditMessage) {
       // Mod editare: confirmarea de send aplică editarea în loc să trimită un mesaj nou.
+      if (!trimmed) return;
+      setSending(true);
       const target = editTarget;
       setEditTarget(null);
       setText('');
       await onEditMessage(target, trimmed);
     } else {
+      if (!trimmed && !hasPendingAttach) return;
+      setSending(true);
       const replyId = replyTarget?.id ?? null;
       setText('');
       setReplyTarget(null);
@@ -767,6 +1241,11 @@ export function ChatScreen<M extends ChatMessageBase>({
             data={reversedMessages}
             keyExtractor={(item) => item.id}
             inverted
+            // Cu tastatura deschisă, tap-urile pe listă erau consumate de închiderea
+            // tastaturii → long-press-ul pe bule nu pornea (bug 26 iul). „handled"
+            // lasă gesturile să ajungă la bule; scroll-ul închide tastatura.
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             contentContainerStyle={styles.messageList}
             onEndReached={onLoadOlder}
             onEndReachedThreshold={0.3}
@@ -826,6 +1305,19 @@ export function ChatScreen<M extends ChatMessageBase>({
                   onPressUser ? () => onPressUser(item.sender_id) : undefined
                 }
                 onPressListing={onPressListing}
+                onPressMechanic={onPressMechanic}
+                onPressAnnouncement={onPressAnnouncement}
+                mechanicAvatarUrl={
+                  item.mechanic?.avatar_path ? urls[item.mechanic.avatar_path] : undefined
+                }
+                listingCoverUrl={(() => {
+                  const cover = listingCoverPath(item.listing);
+                  return cover ? urls[cover] : undefined;
+                })()}
+                onPressFile={
+                  !item.deleted_at && item.file_path ? () => handleOpenFile(item) : undefined
+                }
+                downloadingFile={downloadingFileId === item.id}
                 readState={
                   readReceipts && item.sender_id === currentUserId && !item.deleted_at
                     ? readCursor &&
@@ -861,6 +1353,67 @@ export function ChatScreen<M extends ChatMessageBase>({
                 onPress={onClearPendingListing}
                 hitSlop={8}
                 accessibilityLabel={t('market.composerAttachedRemove')}>
+                <MaterialIcons name="close" size={20} color={theme.textSecondary} />
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+
+        {/* Bannerul „Anunț de depanare" (19.6, share) — același tipar. */}
+        {pendingAnnouncement && !editTarget ? (
+          <View style={[styles.editBanner, { backgroundColor: theme.backgroundElement }]}>
+            <MaterialIcons name="location-on" size={16} color={theme.brand} />
+            <View style={styles.editBannerInfo}>
+              <Text style={[styles.editBannerTitle, { color: theme.brand }]} numberOfLines={1}>
+                {t('attach.announcementBanner')}
+              </Text>
+              <Text
+                style={[styles.editBannerText, { color: theme.textSecondary }]}
+                numberOfLines={1}>
+                {pendingAnnouncement.location}
+              </Text>
+            </View>
+            {onClearPendingAnnouncement ? (
+              <Pressable
+                onPress={onClearPendingAnnouncement}
+                hitSlop={8}
+                accessibilityLabel={t('attach.announcementRemove')}>
+                <MaterialIcons name="close" size={20} color={theme.textSecondary} />
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+
+        {/* Bannerul „Mecanic/Transportator recomandat" (19.5/19.6) — eticheta pe rol. */}
+        {pendingMechanic && !editTarget ? (
+          <View style={[styles.editBanner, { backgroundColor: theme.backgroundElement }]}>
+            <MaterialIcons
+              name={pendingMechanic.role === 'driver' ? 'local-shipping' : 'engineering'}
+              size={16}
+              color={theme.brand}
+            />
+            <View style={styles.editBannerInfo}>
+              <Text style={[styles.editBannerTitle, { color: theme.brand }]} numberOfLines={1}>
+                {t(
+                  pendingMechanic.role === 'driver'
+                    ? 'attach.driverBanner'
+                    : 'attach.mechanicBanner'
+                )}
+              </Text>
+              <Text
+                style={[styles.editBannerText, { color: theme.textSecondary }]}
+                numberOfLines={1}>
+                {displayName(pendingMechanic, t)}
+                {pendingMechanic.rating_count > 0
+                  ? ` · ★ ${pendingMechanic.rating_avg.toFixed(1)}`
+                  : ''}
+              </Text>
+            </View>
+            {onClearPendingMechanic ? (
+              <Pressable
+                onPress={onClearPendingMechanic}
+                hitSlop={8}
+                accessibilityLabel={t('attach.mechanicRemove')}>
                 <MaterialIcons name="close" size={20} color={theme.textSecondary} />
               </Pressable>
             ) : null}
@@ -967,10 +1520,21 @@ export function ChatScreen<M extends ChatMessageBase>({
             multiline
             maxLength={1000}
           />
+          {/* Meniul „+" (19.5) — în DREAPTA casetei text (decizie 25 iul), doar dacă
+              ecranul furnizează măcar o opțiune de atașare; ascuns în modul editare. */}
+          {(onAttachListing || onAttachMechanic || onAttachDriver || onSendFile) && !editTarget ? (
+            <Pressable
+              onPress={() => setAttachOpen(true)}
+              style={[styles.attachButton, { backgroundColor: theme.brandSoft }]}
+              hitSlop={8}
+              accessibilityLabel={t('attach.title')}>
+              <Feather name="plus" size={20} color={theme.brand} />
+            </Pressable>
+          ) : null}
           <Pressable
             onPress={handleSend}
-            disabled={!text.trim() || sending}
-            style={{ opacity: text.trim() && !sending ? 1 : 0.4 }}>
+            disabled={!sendEnabled}
+            style={{ opacity: sendEnabled ? 1 : 0.4 }}>
             <LinearGradient
               colors={ActiveGradient[scheme]}
               start={HeaderGradientDirection.start}
@@ -980,8 +1544,7 @@ export function ChatScreen<M extends ChatMessageBase>({
                 // Umbra DOAR pe starea activă: elevation sub un părinte cu opacity<1 se
                 // vede PRIN suprafața translucidă ca o pată poligonală decalată (Android)
                 // — sursa „octagonului" semitransparent de pe butonul dezactivat.
-                !!text.trim() &&
-                  !sending &&
+                sendEnabled &&
                   (scheme === 'light' ? styles.sendShadowLight : styles.sendShadowDark),
               ]}>
               {sending ? (
@@ -1008,6 +1571,57 @@ export function ChatScreen<M extends ChatMessageBase>({
           onClose={() => setViewerAt(null)}
         />
       ) : null}
+
+      {/* Meniul „+" ca grilă 2/rând (19.6): închide întâi modalul, apoi rulează
+          acțiunea (pe iOS după onDismiss) — exact ce cere document pickerul nativ. */}
+      <AttachSheet
+        visible={attachOpen}
+        title={t('attach.title')}
+        onClose={() => setAttachOpen(false)}
+        options={[
+          // Rândul de sus: cele două recomandări una lângă alta (cerința 26 iul).
+          ...(onAttachMechanic
+            ? [
+                {
+                  key: 'mechanic',
+                  label: t('attach.mechanic'),
+                  icon: 'engineering' as const,
+                  onPress: onAttachMechanic,
+                },
+              ]
+            : []),
+          ...(onAttachDriver
+            ? [
+                {
+                  key: 'driver',
+                  label: t('attach.driver'),
+                  icon: 'local-shipping' as const,
+                  onPress: onAttachDriver,
+                },
+              ]
+            : []),
+          ...(onAttachListing
+            ? [
+                {
+                  key: 'listing',
+                  label: t('attach.market'),
+                  icon: 'sell' as const,
+                  onPress: onAttachListing,
+                },
+              ]
+            : []),
+          ...(onSendFile
+            ? [
+                {
+                  key: 'file',
+                  label: t('attach.file', { max: MAX_FILE_SIZE_MB }),
+                  icon: 'attach-file' as const,
+                  onPress: handlePickFile,
+                },
+              ]
+            : []),
+        ]}
+      />
 
       <MessageActionSheet
         message={menuMessage}
@@ -1077,7 +1691,8 @@ const styles = StyleSheet.create({
   bubbleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.one, marginVertical: 2 },
   bubbleRowRight: { justifyContent: 'flex-end' },
   bubbleRowLeft: { justifyContent: 'flex-start' },
-  bubbleColumn: { maxWidth: '75%' },
+  // 78% (spec 6b): cardurile de atașament cer puțin mai mult decât vechiul 75%.
+  bubbleColumn: { maxWidth: '78%' },
   senderLabel: { marginBottom: 2, marginLeft: 4, fontSize: 11 },
   // Colțurile-„coadă" (4px jos, pe partea expeditorului) vin din bubbleMe/bubbleOther.
   bubble: {
@@ -1125,21 +1740,72 @@ const styles = StyleSheet.create({
   deletedText: { fontStyle: 'italic', paddingRight: 3 },
   metaRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-end', gap: Spacing.one },
   editedLabel: { fontStyle: 'italic', paddingRight: 2 }, // italic: același clip ca deletedText
-  // Faza 19.4: cardul anunțului atașat mesajului (deasupra textului).
-  listingCard: {
+  // Stil 6b (26 iul): „atașament etichetat" — card pe suprafață proprie, ÎN AFARA bulei.
+  attachCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    minWidth: 252,
+    marginBottom: 2,
+  },
+  attachCardMe: { borderBottomRightRadius: 4 },
+  attachCardOther: { borderBottomLeftRadius: 4 },
+  attachCardShadow: {
+    shadowColor: '#142850',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 3,
+  },
+  attachBand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  attachBandText: {
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.9,
+  },
+  attachBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  attachInfo: { flex: 1, gap: 2 },
+  attachName: { fontSize: 15, fontWeight: '700' },
+  attachMeta: { fontSize: 12, fontWeight: '600' },
+  attachPrice: { fontSize: 14, fontWeight: '800', marginTop: 3 },
+  attachThumb: { width: 52, height: 52, borderRadius: 10 },
+  attachThumbFallback: { justifyContent: 'center', alignItems: 'center' },
+  attachCta: { borderTopWidth: 1, paddingVertical: 10, alignItems: 'center' },
+  attachCtaText: { fontSize: 13, fontWeight: '700' },
+  attachExternalMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  attachMetaRight: { alignSelf: 'flex-end' },
+  attachMetaLeft: { alignSelf: 'flex-start' },
+  // Faza 19.5: bula-fișier.
+  fileRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    borderLeftWidth: 3,
-    borderRadius: 10,
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.two,
-    marginBottom: 6,
-    minWidth: 190,
+    minWidth: 200,
+    maxWidth: 260,
+    paddingVertical: 2,
   },
-  listingInfo: { flex: 1 },
-  listingTitle: { fontSize: 13, fontWeight: '700' },
-  listingPrice: { fontSize: 13, fontWeight: '800', marginTop: 1 },
+  fileIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fileInfo: { flex: 1 },
+  fileName: { fontSize: 13, fontWeight: '700' },
+  fileSize: { fontSize: 11, fontWeight: '600', marginTop: 1 },
   quote: {
     borderLeftWidth: 3,
     borderRadius: Radius.badge,

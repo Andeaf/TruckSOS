@@ -5,7 +5,14 @@ import { supabase } from '@/lib/supabase';
 import { hasChatV14, replyEmbed } from '@/lib/chat-schema';
 import { emitReadsChanged, onReadsChanged } from '@/lib/read-events';
 import { useBlocked } from '@/hooks/use-blocked';
-import { uploadPhoto } from '@/lib/storage';
+import {
+  fetchMessageListingContext,
+  fetchMessageMechanicContext,
+  type MessageAnnouncementContext,
+  type MessageListingContext,
+  type MessageMechanicContext,
+} from '@/hooks/use-chat';
+import { uploadFile, uploadPhoto, type PickedFile } from '@/lib/storage';
 import type { PickedImage } from '@/lib/media';
 import type { Channel, ChannelMessage, PublicUser, Role } from '@/types/database';
 
@@ -13,7 +20,18 @@ const PAGE_SIZE = 50;
 
 export type ChannelMessageWithSender = ChannelMessage & {
   sender: PublicUser & { role: Role };
+  /** Faza 19.5/19.6: contextele atașate (paritate cu chatul privat). */
+  listing?: MessageListingContext | null;
+  mechanic?: MessageMechanicContext | null;
+  announcement?: MessageAnnouncementContext | null;
 };
+
+/** Embed-urile de context 19.5/19.6 pe mesajele de canal (sender_id e calificat
+ * explicit în selecturi, deci al doilea FK către profiles nu creează ambiguitate). */
+const CHANNEL_ATTACH_EMBEDS =
+  ', listing:market_listings!listing_id(id,title,price,currency,status,category,description,market_listing_photos(storage_path,position))' +
+  ', mechanic:profiles!recommended_mechanic_id(id,full_name,avatar_path,deleted_at,role,rating_avg,rating_count,specialization,activity_zone)' +
+  ', announcement:announcements!announcement_id(id,location,status,description)';
 
 export function useChannels() {
   const [channels, setChannels] = useState<Channel[]>([]);
@@ -76,7 +94,8 @@ export function useChannelMessages(channelId: string) {
         .from('channel_messages')
         .select(
           '*, sender:profiles!sender_id(full_name,role,avatar_path,deleted_at)' +
-            (v14 ? replyEmbed('channel_messages') : '')
+            (v14 ? replyEmbed('channel_messages') : '') +
+            CHANNEL_ATTACH_EMBEDS
         )
         .eq('channel_id', channelId)
         .order('created_at', { ascending: false })
@@ -102,7 +121,7 @@ export function useChannelMessages(channelId: string) {
         },
         async (payload) => {
           if (!active) return;
-          const incoming = payload.new as ChannelMessage;
+          const incoming = payload.new as ChannelMessageWithSender;
           // Own messages are already added optimistically by sendChannelMessage (same id) —
           // skip the extra profile fetch in that case.
           if (messagesRef.current.some((m) => m.id === incoming.id)) return;
@@ -112,6 +131,15 @@ export function useChannelMessages(channelId: string) {
             .eq('id', incoming.sender_id)
             .single();
           if (!active) return;
+          // Faza 19.5: payload-ul nu aduce embed-uri — contextele se completează separat.
+          if (incoming.listing_id) {
+            incoming.listing = await fetchMessageListingContext(incoming.listing_id);
+            if (!active) return;
+          }
+          if (incoming.recommended_mechanic_id) {
+            incoming.mechanic = await fetchMessageMechanicContext(incoming.recommended_mechanic_id);
+            if (!active) return;
+          }
           addMessage({
             ...incoming,
             sender: (sender as (PublicUser & { role: Role }) | null) ?? {
@@ -157,7 +185,8 @@ export function useChannelMessages(channelId: string) {
       .from('channel_messages')
       .select(
         '*, sender:profiles!sender_id(full_name,role,avatar_path,deleted_at)' +
-          (v14 ? replyEmbed('channel_messages') : '')
+          (v14 ? replyEmbed('channel_messages') : '') +
+          CHANNEL_ATTACH_EMBEDS
       )
       .eq('channel_id', channelId)
       .lt('created_at', oldest)
@@ -182,7 +211,9 @@ export async function sendChannelMessage(
   senderId: string,
   content: string,
   imagePath: string | null = null,
-  replyToId: string | null = null
+  replyToId: string | null = null,
+  listingId: string | null = null,
+  mechanicId: string | null = null
 ): Promise<{ message: ChannelMessageWithSender | null; error: string | null }> {
   const v14 = await hasChatV14();
   const row: Record<string, unknown> = {
@@ -192,15 +223,50 @@ export async function sendChannelMessage(
     image_path: imagePath,
   };
   if (v14) row.reply_to_id = replyToId;
+  // Faza 19.5: contextele din meniul „+" (paritate cu chatul privat).
+  if (listingId) row.listing_id = listingId;
+  if (mechanicId) row.recommended_mechanic_id = mechanicId;
   const { data, error } = await supabase
     .from('channel_messages')
     .insert(row as never)
     .select(
       '*, sender:profiles!sender_id(full_name,role,avatar_path,deleted_at)' +
-        (v14 ? replyEmbed('channel_messages') : '')
+        (v14 ? replyEmbed('channel_messages') : '') +
+        CHANNEL_ATTACH_EMBEDS
     )
     .single();
   return { message: (data as unknown as ChannelMessageWithSender) ?? null, error: error?.message ?? null };
+}
+
+/** Fișier în canal (Faza 19.5) — simetric cu sendFileMessage din chatul privat. */
+export async function sendChannelFileMessage(
+  channelId: string,
+  senderId: string,
+  file: PickedFile
+): Promise<{ message: ChannelMessageWithSender | null; error: string | null }> {
+  const { path, error } = await uploadFile('channel', channelId, file);
+  if (error || !path) {
+    console.warn('[channel] upload fișier eșuat:', error);
+    return { message: null, error: error ?? 'upload_failed' };
+  }
+  const v14 = await hasChatV14();
+  const { data, error: insertError } = await supabase
+    .from('channel_messages')
+    .insert({
+      channel_id: channelId,
+      sender_id: senderId,
+      content: '',
+      file_path: path,
+      file_name: file.name,
+      file_size: file.size,
+    } as never)
+    .select(
+      '*, sender:profiles!sender_id(full_name,role,avatar_path,deleted_at)' +
+        (v14 ? replyEmbed('channel_messages') : '') +
+        CHANNEL_ATTACH_EMBEDS
+    )
+    .single();
+  return { message: (data as unknown as ChannelMessageWithSender) ?? null, error: insertError?.message ?? null };
 }
 
 /**

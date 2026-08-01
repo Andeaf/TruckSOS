@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
+import { Alert } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { ChatScreen } from '@/components/chat-screen';
+import { MarketPickerSheet } from '@/components/market-picker-sheet';
+import { MechanicPickerSheet } from '@/components/mechanic-picker-sheet';
 import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
@@ -12,9 +15,12 @@ import {
   deleteMessage,
   editMessage,
   fetchConversationDetails,
+  fetchMessageAnnouncementContext,
   fetchMessageListingContext,
+  fetchMessageMechanicContext,
   markConversationRead,
   otherParticipant,
+  sendFileMessage,
   sendImageMessage,
   sendMessage,
   useAnnouncementStatus,
@@ -22,15 +28,33 @@ import {
   useReadCursor,
   withinEditWindow,
   type ConversationWithDetails,
+  type MessageAnnouncementContext,
   type MessageListingContext,
+  type MessageMechanicContext,
 } from '@/hooks/use-chat';
 
 export default function MechanicChatScreen() {
   // `listingId` (opțional) = venim din „Contactează vânzătorul" — vezi ruta șoferului.
-  const { id, listingId } = useLocalSearchParams<{ id: string; listingId?: string }>();
+  const { id, listingId, announcementId } = useLocalSearchParams<{
+    id: string;
+    listingId?: string;
+    announcementId?: string;
+  }>();
   const [pendingListing, setPendingListing] = useState<string | null>(listingId ?? null);
+  // Faza 19.6: venim din share-ul unui anunț de depanare — cardul pe primul mesaj.
+  const [pendingAnnouncement, setPendingAnnouncement] = useState<string | null>(
+    announcementId ?? null
+  );
+  const [pendingAnnouncementInfo, setPendingAnnouncementInfo] =
+    useState<MessageAnnouncementContext | null>(null);
   // Detaliile pentru bannerul „anunț atașat" din compozitor (ruta aduce doar id-ul).
   const [pendingListingInfo, setPendingListingInfo] = useState<MessageListingContext | null>(null);
+  // Faza 19.5: mecanicul recomandat (meniul „+") + pickerele de atașamente.
+  const [pendingMechanic, setPendingMechanic] = useState<string | null>(null);
+  const [pendingMechanicInfo, setPendingMechanicInfo] = useState<MessageMechanicContext | null>(null);
+  const [marketPickerOpen, setMarketPickerOpen] = useState(false);
+  // 19.6: același picker pentru „Recomandă un mecanic" ȘI „Recomandă un transportator".
+  const [recommendRole, setRecommendRole] = useState<'mechanic' | 'driver' | null>(null);
   const { session } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
@@ -65,6 +89,40 @@ export default function MechanicChatScreen() {
   }, [pendingListing]);
 
   useEffect(() => {
+    // Faza 19.6: bannerul anunțului de depanare distribuit (share).
+    if (!pendingAnnouncement) {
+      setPendingAnnouncementInfo(null);
+      return;
+    }
+    let active = true;
+    fetchMessageAnnouncementContext(pendingAnnouncement).then((info) => {
+      if (!active) return;
+      if (info) setPendingAnnouncementInfo(info);
+      else setPendingAnnouncement(null);
+    });
+    return () => {
+      active = false;
+    };
+  }, [pendingAnnouncement]);
+
+  useEffect(() => {
+    // Simetric cu anunțul atașat: bannerul de mecanic urmează starea `pendingMechanic`.
+    if (!pendingMechanic) {
+      setPendingMechanicInfo(null);
+      return;
+    }
+    let active = true;
+    fetchMessageMechanicContext(pendingMechanic).then((info) => {
+      if (!active) return;
+      if (info && !info.deleted_at) setPendingMechanicInfo(info);
+      else setPendingMechanic(null);
+    });
+    return () => {
+      active = false;
+    };
+  }, [pendingMechanic]);
+
+  useEffect(() => {
     // Cursorul acoperă cel mai nou mesaj AFIȘAT (vezi markConversationRead) — dar DOAR
     // cu ecranul în față: tab-urile păstrează stack-ul montat, iar fără garda de focus
     // un mesaj sosit cât timp userul e pe alt tab se marca singur „citit" (✓✓ false).
@@ -81,6 +139,7 @@ export default function MechanicChatScreen() {
   if (!conv || !session || !other) return <ThemedView style={{ flex: 1 }} />;
 
   return (
+    <>
     <ChatScreen
       currentUserId={session.user.id}
       title={displayName(other.profile, t)}
@@ -106,11 +165,14 @@ export default function MechanicChatScreen() {
       loading={loading}
       onSend={async (content, replyToId) => {
         const { message } = await sendMessage(
-          id, session.user.id, content, null, replyToId, pendingListing
+          id, session.user.id, content, null, replyToId,
+          pendingListing, pendingMechanic, pendingAnnouncement
         );
         if (message) {
           addMessage(message);
           if (pendingListing) setPendingListing(null);
+          if (pendingMechanic) setPendingMechanic(null);
+          if (pendingAnnouncement) setPendingAnnouncement(null);
         }
       }}
       onPressListing={(lid) =>
@@ -118,6 +180,23 @@ export default function MechanicChatScreen() {
       }
       pendingListing={pendingListingInfo}
       onClearPendingListing={() => setPendingListing(null)}
+      pendingMechanic={pendingMechanicInfo}
+      onClearPendingMechanic={() => setPendingMechanic(null)}
+      pendingAnnouncement={pendingAnnouncementInfo}
+      onClearPendingAnnouncement={() => setPendingAnnouncement(null)}
+      onPressAnnouncement={(aid) =>
+        router.push({ pathname: '/(mechanic)/feed/[id]' as never, params: { id: aid } })
+      }
+      onAttachListing={() => setMarketPickerOpen(true)}
+      onAttachMechanic={() => setRecommendRole('mechanic')}
+      onAttachDriver={() => setRecommendRole('driver')}
+      onSendFile={async (file) => {
+        const { message } = await sendFileMessage(id, session.user.id, file);
+        if (message) addMessage(message);
+      }}
+      onPressMechanic={(mid) =>
+        router.push({ pathname: '/(mechanic)/public-profile/[id]' as never, params: { id: mid } })
+      }
       onSendImage={async (image) => {
         const { message } = await sendImageMessage(id, session.user.id, image);
         if (message) addMessage(message);
@@ -126,6 +205,9 @@ export default function MechanicChatScreen() {
         const err = await deleteMessage('messages', m.id);
         if (!err) {
           patchMessage(m.id, { content: '', image_path: null, deleted_at: new Date().toISOString() });
+        } else {
+          // Eroarea era înghițită tăcut — utilizatorul credea că a șters (bug 26 iul).
+          Alert.alert(t('common.error'), err);
         }
       }}
       onEditMessage={async (m, content) => {
@@ -138,5 +220,30 @@ export default function MechanicChatScreen() {
       readCursor={readCursor}
       onBack={goBack}
     />
+    {marketPickerOpen ? (
+      <MarketPickerSheet
+        visible
+        userId={session.user.id}
+        onClose={() => setMarketPickerOpen(false)}
+        onPick={(listing) => {
+          setMarketPickerOpen(false);
+          // Doar id-ul: efectul de pendingListing aduce detaliile pentru banner.
+          setPendingListing(listing.id);
+        }}
+      />
+    ) : null}
+    {recommendRole ? (
+      <MechanicPickerSheet
+        visible
+        userId={session.user.id}
+        targetRole={recommendRole}
+        onClose={() => setRecommendRole(null)}
+        onPick={(mechanic) => {
+          setRecommendRole(null);
+          setPendingMechanic(mechanic.id);
+        }}
+      />
+    ) : null}
+    </>
   );
 }

@@ -17,10 +17,12 @@ import { RatingSheet } from '@/components/rating-sheet';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { UserPickerSheet } from '@/components/user-picker-sheet';
 import { Radius, Spacing } from '@/constants/theme';
 import { displayName } from '@/lib/display-name';
 import { useAnnouncementPhotos } from '@/hooks/use-announcement-photos';
 import { useAuth } from '@/hooks/use-auth';
+import { startDirectConversation } from '@/hooks/use-chat';
 import { useMyRatingFor } from '@/hooks/use-ratings';
 import { useSignedUrls } from '@/hooks/use-signed-urls';
 import {
@@ -162,6 +164,28 @@ export default function AnnouncementDetailScreen() {
   const theme = useTheme();
   const router = useRouter();
   const goBack = useBack('/(driver)/announcements');
+  // Faza 19.6: share — trimite anunțul unui alt utilizator (card pe primul mesaj).
+  const [shareOpen, setShareOpen] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const handleShareTo = async (targetId: string) => {
+    if (sharing) return;
+    setSharing(true);
+    const { conversationId, error } = await startDirectConversation(targetId);
+    setSharing(false);
+    setShareOpen(false);
+    if (error === 'blocked_by_you') {
+      Alert.alert(t('newConversation.blockedTitle'), t('newConversation.blockedBody'));
+      return;
+    }
+    if (error || !conversationId) {
+      Alert.alert(t('common.error'));
+      return;
+    }
+    router.push({
+      pathname: '/(driver)/conversations/[id]' as never,
+      params: { id: conversationId, announcementId: id },
+    });
+  };
   const [announcement, setAnnouncement] = useState<AnnouncementWithMechanic | null>(null);
   const [loading, setLoading] = useState(true);
   const [resolving, setResolving] = useState(false);
@@ -305,11 +329,20 @@ export default function AnnouncementDetailScreen() {
         title={t('driver.announcements.detailTitle')}
         onBack={goBack}
         right={
-          announcement.status !== 'accepted' ? (
-            <Pressable onPress={handleDeletePress} hitSlop={12} disabled={deleting}>
-              <MaterialIcons name="delete" size={22} color={theme.onHeader} />
+          <View style={styles.headerActions}>
+            {/* Faza 19.6: share — trimite anunțul unui mecanic sau șofer. */}
+            <Pressable
+              onPress={() => setShareOpen(true)}
+              hitSlop={12}
+              accessibilityLabel={t('attach.shareTitle')}>
+              <MaterialIcons name="share" size={22} color={theme.onHeader} />
             </Pressable>
-          ) : null
+            {announcement.status !== 'accepted' ? (
+              <Pressable onPress={handleDeletePress} hitSlop={12} disabled={deleting}>
+                <MaterialIcons name="delete" size={22} color={theme.onHeader} />
+              </Pressable>
+            ) : null}
+          </View>
         }
       />
 
@@ -532,11 +565,21 @@ export default function AnnouncementDetailScreen() {
           onSaved={() => { setRatingVisible(false); refreshMyRating(); }}
         />
       ) : null}
+
+      {shareOpen ? (
+        <UserPickerSheet
+          visible
+          title={t('attach.shareTitle')}
+          onClose={() => setShareOpen(false)}
+          onPick={(user) => handleShareTo(user.id)}
+        />
+      ) : null}
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.four },
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   personRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },

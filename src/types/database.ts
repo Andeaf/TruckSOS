@@ -133,6 +133,15 @@ export interface Message {
   /** Faza 19.4: contextul de anunț de market atașat mesajului („Sunt interesat" cu
    * cardul anunțului deasupra); SET NULL dacă anunțul dispare. */
   listing_id: string | null;
+  /** Faza 19.5: mecanicul recomandat atașat mesajului; SET NULL dacă profilul dispare. */
+  recommended_mechanic_id: string | null;
+  /** Faza 19.6: anunțul de DEPANARE distribuit (share); SET NULL dacă anunțul dispare. */
+  announcement_id: string | null;
+  /** Faza 19.5: mesaj-fișier (un fișier = o bulă; content=''). Path în bucketul `photos`
+   * (`chat/{conv}/{uuid}.{ext}`); numele ORIGINAL trăiește doar în file_name. */
+  file_path: string | null;
+  file_name: string | null;
+  file_size: number | null;
   created_at: string;
 }
 
@@ -232,6 +241,13 @@ export interface ChannelMessage {
   reply_to_id: string | null;
   /** Faza 16: true = tombstone pus de un moderator (marcaj distinct „Șters de moderator"). */
   deleted_by_admin: boolean;
+  /** Faza 19.5/19.6: paritate cu chatul privat — anunțuri, mecanic recomandat, fișier. */
+  listing_id: string | null;
+  recommended_mechanic_id: string | null;
+  announcement_id: string | null;
+  file_path: string | null;
+  file_name: string | null;
+  file_size: number | null;
   created_at: string;
 }
 
@@ -369,6 +385,21 @@ export interface Database {
         Returns: Pick<
           Profile,
           'id' | 'full_name' | 'specialization' | 'activity_zone' | 'rating_avg' | 'rating_count'
+        >[];
+      };
+      /** Faza 19.6: directorul pickerului „conversație nouă"/share — ambele roluri. */
+      search_users: {
+        Args: { p_query: string };
+        Returns: Pick<
+          Profile,
+          | 'id'
+          | 'full_name'
+          | 'role'
+          | 'specialization'
+          | 'activity_zone'
+          | 'rating_avg'
+          | 'rating_count'
+          | 'avatar_path'
         >[];
       };
       get_mechanic_phone: {

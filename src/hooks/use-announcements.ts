@@ -177,6 +177,20 @@ export async function fetchRejectedAnnouncementIds(mechanicId: string): Promise<
   return new Set((data ?? []).map((r) => r.announcement_id));
 }
 
+/** 26 iul: anunțurile cu candidatura mea ÎN AȘTEPTARE — feed-ul le arată „În așteptare"
+ * în loc de „Deschis" (același tipar ca fetchRejectedAnnouncementIds). */
+export async function fetchPendingApplicationAnnouncementIds(
+  mechanicId: string
+): Promise<Set<string>> {
+  const { data } = await supabase
+    .from('applications')
+    .select('announcement_id')
+    .eq('mechanic_id', mechanicId)
+    .eq('status', 'pending');
+  const rows = ((data ?? []) as unknown) as { announcement_id: string }[];
+  return new Set(rows.map((r) => r.announcement_id));
+}
+
 export async function fetchMyApplicationForAnnouncement(
   announcementId: string,
 ): Promise<Application | null> {

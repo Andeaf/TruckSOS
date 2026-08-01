@@ -611,6 +611,52 @@
     "error": "Fehler",
     "cancel": "Abbrechen"
   },
+  "attach": {
+    "title": "Anhängen",
+    "market": "Market-Anzeige",
+    "mechanic": "Mechaniker empfehlen",
+    "file": "Datei (max. {{max}} MB)",
+    "driver": "Transporteur empfehlen",
+    "driverPickerTitle": "Transporteur auswählen",
+    "driverBanner": "Empfohlener Transporteur",
+    "searchDrivers": "Name des Transporteurs…",
+    "mechanicBanner": "Empfohlener Mechaniker",
+    "mechanicRemove": "Empfehlung aus der Nachricht entfernen",
+    "marketPickerTitle": "Anzeige auswählen",
+    "mechanicPickerTitle": "Mechaniker auswählen",
+    "searchListings": "Im Market suchen…",
+    "searchMechanics": "Name des Mechanikers…",
+    "searchHint": "Mindestens 2 Buchstaben eingeben",
+    "noResults": "Keine Ergebnisse",
+    "fileTooLargeTitle": "Datei zu groß",
+    "fileTooLargeBody": "Das Limit beträgt {{max}} MB.",
+    "fileBlockedTitle": "Dateityp nicht erlaubt",
+    "fileBlockedBody": "Ausführbare Dateien können nicht gesendet werden.",
+    "downloadError": "Download fehlgeschlagen. Versuch es erneut.",
+    "searchUsers": "Nach Name suchen…",
+    "recent": "Zuletzt",
+    "bandMechanic": "Empfehlung · Mechaniker",
+    "bandDriver": "Empfehlung · Transporteur",
+    "bandMarket": "Empfehlung · Market",
+    "bandAnnouncement": "Meldung · Panne",
+    "cardCtaProfile": "Profil öffnen",
+    "cardCtaListing": "Anzeige ansehen",
+    "shareTitle": "Senden an…",
+    "announcementBanner": "Pannenmeldung",
+    "announcementRemove": "Meldung aus der Nachricht entfernen",
+    "status": {
+      "open": "Offen",
+      "accepted": "Angenommen",
+      "resolved": "Gelöst",
+      "cancelled": "Storniert"
+    }
+  },
+  "newConversation": {
+    "title": "Neue Unterhaltung",
+    "fab": "Neue Unterhaltung beginnen",
+    "blockedTitle": "Blockierter Nutzer",
+    "blockedBody": "Du hast diesen Nutzer blockiert. Entblocke ihn unter Einstellungen → Blockierte Nutzer, um ihm zu schreiben."
+  },
   "market": {
     "tabTitle": "Markt",
     "title": "Markt",
@@ -637,6 +683,7 @@
     "emptySearchTitle": "Keine Ergebnisse",
     "emptySearchDescription": "Versuche andere Wörter oder eine andere Kategorie.",
     "soldBadge": "Verkauft",
+    "toggleView": "Listenansicht wechseln",
     "soldBanner": "Diese Anzeige wurde verkauft.",
     "composerAttached": "Angehängte Anzeige",
     "composerAttachedRemove": "Anzeige aus der Nachricht entfernen",
@@ -689,6 +736,7 @@
   "status": {
     "open": "Offen",
     "accepted": "Angenommen",
+    "pending": "Ausstehend",
     "resolved": "Gelöst",
     "cancelled": "Storniert",
     "new": "Neu"
@@ -808,7 +856,7 @@
   "legal": {
     "terms": {
       "title": "Nutzungsbedingungen",
-      "updated": "Zuletzt aktualisiert: 21. Juli 2026",
+      "updated": "Zuletzt aktualisiert: 31. Juli 2026",
       "sections": [
         {
           "heading": "1. Annahme der Bedingungen",
@@ -816,7 +864,7 @@
         },
         {
           "heading": "2. Was TruckSOS ist",
-          "body": "TruckSOS verbindet Transporteure liegengebliebener Lkw mit verfügbaren Mechanikern. Die App vermittelt nur den Kontakt: Preis, Ausführung der Arbeit und Zahlung werden direkt zwischen Transporteur und Mechaniker vereinbart. TruckSOS ist nicht Partei ihres Vertrags und garantiert weder Qualität noch Verfügbarkeit oder Ergebnis der erbrachten Leistungen."
+          "body": "TruckSOS verbindet Transporteure liegengebliebener Lkw mit verfügbaren Mechanikern. Die App vermittelt nur den Kontakt: Preis, Ausführung der Arbeit und Zahlung werden direkt zwischen Transporteur und Mechaniker vereinbart. TruckSOS ist nicht Partei ihres Vertrags und garantiert weder Qualität noch Verfügbarkeit oder Ergebnis der erbrachten Leistungen. Die App enthält außerdem einen Bereich Markt, in dem Nutzer Verkaufsanzeigen für Teile, Reifen, Lkw und Anhänger veröffentlichen können. Auch hier vermittelt TruckSOS nur den Kontakt: Verhandlung, Zahlung und Lieferung erfolgen direkt zwischen Käufer und Verkäufer, außerhalb der App. Wir prüfen die angebotenen Waren nicht und haften nicht für Transaktionen zwischen Nutzern. Der Verkäufer ist dafür verantwortlich, die geltenden Gesetze einzuhalten, einschließlich steuerlicher und verbraucherschutzrechtlicher Pflichten, wenn er gewerblich verkauft."
         },
         {
           "heading": "3. Dein Konto",
@@ -824,7 +872,7 @@
         },
         {
           "heading": "4. Deine Inhalte",
-          "body": "Du bleibst Eigentümer der von dir veröffentlichten Inhalte (Anzeigen, Markt-Verkaufsanzeigen, Fotos, Nachrichten, Bewertungen). Du gewährst uns eine begrenzte Lizenz, sie in der App zu speichern und anzuzeigen, ausschließlich für den Betrieb des Dienstes. Illegale, irreführende oder beleidigende Inhalte, falsche Anzeigen und Spam sind verboten. Markt-Transaktionen kommen direkt zwischen Nutzern zustande; TruckSOS ist nicht Partei des Verkaufs, wickelt keine Zahlungen ab und übernimmt keine Gewähr für die angebotenen Artikel."
+          "body": "Du bleibst Eigentümer der von dir veröffentlichten Inhalte (Pannen-Anzeigen, Markt-Verkaufsanzeigen, Fotos, angehängte Dateien, Nachrichten, Bewertungen). Du gewährst uns eine begrenzte Lizenz, sie in der App zu speichern und anzuzeigen, ausschließlich für den Betrieb des Dienstes. Illegale, irreführende oder beleidigende Inhalte, falsche Anzeigen und Spam sind verboten. Markt-Transaktionen kommen direkt zwischen Nutzern zustande; TruckSOS ist nicht Partei des Verkaufs, wickelt keine Zahlungen ab und übernimmt keine Gewähr für die angebotenen Artikel."
         },
         {
           "heading": "5. Verhalten und Moderation",
@@ -850,19 +898,19 @@
     },
     "privacy": {
       "title": "Datenschutzerklärung",
-      "updated": "Zuletzt aktualisiert: 23. Juli 2026",
+      "updated": "Zuletzt aktualisiert: 31. Juli 2026",
       "sections": [
         {
           "heading": "1. Wer wir sind",
-          "body": "TruckSOS ist eine mobile App, die Transporteure liegengebliebener Lkw mit verfügbaren Mechanikern verbindet. Verantwortlicher für die Daten ist der Entwickler von TruckSOS; du erreichst uns jederzeit unter trucksos.support@gmail.com."
+          "body": "TruckSOS ist eine mobile App, die Transporteure liegengebliebener Lkw mit verfügbaren Mechanikern verbindet und die einen Bereich für Verkaufsanzeigen (Markt) zwischen Nutzern enthält. Verantwortlicher für die Daten ist der Entwickler von TruckSOS; du erreichst uns jederzeit unter trucksos.support@gmail.com."
         },
         {
           "heading": "2. Welche Daten wir erfassen",
-          "body": "Kontodaten: E-Mail-Adresse und Passwort (das Passwort wird von unserem Authentifizierungsanbieter verschlüsselt verwaltet; wir sehen es nie). Profildaten: Name, Rolle, Telefonnummer, Firma, Kontakt-E-Mail, Adresse, USt-IdNr., Spezialisierung, Einsatzgebiet, Profilfoto und gewählte Sprache. Veröffentlichte Inhalte: Pannen-Anzeigen (Beschreibung, Ort, Lkw-Details, Kennzeichen, Fotos und — nur wenn du sie anhängst — die GPS-Position), Markt-Verkaufsanzeigen (Titel, Beschreibung, Preis, Kategorie, Fotos), private Nachrichten, Nachrichten im öffentlichen Kanal, Bewertungen und Meldungen. Technische Daten: das Push-Token deines Geräts und bei Mechanikern die Referenzposition, falls für den Radiusfilter gesetzt."
+          "body": "Kontodaten: E-Mail-Adresse und Passwort (das Passwort wird von unserem Authentifizierungsanbieter verschlüsselt verwaltet; wir sehen es nie). Profildaten: Name, Rolle, Telefonnummer, Firma, Kontakt-E-Mail, Adresse, USt-IdNr., Spezialisierung, Einsatzgebiet, Profilfoto und gewählte Sprache. Veröffentlichte Inhalte: Pannen-Anzeigen (Beschreibung, Ort, Lkw-Details, Kennzeichen, Fotos und — nur wenn du sie anhängst — die GPS-Position), Markt-Verkaufsanzeigen (Titel, Beschreibung, Preis, Kategorie, Fotos), private Nachrichten, Nachrichten im öffentlichen Kanal, die Fotos und Dateien, die du in Konversationen anhängst, Bewertungen und Meldungen. Technische Daten: das Push-Token deines Geräts, deinen Verlauf der Mechaniker-Suchen (in deinem Konto gespeichert, damit wir dir deine letzten Suchen anzeigen können) und bei Mechanikern die Referenzposition, falls für den Radiusfilter gesetzt."
         },
         {
           "heading": "3. Wer was sieht",
-          "body": "Deine Telefonnummer ist NICHT öffentlich: Nur der Nutzer, mit dem du eine offene Konversation hast, sieht sie. Name, Profilfoto, Firma und Kontakt-E-Mail sind für angemeldete Nutzer sichtbar. Adresse und USt-IdNr. von Mechanikern werden als Anbieterinformation auf ihrem öffentlichen Profil angezeigt. Private Nachrichten sehen nur die Gesprächsteilnehmer; Nachrichten im öffentlichen Kanal sehen angemeldete Nutzer — jeder Nutzer sieht die Nachrichten, die nach Erstellung seines Kontos gesendet wurden, und Administratoren sehen den gesamten Kanal zur Moderation. Offene Anzeigen sind für Mechaniker sichtbar. Aktive Markt-Verkaufsanzeigen sind für alle angemeldeten Nutzer sichtbar."
+          "body": "Deine Telefonnummer ist NICHT öffentlich: Nur der Nutzer, mit dem du eine offene Konversation hast, sieht sie. Name, Profilfoto, Firma und Kontakt-E-Mail sind für angemeldete Nutzer sichtbar. Adresse und USt-IdNr. von Mechanikern werden als Anbieterinformation auf ihrem öffentlichen Profil angezeigt. Private Nachrichten sehen nur die Gesprächsteilnehmer; Nachrichten im öffentlichen Kanal sehen angemeldete Nutzer — jeder Nutzer sieht die Nachrichten, die nach Erstellung seines Kontos gesendet wurden, und Administratoren sehen den gesamten Kanal zur Moderation. Offene Anzeigen sind für Mechaniker sichtbar. Aktive Markt-Verkaufsanzeigen sind für alle angemeldeten Nutzer sichtbar, zusammen mit deinem Namen und deinem Profilfoto; Käufer und Verkäufer nehmen ausschließlich über den Chat in der App Kontakt auf, und wir wickeln keine Zahlungen ab und erheben keine Zahlungsdaten. Fotos und Dateien, die in einer Konversation angehängt werden, sind nur für deren Teilnehmer sichtbar, die im öffentlichen Kanal gesendeten für alle angemeldeten Nutzer. Wenn du in einer Konversation eine Pannen-Anzeige, eine Markt-Anzeige oder das Profil eines Mechanikers teilst, enthält die gesendete Karte deren öffentliche Daten. Dein Suchverlauf ist nur für dich sichtbar."
         },
         {
           "heading": "4. Wo die Daten gespeichert werden",
@@ -874,7 +922,7 @@
         },
         {
           "heading": "6. Speicherdauer und Kontolöschung",
-          "body": "Die Daten bleiben gespeichert, solange dein Konto aktiv ist. Du kannst dein Konto direkt in der App löschen (Profil → Einstellungen → Konto löschen) oder per E-Mail; die Löschung ist sofortig und unwiderruflich. Textnachrichten in den Konversationen anderer bleiben anonymisiert sichtbar, markiert als von einem gelöschten Nutzer — alles andere (Profil, Anzeigen, Markt-Verkaufsanzeigen, Fotos, Bewertungen, Favoriten) wird endgültig gelöscht."
+          "body": "Die Daten bleiben gespeichert, solange dein Konto aktiv ist. Du kannst dein Konto direkt in der App löschen (Profil → Einstellungen → Konto löschen) oder per E-Mail; die Löschung ist sofortig und unwiderruflich. Textnachrichten in den Konversationen anderer bleiben anonymisiert sichtbar, markiert als von einem gelöschten Nutzer — alles andere (Profil, Pannen-Anzeigen, Markt-Verkaufsanzeigen, Fotos, angehängte Dateien, Bewertungen, Favoriten und Suchverlauf) wird endgültig gelöscht."
         },
         {
           "heading": "7. Rechtsgrundlagen",

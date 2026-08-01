@@ -4,7 +4,7 @@ import { AppState } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { hasChatV14, replyEmbed } from '@/lib/chat-schema';
 import { emitReadsChanged, onReadsChanged } from '@/lib/read-events';
-import { uploadPhoto } from '@/lib/storage';
+import { uploadFile, uploadPhoto, type PickedFile } from '@/lib/storage';
 import type { PickedImage } from '@/lib/media';
 import type { Announcement, Conversation, Message, PublicUser, Role } from '@/types/database';
 import type { AnnouncementStatus, MarketListingStatus } from '@/types/database';
@@ -38,17 +38,56 @@ export function otherParticipant(
     : { id: conv.driver_id, profile: conv.driver };
 }
 
-/** Faza 19.4: contextul de anunț atașat unui MESAJ (cardul de deasupra textului). */
+/** Faza 19.4: contextul de anunț atașat unui MESAJ (cardul de deasupra textului).
+ * 26 iul (carduri detaliate): + categorie, descriere și pozele (cover = poziția minimă). */
 export interface MessageListingContext {
   id: string;
   title: string;
   price: number;
   currency: string;
   status: 'active' | 'sold';
+  category?: string | null;
+  description?: string | null;
+  market_listing_photos?: { storage_path: string; position: number }[];
+}
+
+/** Faza 19.5: utilizatorul recomandat atașat unui mesaj (card în bulă + banner
+ * compozitor). Din 19.6 poate fi mecanic SAU transportator — rolul decide eticheta
+ * bannerului și rutarea cardului; numele tipului rămâne istoric. */
+export interface MessageMechanicContext {
+  id: string;
+  full_name: string;
+  avatar_path: string | null;
+  deleted_at: string | null;
+  role: Role;
+  rating_avg: number;
+  rating_count: number;
+  /** 26 iul (carduri detaliate): contextul profesional, direct pe card. */
+  specialization?: string | null;
+  activity_zone?: string | null;
+}
+
+/** Faza 19.6: anunțul de depanare distribuit pe un mesaj (share → card în bulă). */
+export interface MessageAnnouncementContext {
+  id: string;
+  location: string;
+  status: AnnouncementStatus;
+  /** 26 iul (carduri detaliate): fragmentul de descriere de pe card. */
+  description?: string | null;
 }
 
 /** Embed-ul de context pe mesaje — cere migrarea etapa194 (messages.listing_id). */
-const MESSAGE_LISTING_EMBED = ', listing:market_listings!listing_id(id,title,price,currency,status)';
+const MESSAGE_LISTING_EMBED =
+  ', listing:market_listings!listing_id(id,title,price,currency,status,category,description,market_listing_photos(storage_path,position))';
+/** Embed-ul mecanicului recomandat — cere migrarea faza195 (recommended_mechanic_id). */
+const MESSAGE_MECHANIC_EMBED =
+  ', mechanic:profiles!recommended_mechanic_id(id,full_name,avatar_path,deleted_at,role,rating_avg,rating_count,specialization,activity_zone)';
+/** Embed-ul anunțului de depanare distribuit — cere migrarea faza196 (announcement_id). */
+const MESSAGE_ANNOUNCEMENT_EMBED =
+  ', announcement:announcements!announcement_id(id,location,status,description)';
+/** Toate contextele atașabile unui mesaj (19.4 + 19.5 + 19.6), într-un singur sufix. */
+const MESSAGE_ATTACH_EMBEDS =
+  MESSAGE_LISTING_EMBED + MESSAGE_MECHANIC_EMBED + MESSAGE_ANNOUNCEMENT_EMBED;
 
 /**
  * Contextul de anunț după id — null dacă anunțul nu mai există (șters). Folosit de
@@ -60,10 +99,35 @@ export async function fetchMessageListingContext(
 ): Promise<MessageListingContext | null> {
   const { data } = await supabase
     .from('market_listings')
-    .select('id,title,price,currency,status')
+    .select('id,title,price,currency,status,category,description,market_listing_photos(storage_path,position)')
     .eq('id', listingId)
     .maybeSingle();
   return (data as unknown as MessageListingContext) ?? null;
+}
+
+/** Contextul de mecanic recomandat după id — simetric cu fetchMessageListingContext. */
+export async function fetchMessageMechanicContext(
+  mechanicId: string
+): Promise<MessageMechanicContext | null> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('id,full_name,avatar_path,deleted_at,role,rating_avg,rating_count,specialization,activity_zone')
+    .eq('id', mechanicId)
+    .maybeSingle();
+  return (data as unknown as MessageMechanicContext) ?? null;
+}
+
+/** Contextul de anunț de depanare după id — null și când RLS nu-l lasă vizibil
+ * (ex. anunțul altui șofer, văzut de un șofer): cardul pur și simplu nu apare. */
+export async function fetchMessageAnnouncementContext(
+  announcementId: string
+): Promise<MessageAnnouncementContext | null> {
+  const { data } = await supabase
+    .from('announcements')
+    .select('id,location,status,description')
+    .eq('id', announcementId)
+    .maybeSingle();
+  return (data as unknown as MessageAnnouncementContext) ?? null;
 }
 
 /** Selectul comun al listei/detaliului de conversație (embeds pe ambele sloturi + contexte). */
@@ -131,7 +195,7 @@ export function useMessages(conversationId: string) {
       const v14 = await hasChatV14();
       const { data } = await supabase
         .from('messages')
-        .select('*' + (v14 ? replyEmbed('messages') : '') + MESSAGE_LISTING_EMBED)
+        .select('*' + (v14 ? replyEmbed('messages') : '') + MESSAGE_ATTACH_EMBEDS)
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
       if (active) {
@@ -156,13 +220,27 @@ export function useMessages(conversationId: string) {
         },
         async (payload) => {
           if (!active) return;
-          const incoming = payload.new as Message & { listing?: MessageListingContext | null };
-          // Faza 19.4: payload-ul Realtime nu aduce embed-uri — cardul anunțului
-          // se completează cu un fetch scurt (doar la mesajele cu context).
+          const incoming = payload.new as Message & {
+            listing?: MessageListingContext | null;
+            mechanic?: MessageMechanicContext | null;
+            announcement?: MessageAnnouncementContext | null;
+          };
+          // Faza 19.4/19.5/19.6: payload-ul Realtime nu aduce embed-uri — cardurile
+          // de context se completează cu fetch-uri scurte (doar la mesajele cu context).
           if (incoming.listing_id) {
             const listing = await fetchMessageListingContext(incoming.listing_id);
             if (!active) return;
             incoming.listing = listing;
+          }
+          if (incoming.recommended_mechanic_id) {
+            const mechanic = await fetchMessageMechanicContext(incoming.recommended_mechanic_id);
+            if (!active) return;
+            incoming.mechanic = mechanic;
+          }
+          if (incoming.announcement_id) {
+            const announcement = await fetchMessageAnnouncementContext(incoming.announcement_id);
+            if (!active) return;
+            incoming.announcement = announcement;
           }
           // Deduplicates: own messages added optimistically have the same ID
           setMessages((prev) =>
@@ -229,12 +307,14 @@ export async function editMessage(
   return error?.message ?? null;
 }
 
-// Întoarce conversația directă existentă cu mecanicul sau creează una nouă (RPC atomic)
+// Întoarce conversația directă existentă cu ținta sau creează una nouă (RPC atomic).
+// Faza 19.6: ținta poate avea ORICE rol (șofer↔șofer, mecanic↔mecanic) — RPC-ul caută
+// perechea în ambele orientări; numele parametrului rămâne istoric (p_mechanic_id).
 export async function startDirectConversation(
-  mechanicId: string
+  targetUserId: string
 ): Promise<{ conversationId: string | null; error: string | null }> {
   const { data, error } = await supabase.rpc('start_direct_conversation', {
-    p_mechanic_id: mechanicId,
+    p_mechanic_id: targetUserId,
   } as never);
   return { conversationId: (data as unknown as string) ?? null, error: error?.message ?? null };
 }
@@ -254,7 +334,9 @@ export async function sendMessage(
   content: string,
   imagePath: string | null = null,
   replyToId: string | null = null,
-  listingId: string | null = null
+  listingId: string | null = null,
+  mechanicId: string | null = null,
+  announcementId: string | null = null
 ): Promise<{ message: Message | null; error: string | null }> {
   const v14 = await hasChatV14();
   const row: Record<string, unknown> = {
@@ -267,13 +349,48 @@ export async function sendMessage(
   if (v14) row.reply_to_id = replyToId;
   // Faza 19.4: contextul de anunț („Sunt interesat" din market) — cardul de deasupra.
   if (listingId) row.listing_id = listingId;
+  // Faza 19.5: mecanicul recomandat din meniul „+".
+  if (mechanicId) row.recommended_mechanic_id = mechanicId;
+  // Faza 19.6: anunțul de depanare distribuit (butonul de share de pe detaliu).
+  if (announcementId) row.announcement_id = announcementId;
   const { data, error } = await supabase
     .from('messages')
     .insert(row as never)
-    // Returnăm și citatul + contextul, ca bula proprie să le afișeze instant (optimist).
-    .select('*' + (v14 ? replyEmbed('messages') : '') + MESSAGE_LISTING_EMBED)
+    // Returnăm și citatul + contextele, ca bula proprie să le afișeze instant (optimist).
+    .select('*' + (v14 ? replyEmbed('messages') : '') + MESSAGE_ATTACH_EMBEDS)
     .single();
   return { message: (data as unknown as Message) ?? null, error: error?.message ?? null };
+}
+
+/**
+ * Trimite un FIȘIER ca mesaj (Faza 19.5) — simetric cu sendImageMessage: urcă în
+ * `chat/{convId}/` (fără compresie), apoi inserează mesajul cu content='' +
+ * file_path/file_name/file_size. Un fișier = o bulă.
+ */
+export async function sendFileMessage(
+  conversationId: string,
+  senderId: string,
+  file: PickedFile
+): Promise<{ message: Message | null; error: string | null }> {
+  const { path, error } = await uploadFile('chat', conversationId, file);
+  if (error || !path) {
+    console.warn('[chat] upload fișier eșuat:', error);
+    return { message: null, error: error ?? 'upload_failed' };
+  }
+  const v14 = await hasChatV14();
+  const { data, error: insertError } = await supabase
+    .from('messages')
+    .insert({
+      conversation_id: conversationId,
+      sender_id: senderId,
+      content: '',
+      file_path: path,
+      file_name: file.name,
+      file_size: file.size,
+    } as never)
+    .select('*' + (v14 ? replyEmbed('messages') : '') + MESSAGE_ATTACH_EMBEDS)
+    .single();
+  return { message: (data as unknown as Message) ?? null, error: insertError?.message ?? null };
 }
 
 /**

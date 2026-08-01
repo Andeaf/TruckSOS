@@ -61,6 +61,57 @@ export async function uploadPhoto(
   }
 }
 
+/** Fișier ales din document picker (Faza 19.5) — se urcă NEmodificat. */
+export interface PickedFile {
+  uri: string;
+  name: string;
+  size: number;
+  mimeType?: string;
+}
+
+/** Limita de mărime pentru fișierele din chat (decizie F19.5): 10 MB. */
+export const MAX_FILE_SIZE = 10 * 1024 * 1024;
+export const MAX_FILE_SIZE_MB = 10;
+/** Executabile blocate — restul extensiilor sunt permise (B2B: PDF-uri, devize, arhive). */
+export const BLOCKED_FILE_EXTENSIONS = ['apk', 'exe', 'bat', 'cmd', 'sh', 'msi'];
+
+/** Extensia (lowercase, fără punct) sau '' — pentru blocklist și path-ul din Storage. */
+export function fileExtension(name: string): string {
+  const i = name.lastIndexOf('.');
+  return i > 0 ? name.slice(i + 1).toLowerCase() : '';
+}
+
+/**
+ * Urcă un fișier de chat în `photos/{chat|channel}/{parentId}/{uuid}.{ext}` —
+ * ACELEAȘI foldere și politici RLS ca pozele (politicile nu discriminează extensia,
+ * deci participanții pot scrie/citit, restul nu). Numele original NU intră în path
+ * (path-ul e uuid, ca la poze); el trăiește în messages.file_name.
+ */
+export async function uploadFile(
+  folder: 'chat' | 'channel',
+  parentId: string,
+  file: PickedFile,
+): Promise<{ path: string | null; error: string | null }> {
+  try {
+    const ext = fileExtension(file.name) || 'bin';
+    const path = `${folder}/${parentId}/${Crypto.randomUUID()}.${ext}`;
+    const bytes = await new File(file.uri).arrayBuffer();
+    const { error } = await supabase.storage
+      .from(BUCKET)
+      .upload(path, bytes, {
+        contentType: file.mimeType ?? 'application/octet-stream',
+        upsert: false,
+      });
+    if (error) {
+      console.warn('[storage] upload fișier refuzat pt. path:', path, '→', error.message);
+      return { path: null, error: error.message };
+    }
+    return { path, error: null };
+  } catch (e) {
+    return { path: null, error: e instanceof Error ? e.message : 'upload_failed' };
+  }
+}
+
 /**
  * Avatarul propriu → `avatars/{user_id}/{uuid}.jpg`. UUID nou la fiecare schimbare,
  * ca URL-ul semnat vechi și cache-ul `expo-image` să nu mai servească poza veche.

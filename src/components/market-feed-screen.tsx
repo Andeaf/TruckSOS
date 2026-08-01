@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   ActivityIndicator,
   Alert,
@@ -50,6 +51,10 @@ interface MarketFeedScreenProps {
 
 type CategoryFilter = MarketCategory | 'all';
 
+/** 26 iul: aspect comutabil — „pătrate" (grilă 2 col) vs „dreptunghiuri" (listă). */
+const VIEW_MODE_KEY = 'market_view_mode';
+type MarketViewMode = 'grid' | 'list';
+
 export function MarketFeedScreen({ role }: MarketFeedScreenProps) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -63,6 +68,21 @@ export function MarketFeedScreen({ role }: MarketFeedScreenProps) {
   const [category, setCategory] = useState<CategoryFilter>('all');
   const [sort, setSort] = useState<MarketSort>('recent');
   const [mine, setMine] = useState(false);
+  const [viewMode, setViewMode] = useState<MarketViewMode>('grid');
+
+  useEffect(() => {
+    AsyncStorage.getItem(VIEW_MODE_KEY).then((stored) => {
+      if (stored === 'grid' || stored === 'list') setViewMode(stored);
+    });
+  }, []);
+
+  function toggleViewMode() {
+    setViewMode((prev) => {
+      const next: MarketViewMode = prev === 'grid' ? 'list' : 'grid';
+      AsyncStorage.setItem(VIEW_MODE_KEY, next);
+      return next;
+    });
+  }
 
   const { listings, covers, loading, loadingMore, hasMore, refresh, loadMore } =
     useMarketListings(session?.user.id, {
@@ -165,31 +185,76 @@ export function MarketFeedScreen({ role }: MarketFeedScreenProps) {
         </View>
       </ScreenHeader>
 
-      {/* Chips: categorii + „Ale mele" + sortare, un singur rând scrollabil. */}
+      {/* Rândul de control (design 26 iul): segmented „Toate / Ale mele" + butoane
+          rotunde de sortare și de comutare grilă/listă. Categoriile au rândul lor. */}
+      <View style={styles.controlRow}>
+        <View style={[styles.segmented, { backgroundColor: theme.backgroundElement }, Shadows.chip]}>
+          {([false, true] as const).map((m) => (
+            <Pressable
+              key={String(m)}
+              onPress={() => setMine(m)}
+              hitSlop={{ top: 8, bottom: 8, left: 2, right: 2 }}
+              accessibilityRole="button"
+              accessibilityState={{ selected: mine === m }}
+              style={[styles.segment, mine === m && { backgroundColor: theme.brand }]}>
+              <ThemedText
+                style={[
+                  styles.segmentLabel,
+                  { color: mine === m ? '#FFFFFF' : theme.textSecondary },
+                ]}
+                maxFontSizeMultiplier={1.2}>
+                {m ? t('market.tabMine') : t('market.tabAll')}
+              </ThemedText>
+            </Pressable>
+          ))}
+        </View>
+
+        <View style={styles.controlButtons}>
+          <Pressable
+            onPress={openSortMenu}
+            hitSlop={8}
+            accessibilityLabel={t('market.sortTitle')}
+            style={[styles.roundBtn, { backgroundColor: theme.backgroundElement }, Shadows.chip]}>
+            <Feather
+              name="sliders"
+              size={16}
+              color={sort !== 'recent' ? theme.brand : theme.textSecondary}
+            />
+          </Pressable>
+          <Pressable
+            onPress={toggleViewMode}
+            hitSlop={8}
+            accessibilityLabel={t('market.toggleView')}
+            style={[styles.roundBtn, { backgroundColor: theme.backgroundElement }, Shadows.chip]}>
+            {/* Iconița arată vizualizarea CURENTĂ, pe accent (spec 26 iul). */}
+            <Feather
+              name={viewMode === 'grid' ? 'grid' : 'list'}
+              size={16}
+              color={theme.brand}
+            />
+          </Pressable>
+        </View>
+      </View>
+
+      {/* Chips: DOAR categoriile — independente de segmentul Toate/Ale mele. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.chipsScroll}
         contentContainerStyle={styles.chipsRow}>
-        {chip('all', t('market.categoryAll'), null, category === 'all' && !mine, () => {
-          setCategory('all');
-          setMine(false);
-        })}
+        {chip('all', t('market.categoryAll'), null, category === 'all', () => setCategory('all'))}
         {MARKET_CATEGORIES.map((c) =>
-          chip(c, t(`market.categories.${c}`), null, category === c && !mine, () => {
-            setCategory(c);
-            setMine(false);
-          }),
+          chip(c, t(`market.categories.${c}`), null, category === c, () => setCategory(c)),
         )}
-        {chip('mine', t('market.tabMine'), 'user', mine, () => setMine((v) => !v))}
-        {chip('sort', null, 'sliders', sort !== 'recent', openSortMenu)}
       </ScrollView>
 
       <FlatList
+        // Schimbarea lui numColumns cere remount → key pe aspect (limitare FlatList).
+        key={viewMode}
         data={listings}
         keyExtractor={(item) => item.id}
-        numColumns={2}
-        columnWrapperStyle={styles.columnWrapper}
+        numColumns={viewMode === 'grid' ? 2 : 1}
+        columnWrapperStyle={viewMode === 'grid' ? styles.columnWrapper : undefined}
         contentContainerStyle={styles.list}
         keyboardShouldPersistTaps="handled"
         refreshing={pullRefreshing}
@@ -200,6 +265,7 @@ export function MarketFeedScreen({ role }: MarketFeedScreenProps) {
           <MarketCard
             listing={item}
             coverUrl={covers[item.id]}
+            horizontal={viewMode === 'list'}
             onPress={() =>
               router.push({ pathname: `${base}/[id]`, params: { id: item.id } } as never)
             }
@@ -279,6 +345,33 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     padding: 0,
+  },
+  // Rândul de control (26 iul): segmented + butoane rotunde 36 (touch extins prin hitSlop).
+  controlRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 22,
+    paddingTop: 14,
+  },
+  segmented: {
+    flexDirection: 'row',
+    borderRadius: Radius.badge,
+    padding: 3,
+  },
+  segment: {
+    borderRadius: Radius.badge,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+  },
+  segmentLabel: { fontSize: 13, fontWeight: '600', lineHeight: 18 },
+  controlButtons: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  roundBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: Radius.circle,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   chipsScroll: { flexGrow: 0 },
   chipsRow: {

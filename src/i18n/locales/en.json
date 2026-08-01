@@ -597,6 +597,52 @@
     "error": "Error",
     "cancel": "Cancel"
   },
+  "attach": {
+    "title": "Attach",
+    "market": "Market listing",
+    "mechanic": "Recommend a mechanic",
+    "file": "File (max {{max}} MB)",
+    "driver": "Recommend a carrier",
+    "driverPickerTitle": "Choose a carrier",
+    "driverBanner": "Recommended carrier",
+    "searchDrivers": "Carrier's name…",
+    "mechanicBanner": "Recommended mechanic",
+    "mechanicRemove": "Remove recommendation from message",
+    "marketPickerTitle": "Choose a listing",
+    "mechanicPickerTitle": "Choose a mechanic",
+    "searchListings": "Search Market…",
+    "searchMechanics": "Mechanic's name…",
+    "searchHint": "Type at least 2 letters",
+    "noResults": "No results",
+    "fileTooLargeTitle": "File too large",
+    "fileTooLargeBody": "The limit is {{max}} MB.",
+    "fileBlockedTitle": "File type not allowed",
+    "fileBlockedBody": "Executable files cannot be sent.",
+    "downloadError": "Download failed. Try again.",
+    "searchUsers": "Search by name…",
+    "recent": "Recent",
+    "bandMechanic": "Recommendation · Mechanic",
+    "bandDriver": "Recommendation · Carrier",
+    "bandMarket": "Recommendation · Market",
+    "bandAnnouncement": "Announcement · Breakdown",
+    "cardCtaProfile": "Open profile",
+    "cardCtaListing": "View listing",
+    "shareTitle": "Send to…",
+    "announcementBanner": "Breakdown announcement",
+    "announcementRemove": "Remove announcement from message",
+    "status": {
+      "open": "Open",
+      "accepted": "Accepted",
+      "resolved": "Resolved",
+      "cancelled": "Cancelled"
+    }
+  },
+  "newConversation": {
+    "title": "New conversation",
+    "fab": "Start a new conversation",
+    "blockedTitle": "Blocked user",
+    "blockedBody": "You have blocked this user. Unblock them in Settings → Blocked users to message them."
+  },
   "market": {
     "tabTitle": "Market",
     "title": "Market",
@@ -623,6 +669,7 @@
     "emptySearchTitle": "No results",
     "emptySearchDescription": "Try different words or another category.",
     "soldBadge": "Sold",
+    "toggleView": "Toggle list layout",
     "soldBanner": "This listing has been sold.",
     "composerAttached": "Attached listing",
     "composerAttachedRemove": "Remove listing from message",
@@ -689,6 +736,7 @@
   "status": {
     "open": "Open",
     "accepted": "Accepted",
+    "pending": "Pending",
     "resolved": "Resolved",
     "cancelled": "Cancelled",
     "new": "New"
@@ -808,7 +856,7 @@
   "legal": {
     "terms": {
       "title": "Terms and conditions",
-      "updated": "Last updated: 21 July 2026",
+      "updated": "Last updated: 31 July 2026",
       "sections": [
         {
           "heading": "1. Accepting the terms",
@@ -816,7 +864,7 @@
         },
         {
           "heading": "2. What TruckSOS is",
-          "body": "TruckSOS connects carriers with broken-down trucks to available mechanics. The app only facilitates contact: the price, the work itself and the payment are agreed directly between carrier and mechanic. TruckSOS is not a party to their contract and does not guarantee the quality, availability or outcome of the services provided."
+          "body": "TruckSOS connects carriers with broken-down trucks to available mechanics. The app only facilitates contact: the price, the work itself and the payment are agreed directly between carrier and mechanic. TruckSOS is not a party to their contract and does not guarantee the quality, availability or outcome of the services provided. The app also includes a Market section, where users can post listings for parts, tyres, trucks and trailers. Here too TruckSOS only facilitates contact: negotiation, payment and delivery happen directly between buyer and seller, outside the app. We do not verify the goods offered and we are not liable for transactions between users. Sellers are responsible for complying with applicable law, including tax and consumer-protection obligations if they sell in a professional capacity."
         },
         {
           "heading": "3. Your account",
@@ -824,7 +872,7 @@
         },
         {
           "heading": "4. Your content",
-          "body": "You remain the owner of the content you publish (announcements, Market sale listings, photos, messages, reviews). You grant us a limited licence to store and display it in the app, strictly to operate the service. Illegal, misleading or offensive content, false announcements and spam are forbidden. Market transactions are concluded directly between users; TruckSOS is not a party to the sale, does not process payments and does not guarantee the listed items."
+          "body": "You remain the owner of the content you publish (breakdown announcements, Market sale listings, photos, attached files, messages, reviews). You grant us a limited licence to store and display it in the app, strictly to operate the service. Illegal, misleading or offensive content, false announcements and spam are forbidden. Market transactions are concluded directly between users; TruckSOS is not a party to the sale, does not process payments and does not guarantee the listed items."
         },
         {
           "heading": "5. Conduct and moderation",
@@ -850,19 +898,19 @@
     },
     "privacy": {
       "title": "Privacy policy",
-      "updated": "Last updated: 23 July 2026",
+      "updated": "Last updated: 31 July 2026",
       "sections": [
         {
           "heading": "1. Who we are",
-          "body": "TruckSOS is a mobile app that connects carriers with broken-down trucks to available mechanics. The data controller is the developer of TruckSOS; you can contact us any time at trucksos.support@gmail.com."
+          "body": "TruckSOS is a mobile app that connects carriers with broken-down trucks to available mechanics, and that includes a classified-ads section (Market) between users. The data controller is the developer of TruckSOS; you can contact us any time at trucksos.support@gmail.com."
         },
         {
           "heading": "2. What data we collect",
-          "body": "Account data: your email address and password (the password is handled encrypted by our authentication provider; we never see it). Profile data: name, role, phone number, company, contact email, address, VAT number, specialisation, activity zone, profile photo and chosen language. Published content: breakdown announcements (description, location, truck details, plate number, photos and — only if you choose to attach it — the GPS position), Market sale listings (title, description, price, category, photos), private messages, public-channel messages, reviews and reports. Technical data: your device's push notification token and, for mechanics, the reference position if set for the radius filter."
+          "body": "Account data: your email address and password (the password is handled encrypted by our authentication provider; we never see it). Profile data: name, role, phone number, company, contact email, address, VAT number, specialisation, activity zone, profile photo and chosen language. Published content: breakdown announcements (description, location, truck details, plate number, photos and — only if you choose to attach it — the GPS position), Market sale listings (title, description, price, category, photos), private messages, public-channel messages, the photos and files you attach in conversations, reviews and reports. Technical data: your device's push notification token, your mechanic-search history (kept in your account so we can show you your recent searches) and, for mechanics, the reference position if set for the radius filter."
         },
         {
           "heading": "3. Who sees what",
-          "body": "Your phone number is NOT public: only the user you have an open conversation with can see it. Your name, profile photo, company and contact email are visible to signed-in users. Mechanics' address and VAT number are shown on their public profile as provider information. Private messages are visible only to the conversation participants; public-channel messages are visible to signed-in users — each user sees the messages sent after their account was created, and administrators can view the entire channel for moderation. Open announcements are visible to mechanics. Active Market sale listings are visible to all signed-in users."
+          "body": "Your phone number is NOT public: only the user you have an open conversation with can see it. Your name, profile photo, company and contact email are visible to signed-in users. Mechanics' address and VAT number are shown on their public profile as provider information. Private messages are visible only to the conversation participants; public-channel messages are visible to signed-in users — each user sees the messages sent after their account was created, and administrators can view the entire channel for moderation. Open announcements are visible to mechanics. Active Market sale listings are visible to all signed-in users, together with your name and profile photo; buyer and seller contact each other exclusively through the in-app chat, and we neither process payments nor collect payment data. Photos and files attached in a conversation are visible only to that conversation's participants, and those sent in the public channel to all signed-in users. When you share a breakdown announcement, a Market listing or a mechanic's profile inside a conversation, the card you send contains their public details. Your search history is visible only to you."
         },
         {
           "heading": "4. Where the data is stored",
@@ -874,7 +922,7 @@
         },
         {
           "heading": "6. Retention and deleting your account",
-          "body": "Data is kept while your account is active. You can delete your account directly from the app (Profile → Settings → Delete account) or by email; deletion is immediate and irreversible. Text messages you sent in other people's conversations remain visible anonymised, marked as coming from a deleted user — everything else (profile, announcements, Market sale listings, photos, reviews, favourites) is permanently deleted."
+          "body": "Data is kept while your account is active. You can delete your account directly from the app (Profile → Settings → Delete account) or by email; deletion is immediate and irreversible. Text messages you sent in other people's conversations remain visible anonymised, marked as coming from a deleted user — everything else (profile, breakdown announcements, Market sale listings, photos, attached files, reviews, favourites and search history) is permanently deleted."
         },
         {
           "heading": "7. Legal bases",

@@ -1,20 +1,32 @@
 import { useEffect, useState } from 'react';
+import { Alert } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { ChatScreen } from '@/components/chat-screen';
+import { MarketPickerSheet } from '@/components/market-picker-sheet';
+import { MechanicPickerSheet } from '@/components/mechanic-picker-sheet';
 import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
 import {
   fetchChannel,
   markChannelRead,
+  sendChannelFileMessage,
   sendChannelImageMessage,
   sendChannelMessage,
   useChannelMessages,
 } from '@/hooks/use-channel-chat';
-import { deleteMessage, editMessage, withinEditWindow } from '@/hooks/use-chat';
+import {
+  deleteMessage,
+  editMessage,
+  fetchMessageListingContext,
+  fetchMessageMechanicContext,
+  withinEditWindow,
+  type MessageListingContext,
+  type MessageMechanicContext,
+} from '@/hooks/use-chat';
 import { displayName } from '@/lib/display-name';
 import type { Channel } from '@/types/database';
 
@@ -28,10 +40,51 @@ export default function DriverChannelChatScreen() {
   const { messages, loading, loadingMore, loadOlder, addMessage, patchMessage } =
     useChannelMessages(id);
   const isFocused = useIsFocused();
+  // Faza 19.5: atașamente (paritate cu chatul privat) — stări pending + pickere.
+  const [pendingListing, setPendingListing] = useState<string | null>(null);
+  const [pendingListingInfo, setPendingListingInfo] = useState<MessageListingContext | null>(null);
+  const [pendingMechanic, setPendingMechanic] = useState<string | null>(null);
+  const [pendingMechanicInfo, setPendingMechanicInfo] = useState<MessageMechanicContext | null>(null);
+  const [marketPickerOpen, setMarketPickerOpen] = useState(false);
+  // 19.6: același picker pentru „Recomandă un mecanic" ȘI „Recomandă un transportator".
+  const [recommendRole, setRecommendRole] = useState<'mechanic' | 'driver' | null>(null);
 
   useEffect(() => {
     fetchChannel(id).then(setChannel);
   }, [id]);
+
+  useEffect(() => {
+    // Bannerul „Anunț atașat" urmează starea `pendingListing` (vezi chatul privat).
+    if (!pendingListing) {
+      setPendingListingInfo(null);
+      return;
+    }
+    let active = true;
+    fetchMessageListingContext(pendingListing).then((info) => {
+      if (!active) return;
+      if (info) setPendingListingInfo(info);
+      else setPendingListing(null);
+    });
+    return () => {
+      active = false;
+    };
+  }, [pendingListing]);
+
+  useEffect(() => {
+    if (!pendingMechanic) {
+      setPendingMechanicInfo(null);
+      return;
+    }
+    let active = true;
+    fetchMessageMechanicContext(pendingMechanic).then((info) => {
+      if (!active) return;
+      if (info && !info.deleted_at) setPendingMechanicInfo(info);
+      else setPendingMechanic(null);
+    });
+    return () => {
+      active = false;
+    };
+  }, [pendingMechanic]);
 
   useEffect(() => {
     // Cursorul acoperă cel mai nou mesaj AFIȘAT (vezi markChannelRead) — dar DOAR cu
@@ -45,6 +98,7 @@ export default function DriverChannelChatScreen() {
   if (!channel || !session) return <ThemedView style={{ flex: 1 }} />;
 
   return (
+    <>
     <ChatScreen
       currentUserId={session.user.id}
       title={t(`channel.name.${channel.type}`)}
@@ -62,9 +116,38 @@ export default function DriverChannelChatScreen() {
         `${displayName(message.sender, t)} · ${t(`auth.roleSelect.${message.sender.role}Title`)}`
       }
       onSend={async (content, replyToId) => {
-        const { message } = await sendChannelMessage(id, session.user.id, content, null, replyToId);
+        const { message } = await sendChannelMessage(
+          id, session.user.id, content, null, replyToId, pendingListing, pendingMechanic
+        );
+        if (message) {
+          addMessage(message);
+          if (pendingListing) setPendingListing(null);
+          if (pendingMechanic) setPendingMechanic(null);
+        }
+      }}
+      onPressListing={(lid) =>
+        router.push({ pathname: '/(driver)/market/[id]', params: { id: lid } } as never)
+      }
+      pendingListing={pendingListingInfo}
+      onClearPendingListing={() => setPendingListing(null)}
+      pendingMechanic={pendingMechanicInfo}
+      onClearPendingMechanic={() => setPendingMechanic(null)}
+      onAttachListing={() => setMarketPickerOpen(true)}
+      onAttachMechanic={() => setRecommendRole('mechanic')}
+      onAttachDriver={() => setRecommendRole('driver')}
+      onSendFile={async (file) => {
+        const { message } = await sendChannelFileMessage(id, session.user.id, file);
         if (message) addMessage(message);
       }}
+      onPressMechanic={(mid, role) =>
+        router.push({
+          pathname:
+            role === 'driver'
+              ? '/(driver)/public-profile/[id]'
+              : '/(driver)/mechanic-profile/[id]',
+          params: { id: mid },
+        } as never)
+      }
       onSendImage={async (image) => {
         const { message } = await sendChannelImageMessage(id, session.user.id, image);
         if (message) addMessage(message);
@@ -73,6 +156,8 @@ export default function DriverChannelChatScreen() {
         const err = await deleteMessage('channel_messages', m.id);
         if (!err) {
           patchMessage(m.id, { content: '', image_path: null, deleted_at: new Date().toISOString() });
+        } else {
+          Alert.alert(t('common.error'), err);
         }
       }}
       onEditMessage={async (m, content) => {
@@ -83,5 +168,29 @@ export default function DriverChannelChatScreen() {
       messageTable="channel_messages"
       onBack={goBack}
     />
+    {marketPickerOpen ? (
+      <MarketPickerSheet
+        visible
+        userId={session.user.id}
+        onClose={() => setMarketPickerOpen(false)}
+        onPick={(listing) => {
+          setMarketPickerOpen(false);
+          setPendingListing(listing.id);
+        }}
+      />
+    ) : null}
+    {recommendRole ? (
+      <MechanicPickerSheet
+        visible
+        userId={session.user.id}
+        targetRole={recommendRole}
+        onClose={() => setRecommendRole(null)}
+        onPick={(mechanic) => {
+          setRecommendRole(null);
+          setPendingMechanic(mechanic.id);
+        }}
+      />
+    ) : null}
+    </>
   );
 }

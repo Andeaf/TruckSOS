@@ -22,6 +22,7 @@ import { ReportSheet } from '@/components/report-sheet';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { UserPickerSheet } from '@/components/user-picker-sheet';
 import { formatListingPrice } from '@/components/market-card';
 import { Radius, Spacing } from '@/constants/theme';
 import { useBack } from '@/hooks/use-back';
@@ -37,6 +38,7 @@ import {
   type MarketListingWithSeller,
   type MarketPhotoWithUrl,
 } from '@/hooks/use-market';
+import { startDirectConversation } from '@/hooks/use-chat';
 import { displayName } from '@/lib/display-name';
 import type { Role } from '@/types/database';
 
@@ -94,6 +96,31 @@ export function MarketDetailScreen({ role }: MarketDetailScreenProps) {
 
   const isOwner = !!listing && listing.seller_id === session?.user.id;
   const sold = listing?.status === 'sold';
+
+  // Faza 19.6: share — trimite anunțul de market unui alt utilizator (cardul 19.4
+  // pe primul mesaj, prin parametrul listingId al rutei de conversație).
+  const [shareOpen, setShareOpen] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const handleShareTo = async (targetId: string) => {
+    if (!listing || sharing) return;
+    setSharing(true);
+    const { conversationId, error } = await startDirectConversation(targetId);
+    setSharing(false);
+    setShareOpen(false);
+    if (error === 'blocked_by_you') {
+      Alert.alert(t('newConversation.blockedTitle'), t('newConversation.blockedBody'));
+      return;
+    }
+    if (error || !conversationId) {
+      Alert.alert(t('common.error'));
+      return;
+    }
+    router.push({
+      pathname:
+        role === 'driver' ? '/(driver)/conversations/[id]' : '/(mechanic)/conversations/[id]',
+      params: { id: conversationId, listingId: listing.id },
+    } as never);
+  };
 
   async function handleContact() {
     if (!listing || contacting) return;
@@ -215,11 +242,20 @@ export function MarketDetailScreen({ role }: MarketDetailScreenProps) {
         title={t('market.detailTitle')}
         onBack={goBack}
         right={
-          !isOwner ? (
-            <Pressable onPress={() => setReportOpen(true)} hitSlop={8}>
-              <MaterialIcons name="flag" size={22} color={theme.onHeader} />
+          <View style={styles.headerActions}>
+            {/* Faza 19.6: share — trimite anunțul unui mecanic sau șofer. */}
+            <Pressable
+              onPress={() => setShareOpen(true)}
+              hitSlop={8}
+              accessibilityLabel={t('attach.shareTitle')}>
+              <MaterialIcons name="share" size={22} color={theme.onHeader} />
             </Pressable>
-          ) : undefined
+            {!isOwner ? (
+              <Pressable onPress={() => setReportOpen(true)} hitSlop={8}>
+                <MaterialIcons name="flag" size={22} color={theme.onHeader} />
+              </Pressable>
+            ) : null}
+          </View>
         }
       />
 
@@ -355,6 +391,15 @@ export function MarketDetailScreen({ role }: MarketDetailScreenProps) {
         ) : null}
       </ScrollView>
 
+      {shareOpen ? (
+        <UserPickerSheet
+          visible
+          title={t('attach.shareTitle')}
+          onClose={() => setShareOpen(false)}
+          onPick={(user) => handleShareTo(user.id)}
+        />
+      ) : null}
+
       {viewerAt !== null ? (
         <PhotoViewer
           visible
@@ -381,6 +426,7 @@ export function MarketDetailScreen({ role }: MarketDetailScreenProps) {
 }
 
 const styles = StyleSheet.create({
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.four },
   container: { flex: 1 },
   loader: { marginTop: Spacing.six },
   notFound: {

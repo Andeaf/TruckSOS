@@ -10,24 +10,30 @@ import type { AnnouncementStatus } from '@/types/database';
  * Pastila de status (redesign 22 iul 2026): 12/700, padding 4×10, pill.
  * Verde = cere atenție/e viu (deschis), chihlimbar = în lucru, gri = încheiat.
  * Prefixele („●", „✓") vin din design — nu sunt în textele traduse.
+ * `pending` (26 iul) e un status DERIVAT per-privitor: anunț deschis la care
+ * mecanicul curent a aplicat deja — nu există în DB pe announcements.
  */
-const PREFIX: Record<AnnouncementStatus, string> = {
+type BadgeStatus = AnnouncementStatus | 'pending';
+
+const PREFIX: Record<BadgeStatus, string> = {
   open: '● ',
   accepted: '● ',
+  pending: '● ',
   resolved: '✓ ',
   cancelled: '',
 };
 
 const AMBER = { light: { color: '#B45309', bg: '#FCEEDC' }, dark: { color: '#F0A954', bg: '#3A2A12' } };
 
-export function StatusBadge({ status }: { status: AnnouncementStatus }) {
+export function StatusBadge({ status }: { status: BadgeStatus }) {
   const { t } = useTranslation();
   const theme = useTheme();
   const scheme = useResolvedScheme();
 
-  const palette: Record<AnnouncementStatus, { color: string; bg: string }> = {
+  const palette: Record<BadgeStatus, { color: string; bg: string }> = {
     open: { color: theme.successText, bg: theme.successBg },
     accepted: AMBER[scheme],
+    pending: AMBER[scheme],
     resolved: { color: theme.textSecondary, bg: theme.neutralBg },
     cancelled: { color: theme.textTertiary, bg: theme.neutralBg },
   };

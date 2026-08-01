@@ -517,6 +517,52 @@
     "error": "Eroare",
     "cancel": "Anulează"
   },
+  "attach": {
+    "title": "Atașează",
+    "market": "Anunț din Market",
+    "mechanic": "Recomandă un mecanic",
+    "file": "Fișier (max {{max}} MB)",
+    "driver": "Recomandă un transportator",
+    "driverPickerTitle": "Alege transportatorul",
+    "driverBanner": "Transportator recomandat",
+    "searchDrivers": "Numele transportatorului…",
+    "mechanicBanner": "Mecanic recomandat",
+    "mechanicRemove": "Elimină recomandarea din mesaj",
+    "marketPickerTitle": "Alege anunțul",
+    "mechanicPickerTitle": "Alege mecanicul",
+    "searchListings": "Caută în Market…",
+    "searchMechanics": "Numele mecanicului…",
+    "searchHint": "Scrie cel puțin 2 litere",
+    "noResults": "Niciun rezultat",
+    "fileTooLargeTitle": "Fișier prea mare",
+    "fileTooLargeBody": "Limita este {{max}} MB.",
+    "fileBlockedTitle": "Tip de fișier neacceptat",
+    "fileBlockedBody": "Fișierele executabile nu pot fi trimise.",
+    "downloadError": "Descărcarea a eșuat. Încearcă din nou.",
+    "searchUsers": "Caută după nume…",
+    "recent": "Recente",
+    "bandMechanic": "Recomandare · Mecanic",
+    "bandDriver": "Recomandare · Transportator",
+    "bandMarket": "Recomandare · Market",
+    "bandAnnouncement": "Anunț · Depanare",
+    "cardCtaProfile": "Deschide profilul",
+    "cardCtaListing": "Vezi anunțul",
+    "shareTitle": "Trimite către…",
+    "announcementBanner": "Anunț de depanare",
+    "announcementRemove": "Elimină anunțul din mesaj",
+    "status": {
+      "open": "Deschis",
+      "accepted": "Acceptat",
+      "resolved": "Rezolvat",
+      "cancelled": "Anulat"
+    }
+  },
+  "newConversation": {
+    "title": "Conversație nouă",
+    "fab": "Începe o conversație nouă",
+    "blockedTitle": "Utilizator blocat",
+    "blockedBody": "Ai blocat acest utilizator. Deblochează-l din Setări → Utilizatori blocați pentru a-i putea scrie."
+  },
   "market": {
     "tabTitle": "Market",
     "title": "Market",
@@ -543,6 +589,7 @@
     "emptySearchTitle": "Niciun rezultat",
     "emptySearchDescription": "Încearcă alte cuvinte sau altă categorie.",
     "soldBadge": "Vândut",
+    "toggleView": "Schimbă aspectul listei",
     "soldBanner": "Acest anunț a fost vândut.",
     "composerAttached": "Anunț atașat",
     "composerAttachedRemove": "Elimină anunțul din mesaj",
@@ -691,6 +738,7 @@
   "status": {
     "open": "Deschis",
     "accepted": "Acceptat",
+    "pending": "În așteptare",
     "resolved": "Rezolvat",
     "cancelled": "Anulat",
     "new": "Nou"
@@ -810,7 +858,7 @@
   "legal": {
     "terms": {
       "title": "Termeni și condiții",
-      "updated": "Ultima actualizare: 21 iulie 2026",
+      "updated": "Ultima actualizare: 31 iulie 2026",
       "sections": [
         {
           "heading": "1. Acceptarea termenilor",
@@ -818,7 +866,7 @@
         },
         {
           "heading": "2. Ce este TruckSOS",
-          "body": "TruckSOS pune în legătură transportatori de camioane aflate în pană cu mecanici disponibili. Aplicația facilitează doar contactul: prețul, execuția lucrării și plata se stabilesc direct între transportator și mecanic. TruckSOS nu este parte în contractul dintre ei și nu garantează calitatea, disponibilitatea sau rezultatul serviciilor prestate."
+          "body": "TruckSOS pune în legătură transportatori de camioane aflate în pană cu mecanici disponibili. Aplicația facilitează doar contactul: prețul, execuția lucrării și plata se stabilesc direct între transportator și mecanic. TruckSOS nu este parte în contractul dintre ei și nu garantează calitatea, disponibilitatea sau rezultatul serviciilor prestate. Aplicația include și o secțiune Market, unde utilizatorii pot publica anunțuri de vânzare pentru piese, anvelope, camioane și remorci. Și aici TruckSOS facilitează doar contactul: negocierea, plata și livrarea se fac direct între cumpărător și vânzător, în afara aplicației. Nu verificăm produsele oferite și nu răspundem pentru tranzacțiile dintre utilizatori. Vânzătorul este responsabil să respecte legislația aplicabilă, inclusiv obligațiile fiscale și cele privind protecția consumatorului, dacă vinde în calitate de profesionist."
         },
         {
           "heading": "3. Contul tău",
@@ -826,7 +874,7 @@
         },
         {
           "heading": "4. Conținutul tău",
-          "body": "Rămâi proprietarul conținutului pe care îl publici (anunțuri, anunțuri de vânzare în Market, poze, mesaje, evaluări). Ne acorzi o licență limitată de a-l stoca și afișa în aplicație, strict pentru funcționarea serviciului. Sunt interzise conținutul ilegal, înșelător sau ofensator, anunțurile false și spam-ul. Tranzacțiile din Market se încheie direct între utilizatori; TruckSOS nu este parte în vânzare, nu procesează plăți și nu garantează produsele listate."
+          "body": "Rămâi proprietarul conținutului pe care îl publici (anunțuri de depanare, anunțuri de vânzare din Market, poze, fișiere atașate, mesaje, evaluări). Ne acorzi o licență limitată de a-l stoca și afișa în aplicație, strict pentru funcționarea serviciului. Sunt interzise conținutul ilegal, înșelător sau ofensator, anunțurile false și spam-ul. Tranzacțiile din Market se încheie direct între utilizatori; TruckSOS nu este parte în vânzare, nu procesează plăți și nu garantează produsele listate."
         },
         {
           "heading": "5. Conduită și moderare",
@@ -852,19 +900,19 @@
     },
     "privacy": {
       "title": "Politica de confidențialitate",
-      "updated": "Ultima actualizare: 23 iulie 2026",
+      "updated": "Ultima actualizare: 31 iulie 2026",
       "sections": [
         {
           "heading": "1. Cine suntem",
-          "body": "TruckSOS este o aplicație mobilă care pune în legătură transportatori de camioane aflate în pană cu mecanici disponibili. Operatorul datelor este dezvoltatorul aplicației TruckSOS; ne poți contacta oricând la trucksos.support@gmail.com."
+          "body": "TruckSOS este o aplicație mobilă care pune în legătură transportatori de camioane aflate în pană cu mecanici disponibili și care include o secțiune de anunțuri de vânzare (Market) între utilizatori. Operatorul datelor este dezvoltatorul aplicației TruckSOS; ne poți contacta oricând la trucksos.support@gmail.com."
         },
         {
           "heading": "2. Ce date colectăm",
-          "body": "Date de cont: adresa de e-mail și parola (parola este gestionată criptat de furnizorul de autentificare; nu o vedem niciodată). Date de profil: nume, rol, număr de telefon, firmă, e-mail de contact, adresă, număr TVA/CUI, specializare, zonă de activitate, poză de profil și limba aleasă. Conținut publicat: anunțuri de depanare (descriere, locație, detalii camion, număr de înmatriculare, poze și — doar dacă alegi să o atașezi — poziția GPS), anunțuri de vânzare în Market (titlu, descriere, preț, categorie, poze), mesaje private, mesaje în canalul public, evaluări și rapoarte. Date tehnice: token-ul de notificări push al dispozitivului și, la mecanici, poziția de referință dacă e setată pentru filtrul de rază."
+          "body": "Date de cont: adresa de e-mail și parola (parola este gestionată criptat de furnizorul de autentificare; nu o vedem niciodată). Date de profil: nume, rol, număr de telefon, firmă, e-mail de contact, adresă, număr TVA/CUI, specializare, zonă de activitate, poză de profil și limba aleasă. Conținut publicat: anunțuri de depanare (descriere, locație, detalii camion, număr de înmatriculare, poze și — doar dacă alegi să o atașezi — poziția GPS), anunțuri de vânzare în Market (titlu, descriere, preț, categorie, poze), mesaje private, mesaje în canalul public, pozele și fișierele pe care le atașezi în conversații, evaluări și rapoarte. Date tehnice: token-ul de notificări push al dispozitivului, istoricul căutărilor tale de mecanici (păstrat în contul tău, ca să îți putem afișa căutările recente) și, la mecanici, poziția de referință dacă e setată pentru filtrul de rază."
         },
         {
           "heading": "3. Cine vede ce",
-          "body": "Numărul de telefon NU este public: îl vede doar utilizatorul cu care ai o conversație deschisă. Numele, poza de profil, firma și e-mailul de contact sunt vizibile utilizatorilor autentificați. Adresa și numărul TVA ale mecanicilor sunt afișate în profilul lor public, ca informații de prestator. Mesajele private se văd doar de participanții conversației; mesajele din canalul public se văd de utilizatorii autentificați — fiecare utilizator vede mesajele trimise după crearea contului său, iar administratorii văd întregul canal, pentru moderare. Anunțurile deschise sunt vizibile mecanicilor. Anunțurile de vânzare active din Market sunt vizibile tuturor utilizatorilor autentificați."
+          "body": "Numărul de telefon NU este public: îl vede doar utilizatorul cu care ai o conversație deschisă. Numele, poza de profil, firma și e-mailul de contact sunt vizibile utilizatorilor autentificați. Adresa și numărul TVA ale mecanicilor sunt afișate în profilul lor public, ca informații de prestator. Mesajele private se văd doar de participanții conversației; mesajele din canalul public se văd de utilizatorii autentificați — fiecare utilizator vede mesajele trimise după crearea contului său, iar administratorii văd întregul canal, pentru moderare. Anunțurile deschise sunt vizibile mecanicilor. Anunțurile de vânzare active din Market sunt vizibile tuturor utilizatorilor autentificați, împreună cu numele și poza ta de profil; contactul dintre cumpărător și vânzător se face exclusiv prin chatul din aplicație, iar noi nu intermediem plăți și nu colectăm date de plată. Pozele și fișierele atașate într-o conversație sunt vizibile doar participanților la ea, iar cele trimise în canalul public — tuturor utilizatorilor autentificați. Când distribui într-o conversație un anunț de depanare, un produs din Market sau profilul unui mecanic, cardul trimis conține datele publice ale acestora. Istoricul căutărilor tale este vizibil doar ție."
         },
         {
           "heading": "4. Unde sunt stocate datele",
@@ -876,7 +924,7 @@
         },
         {
           "heading": "6. Cât păstrăm datele și cum îți ștergi contul",
-          "body": "Datele se păstrează cât timp contul tău este activ. Îți poți șterge contul direct din aplicație (Profil → Setări → Șterge contul) sau prin e-mail; ștergerea este imediată și ireversibilă. Mesajele text trimise în conversațiile altora rămân vizibile anonimizat, marcate ca provenind de la un utilizator șters — restul datelor (profil, anunțuri, anunțuri de vânzare din Market, poze, evaluări, favorite) se șterg definitiv."
+          "body": "Datele se păstrează cât timp contul tău este activ. Îți poți șterge contul direct din aplicație (Profil → Setări → Șterge contul) sau prin e-mail; ștergerea este imediată și ireversibilă. Mesajele text trimise în conversațiile altora rămân vizibile anonimizat, marcate ca provenind de la un utilizator șters — restul datelor (profil, anunțuri de depanare, anunțuri de vânzare din Market, poze, fișiere atașate, evaluări, favorite și istoricul căutărilor) se șterg definitiv."
         },
         {
           "heading": "7. Temeiurile legale",

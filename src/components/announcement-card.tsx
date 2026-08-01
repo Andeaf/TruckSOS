@@ -15,6 +15,9 @@ interface AnnouncementCardProps {
   driverName?: string;
   compact?: boolean;
   rejectedByUser?: boolean;
+  /** Mecanic (26 iul): am o candidatură ÎN AȘTEPTARE pe anunț → badge „În așteptare"
+   * în locul lui „Deschis" (are prioritate și peste „Nou" — evident l-am văzut). */
+  appliedByUser?: boolean;
   /** Mecanic: anunț nedeschis încă → „Nou" în loc de status („Deschis"). */
   isNew?: boolean;
   /**
@@ -32,7 +35,7 @@ interface AnnouncementCardProps {
   onToggleSelect?: () => void;
 }
 
-export function AnnouncementCard({ announcement, onPress, driverName, compact = false, rejectedByUser = false, isNew = false, distanceKm, applicantCount = 0, selectionMode, selected, selectable = true, onLongPress, onToggleSelect }: AnnouncementCardProps) {
+export function AnnouncementCard({ announcement, onPress, driverName, compact = false, rejectedByUser = false, appliedByUser = false, isNew = false, distanceKm, applicantCount = 0, selectionMode, selected, selectable = true, onLongPress, onToggleSelect }: AnnouncementCardProps) {
   const theme = useTheme();
   const { t } = useTranslation();
 
@@ -108,6 +111,8 @@ export function AnnouncementCard({ announcement, onPress, driverName, compact = 
                     {t('mechanic.applications.status_rejected')}
                   </Text>
                 </View>
+              ) : appliedByUser ? (
+                <StatusBadge status="pending" />
               ) : isNew ? (
                 <View style={styles.newBadge}>
                   <Text style={styles.newBadgeText}>{t('status.new')}</Text>
