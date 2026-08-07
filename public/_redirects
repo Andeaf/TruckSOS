@@ -1,0 +1,6 @@
+# Fallback SPA: orice rută necunoscută servește aplicația, nu 404.
+# Necesar pe Netlify și Cloudflare Pages (EAS Hosting o face singur, pentru
+# `web.output: "single"`); fișierul e inofensiv acolo unde nu e folosit.
+# Fără el, un link direct (ex. /market/<id> trimis pe WhatsApp) ar da pagină
+# inexistentă — verificat pe 7 aug că ruta adâncă trebuie să întoarcă 200.
+/*    /index.html   200

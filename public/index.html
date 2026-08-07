@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<!--
+  Șablonul HTML al variantei WEB (7 aug 2026).
+
+  DE CE aici și nu în `app/+html.tsx`: acela funcționează DOAR cu randare statică
+  (`web.output: "static"`), pe care am abandonat-o pe 7 aug — prerandarea în Node
+  crapă pe `window`, atins de AsyncStorage/Supabase la import. Cu `output: "single"`
+  (SPA) Expo folosește fișierul de față ca șablon, iar linkurile de CSS, iconița și
+  scriptul de intrare le injectează singur, la închiderea secțiunilor head și body.
+
+  ATENȚIE (pățit pe 7 aug): injectarea se face prin înlocuirea PRIMEI apariții a
+  tagului de închidere a body-ului din text. Dacă scrii acel tag oriunde în
+  comentarii, scriptul aplicației ajunge ÎN comentariu, nu se execută niciodată și
+  pagina rămâne un ecran gol, colorat doar cu fundalul. Nu scrie tagurile de
+  închidere ca text nicăieri în acest fișier.
+
+  Blocul `expo-reset` de mai jos e cel generat implicit de Expo — NU-l scoate:
+  fără el, react-native-web nu primește înălțime pe rădăcină.
+-->
+<html lang="ro">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+
+    <title>TruckSOS — ajutor rapid pentru camioane în pană</title>
+    <meta
+      name="description"
+      content="TruckSOS pune în legătură transportatorii cu camioane în pană și mecanicii disponibili: anunțuri cu poziție GPS, chat direct, evaluări și o secțiune Market pentru piese, anvelope și camioane."
+    />
+    <meta name="theme-color" content="#0E3A7D" />
+    <meta name="apple-mobile-web-app-title" content="TruckSOS" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Previzualizarea linkului (WhatsApp, Facebook, Messenger). `og:image` se
+         adaugă odată cu domeniul definitiv: scraper-ele cer URL ABSOLUT, iar pe
+         linkul temporar .expo.app ar da 404. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="TruckSOS" />
+    <meta property="og:title" content="TruckSOS — ajutor rapid pentru camioane în pană" />
+    <meta
+      property="og:description"
+      content="Anunțuri de depanare cu poziție GPS, mecanici în apropiere, chat direct și piese de vânzare — într-o singură aplicație."
+    />
+    <meta name="twitter:card" content="summary" />
+
+    <!-- The `react-native-web` recommended style reset -->
+    <style id="expo-reset">
+      /* These styles make the body full-height */
+      html,
+      body {
+        height: 100%;
+      }
+      /* These styles disable body scrolling if you are using <ScrollView> */
+      body {
+        overflow: hidden;
+      }
+      /* These styles make the root element full-height */
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+    </style>
+
+    <style id="trucksos-shell">
+      /* Aplicația ocupă toată lățimea ferestrei, pe orice ecran (decizie user,
+         7 aug: varianta cu coloană de telefon centrată a fost încercată și
+         respinsă — pe ecranele de tip listă arată mai bine întinsă).
+
+         Fundalul navy se vede DOAR până se montează aplicația (după aceea #root
+         acoperă tot): ține primul cadru pe culoarea mărcii, nu pe alb. */
+      html,
+      body {
+        background-color: #081729;
+      }
+    </style>
+  </head>
+
+  <body>
+    <noscript>Pentru a folosi TruckSOS, activează JavaScript în browser.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
