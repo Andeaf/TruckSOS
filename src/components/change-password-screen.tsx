@@ -93,6 +93,7 @@ export function ChangePasswordScreen({ backPath }: { backPath: string }) {
             placeholder={t('auth.login.passwordPlaceholder')}
             secureTextEntry
             error={currentError}
+            required
           />
           <Input
             label={t('settings.changePasswordScreen.newLabel')}
@@ -100,6 +101,7 @@ export function ChangePasswordScreen({ backPath }: { backPath: string }) {
             onChangeText={setNext}
             placeholder={t('auth.register.passwordPlaceholder')}
             secureTextEntry
+            required
           />
           <Input
             label={t('settings.changePasswordScreen.confirmLabel')}
@@ -108,6 +110,7 @@ export function ChangePasswordScreen({ backPath }: { backPath: string }) {
             placeholder={t('auth.register.passwordPlaceholder')}
             secureTextEntry
             error={error}
+            required
           />
 
           <Button

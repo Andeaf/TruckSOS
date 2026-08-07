@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
-import { hasChatV14, replyEmbed } from '@/lib/chat-schema';
+import { fetchReplyEmbed, hasChatV14, replyEmbed, type ReplyEmbedRow } from '@/lib/chat-schema';
 import { emitReadsChanged, onReadsChanged } from '@/lib/read-events';
+import { dismissThreadNotifications } from '@/lib/push';
 import { useBlocked } from '@/hooks/use-blocked';
 import {
   fetchMessageListingContext,
@@ -20,6 +21,10 @@ const PAGE_SIZE = 50;
 
 export type ChannelMessageWithSender = ChannelMessage & {
   sender: PublicUser & { role: Role };
+  /** Faza 14: citatul — embed pe coloana FK în selecturi (direcție m2o garantată,
+   * vezi replyEmbed), hidratat manual la Realtime. Obiect sau null; MessageBubble
+   * normalizează defensiv și forma-array a vechiului embed. */
+  reply_to?: ReplyEmbedRow | null;
   /** Faza 19.5/19.6: contextele atașate (paritate cu chatul privat). */
   listing?: MessageListingContext | null;
   mechanic?: MessageMechanicContext | null;
@@ -72,9 +77,18 @@ export function useChannelMessages(channelId: string) {
   const messagesRef = useRef<ChannelMessageWithSender[]>([]);
   messagesRef.current = messages;
 
-  // Adds a message only if not already present (deduplicates Realtime vs optimistic)
+  // Adaugă un mesaj; la id duplicat ÎMBINĂ rândurile în loc să-l ignore pe al doilea.
+  // Cursa Realtime vs. optimist: dacă evenimentul Realtime (rând brut) sosea înaintea
+  // răspunsului la INSERT, varianta completă (cu embed-uri) venea a doua și era
+  // aruncată — propriul reply rămânea pe „Mesaj indisponibil".
   const addMessage = useCallback((msg: ChannelMessageWithSender) => {
-    setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+    setMessages((prev) => {
+      const at = prev.findIndex((m) => m.id === msg.id);
+      if (at === -1) return [...prev, msg];
+      const next = prev.slice();
+      next[at] = { ...next[at], ...msg };
+      return next;
+    });
   }, []);
 
   // Actualizare locală optimistă (tombstone/editare), înainte de UPDATE-ul Realtime.
@@ -94,7 +108,7 @@ export function useChannelMessages(channelId: string) {
         .from('channel_messages')
         .select(
           '*, sender:profiles!sender_id(full_name,role,avatar_path,deleted_at)' +
-            (v14 ? replyEmbed('channel_messages') : '') +
+            (v14 ? replyEmbed() : '') +
             CHANNEL_ATTACH_EMBEDS
         )
         .eq('channel_id', channelId)
@@ -138,6 +152,12 @@ export function useChannelMessages(channelId: string) {
           }
           if (incoming.recommended_mechanic_id) {
             incoming.mechanic = await fetchMessageMechanicContext(incoming.recommended_mechanic_id);
+            if (!active) return;
+          }
+          // Faza 14: nici citatul nu vine în payload — fără hidratare, reply-urile
+          // primite live afișau „Mesaj indisponibil" deși originalul există.
+          if (incoming.reply_to_id) {
+            incoming.reply_to = await fetchReplyEmbed('channel_messages', incoming.reply_to_id);
             if (!active) return;
           }
           addMessage({
@@ -185,7 +205,7 @@ export function useChannelMessages(channelId: string) {
       .from('channel_messages')
       .select(
         '*, sender:profiles!sender_id(full_name,role,avatar_path,deleted_at)' +
-          (v14 ? replyEmbed('channel_messages') : '') +
+          (v14 ? replyEmbed() : '') +
           CHANNEL_ATTACH_EMBEDS
       )
       .eq('channel_id', channelId)
@@ -231,7 +251,7 @@ export async function sendChannelMessage(
     .insert(row as never)
     .select(
       '*, sender:profiles!sender_id(full_name,role,avatar_path,deleted_at)' +
-        (v14 ? replyEmbed('channel_messages') : '') +
+        (v14 ? replyEmbed() : '') +
         CHANNEL_ATTACH_EMBEDS
     )
     .single();
@@ -262,7 +282,7 @@ export async function sendChannelFileMessage(
     } as never)
     .select(
       '*, sender:profiles!sender_id(full_name,role,avatar_path,deleted_at)' +
-        (v14 ? replyEmbed('channel_messages') : '') +
+        (v14 ? replyEmbed() : '') +
         CHANNEL_ATTACH_EMBEDS
     )
     .single();
@@ -284,6 +304,23 @@ export async function sendChannelImageMessage(
     return { message: null, error: error ?? 'upload_failed' };
   }
   return sendChannelMessage(channelId, senderId, '', path);
+}
+
+/**
+ * Cursorul MEU de citire pe canal — simetric cu fetchMyReadCursor din chatul privat:
+ * snapshot la deschidere, înainte ca markChannelRead să-l mute la zi. Decide ancora
+ * „Mesaje noi" (cerere 7 aug). `null` = canal nedeschis niciodată.
+ */
+export async function fetchMyChannelReadCursor(channelId: string): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) return null;
+  const { data } = await supabase
+    .from('channel_reads')
+    .select('last_read_at')
+    .eq('channel_id', channelId)
+    .eq('user_id', session.user.id)
+    .maybeSingle();
+  return (data as unknown as { last_read_at: string } | null)?.last_read_at ?? null;
 }
 
 export async function markChannelRead(
@@ -312,6 +349,8 @@ export async function markChannelRead(
     { onConflict: 'channel_id,user_id' }
   );
   emitReadsChanged();
+  // Mesajele au fost văzute → celula canalului dispare din bara de notificări (7 aug).
+  void dismissThreadNotifications('channel', channelId);
 }
 
 // Separat de useUnreadCounts (chat privat): abonare Realtime FILTRATĂ pe channel_id,

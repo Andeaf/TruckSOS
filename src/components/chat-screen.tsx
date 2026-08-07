@@ -6,6 +6,7 @@ import {
   FlatList,
   Keyboard,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   StyleSheet,
@@ -30,6 +31,7 @@ import Animated, {
 import { useTranslation } from 'react-i18next';
 
 
+import { ActionSheet } from '@/components/action-sheet';
 import { AttachSheet } from '@/components/attach-sheet';
 import { Avatar } from '@/components/avatar';
 import { MessageActionSheet } from '@/components/message-action-sheet';
@@ -60,6 +62,7 @@ import {
   signedUrl,
   type PickedFile,
 } from '@/lib/storage';
+import { webDownload } from '@/lib/web-download';
 
 export interface ChatMessageBase {
   id: string;
@@ -205,7 +208,6 @@ function AttachmentCard({
       style={[
         styles.attachCard,
         { backgroundColor: tk.surface },
-        isMe ? styles.attachCardMe : styles.attachCardOther,
         scheme === 'light' && styles.attachCardShadow,
       ]}>
       <View style={[styles.attachBand, { backgroundColor: tk.bandBg }]}>
@@ -234,6 +236,31 @@ function dayKey(dateStr: string) {
   const d = new Date(dateStr);
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
+
+/**
+ * Culoarea stabilă a unui membru (stil 7a): hash pe user id → paleta de 4.
+ * `base` = fundal avatar (ambele teme) + numele în light; `dark` = numele în dark
+ * (base-ul navy/verde ar fi ilizibil pe bula #1A2333).
+ */
+const USER_COLORS = [
+  { base: '#D6437F', dark: '#E06C9F' }, // roz
+  { base: '#164F9E', dark: '#7BA7E0' }, // albastru
+  { base: '#1C7C3C', dark: '#4ECB7D' }, // verde
+  { base: '#C4690B', dark: '#E8A44B' }, // portocaliu
+] as const;
+
+function userColor(userId: string) {
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = (hash * 31 + userId.charCodeAt(i)) % 1000003;
+  }
+  return USER_COLORS[hash % USER_COLORS.length];
+}
+
+/** Pauza care rupe un grup de mesaje consecutive (ca la WhatsApp). */
+const GROUP_GAP_MS = 10 * 60 * 1000;
+/** Lățimea avatarului din chatul de grup — și a indentării mesajelor 2+ din grup. */
+const GROUP_AVATAR_SIZE = 34;
 
 /**
  * Suprafața bulei: gradientul „element activ" la mesajele proprii, suprafață
@@ -267,13 +294,17 @@ function BubbleSurface({
 interface MessageBubbleProps<M extends ChatMessageBase> {
   message: M;
   isMe: boolean;
-  senderLabel?: string | null;
   /** URL semnat, când mesajul e o poză; lipsește cât timp se semnează sau dacă RLS refuză. */
   imageUrl?: string;
   /** Avatarul expeditorului, doar în chatul de grup (unde mesajele vin de la mai mulți). */
   senderName?: string | null;
+  /** Rolul expeditorului (chat de grup) — „ · Rol" lângă nume, în prima bulă a grupului. */
+  senderRole?: string | null;
   senderAvatarUrl?: string;
   showSenderAvatar?: boolean;
+  /** Grupare WhatsApp (stil 7a): primul mesaj al unui grup consecutiv de la același
+   * expeditor — doar el are avatar + nume + „coada" din colțul de sus. */
+  isFirstOfGroup: boolean;
   onPressImage?: () => void;
   onLongPress?: () => void;
   /** Tap pe citat → derulează la mesajul original (dacă e încărcat). */
@@ -303,11 +334,12 @@ interface MessageBubbleProps<M extends ChatMessageBase> {
 function MessageBubble<M extends ChatMessageBase>({
   message,
   isMe,
-  senderLabel,
   imageUrl,
   senderName,
+  senderRole,
   senderAvatarUrl,
   showSenderAvatar,
+  isFirstOfGroup,
   onPressImage,
   onLongPress,
   onPressQuote,
@@ -359,6 +391,23 @@ function MessageBubble<M extends ChatMessageBase>({
     : '';
   // Design 22 iul: timp/bife pe bula trimisă = alb 70%; pe cea primită = text terțiar.
   const secondaryColor = isMe ? 'rgba(255,255,255,0.7)' : theme.textTertiary;
+  // Stil 7a: culoarea stabilă a expeditorului (avatar + nume), hash pe user id.
+  const uc = userColor(message.sender_id);
+  const nameColor = scheme === 'dark' ? uc.dark : uc.base;
+  // Numele + rolul apar O dată per grup, ÎN prima bulă (nu deasupra ei, ca înainte).
+  const senderHeader =
+    !isMe && isFirstOfGroup && senderName ? (
+      <Text
+        numberOfLines={1}
+        style={[styles.senderHeader, !isDeleted && !!message.image_path && styles.senderHeaderOnImage]}>
+        <Text style={[styles.senderHeaderName, { color: nameColor }]}>{senderName}</Text>
+        {senderRole ? (
+          <Text style={[styles.senderHeaderRole, { color: secondaryColor }]}>
+            {` · ${senderRole}`}
+          </Text>
+        ) : null}
+      </Text>
+    ) : null;
   const tick = readState ? (
     <MaterialIcons
       name={readState === 'read' ? 'done-all' : 'check'}
@@ -366,9 +415,11 @@ function MessageBubble<M extends ChatMessageBase>({
       color={secondaryColor}
     />
   ) : null;
-  // PostgREST întoarce embed-ul self-join `reply_to` ca ARRAY ([] pentru non-reply),
-  // nu ca obiect/null. `[]` e truthy → randa un chenar `styles.quote` gol deasupra
-  // textului (foarte vizibil pe bulele verzi). Normalizăm (array→primul) și cerem `id`.
+  // Embed-ul `reply_to` vine ca obiect/null (embed pe coloana FK, m2o — vezi
+  // replyEmbed). Normalizarea array→primul rămâne DEFENSIV: vechiul embed self-join
+  // `<tabel>!reply_to_id` era rezolvat de PostgREST în direcția inversă (o2m) și
+  // întorcea ARRAY — `[]` truthy randa un chenar quote gol, iar reply-urile reale
+  // rămâneau fără citat („Mesaj indisponibil", bug reparat 7 aug).
   const rawReply = message.reply_to as unknown;
   const rt = (Array.isArray(rawReply) ? rawReply[0] : rawReply) as ChatMessageBase['reply_to'];
   const quote = !isDeleted && rt && rt.id ? rt : null;
@@ -424,20 +475,41 @@ function MessageBubble<M extends ChatMessageBase>({
     <GestureDetector gesture={swipeGesture}>
     <View style={[styles.bubbleRow, isMe ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
       {showSenderAvatar && !isMe ? (
-        <Pressable onPress={onPressAvatar} disabled={!onPressAvatar}>
-          <Avatar url={senderAvatarUrl} name={senderName} size={32} />
-        </Pressable>
+        isFirstOfGroup ? (
+          // Avatarul apare O dată per grup, aliniat SUS, în dreptul primului mesaj.
+          <Pressable onPress={onPressAvatar} disabled={!onPressAvatar} hitSlop={6}>
+            <Avatar
+              url={senderAvatarUrl}
+              name={senderName}
+              size={GROUP_AVATAR_SIZE}
+              color={uc.base}
+            />
+          </Pressable>
+        ) : (
+          // Mesajele 2+ din grup: fără avatar, dar aliniate la aceeași margine stângă.
+          <View style={styles.avatarSpacer} />
+        )
       ) : null}
       <Animated.View
-        style={[styles.bubbleColumn, swipeStyle]}
+        style={[
+          styles.bubbleColumn,
+          isMe ? styles.bubbleColumnMe : styles.bubbleColumnOther,
+          swipeStyle,
+        ]}
         onLayout={(e) => {
           bubbleLeft.value = e.nativeEvent.layout.x;
           bubbleRight.value = e.nativeEvent.layout.x + e.nativeEvent.layout.width;
         }}>
-        {senderLabel ? (
-          <ThemedText themeColor="textSecondary" type="small" style={styles.senderLabel}>
-            {senderLabel}
-          </ThemedText>
+        {/* Mesaj doar-card (fără bulă): numele nu are bulă în care să stea → deasupra cardului. */}
+        {!showBubble && !isMe && isFirstOfGroup && senderName ? (
+          <Text numberOfLines={1} style={styles.senderLabelOutside}>
+            <Text style={[styles.senderHeaderName, { color: nameColor }]}>{senderName}</Text>
+            {senderRole ? (
+              <Text style={[styles.senderHeaderRole, { color: theme.textTertiary }]}>
+                {` · ${senderRole}`}
+              </Text>
+            ) : null}
+          </Text>
         ) : null}
 
         {/* Stil 6b: „atașament etichetat" — recomandare de persoană. */}
@@ -578,24 +650,35 @@ function MessageBubble<M extends ChatMessageBase>({
           scheme={scheme}
           style={[
             styles.bubble,
-            isMe ? styles.bubbleMe : styles.bubbleOther,
+            // Stil 7a: „coada" stă pe colțul de SUS al PRIMEI bule din grup;
+            // restul bulelor sunt complet rotunjite.
+            isFirstOfGroup && (isMe ? styles.bubbleTailMe : styles.bubbleTailOther),
             // Umbra stă pe suprafața cu fundal (altfel Android nu desenează elevation);
             // în dark, bulele primite rămân plate — decizie de design.
             isMe && (scheme === 'light' ? styles.sentShadowLight : styles.sentShadowDark),
             isImage && styles.bubbleImage,
             !isMe && { backgroundColor: theme.backgroundElement },
           ]}>
+          {senderHeader}
           {isDeleted ? (
             // Tombstone (Faza 14): bula rămâne, textul e discret (italic/gri).
             // Faza 16: marcaj DISTINCT dacă ștergerea a fost făcută de un moderator.
-            <>
-              <Text style={[styles.bubbleText, styles.deletedText, { color: secondaryColor }]}>
+            <View style={styles.textTimeRow}>
+              <Text
+                style={[
+                  styles.bubbleText,
+                  styles.textShrink,
+                  styles.deletedText,
+                  { color: secondaryColor },
+                ]}>
                 {message.deleted_by_admin ? t('chat.deletedByModerator') : t('chat.deletedMessage')}
               </Text>
-              <Text style={[styles.bubbleTime, { color: secondaryColor }]}>
-                {formatTime(message.created_at)}
-              </Text>
-            </>
+              <View style={styles.metaInline}>
+                <Text style={[styles.bubbleTime, { color: secondaryColor }]}>
+                  {formatTime(message.created_at)}
+                </Text>
+              </View>
+            </View>
           ) : isImage ? (
             // Poza umple bula; ora stă peste ea, într-o pastilă întunecată.
             <Pressable
@@ -703,23 +786,47 @@ function MessageBubble<M extends ChatMessageBase>({
                   </Text>
                 </View>
               ) : null}
-              {/* 19.6: mesaj doar-atașament (fără text) → nu randa un rând de text gol. */}
+              {/* Ora stă în colțul dreapta-jos, la nivelul ULTIMULUI rând de text
+                  (stil 7a): rând flex cu textul shrink + meta împinsă cu auto-margin.
+                  La mesaje scurte bula se lățește cât textul + ora pe același rând. */}
               {message.content !== '' ? (
-                <Text style={[styles.bubbleText, { color: isMe ? '#ffffff' : theme.text }]}>
-                  {message.content}
-                </Text>
-              ) : null}
-              <View style={styles.metaRow}>
-                {message.edited_at ? (
-                  <Text style={[styles.bubbleTime, styles.editedLabel, { color: secondaryColor }]}>
-                    {t('chat.edited')}
+                <View style={styles.textTimeRow}>
+                  <Text
+                    style={[
+                      styles.bubbleText,
+                      styles.textShrink,
+                      { color: isMe ? '#ffffff' : theme.text },
+                    ]}>
+                    {message.content}
                   </Text>
-                ) : null}
-                <Text style={[styles.bubbleTime, { color: secondaryColor }]}>
-                  {formatTime(message.created_at)}
-                </Text>
-                {tick}
-              </View>
+                  <View style={styles.metaInline}>
+                    {message.edited_at ? (
+                      <Text
+                        style={[styles.bubbleTime, styles.editedLabel, { color: secondaryColor }]}>
+                        {t('chat.edited')}
+                      </Text>
+                    ) : null}
+                    <Text style={[styles.bubbleTime, { color: secondaryColor }]}>
+                      {formatTime(message.created_at)}
+                    </Text>
+                    {tick}
+                  </View>
+                </View>
+              ) : (
+                // 19.6: mesaj doar-atașament (fără text) → doar rândul de meta.
+                <View style={styles.metaRow}>
+                  {message.edited_at ? (
+                    <Text
+                      style={[styles.bubbleTime, styles.editedLabel, { color: secondaryColor }]}>
+                      {t('chat.edited')}
+                    </Text>
+                  ) : null}
+                  <Text style={[styles.bubbleTime, { color: secondaryColor }]}>
+                    {formatTime(message.created_at)}
+                  </Text>
+                  {tick}
+                </View>
+              )}
             </>
           )}
         </BubbleSurface>
@@ -766,9 +873,10 @@ interface ChatScreenProps<M extends ChatMessageBase> {
    * activată (canalele, până la Etapa 9.2.4).
    */
   onSendImage?: (image: PickedImage) => Promise<void>;
-  renderSenderLabel?: (message: M) => string | null;
   /** Chat de grup: numele + avatarul expeditorului, lângă bulele celorlalți. */
   renderSenderName?: (message: M) => string | null;
+  /** Chat de grup: rolul expeditorului („ · Rol" după nume, în prima bulă a grupului). */
+  renderSenderRole?: (message: M) => string | null;
   renderSenderAvatarPath?: (message: M) => string | null;
   /** Avatarul interlocutorului, în antet (chat 1-la-1). */
   headerAvatarPath?: string | null;
@@ -828,6 +936,17 @@ interface ChatScreenProps<M extends ChatMessageBase> {
   readReceipts?: boolean;
   /** `last_read_at` al celuilalt participant (chat privat) — decide ✓ vs ✓✓. */
   readCursor?: string | null;
+  /** Cursorul MEU de citire, „înghețat" de ecran la deschidere (ÎNAINTE de mark-read):
+   * decide unde apare separatorul „Mesaje noi" și unde aterizează lista (cerere 7 aug).
+   * `undefined` = încă se încarcă (fără ancoră); `null` = niciodată deschisă. */
+  unreadCursor?: string | null;
+  /** Numărul interlocutorului (chat 1-la-1): dacă există, antetul arată butonul de apel
+   * (deschide dialer-ul cu numărul pretastat). Vine din get_mechanic_phone/
+   * get_driver_phone, deci simpla lui prezență = acces permis (conversație non-market,
+   * fără blocaj) — clientul nu re-verifică nimic. */
+  phoneNumber?: string | null;
+  /** Rotița de setări din antet (canalul global, 5 aug) — apare doar dacă e furnizat. */
+  onOpenSettings?: () => void;
 }
 
 export function ChatScreen<M extends ChatMessageBase>({
@@ -842,8 +961,8 @@ export function ChatScreen<M extends ChatMessageBase>({
   onLoadOlder,
   onSend,
   onSendImage,
-  renderSenderLabel,
   renderSenderName,
+  renderSenderRole,
   renderSenderAvatarPath,
   headerAvatarPath,
   headerUserId,
@@ -868,6 +987,9 @@ export function ChatScreen<M extends ChatMessageBase>({
   canEditMessage,
   readReceipts,
   readCursor,
+  unreadCursor,
+  phoneNumber,
+  onOpenSettings,
 }: ChatScreenProps<M>) {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
@@ -928,11 +1050,18 @@ export function ChatScreen<M extends ChatMessageBase>({
     setEditTarget(null);
     setText('');
   }, []);
-  const enterReplyMode = useCallback((m: M) => {
-    setEditTarget(null);
-    setText('');
-    setReplyTarget(m);
-  }, []);
+  const enterReplyMode = useCallback(
+    (m: M) => {
+      // Ca pe WhatsApp (cerere 7 aug): textul deja tastat SUPRAVIEȚUIEȘTE intrării în
+      // modul reply — swipe-ul pe o bulă nu-ți mai șterge mesajul din compozitor.
+      // Excepție: veneam din modul editare — acolo inputul ținea conținutul VECHIULUI
+      // mesaj, care nu trebuie să devină din greșeală mesajul nou.
+      if (editTarget) setText('');
+      setEditTarget(null);
+      setReplyTarget(m);
+    },
+    [editTarget]
+  );
   const cancelReply = useCallback(() => setReplyTarget(null), []);
 
   const handleCopy = useCallback(
@@ -1017,17 +1146,85 @@ export function ChatScreen<M extends ChatMessageBase>({
     [t, i18n.language],
   );
 
+  // scrollToIndex pe listă inversată FĂRĂ getItemLayout (bulele au înălțimi variabile):
+  // ținta poate fi nerandată încă, deci eșecul primei încercări e NORMAL. Reținem ținta,
+  // sărim aproximativ (averageItemLength — virtualizarea randează zona), apoi reîncercăm
+  // precis — de câteva ori, nu la nesfârșit.
+  const pendingScroll = useRef<{ index: number; viewPosition: number; retries: number } | null>(
+    null
+  );
+  const scrollToIndexSafe = useCallback(
+    (index: number, viewPosition: number, animated: boolean) => {
+      pendingScroll.current = { index, viewPosition, retries: 4 };
+      listRef.current?.scrollToIndex({ index, viewPosition, animated });
+    },
+    []
+  );
+  const handleScrollToIndexFailed = useCallback(
+    (info: { index: number; averageItemLength: number }) => {
+      const target = pendingScroll.current;
+      if (!target || target.retries <= 0) return;
+      target.retries -= 1;
+      listRef.current?.scrollToOffset({
+        offset: info.averageItemLength * target.index,
+        animated: false,
+      });
+      setTimeout(() => {
+        if (pendingScroll.current === target) {
+          listRef.current?.scrollToIndex({
+            index: target.index,
+            viewPosition: target.viewPosition,
+            animated: false,
+          });
+        }
+      }, 120);
+    },
+    []
+  );
+
   // Tap pe citat → derulează la mesajul original, dacă e în pagina încărcată.
   // Dacă e mai vechi decât paginarea (canal, 50/pagină) → no-op discret.
   const scrollToQuoted = useCallback(
     (quotedId: string) => {
       const index = reversedMessages.findIndex((m) => m.id === quotedId);
-      if (index >= 0) {
-        listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
-      }
+      if (index >= 0) scrollToIndexSafe(index, 0.5, true);
     },
-    [reversedMessages],
+    [reversedMessages, scrollToIndexSafe],
   );
+
+  // Ancora „Mesaje noi" (cerere 7 aug, ca pe WhatsApp): la deschidere, dacă există
+  // mesaje de la ALȚII mai noi decât cursorul meu de citire (snapshot luat de ecran
+  // înainte de mark-read), lista aterizează pe primul necitit, cu separator deasupra.
+  // Calculată O SINGURĂ dată per montare — mesajele sosite live după aceea n-o mută.
+  const [unreadAnchorId, setUnreadAnchorId] = useState<string | null>(null);
+  const anchorDone = useRef(false);
+  useEffect(() => {
+    if (anchorDone.current || loading || unreadCursor === undefined) return;
+    anchorDone.current = true;
+    // Fără cursor (prima deschidere): în CANAL pornim de la final, ca până acum — la
+    // prima intrare totul e „nou" și am ateriza cu 50 de mesaje în urmă, fără folos.
+    // Într-o conversație privată nedeschisă, primul mesaj chiar e locul potrivit.
+    const cutoff = unreadCursor
+      ? new Date(unreadCursor).getTime()
+      : messageTable === 'channel_messages'
+        ? Infinity
+        : 0;
+    const first = messages.find(
+      (m) => m.sender_id !== currentUserId && new Date(m.created_at).getTime() > cutoff
+    );
+    if (first) setUnreadAnchorId(first.id);
+  }, [loading, unreadCursor, messages, currentUserId, messageTable]);
+
+  useEffect(() => {
+    if (!unreadAnchorId) return;
+    const index = reversedMessages.findIndex((m) => m.id === unreadAnchorId);
+    // index 0 = cel mai nou mesaj: lista inversată pornește deja acolo.
+    if (index <= 0) return;
+    const timer = setTimeout(() => scrollToIndexSafe(index, 0.9, false), 80);
+    return () => clearTimeout(timer);
+    // Intenționat DOAR la fixarea ancorei — mesajele noi nu re-derulează lista.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unreadAnchorId]);
 
   // URL-uri semnate pt. poze, avatare ȘI avatarele mecanicilor recomandați (19.5),
   // într-un singur batch care crește pe măsură ce sosesc mesaje noi
@@ -1081,9 +1278,23 @@ export function ChatScreen<M extends ChatMessageBase>({
 
   // Descarcă fișierul (URL semnat → cache) și îl deschide prin share sheet-ul nativ —
   // de acolo utilizatorul îl poate vizualiza sau salva. Numele original e păstrat.
+  // Pe WEB nu există File/Paths/Sharing: descărcăm prin browser (blob + <a download>).
   const handleOpenFile = useCallback(
     async (m: M) => {
       if (!m.file_path || downloadingFileId) return;
+      if (Platform.OS === 'web') {
+        setDownloadingFileId(m.id);
+        try {
+          const url = await signedUrl(m.file_path);
+          if (!url) throw new Error('no_signed_url');
+          await webDownload(url, m.file_name ?? 'file');
+        } catch {
+          setToast(t('attach.downloadError'));
+        } finally {
+          setDownloadingFileId(null);
+        }
+        return;
+      }
       setDownloadingFileId(m.id);
       try {
         const url = await signedUrl(m.file_path);
@@ -1160,19 +1371,14 @@ export function ChatScreen<M extends ChatMessageBase>({
     setUploading(false);
   }
 
+  // Sheet tematizat în locul fostului Alert.alert nativ (nestilizabil, fără
+  // închidere la tap în afară); ActionSheet gestionează și amânarea pe iOS
+  // (pickerul nativ nu se poate prezenta peste un Modal care încă se închide).
+  const [photoSourceOpen, setPhotoSourceOpen] = useState(false);
+
   function handleAttach() {
     if (uploading) return;
-    Alert.alert(t('photos.sourceTitle'), undefined, [
-      {
-        text: t('photos.sourceLibrary'),
-        onPress: async () => sendImages(await pickFromLibrary()),
-      },
-      {
-        text: t('photos.sourceCamera'),
-        onPress: async () => sendImages(await pickFromCamera()),
-      },
-      { text: t('photos.cancel'), style: 'cancel' },
-    ]);
+    setPhotoSourceOpen(true);
   }
 
   return (
@@ -1206,6 +1412,25 @@ export function ChatScreen<M extends ChatMessageBase>({
             </Text>
           </View>
         </View>
+        {/* Butonul de apel (7 aug) — doar 1-la-1, doar când numărul e accesibil
+            (RPC-ul a întors non-null) și interlocutorul nu e blocat de mine. */}
+        {phoneNumber && !peerBlocked ? (
+          <Pressable
+            onPress={() => Linking.openURL(`tel:${phoneNumber.replace(/[^+\d]/g, '')}`)}
+            hitSlop={12}
+            accessibilityLabel={t('chat.callPeer')}>
+            <MaterialIcons name="call" size={22} color={theme.onHeader} />
+          </Pressable>
+        ) : null}
+        {/* Setările canalului (5 aug) — doar ecranele care furnizează handler-ul. */}
+        {onOpenSettings ? (
+          <Pressable
+            onPress={onOpenSettings}
+            hitSlop={12}
+            accessibilityLabel={t('channelSettings.title')}>
+            <MaterialIcons name="settings" size={22} color={theme.onHeader} />
+          </Pressable>
+        ) : null}
       </ScreenHeader>
 
       {bannerText ? (
@@ -1249,8 +1474,8 @@ export function ChatScreen<M extends ChatMessageBase>({
             contentContainerStyle={styles.messageList}
             onEndReached={onLoadOlder}
             onEndReachedThreshold={0.3}
-            // Mesajul citat poate să nu fie randat încă → eșec grațios, fără crash.
-            onScrollToIndexFailed={() => {}}
+            // Ținta (citat/ancoră necitite) poate fi nerandată → salt aproximativ + retry.
+            onScrollToIndexFailed={handleScrollToIndexFailed}
             ListFooterComponent={
               loadingMore ? (
                 <View style={styles.loadingMore}>
@@ -1264,8 +1489,19 @@ export function ChatScreen<M extends ChatMessageBase>({
               // Primul mesaj al fiecărei zile primește pastila de dată deasupra.
               const older = reversedMessages[index + 1];
               const showDate = !older || dayKey(older.created_at) !== dayKey(item.created_at);
+              // Grupare WhatsApp (stil 7a): mesajele consecutive de la același expeditor
+              // formează un grup; grupul se rupe la zi nouă, la pauze >10 min și la
+              // separatorul „Mesaje noi" (un grup tăiat de separator ar rămâne fără nume).
+              const isFirstOfGroup =
+                showDate ||
+                !older ||
+                older.sender_id !== item.sender_id ||
+                new Date(item.created_at).getTime() - new Date(older.created_at).getTime() >
+                  GROUP_GAP_MS ||
+                item.id === unreadAnchorId;
               return (
-              <View>
+              // 14px între grupuri, 3px între mesajele aceluiași grup (spațierea 7a).
+              <View style={isFirstOfGroup ? styles.groupSpacing : styles.messageSpacing}>
               {showDate ? (
                 <View style={styles.dateRow}>
                   <View
@@ -1280,16 +1516,32 @@ export function ChatScreen<M extends ChatMessageBase>({
                   </View>
                 </View>
               ) : null}
+              {/* Separatorul „Mesaje noi" — deasupra primului necitit de la deschidere. */}
+              {item.id === unreadAnchorId ? (
+                <View style={styles.dateRow}>
+                  <View
+                    style={[
+                      styles.datePill,
+                      { backgroundColor: theme.brandSoft },
+                      scheme === 'light' && Shadows.chip,
+                    ]}>
+                    <Text style={[styles.datePillText, { color: theme.brand }]}>
+                      {t('chat.newMessages')}
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
               <MessageBubble
                 message={item}
                 isMe={item.sender_id === currentUserId}
-                senderLabel={
-                  item.sender_id !== currentUserId && renderSenderLabel
-                    ? renderSenderLabel(item)
-                    : null
-                }
+                isFirstOfGroup={isFirstOfGroup}
                 showSenderAvatar={!!renderSenderAvatarPath}
                 senderName={renderSenderName?.(item) ?? null}
+                senderRole={
+                  item.sender_id !== currentUserId && renderSenderRole
+                    ? renderSenderRole(item)
+                    : null
+                }
                 senderAvatarUrl={avatarPath ? urls[avatarPath] : undefined}
                 imageUrl={item.image_path ? urls[item.image_path] : undefined}
                 onPressImage={() => {
@@ -1508,18 +1760,23 @@ export function ChatScreen<M extends ChatMessageBase>({
               )}
             </Pressable>
           ) : null}
-          <TextInput
-            style={[
-              styles.input,
-              { color: theme.text, backgroundColor: theme.background },
-            ]}
-            value={text}
-            onChangeText={setText}
-            placeholder={t('chat.inputPlaceholder')}
-            placeholderTextColor={theme.textTertiary}
-            multiline
-            maxLength={1000}
-          />
+          {/* TextInput-ul multiline NU stă direct în rândul flex: pe Android, când
+              crește pe verticală se re-măsoară cu lățime necontrânsă și textul se
+              întindea peste butoanele „+"/trimite — wrapper-ul îi fixează lățimea. */}
+          <View style={styles.inputWrap}>
+            <TextInput
+              style={[
+                styles.input,
+                { color: theme.text, backgroundColor: theme.background },
+              ]}
+              value={text}
+              onChangeText={setText}
+              placeholder={t('chat.inputPlaceholder')}
+              placeholderTextColor={theme.textTertiary}
+              multiline
+              maxLength={1000}
+            />
+          </View>
           {/* Meniul „+" (19.5) — în DREAPTA casetei text (decizie 25 iul), doar dacă
               ecranul furnizează măcar o opțiune de atașare; ascuns în modul editare. */}
           {(onAttachListing || onAttachMechanic || onAttachDriver || onSendFile) && !editTarget ? (
@@ -1637,6 +1894,24 @@ export function ChatScreen<M extends ChatMessageBase>({
         senderBlocked={menuMessage ? blockedIds.has(menuMessage.sender_id) : false}
       />
 
+      <ActionSheet
+        visible={photoSourceOpen}
+        title={t('photos.sourceTitle')}
+        actions={[
+          {
+            label: t('photos.sourceLibrary'),
+            icon: 'photo-library',
+            onPress: async () => sendImages(await pickFromLibrary()),
+          },
+          {
+            label: t('photos.sourceCamera'),
+            icon: 'photo-camera',
+            onPress: async () => sendImages(await pickFromCamera()),
+          },
+        ]}
+        onClose={() => setPhotoSourceOpen(false)}
+      />
+
       {reportTarget && messageTable ? (
         <ReportSheet
           visible
@@ -1684,17 +1959,30 @@ const styles = StyleSheet.create({
   messageList: {
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
-    gap: Spacing.one,
+    // Spațierea vine per rând (groupSpacing/messageSpacing), nu dintr-un gap uniform.
   },
   loadingMore: { paddingVertical: Spacing.two, alignItems: 'center' },
-  // `flex-end`: în chatul de grup avatarul stă lângă baza bulei, nu lângă vârful ei.
-  bubbleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.one, marginVertical: 2 },
+  // Spațierea 7a: 14px între grupuri, 3px în interiorul unui grup.
+  groupSpacing: { marginTop: 14 },
+  messageSpacing: { marginTop: 3 },
+  // `flex-start` (stil 7a): avatarul stă SUS, în dreptul primei bule a grupului.
+  bubbleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   bubbleRowRight: { justifyContent: 'flex-end' },
   bubbleRowLeft: { justifyContent: 'flex-start' },
-  // 78% (spec 6b): cardurile de atașament cer puțin mai mult decât vechiul 75%.
-  bubbleColumn: { maxWidth: '78%' },
-  senderLabel: { marginBottom: 2, marginLeft: 4, fontSize: 11 },
-  // Colțurile-„coadă" (4px jos, pe partea expeditorului) vin din bubbleMe/bubbleOther.
+  // Mesajele 2+ dintr-un grup rămân aliniate la marginea primei bule.
+  avatarSpacer: { width: GROUP_AVATAR_SIZE },
+  // 78% trimise / 75% primite (spec 7a; primitele pierd oricum indentarea avatarului).
+  bubbleColumn: {},
+  bubbleColumnMe: { maxWidth: '78%' },
+  bubbleColumnOther: { maxWidth: '75%' },
+  // Numele deasupra cardurilor de atașament (mesaj fără bulă în care să-l punem).
+  senderLabelOutside: { marginBottom: 2, marginLeft: 4, fontSize: 12.5 },
+  // Numele + rolul din PRIMA bulă a grupului (stil 7a).
+  senderHeader: { fontSize: 12.5, marginBottom: 2 },
+  senderHeaderName: { fontWeight: '700' },
+  senderHeaderRole: { fontWeight: '600' },
+  senderHeaderOnImage: { paddingHorizontal: 8, paddingTop: 4 },
+  // Colțurile-„coadă" (4px SUS, pe partea expeditorului) — doar prima bulă din grup.
   bubble: {
     borderRadius: 16,
     paddingHorizontal: 14,
@@ -1702,8 +1990,8 @@ const styles = StyleSheet.create({
     // Fără gap: ora stă imediat sub text (leading-ul liniei de text dă deja ~3px aer);
     // gap-ul de 2px în plus se citea ca spațiu mort sub mesaj (feedback pe device).
   },
-  bubbleMe: { borderBottomRightRadius: 4 },
-  bubbleOther: { borderBottomLeftRadius: 4 },
+  bubbleTailMe: { borderTopRightRadius: 4 },
+  bubbleTailOther: { borderTopLeftRadius: 4 },
   sentShadowLight: {
     shadowColor: '#0E3A7D',
     shadowOffset: { width: 0, height: 4 },
@@ -1733,7 +2021,18 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   bubbleText: { fontSize: 14, lineHeight: 20 },
-  bubbleTime: { fontSize: 11, lineHeight: 14, fontWeight: '600', alignSelf: 'flex-end' },
+  bubbleTime: { fontSize: 11, lineHeight: 14, fontWeight: '600' },
+  // Stil 7a: textul + ora pe același rând flex — la mesaje scurte bula se lățește
+  // cât textul + ora; la mesaje lungi ora coboară în colțul dreapta-jos, lângă
+  // ultimul rând (align-items: flex-end + auto-margin pe meta).
+  textTimeRow: { flexDirection: 'row', alignItems: 'flex-end', columnGap: 12 },
+  textShrink: { flexShrink: 1 },
+  metaInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    marginLeft: 'auto',
+  },
   // paddingRight: Android măsoară textul italic cu lățimea glifelor drepte (o
   // subestimează) → ultimul cuvânt se tăia la marginea bulei („This message was…”).
   // Padding-ul mută zona tăiată pe spațiu gol, nu pe text.
@@ -1747,8 +2046,6 @@ const styles = StyleSheet.create({
     minWidth: 252,
     marginBottom: 2,
   },
-  attachCardMe: { borderBottomRightRadius: 4 },
-  attachCardOther: { borderBottomLeftRadius: 4 },
   attachCardShadow: {
     shadowColor: '#142850',
     shadowOffset: { width: 0, height: 4 },
@@ -1854,8 +2151,8 @@ const styles = StyleSheet.create({
     gap: 10,
     borderTopWidth: 1,
   },
+  inputWrap: { flex: 1 },
   input: {
-    flex: 1,
     borderRadius: Radius.badge,
     paddingHorizontal: 16,
     paddingVertical: 11,

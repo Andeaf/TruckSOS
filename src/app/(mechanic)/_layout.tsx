@@ -70,9 +70,10 @@ function MechanicTabs() {
 
   return (
     <Tabs
-      // Back-ul fizic urcă în istoricul REAL de navigare (tabul anterior), nu sare
-      // direct pe primul tab — comportamentul implicit („firstRoute").
-      backBehavior="history"
+      // Back-ul fizic duce MEREU spre tab-ul de start (Harta), nu prin istoricul
+      // de tab-uri (cerere 7 aug, consecvent cu șoferul); de pe Hartă,
+      // useExitConfirm întreabă dacă închide aplicația.
+      backBehavior="initialRoute"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: theme.brand,

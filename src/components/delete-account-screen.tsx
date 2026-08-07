@@ -117,6 +117,7 @@ export function DeleteAccountScreen({ backPath }: { backPath: string }) {
           secureTextEntry
           autoCapitalize="none"
           error={error}
+          required
         />
 
         <Button

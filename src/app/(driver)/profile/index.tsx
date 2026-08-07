@@ -35,7 +35,7 @@ export default function DriverProfileScreen() {
   const [showTruckForm, setShowTruckForm] = useState(false);
   const [editingTruck, setEditingTruck] = useState<Pick<
     Truck,
-    'id' | 'make' | 'model' | 'year' | 'nickname' | 'plate_number'
+    'id' | 'make' | 'model' | 'year' | 'nickname' | 'plate_number' | 'chassis_number'
   > | null>(null);
 
   useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
@@ -53,6 +53,7 @@ export default function DriverProfileScreen() {
       year: truck.year,
       nickname: truck.nickname,
       plate_number: truck.plate_number,
+      chassis_number: truck.chassis_number,
     });
     setShowTruckForm(true);
   }
@@ -77,6 +78,7 @@ export default function DriverProfileScreen() {
     year: number;
     nickname: string | null;
     plate_number: string | null;
+    chassis_number: string | null;
   }) {
     const err = editingTruck
       ? await updateTruck(editingTruck.id, data)
@@ -141,6 +143,11 @@ export default function DriverProfileScreen() {
                   {truck.plate_number ? (
                     <ThemedText themeColor="textSecondary" type="small">
                       {t('truck.plateLabel')}: {truck.plate_number}
+                    </ThemedText>
+                  ) : null}
+                  {truck.chassis_number ? (
+                    <ThemedText themeColor="textSecondary" type="small">
+                      {t('truck.chassisLabel')}: {truck.chassis_number}
                     </ThemedText>
                   ) : null}
                 </View>

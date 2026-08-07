@@ -4,6 +4,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
+import { ChannelSettingsSheet } from '@/components/channel-settings-sheet';
 import { ChatScreen } from '@/components/chat-screen';
 import { MarketPickerSheet } from '@/components/market-picker-sheet';
 import { MechanicPickerSheet } from '@/components/mechanic-picker-sheet';
@@ -12,6 +13,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
 import {
   fetchChannel,
+  fetchMyChannelReadCursor,
   markChannelRead,
   sendChannelFileMessage,
   sendChannelImageMessage,
@@ -48,9 +50,24 @@ export default function MechanicChannelChatScreen() {
   const [marketPickerOpen, setMarketPickerOpen] = useState(false);
   // 19.6: același picker pentru „Recomandă un mecanic" ȘI „Recomandă un transportator".
   const [recommendRole, setRecommendRole] = useState<'mechanic' | 'driver' | null>(null);
+  // 5 aug: setările canalului (notificări opt-in) — rotița din antet.
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  // Snapshot-ul cursorului MEU de citire (7 aug): luat ÎNAINTE ca mark-read să-l mute
+  // la zi — decide unde apare „Mesaje noi" și unde aterizează lista. undefined = în curs.
+  const [initialCursor, setInitialCursor] = useState<string | null | undefined>(undefined);
 
   useEffect(() => {
     fetchChannel(id).then(setChannel);
+  }, [id]);
+
+  useEffect(() => {
+    let active = true;
+    fetchMyChannelReadCursor(id).then((c) => {
+      if (active) setInitialCursor(c);
+    });
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   useEffect(() => {
@@ -91,9 +108,12 @@ export default function MechanicChannelChatScreen() {
     // ecranul în față: tab-urile păstrează stack-ul montat, iar fără garda de focus
     // mesajele sosite cât timp userul e pe alt tab se marcau singure „citite" și
     // bulina de pe tabul Chat nu se mai aprindea.
-    if (!loading && isFocused) markChannelRead(id, messages[messages.length - 1]?.created_at ?? null);
+    // + gardă pe snapshot (7 aug): prima marcare așteaptă citirea cursorului VECHI,
+    // altfel upsert-ul putea câștiga cursa și ancora „Mesaje noi" nu mai apărea.
+    if (!loading && isFocused && initialCursor !== undefined)
+      markChannelRead(id, messages[messages.length - 1]?.created_at ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages.length, loading, id, isFocused]);
+  }, [messages.length, loading, id, isFocused, initialCursor]);
 
   if (!channel || !session) return <ThemedView style={{ flex: 1 }} />;
 
@@ -112,9 +132,7 @@ export default function MechanicChannelChatScreen() {
       onPressUser={(userId) =>
         router.push({ pathname: '/(mechanic)/public-profile/[id]' as never, params: { id: userId } })
       }
-      renderSenderLabel={(message) =>
-        `${displayName(message.sender, t)} · ${t(`auth.roleSelect.${message.sender.role}Title`)}`
-      }
+      renderSenderRole={(message) => t(`auth.roleSelect.${message.sender.role}Title`)}
       onSend={async (content, replyToId) => {
         const { message } = await sendChannelMessage(
           id, session.user.id, content, null, replyToId, pendingListing, pendingMechanic
@@ -160,7 +178,9 @@ export default function MechanicChannelChatScreen() {
       }}
       canEditMessage={(m) => withinEditWindow(m.created_at)}
       messageTable="channel_messages"
+      unreadCursor={initialCursor}
       onBack={goBack}
+      onOpenSettings={() => setSettingsOpen(true)}
     />
     {marketPickerOpen ? (
       <MarketPickerSheet
@@ -185,6 +205,13 @@ export default function MechanicChannelChatScreen() {
         }}
       />
     ) : null}
+    <ChannelSettingsSheet
+      visible={settingsOpen}
+      channelId={id}
+      channelName={t(`channel.name.${channel.type}`)}
+      role="mechanic"
+      onClose={() => setSettingsOpen(false)}
+    />
     </>
   );
 }

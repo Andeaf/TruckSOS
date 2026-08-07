@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
+import { ActionSheet } from '@/components/action-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -44,25 +46,13 @@ export function PhotoPickerRow({ photos, onAdd, onRemove, disabled, max = DEFAUL
     }
   }
 
+  // Sheet tematizat în locul fostului Alert.alert nativ (nestilizabil, fără
+  // închidere la tap în afară).
+  const [sourceOpen, setSourceOpen] = useState(false);
+
   function handleAddPress() {
     if (disabled || atLimit) return;
-    Alert.alert(t('photos.sourceTitle'), undefined, [
-      {
-        text: t('photos.sourceLibrary'),
-        onPress: async () => {
-          const imgs = await pickFromLibrary();
-          if (imgs.length > 0) addClamped(imgs);
-        },
-      },
-      {
-        text: t('photos.sourceCamera'),
-        onPress: async () => {
-          const imgs = await pickFromCamera();
-          if (imgs.length > 0) addClamped(imgs);
-        },
-      },
-      { text: t('photos.cancel'), style: 'cancel' },
-    ]);
+    setSourceOpen(true);
   }
 
   return (
@@ -103,6 +93,30 @@ export function PhotoPickerRow({ photos, onAdd, onRemove, disabled, max = DEFAUL
           </ThemedText>
         </View>
       )}
+
+      <ActionSheet
+        visible={sourceOpen}
+        title={t('photos.sourceTitle')}
+        actions={[
+          {
+            label: t('photos.sourceLibrary'),
+            icon: 'photo-library',
+            onPress: async () => {
+              const imgs = await pickFromLibrary();
+              if (imgs.length > 0) addClamped(imgs);
+            },
+          },
+          {
+            label: t('photos.sourceCamera'),
+            icon: 'photo-camera',
+            onPress: async () => {
+              const imgs = await pickFromCamera();
+              if (imgs.length > 0) addClamped(imgs);
+            },
+          },
+        ]}
+        onClose={() => setSourceOpen(false)}
+      />
     </View>
   );
 }

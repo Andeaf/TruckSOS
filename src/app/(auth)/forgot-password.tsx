@@ -122,6 +122,7 @@ export default function ForgotPasswordScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
+                required
               />
 
               {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
@@ -139,6 +140,7 @@ export default function ForgotPasswordScreen() {
                 maxLength={6}
                 autoComplete="one-time-code"
                 textContentType="oneTimeCode"
+                required
               />
               <Input
                 label={t('auth.forgot.newPasswordLabel')}
@@ -146,6 +148,7 @@ export default function ForgotPasswordScreen() {
                 onChangeText={setPassword}
                 placeholder={t('auth.register.passwordPlaceholder')}
                 secureTextEntry
+                required
               />
               <Input
                 label={t('auth.forgot.confirmPasswordLabel')}
@@ -153,6 +156,7 @@ export default function ForgotPasswordScreen() {
                 onChangeText={setConfirmPassword}
                 placeholder={t('auth.register.passwordPlaceholder')}
                 secureTextEntry
+                required
               />
 
               {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}

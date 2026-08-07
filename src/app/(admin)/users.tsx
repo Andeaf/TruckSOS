@@ -447,25 +447,28 @@ function EditProfileModal({
             <ScrollView
               contentContainerStyle={styles.editForm}
               keyboardShouldPersistTaps="handled">
-              <Input label={t('profile.nameLabel')} value={fullName} onChangeText={setFullName} />
+              <Input label={t('profile.nameLabel')} value={fullName} onChangeText={setFullName} required />
               <Input
                 label={t('profile.phoneLabel')}
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
+                required
               />
               <Input
-                label={isMechanic ? t('profile.addressLabel') : t('profile.addressLabelOptional')}
+                label={t('profile.addressLabel')}
                 value={address}
                 onChangeText={setAddress}
                 autoCapitalize="sentences"
+                required={isMechanic}
               />
               <Input
-                label={isMechanic ? t('profile.vatLabel') : t('profile.vatLabelOptional')}
+                label={t('profile.vatLabel')}
                 value={vatNumber}
                 onChangeText={setVatNumber}
                 autoCapitalize="characters"
                 autoCorrect={false}
+                required={isMechanic}
               />
               <Input
                 label={t('profile.companyLabel')}
@@ -496,6 +499,9 @@ function EditProfileModal({
                   />
                 </>
               ) : null}
+              <ThemedText themeColor="textSecondary" type="small" style={styles.requiredNote}>
+                {t('common.requiredNote')}
+              </ThemedText>
             </ScrollView>
             <Button title={t('profile.saveButton')} onPress={submit} loading={saving} />
             <Pressable onPress={onClose} style={styles.closeBtn}>
@@ -532,4 +538,5 @@ const styles = StyleSheet.create({
   chip: { paddingVertical: Spacing.one, paddingHorizontal: Spacing.three, borderRadius: Radius.badge, borderWidth: 1 },
   closeBtn: { alignSelf: 'center', marginTop: Spacing.two, padding: Spacing.two },
   editForm: { gap: Spacing.two, paddingBottom: Spacing.two },
+  requiredNote: { textAlign: 'center' },
 });

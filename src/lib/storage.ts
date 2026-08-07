@@ -1,8 +1,20 @@
 import { File } from 'expo-file-system';
 import * as Crypto from 'expo-crypto';
+import { Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 import { compressImage } from '@/lib/images';
+
+/**
+ * Bytes-ii unui URI local, per platformă (7 aug, varianta web): pe nativ prin
+ * `File.arrayBuffer()` (expo-file-system v19 — `fetch(file://)` e nesigur în RN,
+ * decizia R1); pe web exact invers — File/Paths nu există în browser, iar `fetch`
+ * pe `blob:`/`data:` (ce întorc pickerele web) e calea standard.
+ */
+async function readUriBytes(uri: string): Promise<ArrayBuffer> {
+  if (Platform.OS === 'web') return (await fetch(uri)).arrayBuffer();
+  return new File(uri).arrayBuffer();
+}
 
 /**
  * Acces la Supabase Storage — bucket privat `photos` (PLAN_FAZA9.md §1).
@@ -39,15 +51,24 @@ export async function uploadPhoto(
   compression?: { maxEdge: number; quality: number },
 ): Promise<{ path: string | null; error: string | null }> {
   try {
-    const compressed = await compressImage(
-      source.uri,
-      source.width,
-      source.height,
-      compression?.maxEdge,
-      compression?.quality,
-    );
+    let compressed: { uri: string };
+    try {
+      compressed = await compressImage(
+        source.uri,
+        source.width,
+        source.height,
+        compression?.maxEdge,
+        compression?.quality,
+      );
+    } catch (e) {
+      // Doar pe web degradăm la poza ORIGINALĂ (manipulatorul are backend canvas, dar
+      // dacă dă rateu, un upload necomprimat e mai bun decât niciunul). Pe nativ
+      // compresia funcționează de la Faza 9 — o eroare acolo rămâne eroare reală.
+      if (Platform.OS !== 'web') throw e;
+      compressed = { uri: source.uri };
+    }
     const path = `${folder}/${parentId}/${Crypto.randomUUID()}.jpg`;
-    const bytes = await new File(compressed.uri).arrayBuffer();
+    const bytes = await readUriBytes(compressed.uri);
     const { error } = await supabase.storage
       .from(BUCKET)
       .upload(path, bytes, { contentType: 'image/jpeg', upsert: false });
@@ -95,7 +116,7 @@ export async function uploadFile(
   try {
     const ext = fileExtension(file.name) || 'bin';
     const path = `${folder}/${parentId}/${Crypto.randomUUID()}.${ext}`;
-    const bytes = await new File(file.uri).arrayBuffer();
+    const bytes = await readUriBytes(file.uri);
     const { error } = await supabase.storage
       .from(BUCKET)
       .upload(path, bytes, {

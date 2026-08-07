@@ -44,6 +44,16 @@ export function usePushNavigation() {
         case 'application':
           router.push({ pathname: '/(mechanic)/applications/[id]' as never, params });
           break;
+        // Notificările opt-in ale canalului global (5 aug).
+        case 'channel':
+          router.push({
+            pathname:
+              role === 'driver'
+                ? '/(driver)/conversations/channel/[id]'
+                : ('/(mechanic)/conversations/channel/[id]' as never),
+            params,
+          });
+          break;
       }
     }
 

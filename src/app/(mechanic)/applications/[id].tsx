@@ -206,6 +206,9 @@ export default function ApplicationDetailScreen() {
             {announcement.description}
           </ThemedText>
           {truckLine ? <InfoRow icon="local-shipping" text={truckLine} /> : null}
+          {announcement.chassis_number ? (
+            <InfoRow icon="tag" text={`${t('truck.chassisLabel')}: ${announcement.chassis_number}`} />
+          ) : null}
         </ThemedView>
 
         {photos.length > 0 ? (

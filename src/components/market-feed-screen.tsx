@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Pressable,
   ScrollView,
@@ -16,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
+import { ActionSheet, type SheetAction } from '@/components/action-sheet';
 import { EmptyState } from '@/components/empty-state';
 import { MarketCard } from '@/components/market-card';
 import { HeaderProfileButton, ScreenHeader } from '@/components/screen-header';
@@ -106,13 +106,32 @@ export function MarketFeedScreen({ role }: MarketFeedScreenProps) {
     setPullRefreshing(false);
   }, [refresh]);
 
+  // Sheet tematizat în locul fostului Alert.alert nativ (nestilizabil, fără
+  // închidere la tap în afară) — decizie 5 aug, la cererea userului.
+  const [sortOpen, setSortOpen] = useState(false);
+  const sortActions: SheetAction[] = [
+    {
+      label: t('market.sortRecent'),
+      icon: 'schedule',
+      selected: sort === 'recent',
+      onPress: () => setSort('recent'),
+    },
+    {
+      label: t('market.sortPriceAsc'),
+      icon: 'arrow-upward',
+      selected: sort === 'price_asc',
+      onPress: () => setSort('price_asc'),
+    },
+    {
+      label: t('market.sortPriceDesc'),
+      icon: 'arrow-downward',
+      selected: sort === 'price_desc',
+      onPress: () => setSort('price_desc'),
+    },
+  ];
+
   function openSortMenu() {
-    Alert.alert(t('market.sortTitle'), undefined, [
-      { text: t('market.sortRecent'), onPress: () => setSort('recent') },
-      { text: t('market.sortPriceAsc'), onPress: () => setSort('price_asc') },
-      { text: t('market.sortPriceDesc'), onPress: () => setSort('price_desc') },
-      { text: t('common.cancel'), style: 'cancel' },
-    ]);
+    setSortOpen(true);
   }
 
   function chip(
@@ -236,10 +255,15 @@ export function MarketFeedScreen({ role }: MarketFeedScreenProps) {
         </View>
       </View>
 
-      {/* Chips: DOAR categoriile — independente de segmentul Toate/Ale mele. */}
+      {/* Chips: DOAR categoriile — independente de segmentul Toate/Ale mele.
+          removeClippedSubviews={false}: pe Android, clipping-ul agresiv al
+          ScrollView-ului orizontal poate „pierde" textele chip-urilor după o
+          re-randare (raportat de tester: etichetele dispăreau la comutarea
+          filtrelor) — dezactivat explicit. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        removeClippedSubviews={false}
         style={styles.chipsScroll}
         contentContainerStyle={styles.chipsRow}>
         {chip('all', t('market.categoryAll'), null, category === 'all', () => setCategory('all'))}
@@ -314,6 +338,13 @@ export function MarketFeedScreen({ role }: MarketFeedScreenProps) {
           <MaterialIcons name="add" size={30} color="#fff" />
         </LinearGradient>
       </Pressable>
+
+      <ActionSheet
+        visible={sortOpen}
+        title={t('market.sortTitle')}
+        actions={sortActions}
+        onClose={() => setSortOpen(false)}
+      />
     </ThemedView>
   );
 }
@@ -373,7 +404,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  chipsScroll: { flexGrow: 0 },
+  // flexShrink: 0 e FIX-ul bug-ului „chips-urile se turtesc la «Toate»" (7 aug):
+  // ScrollView-ul RN are implicit flexShrink:1, deci când FlatList-ul de sub el
+  // are conținut mult (Toate, nu Ale mele), coloana flex îl strângea pe verticală
+  // — chips înguste sus/jos, iar la tester textul dispărea complet. flexGrow:0
+  // singur nu împiedica strângerea.
+  chipsScroll: { flexGrow: 0, flexShrink: 0 },
   chipsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -390,7 +426,9 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: Radius.badge,
   },
-  chipLabel: { fontSize: 13, fontWeight: '600', lineHeight: 18 },
+  // flexShrink 0: textul nu are voie să colapseze la lățime 0 la re-măsurare
+  // (al doilea mecanism cunoscut al „textelor dispărute" pe Android).
+  chipLabel: { fontSize: 13, fontWeight: '600', lineHeight: 18, flexShrink: 0 },
   columnWrapper: { gap: 12 },
   list: {
     flexGrow: 1,

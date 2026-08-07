@@ -144,6 +144,7 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
             onChangeText={setFullName}
             placeholder={t('profile.namePlaceholder')}
             autoCapitalize="words"
+            required
           />
 
           <Input
@@ -179,11 +180,12 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
           {/* Faza 18: adresă + TVA — obligatorii la mecanic (afișate public), opționale la șofer. */}
           <View>
             <Input
-              label={isMechanic ? t('profile.addressLabel') : t('profile.addressLabelOptional')}
+              label={t('profile.addressLabel')}
               value={address}
               onChangeText={setAddress}
               placeholder={t('profile.addressPlaceholder')}
               autoCapitalize="sentences"
+              required={isMechanic}
             />
             {isMechanic ? (
               <ThemedText themeColor="textSecondary" type="small" style={styles.phoneHint}>
@@ -193,12 +195,13 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
           </View>
 
           <Input
-            label={isMechanic ? t('profile.vatLabel') : t('profile.vatLabelOptional')}
+            label={t('profile.vatLabel')}
             value={vatNumber}
             onChangeText={setVatNumber}
             placeholder={t('profile.vatPlaceholder')}
             autoCapitalize="characters"
             autoCorrect={false}
+            required={isMechanic}
           />
 
           <View>
@@ -208,6 +211,7 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
               onChangeText={setPhone}
               placeholder={t('profile.phonePlaceholder')}
               keyboardType="phone-pad"
+              required
             />
             <ThemedText themeColor="textSecondary" type="small" style={styles.phoneHint}>
               {isMechanic ? t('profile.phoneHint') : t('driver.profile.phoneHint')}
@@ -232,6 +236,10 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
           {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
 
           <Button title={t('profile.saveButton')} onPress={handleSave} loading={saving} />
+
+          <ThemedText themeColor="textSecondary" type="small" style={styles.requiredNote}>
+            {t('common.requiredNote')}
+          </ThemedText>
         </ScrollView>
       </KeyboardAvoidingView>
     </ThemedView>
@@ -245,4 +253,5 @@ const styles = StyleSheet.create({
   textarea: { height: 80, textAlignVertical: 'top', paddingTop: Spacing.two },
   phoneHint: { marginTop: Spacing.one, paddingHorizontal: Spacing.one },
   error: { color: '#ef4444', fontSize: 14 },
+  requiredNote: { textAlign: 'center' },
 });

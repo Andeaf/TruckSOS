@@ -59,6 +59,7 @@ export default function LoginScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
+              required
             />
             <Input
               label={t('auth.login.passwordLabel')}
@@ -66,6 +67,7 @@ export default function LoginScreen() {
               onChangeText={setPassword}
               placeholder={t('auth.login.passwordPlaceholder')}
               secureTextEntry
+              required
             />
 
             <Link href="/(auth)/forgot-password" asChild>

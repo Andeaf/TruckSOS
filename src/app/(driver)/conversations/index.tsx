@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
+import { ChannelSettingsSheet } from '@/components/channel-settings-sheet';
 import { EmptyState } from '@/components/empty-state';
 import { HeaderText, ScreenHeader } from '@/components/screen-header';
 import { Input } from '@/components/ui/input';
@@ -31,12 +32,16 @@ function ChannelCard({
   channel,
   userId,
   onPress,
+  onOpenSettings,
 }: {
   channel: Channel;
   userId: string | undefined;
   onPress: () => void;
+  /** Rotița din dreapta cardului (5 aug) — setările canalului (notificări). */
+  onOpenSettings: () => void;
 }) {
   const { t } = useTranslation();
+  const theme = useTheme();
   const { count: unreadCount } = useChannelUnreadCount(userId, channel.id);
   return (
     <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
@@ -62,6 +67,12 @@ function ChannelCard({
               {t('channel.subtitle')}
             </ThemedText>
           </View>
+          <Pressable
+            onPress={onOpenSettings}
+            hitSlop={12}
+            accessibilityLabel={t('channelSettings.title')}>
+            <MaterialIcons name="settings" size={20} color={theme.textSecondary} />
+          </Pressable>
         </View>
       </ThemedView>
     </Pressable>
@@ -178,6 +189,8 @@ export default function DriverConversationsScreen() {
   // Faza 19.6: „Începe o conversație nouă" — cu ORICE utilizator (inclusiv același rol).
   const [newConvOpen, setNewConvOpen] = useState(false);
   const [startingConv, setStartingConv] = useState(false);
+  // 5 aug: setările canalului global (notificări opt-in) — deschise de pe card.
+  const [settingsChannel, setSettingsChannel] = useState<Channel | null>(null);
 
   const me = session?.user.id ?? '';
 
@@ -358,6 +371,7 @@ export default function DriverConversationsScreen() {
                       params: { id: channel.id },
                     })
                   }
+                  onOpenSettings={() => setSettingsChannel(channel)}
                 />
               ))}
             </View>
@@ -429,6 +443,16 @@ export default function DriverConversationsScreen() {
           title={t('newConversation.title')}
           onClose={() => setNewConvOpen(false)}
           onPick={(user) => handleStartConversation(user.id)}
+        />
+      ) : null}
+
+      {settingsChannel ? (
+        <ChannelSettingsSheet
+          visible
+          channelId={settingsChannel.id}
+          channelName={t(`channel.name.${settingsChannel.type}`)}
+          role="driver"
+          onClose={() => setSettingsChannel(null)}
         />
       ) : null}
     </ThemedView>

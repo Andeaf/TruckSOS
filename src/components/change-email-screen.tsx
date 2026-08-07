@@ -137,6 +137,7 @@ export function ChangeEmailScreen({ backPath }: { backPath: string }) {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
+                required
               />
               <Input
                 label={t('settings.changeEmailScreen.passwordLabel')}
@@ -145,6 +146,7 @@ export function ChangeEmailScreen({ backPath }: { backPath: string }) {
                 placeholder={t('auth.login.passwordPlaceholder')}
                 secureTextEntry
                 error={error}
+                required
               />
 
               <Button
@@ -167,6 +169,7 @@ export function ChangeEmailScreen({ backPath }: { backPath: string }) {
                 keyboardType="number-pad"
                 maxLength={6}
                 error={error}
+                required
               />
 
               <Button

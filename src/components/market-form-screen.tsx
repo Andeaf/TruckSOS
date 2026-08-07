@@ -14,8 +14,9 @@ import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
+import { ActionSheet } from '@/components/action-sheet';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Input, RequiredMark } from '@/components/ui/input';
 import { FilterChips } from '@/components/ui/filter-chips';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
@@ -130,25 +131,13 @@ export function MarketFormScreen({ role, listingId: listingIdProp }: MarketFormS
     setDirty(true);
   }
 
+  // Sheet tematizat în locul fostului Alert.alert nativ (nestilizabil, fără
+  // închidere la tap în afară).
+  const [photoSourceOpen, setPhotoSourceOpen] = useState(false);
+
   function handleAddPhotos() {
     if (photos.length >= MAX_PHOTOS) return;
-    Alert.alert(t('photos.sourceTitle'), undefined, [
-      {
-        text: t('photos.sourceLibrary'),
-        onPress: async () => {
-          const imgs = await pickFromLibrary();
-          addClamped(imgs);
-        },
-      },
-      {
-        text: t('photos.sourceCamera'),
-        onPress: async () => {
-          const imgs = await pickFromCamera();
-          addClamped(imgs);
-        },
-      },
-      { text: t('photos.cancel'), style: 'cancel' },
-    ]);
+    setPhotoSourceOpen(true);
   }
 
   function addClamped(imgs: PickedImage[]) {
@@ -282,10 +271,14 @@ export function MarketFormScreen({ role, listingId: listingIdProp }: MarketFormS
             placeholder={t('market.titlePlaceholder')}
             autoCapitalize="sentences"
             maxLength={80}
+            required
           />
 
           <View style={styles.fieldGroup}>
-            <ThemedText type="smallBold">{t('market.categoryLabel')}</ThemedText>
+            <ThemedText type="smallBold">
+              {t('market.categoryLabel')}
+              <RequiredMark />
+            </ThemedText>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll}>
               <FilterChips<MarketCategory>
                 options={MARKET_CATEGORIES.map((c) => ({
@@ -312,6 +305,7 @@ export function MarketFormScreen({ role, listingId: listingIdProp }: MarketFormS
                 }}
                 placeholder="0"
                 keyboardType="decimal-pad"
+                required
               />
             </View>
             <View style={styles.currencyChips}>
@@ -353,6 +347,7 @@ export function MarketFormScreen({ role, listingId: listingIdProp }: MarketFormS
             numberOfLines={5}
             maxLength={4000}
             style={styles.textarea}
+            required
           />
 
           <View style={styles.fieldGroup}>
@@ -409,8 +404,30 @@ export function MarketFormScreen({ role, listingId: listingIdProp }: MarketFormS
             onPress={handleSubmit}
             loading={loading}
           />
+
+          <ThemedText themeColor="textSecondary" type="small" style={styles.requiredNote}>
+            {t('common.requiredNote')}
+          </ThemedText>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <ActionSheet
+        visible={photoSourceOpen}
+        title={t('photos.sourceTitle')}
+        actions={[
+          {
+            label: t('photos.sourceLibrary'),
+            icon: 'photo-library',
+            onPress: async () => addClamped(await pickFromLibrary()),
+          },
+          {
+            label: t('photos.sourceCamera'),
+            icon: 'photo-camera',
+            onPress: async () => addClamped(await pickFromCamera()),
+          },
+        ]}
+        onClose={() => setPhotoSourceOpen(false)}
+      />
     </ThemedView>
   );
 }
@@ -472,4 +489,5 @@ const styles = StyleSheet.create({
   },
   addText: { fontSize: 11, textAlign: 'center' },
   error: { color: '#ef4444', fontSize: 14 },
+  requiredNote: { textAlign: 'center' },
 });

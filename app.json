@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#208AEF",
+        "backgroundColor": "#0E3A7D",
         "foregroundImage": "./assets/images/adaptive-icon-foreground.png"
       },
       "config": {
@@ -43,7 +43,7 @@
       "de": "./locales/ios/de.json"
     },
     "web": {
-      "output": "static",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -51,7 +51,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#0E3A7D",
           "android": {
             "image": "./assets/images/splash-icon.png",
             "imageWidth": 200
@@ -67,7 +67,7 @@
       [
         "expo-notifications",
         {
-          "color": "#208AEF",
+          "color": "#0E3A7D",
           "defaultChannel": "default"
         }
       ],

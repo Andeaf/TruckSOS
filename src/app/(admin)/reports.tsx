@@ -11,10 +11,12 @@ import { useTheme } from '@/hooks/use-theme';
 import {
   adminDeleteMessage,
   fetchReportContext,
+  fetchReportConversation,
   fetchReports,
   updateReportStatus,
   type AdminContextMessage,
   type AdminReport,
+  type AdminReportConversation,
 } from '@/hooks/use-admin';
 import type { ReportStatus } from '@/types/database';
 
@@ -34,6 +36,11 @@ export default function AdminReports() {
   const [context, setContext] = useState<{
     messages: AdminContextMessage[];
     reportedId: string;
+  } | null>(null);
+  // 7 aug: conversația raportor↔raportat, la rapoartele pe utilizator.
+  const [conv, setConv] = useState<{
+    report: AdminReport;
+    conversations: AdminReportConversation[];
   } | null>(null);
 
   const load = useCallback(
@@ -80,6 +87,14 @@ export default function AdminReports() {
     });
   }
 
+  function viewConversation(r: AdminReport) {
+    fetchReportConversation(r.id).then(({ data, error }) => {
+      if (error) Alert.alert(t('admin.common.error'), error);
+      else if (data.length === 0) Alert.alert(t('admin.reports.noConversation'));
+      else setConv({ report: r, conversations: data });
+    });
+  }
+
   return (
     <ThemedView style={{ flex: 1 }}>
       <ScreenHeader title={t('admin.reports.title')} />
@@ -123,12 +138,14 @@ export default function AdminReports() {
             onDismiss={() => setStatus(item, 'dismissed')}
             onDeleteMsg={() => deleteMessage(item)}
             onContext={() => viewContext(item)}
+            onConversation={() => viewConversation(item)}
             onUser={() => router.push({ pathname: '/(admin)/users', params: { uid: item.reported_user_id } })}
           />
         )}
       />
 
       <ContextModal context={context} onClose={() => setContext(null)} />
+      <ConversationModal data={conv} onClose={() => setConv(null)} />
     </ThemedView>
   );
 }
@@ -139,6 +156,7 @@ function ReportCard({
   onDismiss,
   onDeleteMsg,
   onContext,
+  onConversation,
   onUser,
 }: {
   report: AdminReport;
@@ -146,6 +164,7 @@ function ReportCard({
   onDismiss: () => void;
   onDeleteMsg: () => void;
   onContext: () => void;
+  onConversation: () => void;
   onUser: () => void;
 }) {
   const { t, i18n } = useTranslation();
@@ -190,7 +209,11 @@ function ReportCard({
             <ActionBtn label={t('admin.reports.actionViewContext')} onPress={onContext} />
             <ActionBtn label={t('admin.reports.actionDeleteMsg')} onPress={onDeleteMsg} danger />
           </>
-        ) : null}
+        ) : (
+          // Raport pe UTILIZATOR: fără mesaj de ancorat → conversația raportor↔raportat
+          // (RPC mărginit + auditat; principiul din privacy policy §5).
+          <ActionBtn label={t('admin.reports.actionViewConversation')} onPress={onConversation} />
+        )}
         <ActionBtn label={t('admin.reports.actionViewUser')} onPress={onUser} />
       </View>
     </View>
@@ -276,6 +299,76 @@ function ContextModal({
   );
 }
 
+/**
+ * Conversațiile raportor↔raportat (7 aug): secțiune per conversație (tip + dată),
+ * mesajele RAPORTATULUI evidențiate cu tenta indigo (pe ele se uită adminul).
+ */
+function ConversationModal({
+  data,
+  onClose,
+}: {
+  data: { report: AdminReport; conversations: AdminReportConversation[] } | null;
+  onClose: () => void;
+}) {
+  const { t, i18n } = useTranslation();
+  const theme = useTheme();
+  const locale = LOCALE_MAP[i18n.language] ?? 'ro-RO';
+  return (
+    <Modal visible={data !== null} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={styles.backdrop} onPress={onClose}>
+        <Pressable style={[styles.modal, { backgroundColor: theme.background }]} onPress={() => {}}>
+          <ThemedText type="subtitle" style={styles.modalTitle}>
+            {t('admin.reports.conversationTitle')}
+          </ThemedText>
+          {data ? (
+            <ScrollView style={styles.ctxScroll}>
+              {data.conversations.map((c) => (
+                <View key={c.conversation_id} style={styles.convSection}>
+                  <ThemedText type="smallBold" style={styles.convHead}>
+                    {t(`admin.reports.convKind_${c.kind}`)} ·{' '}
+                    {new Date(c.created_at).toLocaleDateString(locale)}
+                  </ThemedText>
+                  {c.messages.map((m) => {
+                    const isReported = m.sender_id === data.report.reported_user_id;
+                    const senderName = isReported
+                      ? data.report.reported_name
+                      : data.report.reporter_name;
+                    return (
+                      <View
+                        key={m.id}
+                        style={[
+                          styles.ctxRow,
+                          { borderColor: theme.backgroundElement },
+                          isReported && styles.ctxRowReported,
+                        ]}>
+                        <ThemedText type="small" themeColor="textSecondary">
+                          {senderName ?? '—'} · {new Date(m.created_at).toLocaleString(locale)}
+                        </ThemedText>
+                        <ThemedText>
+                          {m.deleted_at
+                            ? `[${t('chat.deletedMessage')}]`
+                            : m.image_path
+                              ? `[${t('chat.photo')}]`
+                              : m.file_name
+                                ? `📎 ${m.file_name}`
+                                : m.content || t('admin.reports.attachmentOnly')}
+                        </ThemedText>
+                      </View>
+                    );
+                  })}
+                </View>
+              ))}
+            </ScrollView>
+          ) : null}
+          <Pressable onPress={onClose} style={styles.closeBtn}>
+            <ThemedText style={{ color: '#6366f1' }}>{t('admin.common.close')}</ThemedText>
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
 const styles = StyleSheet.create({
   filters: { flexDirection: 'row', gap: Spacing.two, padding: Spacing.three, flexWrap: 'wrap' },
   chip: { paddingVertical: Spacing.one, paddingHorizontal: Spacing.three, borderRadius: Radius.badge, borderWidth: 1 },
@@ -302,4 +395,6 @@ const styles = StyleSheet.create({
     paddingLeft: Spacing.two,
   },
   closeBtn: { alignSelf: 'flex-end', marginTop: Spacing.two, padding: Spacing.two },
+  convSection: { marginBottom: Spacing.three },
+  convHead: { marginBottom: Spacing.one, textTransform: 'uppercase', letterSpacing: 0.5 },
 });

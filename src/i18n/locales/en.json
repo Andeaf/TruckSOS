@@ -57,7 +57,14 @@
       "actionViewUser": "Vezi utilizatorul",
       "deleteMsgConfirm": "Mesajul devine „șters de moderator” pentru toți. Continui?",
       "contextTitle": "Context conversație",
-      "contextEmpty": "Fără mesaje."
+      "contextEmpty": "Fără mesaje.",
+      "actionViewConversation": "Vezi conversația",
+      "conversationTitle": "Conversația raportor ↔ raportat",
+      "noConversation": "Nu există conversații între raportor și utilizatorul raportat.",
+      "convKind_announcement": "Depanare",
+      "convKind_market": "Market",
+      "convKind_direct": "Directă",
+      "attachmentOnly": "[Atașament]"
     },
     "users": {
       "title": "Utilizatori",
@@ -213,6 +220,7 @@
       "listTitle": "My announcements",
       "filterAll": "All",
       "filterActive": "Active",
+      "filterAccepted": "Accepted",
       "filterResolved": "Resolved",
       "emptyTitle": "No announcements yet",
       "emptyDescription": "Tap + to report a breakdown",
@@ -222,14 +230,13 @@
       "descriptionLabel": "Problem description",
       "descriptionPlaceholder": "e.g.: Engine won't start, smoke from engine, flat tyre...",
       "submitButton": "Post announcement",
-      "photosLabel": "Photos (optional)",
+      "photosLabel": "Photos",
       "photosHint": "Attach photos of the problem — visible to mechanics.",
       "photosFailedTitle": "Photos not uploaded",
       "photosFailedMessage": "The announcement was posted, but {{count}} photo(s) could not be uploaded.",
       "errorDescription": "Please describe the problem.",
       "errorLocation": "Please enter your location.",
-      "coordsSectionTitle": "GPS coordinates (optional)",
-      "coordsRationale": "We fill in the coordinates from your location automatically. You can edit them manually.",
+      "coordsSectionTitle": "GPS coordinates",
       "useMyLocation": "Use my GPS location",
       "latitudeLabel": "Latitude",
       "longitudeLabel": "Longitude",
@@ -279,8 +286,7 @@
       "deleteSelectedConfirmMessageWithOpen": "Mechanics who applied will be automatically rejected. This action cannot be undone.",
       "deleteSelectedConfirmOk": "Yes, delete",
       "applicantsBadgeOne": "1 mechanic interested! 👀",
-      "applicantsBadge": "{{count}} mechanics interested! 👀",
-      "coordsMapHint": "Without GPS coordinates your announcement will NOT appear on the mechanics’ map — it will only show up in their list."
+      "applicantsBadge": "{{count}} mechanics interested! 👀"
     },
     "profile": {
       "phoneHint": "Visible to the mechanic only if you have an active conversation."
@@ -375,7 +381,7 @@
       "priceAmountLabel": "Amount",
       "priceAmountPlaceholder": "e.g.: 150",
       "currencyLabel": "Currency",
-      "messageLabel": "Optional message",
+      "messageLabel": "Message",
       "messagePlaceholder": "e.g.: I can arrive in 30 minutes...",
       "submitButton": "Submit application",
       "resubmitSheetTitle": "Modify offer",
@@ -393,7 +399,9 @@
       "pinCount_one": "{{count}} announcement on the map",
       "pinCount_other": "{{count}} announcements on the map",
       "missingCount_one": "{{count}} announcement without a location",
-      "missingCount_other": "{{count}} announcements without a location"
+      "missingCount_other": "{{count}} announcements without a location",
+      "webBody": "The interactive map isn't available in the browser. Announcements with a location are still listed in the feed.",
+      "webCta": "Open the feed"
     }
   },
   "chat": {
@@ -413,6 +421,8 @@
     "deletedMessage": "This message was deleted",
     "deletedByModerator": "Removed by a moderator",
     "unavailableMessage": "Message unavailable",
+    "newMessages": "New messages",
+    "callPeer": "Call",
     "deleteConfirmTitle": "Delete message?",
     "deleteConfirmBody": "The message will be deleted for everyone. This can't be undone.",
     "edited": "edited",
@@ -436,7 +446,7 @@
       "scam": "Scam / fraud",
       "other": "Something else"
     },
-    "detailsPlaceholder": "Details (optional)",
+    "detailsPlaceholder": "Details",
     "submitButton": "Submit report",
     "submitted": "Your report has been sent. We'll review it.",
     "submittedTitle": "Thank you",
@@ -468,9 +478,16 @@
     },
     "subtitle": "Public discussions"
   },
+  "channelSettings": {
+    "title": "Channel settings",
+    "notifyLabel": "Notifications for new messages",
+    "notifyHint": "Get a push notification for every new message in {{name}}. Off by default so we don't overwhelm you.",
+    "appSettings": "All app settings"
+  },
   "search": {
     "tabTitle": "Search",
     "title": "Find mechanics",
+    "allMechanicsTitle": "All mechanics",
     "placeholder": "Mechanic's name…",
     "emptyTitle": "Search for a mechanic",
     "emptyDescription": "Type at least {{min}} characters of the mechanic's name.",
@@ -492,7 +509,6 @@
     "activityZoneLabel": "Activity zone",
     "activityZonePlaceholder": "e.g.: Bavaria, North Rhine-Westphalia...",
     "phoneLabel": "Phone number",
-    "phoneLabelOptional": "Phone number (optional)",
     "phonePlaceholder": "e.g.: +49 170 123 4567",
     "phoneHint": "Visible to the carrier only after they choose you.",
     "companyLabel": "Company",
@@ -501,11 +517,9 @@
     "emailPlaceholder": "e.g.: name@company.com",
     "emailHint": "Visible on your public profile, like your specialisation.",
     "addressLabel": "Address",
-    "addressLabelOptional": "Address (optional)",
     "addressPlaceholder": "e.g. 12 Depot St, Suceava",
     "addressHint": "Visible on your public profile — business information.",
     "vatLabel": "VAT number",
-    "vatLabelOptional": "VAT number (optional)",
     "vatPlaceholder": "e.g. RO12345678",
     "errorPhoneRequired": "The phone number is required.",
     "errorPhoneInvalid": "The phone number does not look valid.",
@@ -531,8 +545,8 @@
     "privacy": "Privacy"
   },
   "truck": {
-    "sectionToggleAdd": "+ Add truck details (optional)",
-    "sectionToggleHide": "- Hide truck details",
+    "sectionToggleAdd": "Add truck details",
+    "sectionToggleHide": "Hide truck details",
     "makeLabel": "Make",
     "makePlaceholder": "e.g.: Volvo, DAF, MAN...",
     "modelLabel": "Model",
@@ -544,7 +558,7 @@
     "savedTitle": "My trucks",
     "addButton": "+ Add truck",
     "emptyTrucks": "No saved trucks yet.",
-    "nicknameLabel": "Nickname (optional)",
+    "nicknameLabel": "Nickname",
     "nicknamePlaceholder": "e.g.: My workhorse",
     "addSheetTitle": "Add truck",
     "editSheetTitle": "Edit truck",
@@ -559,7 +573,9 @@
     "selectSaved": "Select saved truck",
     "addNewInPicker": "Add new truck",
     "plateLabel": "Plate number",
-    "platePlaceholder": "e.g. B 123 ABC (optional)"
+    "platePlaceholder": "e.g. B 123 ABC",
+    "chassisLabel": "Chassis number (VIN)",
+    "chassisPlaceholder": "e.g. WDB9634031L123456"
   },
   "favorites": {
     "toggle": "Favorite",
@@ -585,6 +601,10 @@
     "emptyFilteredDescription": "Increase the radius or turn the filter off to see all announcements"
   },
   "common": {
+    "exitTitle": "Exit the app?",
+    "exitMessage": "Are you sure you want to leave TruckSOS?",
+    "exitConfirm": "Exit",
+    "requiredNote": "Fields marked with * are required",
     "loading": "Loading...",
     "timeNow": "just now",
     "timeMinsAgo": "{{count}} min ago",
@@ -769,7 +789,7 @@
     "editButton": "Edit your rating",
     "sheetTitle": "Rate this mechanic",
     "sheetTitleEdit": "Edit your rating",
-    "commentLabel": "Comment (optional)",
+    "commentLabel": "Comment",
     "commentPlaceholder": "How did it go?",
     "anonymousHint": "Your review appears anonymously on the mechanic profile.",
     "saveButton": "Save rating",
@@ -898,7 +918,7 @@
     },
     "privacy": {
       "title": "Privacy policy",
-      "updated": "Last updated: 31 July 2026",
+      "updated": "Last updated: 7 August 2026",
       "sections": [
         {
           "heading": "1. Who we are",
@@ -918,7 +938,7 @@
         },
         {
           "heading": "5. Moderation and administrative access",
-          "body": "You can report messages or users and you can block any user. Administrators do NOT have general access to your private conversations: they can only see a limited window of messages around a reported message, and every such access is recorded in an audit log. Accounts that break the rules may be suspended."
+          "body": "You can report messages or users and you can block any user. Administrators do NOT have general access to your private conversations: they can only see a limited window of messages around a reported message or, for a report against a user, a limited window of the conversations between the reporter and the reported user. Every such access is recorded in an audit log. Accounts that break the rules may be suspended."
         },
         {
           "heading": "6. Retention and deleting your account",

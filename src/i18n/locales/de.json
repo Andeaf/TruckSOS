@@ -57,7 +57,14 @@
       "actionViewUser": "Vezi utilizatorul",
       "deleteMsgConfirm": "Mesajul devine „șters de moderator” pentru toți. Continui?",
       "contextTitle": "Context conversație",
-      "contextEmpty": "Fără mesaje."
+      "contextEmpty": "Fără mesaje.",
+      "actionViewConversation": "Vezi conversația",
+      "conversationTitle": "Conversația raportor ↔ raportat",
+      "noConversation": "Nu există conversații între raportor și utilizatorul raportat.",
+      "convKind_announcement": "Depanare",
+      "convKind_market": "Market",
+      "convKind_direct": "Directă",
+      "attachmentOnly": "[Atașament]"
     },
     "users": {
       "title": "Utilizatori",
@@ -213,6 +220,7 @@
       "listTitle": "Meine Anzeigen",
       "filterAll": "Alle",
       "filterActive": "Aktive",
+      "filterAccepted": "Angenommene",
       "filterResolved": "Gelöste",
       "emptyTitle": "Noch keine Anzeigen",
       "emptyDescription": "Tippe + um eine Panne zu melden",
@@ -222,14 +230,13 @@
       "descriptionLabel": "Problembeschreibung",
       "descriptionPlaceholder": "z.B.: Motor startet nicht, Rauch aus dem Motor, Reifenpanne...",
       "submitButton": "Anzeige veröffentlichen",
-      "photosLabel": "Fotos (optional)",
+      "photosLabel": "Fotos",
       "photosHint": "Füge Fotos des Problems hinzu — für Mechaniker sichtbar.",
       "photosFailedTitle": "Fotos nicht hochgeladen",
       "photosFailedMessage": "Die Anzeige wurde veröffentlicht, aber {{count}} Foto(s) konnten nicht hochgeladen werden.",
       "errorDescription": "Bitte das Problem beschreiben.",
       "errorLocation": "Bitte Standort eingeben.",
-      "coordsSectionTitle": "GPS-Koordinaten (optional)",
-      "coordsRationale": "Wir füllen die Koordinaten automatisch aus deinem Standort aus. Du kannst sie manuell bearbeiten.",
+      "coordsSectionTitle": "GPS-Koordinaten",
       "useMyLocation": "Meinen GPS-Standort verwenden",
       "latitudeLabel": "Breitengrad",
       "longitudeLabel": "Längengrad",
@@ -279,8 +286,7 @@
       "deleteSelectedConfirmMessageWithOpen": "Mechaniker, die sich beworben haben, werden automatisch abgelehnt. Diese Aktion kann nicht rückgängig gemacht werden.",
       "deleteSelectedConfirmOk": "Ja, löschen",
       "applicantsBadgeOne": "1 Mechaniker interessiert! 👀",
-      "applicantsBadge": "{{count}} Mechaniker interessiert! 👀",
-      "coordsMapHint": "Ohne GPS-Koordinaten erscheint deine Anzeige NICHT auf der Karte der Mechaniker — sie ist nur in deren Liste sichtbar."
+      "applicantsBadge": "{{count}} Mechaniker interessiert! 👀"
     },
     "profile": {
       "phoneHint": "Für den Mechaniker nur sichtbar, wenn ihr ein aktives Gespräch habt."
@@ -375,7 +381,7 @@
       "priceAmountLabel": "Betrag",
       "priceAmountPlaceholder": "z. B.: 150",
       "currencyLabel": "Währung",
-      "messageLabel": "Optionale Nachricht",
+      "messageLabel": "Nachricht",
       "messagePlaceholder": "z. B.: Ich kann in 30 Minuten da sein...",
       "submitButton": "Bewerbung einreichen",
       "resubmitSheetTitle": "Angebot ändern",
@@ -393,7 +399,9 @@
       "pinCount_one": "{{count}} Anzeige auf der Karte",
       "pinCount_other": "{{count}} Anzeigen auf der Karte",
       "missingCount_one": "{{count}} Anzeige ohne Standort",
-      "missingCount_other": "{{count}} Anzeigen ohne Standort"
+      "missingCount_other": "{{count}} Anzeigen ohne Standort",
+      "webBody": "Die interaktive Karte ist im Browser nicht verfügbar. Anzeigen mit Standort findest du weiterhin in der Liste im Feed.",
+      "webCta": "Feed öffnen"
     }
   },
   "chat": {
@@ -413,6 +421,8 @@
     "deletedMessage": "Diese Nachricht wurde gelöscht",
     "deletedByModerator": "Von einem Moderator entfernt",
     "unavailableMessage": "Nachricht nicht verfügbar",
+    "newMessages": "Neue Nachrichten",
+    "callPeer": "Anrufen",
     "deleteConfirmTitle": "Nachricht löschen?",
     "deleteConfirmBody": "Die Nachricht wird für alle gelöscht. Das kann nicht rückgängig gemacht werden.",
     "edited": "bearbeitet",
@@ -436,7 +446,7 @@
       "scam": "Betrug",
       "other": "Etwas anderes"
     },
-    "detailsPlaceholder": "Details (optional)",
+    "detailsPlaceholder": "Details",
     "submitButton": "Meldung senden",
     "submitted": "Deine Meldung wurde gesendet. Wir prüfen sie.",
     "submittedTitle": "Danke",
@@ -468,9 +478,16 @@
     },
     "subtitle": "Öffentliche Diskussionen"
   },
+  "channelSettings": {
+    "title": "Kanal-Einstellungen",
+    "notifyLabel": "Benachrichtigungen für neue Nachrichten",
+    "notifyHint": "Erhalte eine Push-Benachrichtigung für jede neue Nachricht in {{name}}. Standardmäßig aus, um dich nicht zu überfluten.",
+    "appSettings": "Alle App-Einstellungen"
+  },
   "search": {
     "tabTitle": "Suche",
     "title": "Mechaniker finden",
+    "allMechanicsTitle": "Alle Mechaniker",
     "placeholder": "Name des Mechanikers…",
     "emptyTitle": "Suche einen Mechaniker",
     "emptyDescription": "Gib mindestens {{min}} Zeichen des Namens ein.",
@@ -492,7 +509,6 @@
     "activityZoneLabel": "Tätigkeitsgebiet",
     "activityZonePlaceholder": "z.B.: Bayern, Nordrhein-Westfalen...",
     "phoneLabel": "Telefonnummer",
-    "phoneLabelOptional": "Telefonnummer (optional)",
     "phonePlaceholder": "z.B.: 0170 123 4567",
     "phoneHint": "Für den Transporteur nur sichtbar, nachdem er dich ausgewählt hat.",
     "companyLabel": "Firma",
@@ -501,11 +517,9 @@
     "emailPlaceholder": "z.B.: name@firma.de",
     "emailHint": "Auf deinem öffentlichen Profil sichtbar, wie die Spezialisierung.",
     "addressLabel": "Adresse",
-    "addressLabelOptional": "Adresse (optional)",
     "addressPlaceholder": "z. B. Depotstraße 12, Suceava",
     "addressHint": "Auf deinem öffentlichen Profil sichtbar — Geschäftsinformation.",
     "vatLabel": "USt-IdNr.",
-    "vatLabelOptional": "USt-IdNr. (optional)",
     "vatPlaceholder": "z. B. DE123456789",
     "errorPhoneRequired": "Die Telefonnummer ist erforderlich.",
     "errorPhoneInvalid": "Die Telefonnummer scheint ungültig zu sein.",
@@ -531,8 +545,8 @@
     "privacy": "Datenschutz"
   },
   "truck": {
-    "sectionToggleAdd": "+ LKW-Details hinzufügen (optional)",
-    "sectionToggleHide": "- LKW-Details ausblenden",
+    "sectionToggleAdd": "LKW-Details hinzufügen",
+    "sectionToggleHide": "LKW-Details ausblenden",
     "makeLabel": "Marke",
     "makePlaceholder": "z.B.: Volvo, DAF, MAN...",
     "modelLabel": "Modell",
@@ -544,7 +558,7 @@
     "savedTitle": "Meine Fahrzeuge",
     "addButton": "+ Fahrzeug hinzufügen",
     "emptyTrucks": "Noch keine Fahrzeuge gespeichert.",
-    "nicknameLabel": "Spitzname (optional)",
+    "nicknameLabel": "Spitzname",
     "nicknamePlaceholder": "z.B.: Mein Arbeitspferd",
     "addSheetTitle": "Fahrzeug hinzufügen",
     "editSheetTitle": "Fahrzeug bearbeiten",
@@ -559,7 +573,9 @@
     "selectSaved": "Gespeichertes Fahrzeug auswählen",
     "addNewInPicker": "Neues Fahrzeug hinzufügen",
     "plateLabel": "Kennzeichen",
-    "platePlaceholder": "z. B. B-AB 1234 (optional)"
+    "platePlaceholder": "z. B. B-AB 1234",
+    "chassisLabel": "Fahrgestellnummer (VIN)",
+    "chassisPlaceholder": "z. B. WDB9634031L123456"
   },
   "conversations": {
     "selectedCount": "{{count}} ausgewählt",
@@ -599,6 +615,10 @@
     "emptyFilteredDescription": "Vergrößere den Radius oder deaktiviere den Filter, um alle Anzeigen zu sehen"
   },
   "common": {
+    "exitTitle": "App beenden?",
+    "exitMessage": "Möchtest du TruckSOS wirklich verlassen?",
+    "exitConfirm": "Beenden",
+    "requiredNote": "Mit * markierte Felder sind Pflichtfelder",
     "loading": "Lädt...",
     "timeNow": "gerade eben",
     "timeMinsAgo": "vor {{count}} Min.",
@@ -769,7 +789,7 @@
     "editButton": "Bewertung ändern",
     "sheetTitle": "Mechaniker bewerten",
     "sheetTitleEdit": "Bewertung ändern",
-    "commentLabel": "Kommentar (optional)",
+    "commentLabel": "Kommentar",
     "commentPlaceholder": "Wie lief die Zusammenarbeit?",
     "anonymousHint": "Deine Bewertung erscheint anonym im Mechanikerprofil.",
     "saveButton": "Bewertung speichern",
@@ -898,7 +918,7 @@
     },
     "privacy": {
       "title": "Datenschutzerklärung",
-      "updated": "Zuletzt aktualisiert: 31. Juli 2026",
+      "updated": "Zuletzt aktualisiert: 7. August 2026",
       "sections": [
         {
           "heading": "1. Wer wir sind",
@@ -918,7 +938,7 @@
         },
         {
           "heading": "5. Moderation und administrativer Zugriff",
-          "body": "Du kannst Nachrichten oder Nutzer melden und jeden Nutzer blockieren. Administratoren haben KEINEN allgemeinen Zugriff auf deine privaten Konversationen: Sie sehen nur ein begrenztes Nachrichtenfenster um eine gemeldete Nachricht, und jeder solche Zugriff wird in einem Audit-Protokoll erfasst. Konten, die gegen die Regeln verstoßen, können gesperrt werden."
+          "body": "Du kannst Nachrichten oder Nutzer melden und jeden Nutzer blockieren. Administratoren haben KEINEN allgemeinen Zugriff auf deine privaten Konversationen: Sie sehen nur ein begrenztes Nachrichtenfenster um eine gemeldete Nachricht oder, bei einer Meldung gegen einen Nutzer, einen begrenzten Ausschnitt der Konversationen zwischen dem Meldenden und dem gemeldeten Nutzer. Jeder solche Zugriff wird in einem Audit-Protokoll erfasst. Konten, die gegen die Regeln verstoßen, können gesperrt werden."
         },
         {
           "heading": "6. Speicherdauer und Kontolöschung",

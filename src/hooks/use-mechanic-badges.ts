@@ -39,7 +39,9 @@ export function useFeedBadge(userId: string | undefined) {
     const { data } = await supabase
       .from('announcements')
       .select('id, created_at, latitude, longitude')
-      .eq('status', 'open');
+      .eq('status', 'open')
+      // Propriul anunț nu aprinde bulina (mecanicii pot posta și ei, 5 aug).
+      .neq('driver_id', userId);
     const list = (data ?? []) as unknown as {
       id: string;
       created_at: string;

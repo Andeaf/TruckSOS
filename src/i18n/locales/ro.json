@@ -57,7 +57,14 @@
       "actionViewUser": "Vezi utilizatorul",
       "deleteMsgConfirm": "Mesajul devine „șters de moderator” pentru toți. Continui?",
       "contextTitle": "Context conversație",
-      "contextEmpty": "Fără mesaje."
+      "contextEmpty": "Fără mesaje.",
+      "actionViewConversation": "Vezi conversația",
+      "conversationTitle": "Conversația raportor ↔ raportat",
+      "noConversation": "Nu există conversații între raportor și utilizatorul raportat.",
+      "convKind_announcement": "Depanare",
+      "convKind_market": "Market",
+      "convKind_direct": "Directă",
+      "attachmentOnly": "[Atașament]"
     },
     "users": {
       "title": "Utilizatori",
@@ -213,6 +220,7 @@
       "listTitle": "Anunțurile mele",
       "filterAll": "Toate",
       "filterActive": "Active",
+      "filterAccepted": "Acceptate",
       "filterResolved": "Rezolvate",
       "emptyTitle": "Niciun anunț încă",
       "emptyDescription": "Apasă + pentru a raporta o defecțiune",
@@ -222,14 +230,13 @@
       "descriptionLabel": "Descrierea problemei",
       "descriptionPlaceholder": "ex: Motor nu pornește, fum din motor, roatã spartã...",
       "submitButton": "Trimite anunțul",
-      "photosLabel": "Poze (opțional)",
+      "photosLabel": "Poze",
       "photosHint": "Atașează poze cu defecțiunea — vizibile mecanicilor.",
       "photosFailedTitle": "Poze neurcate",
       "photosFailedMessage": "Anunțul a fost publicat, dar {{count}} poză/poze nu s-au putut urca.",
       "errorDescription": "Descrie problema tehnicã.",
       "errorLocation": "Introdu locația.",
-      "coordsSectionTitle": "Coordonate GPS (opțional)",
-      "coordsRationale": "Completăm automat coordonatele din locația ta. Le poți edita manual.",
+      "coordsSectionTitle": "Coordonate GPS",
       "useMyLocation": "Folosește locația mea GPS",
       "latitudeLabel": "Latitudine",
       "longitudeLabel": "Longitudine",
@@ -279,8 +286,7 @@
       "deleteSelectedConfirmMessageWithOpen": "Mecanicii care au candidat vor fi respinși automat. Acțiunea nu poate fi anulată.",
       "deleteSelectedConfirmOk": "Da, șterge",
       "applicantsBadgeOne": "1 mecanic interesat! 👀",
-      "applicantsBadge": "{{count}} mecanici interesați! 👀",
-      "coordsMapHint": "Fără coordonate GPS, anunțul tău NU apare pe harta mecanicilor — va fi vizibil doar în lista lor de anunțuri."
+      "applicantsBadge": "{{count}} mecanici interesați! 👀"
     },
     "profile": {
       "phoneHint": "Vizibil mecanicului doar dacă aveți o conversație activă."
@@ -375,7 +381,7 @@
       "priceAmountLabel": "Suma",
       "priceAmountPlaceholder": "ex: 150",
       "currencyLabel": "Monedă",
-      "messageLabel": "Mesaj opțional",
+      "messageLabel": "Mesaj",
       "messagePlaceholder": "ex: Pot ajunge în 30 de minute...",
       "submitButton": "Trimite candidatura",
       "resubmitSheetTitle": "Modifică oferta",
@@ -395,7 +401,9 @@
       "pinCount_other": "{{count}} de anunțuri pe hartă",
       "missingCount_one": "{{count}} anunț fără locație",
       "missingCount_few": "{{count}} anunțuri fără locație",
-      "missingCount_other": "{{count}} de anunțuri fără locație"
+      "missingCount_other": "{{count}} de anunțuri fără locație",
+      "webBody": "Harta interactivă nu este disponibilă în browser. Anunțurile cu locație rămân vizibile în listă, în feed.",
+      "webCta": "Deschide feedul"
     }
   },
   "chat": {
@@ -415,6 +423,8 @@
     "deletedMessage": "Acest mesaj a fost șters",
     "deletedByModerator": "Șters de moderator",
     "unavailableMessage": "Mesaj indisponibil",
+    "newMessages": "Mesaje noi",
+    "callPeer": "Sună",
     "deleteConfirmTitle": "Ștergi mesajul?",
     "deleteConfirmBody": "Mesajul va fi șters pentru toți. Această acțiune nu poate fi anulată.",
     "edited": "editat",
@@ -438,7 +448,7 @@
       "scam": "Escrocherie / fraudă",
       "other": "Altceva"
     },
-    "detailsPlaceholder": "Detalii (opțional)",
+    "detailsPlaceholder": "Detalii",
     "submitButton": "Trimite raportul",
     "submitted": "Raportul a fost trimis. Îl vom analiza.",
     "submittedTitle": "Mulțumim",
@@ -470,9 +480,16 @@
     },
     "subtitle": "Discuții publice"
   },
+  "channelSettings": {
+    "title": "Setări canal",
+    "notifyLabel": "Notificări pentru mesaje noi",
+    "notifyHint": "Primești o notificare push pentru fiecare mesaj nou din {{name}}. Implicit sunt oprite, ca să nu te aglomerăm.",
+    "appSettings": "Toate setările aplicației"
+  },
   "search": {
     "tabTitle": "Căutare",
     "title": "Caută mecanici",
+    "allMechanicsTitle": "Toți mecanicii",
     "placeholder": "Numele mecanicului…",
     "emptyTitle": "Caută un mecanic",
     "emptyDescription": "Tastează cel puțin {{min}} caractere din numele mecanicului.",
@@ -505,6 +522,10 @@
     "emptyFilteredDescription": "Mărește raza sau dezactivează filtrul ca să vezi toate anunțurile"
   },
   "common": {
+    "exitTitle": "Închizi aplicația?",
+    "exitMessage": "Sigur vrei să ieși din TruckSOS?",
+    "exitConfirm": "Ieși",
+    "requiredNote": "Câmpurile marcate cu * sunt obligatorii",
     "loading": "Se încarcă...",
     "timeNow": "acum",
     "timeMinsAgo": "{{count}} min. în urmă",
@@ -652,7 +673,6 @@
     "activityZoneLabel": "Zonă de activitate",
     "activityZonePlaceholder": "ex: Moldova, Muntenia...",
     "phoneLabel": "Număr de telefon",
-    "phoneLabelOptional": "Număr de telefon (opțional)",
     "phonePlaceholder": "ex: 0722 123 456",
     "phoneHint": "Vizibil transportatorului doar după ce te-a ales.",
     "companyLabel": "Firma",
@@ -661,11 +681,9 @@
     "emailPlaceholder": "ex: nume@firma.ro",
     "emailHint": "Vizibil în profilul tău public, la fel ca specializarea.",
     "addressLabel": "Adresă",
-    "addressLabelOptional": "Adresă (opțional)",
     "addressPlaceholder": "ex: Str. Depoului 12, Suceava",
     "addressHint": "Vizibilă în profilul tău public — informație de business.",
     "vatLabel": "Număr TVA / CUI",
-    "vatLabelOptional": "Număr TVA / CUI (opțional)",
     "vatPlaceholder": "ex: RO12345678",
     "errorPhoneRequired": "Numărul de telefon este obligatoriu.",
     "errorPhoneInvalid": "Numărul de telefon nu pare valid.",
@@ -691,8 +709,8 @@
     "privacy": "Confidențialitate"
   },
   "truck": {
-    "sectionToggleAdd": "+ Adaugă detalii camion (opțional)",
-    "sectionToggleHide": "- Ascunde detalii camion",
+    "sectionToggleAdd": "Adaugă detalii camion",
+    "sectionToggleHide": "Ascunde detalii camion",
     "makeLabel": "Marcă",
     "makePlaceholder": "ex: Volvo, DAF, MAN...",
     "modelLabel": "Model",
@@ -704,7 +722,7 @@
     "savedTitle": "Camioanele mele",
     "addButton": "+ Adaugă camion",
     "emptyTrucks": "Nu ai niciun camion salvat.",
-    "nicknameLabel": "Poreclă (opțional)",
+    "nicknameLabel": "Poreclă",
     "nicknamePlaceholder": "ex: Capul meu de pod",
     "addSheetTitle": "Adaugă camion",
     "editSheetTitle": "Editează camion",
@@ -719,7 +737,9 @@
     "selectSaved": "Selectează camion salvat",
     "addNewInPicker": "Adaugă camion nou",
     "plateLabel": "Număr de înmatriculare",
-    "platePlaceholder": "ex. B 123 ABC (opțional)"
+    "platePlaceholder": "ex. B 123 ABC",
+    "chassisLabel": "Serie șasiu (VIN)",
+    "chassisPlaceholder": "ex. WDB9634031L123456"
   },
   "conversations": {
     "selectedCount": "{{count}} selectate",
@@ -771,7 +791,7 @@
     "editButton": "Modifică evaluarea",
     "sheetTitle": "Evaluează mecanicul",
     "sheetTitleEdit": "Modifică evaluarea",
-    "commentLabel": "Comentariu (opțional)",
+    "commentLabel": "Comentariu",
     "commentPlaceholder": "Cum a decurs colaborarea?",
     "anonymousHint": "Evaluarea apare anonim pe profilul mecanicului.",
     "saveButton": "Salvează evaluarea",
@@ -900,7 +920,7 @@
     },
     "privacy": {
       "title": "Politica de confidențialitate",
-      "updated": "Ultima actualizare: 31 iulie 2026",
+      "updated": "Ultima actualizare: 7 august 2026",
       "sections": [
         {
           "heading": "1. Cine suntem",
@@ -920,7 +940,7 @@
         },
         {
           "heading": "5. Moderare și acces administrativ",
-          "body": "Poți raporta mesaje sau utilizatori și poți bloca orice utilizator. Administratorii NU au acces general la conversațiile tale private: pot vedea doar o fereastră limitată de mesaje din jurul unui mesaj raportat, iar fiecare astfel de acces este înregistrat într-un jurnal de audit. Conturile care încalcă regulile pot fi suspendate."
+          "body": "Poți raporta mesaje sau utilizatori și poți bloca orice utilizator. Administratorii NU au acces general la conversațiile tale private: pot vedea doar o fereastră limitată de mesaje din jurul unui mesaj raportat sau, în cazul unui raport împotriva unui utilizator, o fereastră limitată din conversațiile dintre raportor și utilizatorul raportat. Fiecare astfel de acces este înregistrat într-un jurnal de audit. Conturile care încalcă regulile pot fi suspendate."
         },
         {
           "heading": "6. Cât păstrăm datele și cum îți ștergi contul",

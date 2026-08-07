@@ -17,9 +17,12 @@ export interface AvatarProps {
   url?: string;
   name?: string | null;
   size?: number;
+  /** Fundal explicit pentru inițiale (chatul de grup: culoarea stabilă a userului,
+   * derivată din id — aceeași cu numele din bulă). Fără el: derivat din nume. */
+  color?: string;
 }
 
-export function Avatar({ url, name, size = 40 }: AvatarProps) {
+export function Avatar({ url, name, size = 40, color }: AvatarProps) {
   const dimensions = { width: size, height: size, borderRadius: Radius.circle };
 
   if (url) {
@@ -35,7 +38,7 @@ export function Avatar({ url, name, size = 40 }: AvatarProps) {
   }
 
   return (
-    <View style={[styles.fallback, dimensions, { backgroundColor: colorFor(name) }]}>
+    <View style={[styles.fallback, dimensions, { backgroundColor: color ?? colorFor(name) }]}>
       <Text style={[styles.initials, { fontSize: size * 0.4 }]}>{initials(name)}</Text>
     </View>
   );
@@ -59,5 +62,5 @@ function colorFor(name?: string | null): string {
 
 const styles = StyleSheet.create({
   fallback: { alignItems: 'center', justifyContent: 'center' },
-  initials: { color: '#FFFFFF', fontWeight: '600' },
+  initials: { color: '#FFFFFF', fontWeight: '800' },
 });

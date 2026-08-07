@@ -8,9 +8,20 @@ import { useTheme } from '@/hooks/use-theme';
 interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
+  /** Câmp obligatoriu — adaugă „*" roșu după etichetă (convenția din toată aplicația). */
+  required?: boolean;
 }
 
-export function Input({ label, error, style, secureTextEntry, ...rest }: InputProps) {
+/**
+ * Asteriscul de câmp obligatoriu, pentru etichetele care NU trec prin <Input>
+ * (sheet-urile cu TextInput propriu, titluri de secțiune). Se pune ÎN interiorul
+ * textului etichetei ca să curgă pe același rând.
+ */
+export function RequiredMark() {
+  return <Text style={styles.requiredMark}> *</Text>;
+}
+
+export function Input({ label, error, required, style, secureTextEntry, ...rest }: InputProps) {
   // `useTheme` (nu `useColorScheme`): culorile trebuie să urmeze preferința din
   // Setări, nu tema sistemului — altfel câmpurile rămân negre pe temă deschisă.
   const colors = useTheme();
@@ -19,7 +30,12 @@ export function Input({ label, error, style, secureTextEntry, ...rest }: InputPr
 
   return (
     <View style={styles.container}>
-      {label ? <Text style={[styles.label, { color: colors.textSecondary }]}>{label}</Text> : null}
+      {label ? (
+        <Text style={[styles.label, { color: colors.textSecondary }]}>
+          {label}
+          {required ? <RequiredMark /> : null}
+        </Text>
+      ) : null}
       <View>
         <TextInput
           style={[
@@ -63,6 +79,9 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  requiredMark: {
+    color: '#ef4444',
   },
   input: {
     height: 50,

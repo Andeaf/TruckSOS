@@ -121,6 +121,7 @@ export default function RegisterScreen() {
                   maxLength={6}
                   autoComplete="one-time-code"
                   textContentType="oneTimeCode"
+                  required
                 />
 
                 {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
@@ -171,6 +172,7 @@ export default function RegisterScreen() {
               placeholder={t('auth.register.namePlaceholder')}
               autoCapitalize="words"
               autoComplete="name"
+              required
             />
             <Input
               label={t('auth.register.emailLabel')}
@@ -180,6 +182,7 @@ export default function RegisterScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
+              required
             />
             <Input
               label={t('auth.register.passwordLabel')}
@@ -187,6 +190,7 @@ export default function RegisterScreen() {
               onChangeText={setPassword}
               placeholder={t('auth.register.passwordPlaceholder')}
               secureTextEntry
+              required
             />
             <Input
               label={t('auth.register.confirmPasswordLabel')}
@@ -194,6 +198,7 @@ export default function RegisterScreen() {
               onChangeText={setConfirmPassword}
               placeholder={t('auth.register.passwordPlaceholder')}
               secureTextEntry
+              required
             />
 
             {error ? (
@@ -201,6 +206,10 @@ export default function RegisterScreen() {
             ) : null}
 
             <Button title={t('auth.register.button')} onPress={handleSignUp} loading={loading} />
+
+            <ThemedText themeColor="textSecondary" style={styles.requiredNote}>
+              {t('common.requiredNote')}
+            </ThemedText>
           </View>
 
           <View style={styles.footer}>
@@ -248,4 +257,5 @@ const styles = StyleSheet.create({
   codeForm: { alignSelf: 'stretch', gap: Spacing.three },
   dimmed: { opacity: 0.5 },
   spamHint: { fontSize: 13, textAlign: 'center' },
+  requiredNote: { fontSize: 13, textAlign: 'center' },
 });

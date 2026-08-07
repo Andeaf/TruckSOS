@@ -21,6 +21,9 @@ export interface SheetAction {
   label: string;
   icon: keyof typeof MaterialIcons.glyphMap;
   destructive?: boolean;
+  /** Opțiunea activă într-un meniu de tip „alege una" (ex. sortarea din Market):
+   * etichetă pe brand + bifă la capătul rândului. */
+  selected?: boolean;
   onPress: () => void;
 }
 
@@ -97,11 +100,19 @@ export function ActionSheet({ visible, title, actions, onClose }: ActionSheetPro
               <MaterialIcons
                 name={action.icon}
                 size={20}
-                color={action.destructive ? '#ef4444' : theme.text}
+                color={action.destructive ? '#ef4444' : action.selected ? theme.brand : theme.text}
               />
-              <ThemedText style={action.destructive ? styles.destructive : undefined}>
+              <ThemedText
+                style={[
+                  action.destructive ? styles.destructive : null,
+                  action.selected ? { color: theme.brand, fontWeight: '600' } : null,
+                  styles.rowLabel,
+                ]}>
                 {action.label}
               </ThemedText>
+              {action.selected ? (
+                <MaterialIcons name="check" size={20} color={theme.brand} />
+              ) : null}
             </Pressable>
           ))}
         </View>
@@ -131,5 +142,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.three,
   },
+  rowLabel: { flex: 1 },
   destructive: { color: '#ef4444' },
 });

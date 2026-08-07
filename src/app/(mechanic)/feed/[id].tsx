@@ -155,6 +155,15 @@ export default function MechanicAnnouncementDetailScreen() {
         fetchOpenAnnouncementById(id),
         fetchMyApplicationForAnnouncement(id),
       ]);
+      // Anunțul PROPRIU (mecanicii pot posta, 5 aug — ex. deschis dintr-un share):
+      // vederea de candidat n-are sens pe el → sări la detaliul de proprietar.
+      if (ann && session?.user.id && ann.driver_id === session.user.id) {
+        router.replace({
+          pathname: '/(mechanic)/feed/mine/[id]' as never,
+          params: { id },
+        });
+        return;
+      }
       setAnnouncement(ann);
       setMyApplication(app);
     } finally {
@@ -285,7 +294,7 @@ export default function MechanicAnnouncementDetailScreen() {
           ) : null}
         </ThemedView>
 
-        {truckInfo || announcement.plate_number ? (
+        {truckInfo || announcement.plate_number || announcement.chassis_number ? (
           <ThemedView type="backgroundElement" style={styles.section}>
             <View style={styles.sectionHeader}>
               <MaterialIcons name="local-shipping" size={16} color="#22c55e" />
@@ -295,6 +304,11 @@ export default function MechanicAnnouncementDetailScreen() {
             {announcement.plate_number ? (
               <ThemedText themeColor="textSecondary" type="small">
                 {t('truck.plateLabel')}: {announcement.plate_number}
+              </ThemedText>
+            ) : null}
+            {announcement.chassis_number ? (
+              <ThemedText themeColor="textSecondary" type="small">
+                {t('truck.chassisLabel')}: {announcement.chassis_number}
               </ThemedText>
             ) : null}
           </ThemedView>

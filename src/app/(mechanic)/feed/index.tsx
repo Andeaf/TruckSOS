@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -11,14 +13,25 @@ import { RadiusFilterMenu } from '@/components/radius-filter-menu';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { FilterChips } from '@/components/ui/filter-chips';
 import { Input } from '@/components/ui/input';
-import { Spacing } from '@/constants/theme';
+import {
+  HeaderGradient,
+  HeaderGradientDirection,
+  Radius,
+  Shadows,
+  Spacing,
+} from '@/constants/theme';
+import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import {
+  useMyAnnouncements,
   useOpenAnnouncements,
   fetchPendingApplicationAnnouncementIds,
+  fetchPendingApplicationCounts,
   fetchRejectedAnnouncementIds,
+  type AnnouncementWithDriver,
 } from '@/hooks/use-announcements';
 import { applyRadiusFilter, useRadiusFilter } from '@/hooks/use-radius-filter';
 import { useViewedAnnouncements } from '@/hooks/use-viewed-announcements';
@@ -27,12 +40,21 @@ import { matchesSearch } from '@/lib/search';
 
 const VIEW_MODE_KEY = 'mechanic_feed_view_mode';
 type ViewMode = 'compact' | 'extended';
+type StatusFilter = 'all' | 'active' | 'accepted' | 'resolved';
 
 export default function MechanicFeedScreen() {
   const { profile, session } = useAuth();
   const { t } = useTranslation();
   const theme = useTheme();
-  const { announcements, loading, refresh } = useOpenAnnouncements();
+  const scheme = useResolvedScheme();
+  const insets = useSafeAreaInsets();
+  // Feedul altora (doar `open`; propriile se exclud — vin separat, cu toate statusurile).
+  const { announcements, loading, refresh } = useOpenAnnouncements(session?.user.id);
+  // Anunțurile PROPRII (decizie 5 aug, rev. 2): fără pagină separată — stau în capul
+  // listei, iar „+" postează direct de aici, exact ca la transportatori.
+  const { announcements: myAnnouncements, refresh: refreshMine } = useMyAnnouncements();
+  const [applicantCounts, setApplicantCounts] = useState<Record<string, number>>({});
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const router = useRouter();
   const [viewMode, setViewMode] = useState<ViewMode>('extended');
   const [rejectedIds, setRejectedIds] = useState<Set<string>>(new Set());
@@ -48,14 +70,30 @@ export default function MechanicFeedScreen() {
     [announcements, radiusKm, coords]
   );
 
+  // Lista finală: PROPRIILE anunțuri primele (scutite de filtrul de rază — sunt de
+  // gestionat, nu de găsit), apoi feedul altora. Chips-urile de status se aplică
+  // peste tot: ale altora sunt mereu `open`, deci apar doar la Toate/Active;
+  // Acceptate/Rezolvate rămân practic vederile propriilor anunțuri.
+  const merged = useMemo<AnnouncementWithDriver[]>(() => {
+    const mineFiltered = myAnnouncements.filter((a) => {
+      if (statusFilter === 'active') return a.status === 'open';
+      if (statusFilter === 'accepted') return a.status === 'accepted';
+      if (statusFilter === 'resolved') return a.status === 'resolved';
+      return true;
+    });
+    const mineWithDriver = mineFiltered.map((a) => ({ ...a, driver: null }));
+    const others = statusFilter === 'all' || statusFilter === 'active' ? filtered : [];
+    return [...mineWithDriver, ...others];
+  }, [myAnnouncements, statusFilter, filtered]);
+
   // Căutarea filtrează local peste lista deja filtrată de rază (toate anunțurile
   // deschise sunt oricum în memorie) — instant, fără query-uri suplimentare.
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
   const searchActive = searchOpen && query.trim().length > 0;
   const visible = useMemo(() => {
-    if (!searchActive) return filtered;
-    return filtered.filter((a) =>
+    if (!searchActive) return merged;
+    return merged.filter((a) =>
       matchesSearch(query, [
         a.driver?.full_name,
         a.location,
@@ -65,7 +103,7 @@ export default function MechanicFeedScreen() {
         a.plate_number,
       ])
     );
-  }, [filtered, searchActive, query]);
+  }, [merged, searchActive, query]);
 
   function toggleSearch() {
     setSearchOpen((prev) => {
@@ -91,6 +129,7 @@ export default function MechanicFeedScreen() {
   useFocusEffect(
     useCallback(() => {
       refresh();
+      refreshMine();
       // La întoarcerea din detaliu, anunțul tocmai deschis nu mai e „Nou".
       refreshViewed();
       // Poziția pentru filtrul de rază — throttle intern, nu interoghează GPS-ul mereu.
@@ -99,8 +138,14 @@ export default function MechanicFeedScreen() {
         fetchRejectedAnnouncementIds(session.user.id).then(setRejectedIds);
         fetchPendingApplicationAnnouncementIds(session.user.id).then(setAppliedIds);
       }
-    }, [refresh, refreshViewed, refreshCoords, session?.user.id])
+    }, [refresh, refreshMine, refreshViewed, refreshCoords, session?.user.id])
   );
+
+  // Ofertele în așteptare la anunțurile PROPRII (bulina de pe card, ca la șofer).
+  useEffect(() => {
+    const openIds = myAnnouncements.filter((a) => a.status === 'open').map((a) => a.id);
+    fetchPendingApplicationCounts(openIds).then(setApplicantCounts);
+  }, [myAnnouncements]);
 
   // Pull-to-refresh separat de load-ul programatic: pe iOS, `refreshing=true` setat
   // programatic (la fiecare focus) inserează insetul spinner-ului, care uneori rămâne
@@ -108,9 +153,9 @@ export default function MechanicFeedScreen() {
   const [pullRefreshing, setPullRefreshing] = useState(false);
   const onPullRefresh = useCallback(async () => {
     setPullRefreshing(true);
-    await refresh();
+    await Promise.all([refresh(), refreshMine()]);
     setPullRefreshing(false);
-  }, [refresh]);
+  }, [refresh, refreshMine]);
 
   return (
     <ThemedView style={styles.container}>
@@ -121,6 +166,20 @@ export default function MechanicFeedScreen() {
         subtitle={profile?.full_name}
         right={<RadiusFilterMenu />}
         profileButton
+      />
+
+      {/* Filtrele de status (5 aug, rev. 2 — fără pagină separată „Ale mele"):
+          aceleași 4 chips ca la transportatori; ale altora sunt mereu `open`,
+          deci Acceptate/Rezolvate arată propriile anunțuri. */}
+      <FilterChips
+        options={[
+          { key: 'all', label: t('driver.announcements.filterAll') },
+          { key: 'active', label: t('driver.announcements.filterActive') },
+          { key: 'accepted', label: t('driver.announcements.filterAccepted') },
+          { key: 'resolved', label: t('driver.announcements.filterResolved') },
+        ]}
+        value={statusFilter}
+        onChange={setStatusFilter}
       />
 
       {/* Raza e setată, dar n-avem poziția (permisiune refuzată / GPS indisponibil):
@@ -182,29 +241,35 @@ export default function MechanicFeedScreen() {
         ItemSeparatorComponent={() => <View style={viewMode === 'compact' ? styles.separatorCompact : styles.separator} />}
         refreshing={pullRefreshing}
         onRefresh={onPullRefresh}
-        renderItem={({ item }) => (
-          <AnnouncementCard
-            announcement={item}
-            driverName={item.driver?.full_name}
-            compact={viewMode === 'compact'}
-            rejectedByUser={rejectedIds.has(item.id)}
-            appliedByUser={appliedIds.has(item.id)}
-            isNew={!viewed.has(item.id)}
-            distanceKm={
-              !filterActive
-                ? undefined
-                : item.latitude == null || item.longitude == null
-                  ? null
-                  : distanceKm(coords.latitude, coords.longitude, item.latitude, item.longitude)
-            }
-            onPress={() =>
-              router.push({
-                pathname: '/(mechanic)/feed/[id]',
-                params: { id: item.id },
-              })
-            }
-          />
-        )}
+        renderItem={({ item }) => {
+          // Propriul anunț: fără nume de autor / distanță / „Nou" — în schimb are
+          // bulina de oferte și duce la detaliul de PROPRIETAR, nu la cel de ofertant.
+          const isMine = item.driver_id === session?.user.id;
+          return (
+            <AnnouncementCard
+              announcement={item}
+              driverName={isMine ? undefined : item.driver?.full_name}
+              applicantCount={isMine ? (applicantCounts[item.id] ?? 0) : undefined}
+              compact={viewMode === 'compact'}
+              rejectedByUser={!isMine && rejectedIds.has(item.id)}
+              appliedByUser={!isMine && appliedIds.has(item.id)}
+              isNew={!isMine && !viewed.has(item.id)}
+              distanceKm={
+                isMine || !filterActive
+                  ? undefined
+                  : item.latitude == null || item.longitude == null
+                    ? null
+                    : distanceKm(coords.latitude, coords.longitude, item.latitude, item.longitude)
+              }
+              onPress={() =>
+                router.push({
+                  pathname: (isMine ? '/(mechanic)/feed/mine/[id]' : '/(mechanic)/feed/[id]') as never,
+                  params: { id: item.id },
+                })
+              }
+            />
+          );
+        }}
         ListEmptyComponent={
           !loading ? (
             searchActive ? (
@@ -231,6 +296,23 @@ export default function MechanicFeedScreen() {
           ) : null
         }
       />
+
+      {/* FAB de postare direct pe feed (5 aug, rev. 2) — identic cu al șoferului. */}
+      <Pressable
+        style={({ pressed }) => [
+          styles.fab,
+          { bottom: insets.bottom + Spacing.three },
+          pressed && styles.fabPressed,
+        ]}
+        onPress={() => router.push('/(mechanic)/feed/mine/new' as never)}>
+        <LinearGradient
+          colors={HeaderGradient[scheme]}
+          start={HeaderGradientDirection.start}
+          end={HeaderGradientDirection.end}
+          style={styles.fabGradient}>
+          <MaterialIcons name="add" size={30} color="#fff" />
+        </LinearGradient>
+      </Pressable>
     </ThemedView>
   );
 }
@@ -270,4 +352,20 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
   },
   locationBannerText: { flex: 1 },
+  // FAB squircle 58×58 cu gradientul principal — copiat 1:1 din lista șoferului.
+  fab: {
+    position: 'absolute',
+    right: 18,
+    width: 58,
+    height: 58,
+    borderRadius: Radius.fab,
+    ...Shadows.fab,
+  },
+  fabPressed: { opacity: 0.85 },
+  fabGradient: {
+    flex: 1,
+    borderRadius: Radius.fab,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });

@@ -83,6 +83,8 @@ export interface Announcement {
   truck_model: string | null;
   truck_year: number | null;
   plate_number: string | null;
+  /** Seria de șasiu (VIN) — obligatorie la anunțuri NOI (client-side); NULL istoric. */
+  chassis_number: string | null;
   latitude: number | null;
   longitude: number | null;
   /** Soft-delete DOAR pentru ecranul de Istoric; anunțul rămâne în DB (Faza 9.3). */
@@ -161,12 +163,15 @@ export interface Application {
 
 export interface Truck {
   id: string;
+  /** Proprietarul camionului (istoric „driver", dar orice rol poate salva camioane). */
   driver_id: string;
   make: string;
   model: string;
   year: number;
   nickname: string | null;
   plate_number: string | null;
+  /** Seria de șasiu (VIN) — opțională pe camioanele salvate. */
+  chassis_number: string | null;
   created_at: string;
 }
 
@@ -283,6 +288,7 @@ export interface Database {
           truck_model?: string | null;
           truck_year?: number | null;
           plate_number?: string | null;
+          chassis_number?: string | null;
           latitude?: number | null;
           longitude?: number | null;
         };
@@ -317,7 +323,9 @@ export interface Database {
       trucks: {
         Row: Truck;
         Insert: Omit<Truck, 'id' | 'created_at'>;
-        Update: Partial<Pick<Truck, 'make' | 'model' | 'year' | 'nickname' | 'plate_number'>>;
+        Update: Partial<
+          Pick<Truck, 'make' | 'model' | 'year' | 'nickname' | 'plate_number' | 'chassis_number'>
+        >;
       };
       conversation_deletions: {
         Row: { conversation_id: string; user_id: string; deleted_at: string };

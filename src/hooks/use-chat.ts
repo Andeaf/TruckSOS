@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { AppState } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
-import { hasChatV14, replyEmbed } from '@/lib/chat-schema';
+import { fetchReplyEmbed, hasChatV14, replyEmbed, type ReplyEmbedRow } from '@/lib/chat-schema';
 import { emitReadsChanged, onReadsChanged } from '@/lib/read-events';
+import { dismissThreadNotifications } from '@/lib/push';
 import { uploadFile, uploadPhoto, type PickedFile } from '@/lib/storage';
 import type { PickedImage } from '@/lib/media';
 import type { Announcement, Conversation, Message, PublicUser, Role } from '@/types/database';
@@ -178,9 +179,18 @@ export function useMessages(conversationId: string) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Adds a message only if not already present (deduplicates Realtime vs optimistic)
+  // Adaugă un mesaj; la id duplicat ÎMBINĂ rândurile în loc să-l ignore pe al doilea.
+  // Cursa Realtime vs. optimist: dacă evenimentul Realtime (rând brut) sosea înaintea
+  // răspunsului la INSERT, varianta completă (cu embed-uri) venea a doua și era
+  // aruncată — propriul reply rămânea pe „Mesaj indisponibil".
   const addMessage = useCallback((msg: Message) => {
-    setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+    setMessages((prev) => {
+      const at = prev.findIndex((m) => m.id === msg.id);
+      if (at === -1) return [...prev, msg];
+      const next = prev.slice();
+      next[at] = { ...next[at], ...msg };
+      return next;
+    });
   }, []);
 
   // Actualizare locală optimistă (tombstone/editare), înainte ca UPDATE-ul Realtime să sosească.
@@ -195,7 +205,7 @@ export function useMessages(conversationId: string) {
       const v14 = await hasChatV14();
       const { data } = await supabase
         .from('messages')
-        .select('*' + (v14 ? replyEmbed('messages') : '') + MESSAGE_ATTACH_EMBEDS)
+        .select('*' + (v14 ? replyEmbed() : '') + MESSAGE_ATTACH_EMBEDS)
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
       if (active) {
@@ -221,6 +231,7 @@ export function useMessages(conversationId: string) {
         async (payload) => {
           if (!active) return;
           const incoming = payload.new as Message & {
+            reply_to?: ReplyEmbedRow | null;
             listing?: MessageListingContext | null;
             mechanic?: MessageMechanicContext | null;
             announcement?: MessageAnnouncementContext | null;
@@ -241,6 +252,13 @@ export function useMessages(conversationId: string) {
             const announcement = await fetchMessageAnnouncementContext(incoming.announcement_id);
             if (!active) return;
             incoming.announcement = announcement;
+          }
+          // Faza 14: nici citatul nu vine în payload — fără hidratare, reply-urile
+          // primite live afișau „Mesaj indisponibil" deși originalul există.
+          if (incoming.reply_to_id) {
+            const quoted = await fetchReplyEmbed('messages', incoming.reply_to_id);
+            if (!active) return;
+            incoming.reply_to = quoted;
           }
           // Deduplicates: own messages added optimistically have the same ID
           setMessages((prev) =>
@@ -357,7 +375,7 @@ export async function sendMessage(
     .from('messages')
     .insert(row as never)
     // Returnăm și citatul + contextele, ca bula proprie să le afișeze instant (optimist).
-    .select('*' + (v14 ? replyEmbed('messages') : '') + MESSAGE_ATTACH_EMBEDS)
+    .select('*' + (v14 ? replyEmbed() : '') + MESSAGE_ATTACH_EMBEDS)
     .single();
   return { message: (data as unknown as Message) ?? null, error: error?.message ?? null };
 }
@@ -388,7 +406,7 @@ export async function sendFileMessage(
       file_name: file.name,
       file_size: file.size,
     } as never)
-    .select('*' + (v14 ? replyEmbed('messages') : '') + MESSAGE_ATTACH_EMBEDS)
+    .select('*' + (v14 ? replyEmbed() : '') + MESSAGE_ATTACH_EMBEDS)
     .single();
   return { message: (data as unknown as Message) ?? null, error: insertError?.message ?? null };
 }
@@ -458,6 +476,37 @@ function readCursorValue(newestCreatedAt?: string | null): string {
   return new Date().toISOString();
 }
 
+/**
+ * Cursorul MEU de citire pe o conversație — „înghețat" de ecran la deschidere, ÎNAINTE
+ * de primul markConversationRead (care l-ar muta la zi și ar face orice mesaj să pară
+ * citit). Decide ancora „Mesaje noi" (cerere 7 aug). `null` = niciodată deschisă.
+ */
+export async function fetchMyReadCursor(conversationId: string): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) return null;
+  const { data } = await supabase
+    .from('message_reads')
+    .select('last_read_at')
+    .eq('conversation_id', conversationId)
+    .eq('user_id', session.user.id)
+    .maybeSingle();
+  return (data as unknown as { last_read_at: string } | null)?.last_read_at ?? null;
+}
+
+/**
+ * Telefonul interlocutorului, prin RPC-ul potrivit ROLULUI lui (7 aug — butonul de apel
+ * din antetul conversației). Serverul decide accesul (conversație non-market comună,
+ * fără blocaj, rol corect — vezi migrarea 196 §3): `null` = fără buton, nu eroare.
+ * Adminul trece de verificarea de rol din get_mechanic_phone.
+ */
+export async function fetchPeerPhone(peerId: string, peerRole: Role): Promise<string | null> {
+  const { data } =
+    peerRole === 'driver'
+      ? await supabase.rpc('get_driver_phone', { p_driver_id: peerId } as never)
+      : await supabase.rpc('get_mechanic_phone', { p_mechanic_id: peerId } as never);
+  return (data as unknown as string | null) ?? null;
+}
+
 export async function markConversationRead(
   conversationId: string,
   newestCreatedAt?: string | null
@@ -471,6 +520,8 @@ export async function markConversationRead(
       { onConflict: 'conversation_id,user_id' }
     );
   emitReadsChanged();
+  // Mesajele au fost văzute → celula lor dispare din bara de notificări (7 aug).
+  void dismissThreadNotifications('conversation', conversationId);
 }
 
 /**

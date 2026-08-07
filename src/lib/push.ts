@@ -18,11 +18,14 @@ import { supabase } from '@/lib/supabase';
 
 /** Datele pe care le trimite serverul, ca tapul să deschidă ecranul potrivit. */
 export interface PushData {
-  type?: 'conversation' | 'announcement' | 'application' | 'feed';
+  type?: 'conversation' | 'announcement' | 'application' | 'feed' | 'channel';
   id?: string;
 }
 
 export function pushAvailable(): boolean {
+  // Web (7 aug): push-ul Expo nu are transport în browser — totul rămâne oprit elegant
+  // (fără token, fără listeners); badge-urile in-app merg oricum prin Realtime.
+  if (Platform.OS === 'web') return false;
   // Emulatoarele n-au servicii Google → nu pot primi token.
   if (!Device.isDevice) return false;
   return Constants.executionEnvironment !== ExecutionEnvironment.StoreClient;
@@ -88,12 +91,45 @@ export async function registerPushToken(userId: string): Promise<string | null> 
     // Supabase NU aruncă la eșec (întoarce {error}) — netratat, tokenul ar părea
     // înregistrat deși n-a intrat în DB (bug găsit 22 iul: RPC-ul lipsea din Studio).
     const { error } = await supabase.rpc('claim_push_token', { p_token: token } as never);
-    if (error) return null;
+    if (error) {
+      console.warn('[push] claim_push_token a eșuat:', error.message);
+      return null;
+    }
 
     return token;
-  } catch {
+  } catch (e) {
     // Push-ul e un plus, nu o funcție critică: o eroare aici nu blochează login-ul.
+    // Logăm totuși (adb logcat / consola dev): FIS_AUTH_ERROR pe buildul din Play
+    // e altfel complet invizibil — tokenul lipsește tăcut din push_tokens.
+    console.warn('[push] înregistrarea tokenului a eșuat:', e);
     return null;
+  }
+}
+
+/**
+ * Șterge din bara de notificări celula conversației/canalului tocmai citit
+ * (7 aug: „dacă intru pe conversație și văd mesajele, notificarea dispare").
+ * Serverul grupează push-urile pe fir prin `tag`/`collapseId`; aici filtrăm după
+ * `data` (type + id), ca să prindem și notificările vechi, dinainte de tag.
+ */
+export async function dismissThreadNotifications(
+  type: 'conversation' | 'channel',
+  id: string
+): Promise<void> {
+  if (!pushAvailable()) return;
+  try {
+    const Notifications = getNotifications();
+    const presented = await Notifications.getPresentedNotificationsAsync();
+    await Promise.all(
+      presented
+        .filter((n) => {
+          const data = n.request.content.data as PushData | undefined;
+          return data?.type === type && data?.id === id;
+        })
+        .map((n) => Notifications.dismissNotificationAsync(n.request.identifier))
+    );
+  } catch {
+    // Curățenie best-effort — nu blocăm mark-read-ul pentru asta.
   }
 }
 

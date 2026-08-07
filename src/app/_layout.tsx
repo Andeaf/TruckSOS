@@ -7,6 +7,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
+// Efect secundar, doar web: Alert.alert e no-op în react-native-web — fără shim,
+// erorile și confirmările erau invizibile în browser (vezi lib/web-alert.ts).
+import '@/lib/web-alert';
 import { BlockedProvider } from '@/hooks/use-blocked';
 import { useLangSync } from '@/hooks/use-lang-sync';
 import { usePushNavigation } from '@/hooks/use-push-navigation';

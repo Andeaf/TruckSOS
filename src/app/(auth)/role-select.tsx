@@ -169,6 +169,7 @@ export default function RoleSelectScreen() {
             onChangeText={setPhone}
             placeholder={t('profile.phonePlaceholder')}
             keyboardType="phone-pad"
+            required
           />
 
           {role === 'mechanic' ? (
@@ -179,6 +180,7 @@ export default function RoleSelectScreen() {
                 onChangeText={setAddress}
                 placeholder={t('profile.addressPlaceholder')}
                 autoCapitalize="sentences"
+                required
               />
               <Input
                 label={t('profile.vatLabel')}
@@ -187,6 +189,7 @@ export default function RoleSelectScreen() {
                 placeholder={t('profile.vatPlaceholder')}
                 autoCapitalize="characters"
                 autoCorrect={false}
+                required
               />
               <ThemedText themeColor="textSecondary" type="small">
                 {t('auth.roleSelect.mechanicFieldsHint')}
@@ -201,6 +204,10 @@ export default function RoleSelectScreen() {
             onPress={handleContinue}
             loading={loading}
           />
+
+          <ThemedText themeColor="textSecondary" type="small" style={styles.requiredNote}>
+            {t('common.requiredNote')}
+          </ThemedText>
         </ScrollView>
       </KeyboardAvoidingView>
     </ThemedView>
@@ -249,4 +256,5 @@ const styles = StyleSheet.create({
   },
   roleChipLabel: { flex: 1 },
   error: { color: '#ef4444', textAlign: 'center' },
+  requiredNote: { textAlign: 'center' },
 });

@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
+import { RequiredMark } from '@/components/ui/input';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -22,13 +23,17 @@ const CURRENT_YEAR = new Date().getFullYear();
 
 interface TruckFormSheetProps {
   visible: boolean;
-  initialData?: Pick<Truck, 'id' | 'make' | 'model' | 'year' | 'nickname' | 'plate_number'>;
+  initialData?: Pick<
+    Truck,
+    'id' | 'make' | 'model' | 'year' | 'nickname' | 'plate_number' | 'chassis_number'
+  >;
   onSave: (data: {
     make: string;
     model: string;
     year: number;
     nickname: string | null;
     plate_number: string | null;
+    chassis_number: string | null;
   }) => Promise<void>;
   onClose: () => void;
 }
@@ -42,6 +47,7 @@ export function TruckFormSheet({ visible, initialData, onSave, onClose }: TruckF
   const [yearStr, setYearStr] = useState('');
   const [nickname, setNickname] = useState('');
   const [plateNumber, setPlateNumber] = useState('');
+  const [chassisNumber, setChassisNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -52,6 +58,7 @@ export function TruckFormSheet({ visible, initialData, onSave, onClose }: TruckF
       setYearStr(initialData?.year ? String(initialData.year) : '');
       setNickname(initialData?.nickname ?? '');
       setPlateNumber(initialData?.plate_number ?? '');
+      setChassisNumber(initialData?.chassis_number ?? '');
       setError('');
     }
   }, [visible, initialData]);
@@ -72,6 +79,7 @@ export function TruckFormSheet({ visible, initialData, onSave, onClose }: TruckF
       year,
       nickname: nickname.trim() || null,
       plate_number: plateNumber.trim().toUpperCase() || null,
+      chassis_number: chassisNumber.trim().toUpperCase() || null,
     });
     setLoading(false);
   }
@@ -101,7 +109,7 @@ export function TruckFormSheet({ visible, initialData, onSave, onClose }: TruckF
             </ThemedText>
 
             <View style={styles.fieldBlock}>
-              <ThemedText type="smallBold" style={styles.label}>{t('truck.makeLabel')}</ThemedText>
+              <ThemedText type="smallBold" style={styles.label}>{t('truck.makeLabel')}<RequiredMark /></ThemedText>
               <TextInput
                 style={[styles.input, { color: theme.text, backgroundColor: theme.background, borderColor: theme.backgroundSelected }]}
                 value={make}
@@ -113,7 +121,7 @@ export function TruckFormSheet({ visible, initialData, onSave, onClose }: TruckF
             </View>
 
             <View style={styles.fieldBlock}>
-              <ThemedText type="smallBold" style={styles.label}>{t('truck.modelLabel')}</ThemedText>
+              <ThemedText type="smallBold" style={styles.label}>{t('truck.modelLabel')}<RequiredMark /></ThemedText>
               <TextInput
                 style={[styles.input, { color: theme.text, backgroundColor: theme.background, borderColor: theme.backgroundSelected }]}
                 value={model}
@@ -125,7 +133,7 @@ export function TruckFormSheet({ visible, initialData, onSave, onClose }: TruckF
             </View>
 
             <View style={styles.fieldBlock}>
-              <ThemedText type="smallBold" style={styles.label}>{t('truck.yearLabel')}</ThemedText>
+              <ThemedText type="smallBold" style={styles.label}>{t('truck.yearLabel')}<RequiredMark /></ThemedText>
               <TextInput
                 style={[styles.input, { color: theme.text, backgroundColor: theme.background, borderColor: theme.backgroundSelected }]}
                 value={yearStr}
@@ -162,9 +170,27 @@ export function TruckFormSheet({ visible, initialData, onSave, onClose }: TruckF
               />
             </View>
 
+            <View style={styles.fieldBlock}>
+              <ThemedText type="smallBold" style={styles.label}>{t('truck.chassisLabel')}</ThemedText>
+              <TextInput
+                style={[styles.input, { color: theme.text, backgroundColor: theme.background, borderColor: theme.backgroundSelected }]}
+                value={chassisNumber}
+                onChangeText={setChassisNumber}
+                placeholder={t('truck.chassisPlaceholder')}
+                placeholderTextColor={theme.textSecondary}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                maxLength={20}
+              />
+            </View>
+
             {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
 
             <Button title={t('profile.saveButton')} onPress={handleSave} loading={loading} />
+
+            <ThemedText themeColor="textSecondary" type="small" style={styles.requiredNote}>
+              {t('common.requiredNote')}
+            </ThemedText>
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
@@ -189,4 +215,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   error: { color: '#ef4444', fontSize: 14 },
+  requiredNote: { textAlign: 'center' },
 });

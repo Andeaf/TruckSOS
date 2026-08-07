@@ -1,9 +1,10 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import { File, Paths } from 'expo-file-system';
-import { Alert, Linking } from 'react-native';
+import { Alert, Linking, Platform } from 'react-native';
 
 import i18n from '@/i18n';
+import { webDownload } from '@/lib/web-download';
 
 /**
  * Wrappere peste image-picker + media-library (PLAN_FAZA9.md §8).
@@ -73,6 +74,15 @@ export type GalleryDownloadResult = 'saved' | 'permission-denied' | 'error';
  * trimite userul la setări (PLAN_FAZA17.md §1.1).
  */
 export async function downloadToGallery(remoteUrl: string): Promise<GalleryDownloadResult> {
+  // Web (7 aug): nu există galerie/MediaLibrary — descărcarea browserului e echivalentul.
+  if (Platform.OS === 'web') {
+    try {
+      await webDownload(remoteUrl, `trucksos-${Date.now()}.jpg`);
+      return 'saved';
+    } catch {
+      return 'error';
+    }
+  }
   let dest: File | null = null;
   try {
     const perm = await MediaLibrary.requestPermissionsAsync(true); // writeOnly

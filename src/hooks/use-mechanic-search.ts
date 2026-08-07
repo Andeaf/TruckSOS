@@ -53,6 +53,38 @@ export function useMechanicSearch(query: string) {
   return { results, loading };
 }
 
+/**
+ * 5 aug: directorul complet al mecanicilor, alfabetic — umple spațiul de sub
+ * „Căutări recente" pe pagina de căutare. Sortarea finală e client-side cu
+ * localeCompare (ordinea DB pune diacriticele după 'z').
+ */
+export function useAllMechanics() {
+  const [mechanics, setMechanics] = useState<MechanicSearchResult[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id,full_name,specialization,activity_zone,rating_avg,rating_count,avatar_path')
+        .eq('role', 'mechanic')
+        .is('deleted_at', null)
+        .order('full_name', { ascending: true });
+      if (!active) return;
+      const list = ((data as unknown as MechanicSearchResult[]) ?? []).slice();
+      list.sort((a, b) => a.full_name.localeCompare(b.full_name, 'ro', { sensitivity: 'base' }));
+      setMechanics(list);
+      setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return { mechanics, loading };
+}
+
 /** Faza 19.6: căutare în TOȚI utilizatorii (ambele roluri) — pickerul „conversație
  * nouă" și share-ul de anunțuri. Identic cu useMechanicSearch, dar pe search_users. */
 export function useUserSearch(query: string) {

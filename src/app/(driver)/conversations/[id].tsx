@@ -18,6 +18,8 @@ import {
   fetchMessageAnnouncementContext,
   fetchMessageListingContext,
   fetchMessageMechanicContext,
+  fetchMyReadCursor,
+  fetchPeerPhone,
   markConversationRead,
   otherParticipant,
   sendFileMessage,
@@ -62,6 +64,11 @@ export default function DriverChatScreen() {
   const router = useRouter();
   const goBack = useBack('/(driver)/conversations');
   const [conv, setConv] = useState<ConversationWithDetails | null>(null);
+  // Snapshot-ul cursorului MEU de citire (7 aug): luat ÎNAINTE ca mark-read să-l mute
+  // la zi — decide unde apare „Mesaje noi" și unde aterizează lista. undefined = în curs.
+  const [initialCursor, setInitialCursor] = useState<string | null | undefined>(undefined);
+  // Telefonul interlocutorului (RPC pe rolul lui): null = inaccesibil → fără buton de apel.
+  const [peerPhone, setPeerPhone] = useState<string | null>(null);
   const { messages, loading, addMessage, patchMessage } = useMessages(id);
   // Faza 19: interlocutorul prin ID, nu prin rol — pe market poate fi orice rol.
   const other = conv && session ? otherParticipant(conv, session.user.id) : null;
@@ -71,6 +78,29 @@ export default function DriverChatScreen() {
   useEffect(() => {
     fetchConversationDetails(id).then(setConv);
   }, [id]);
+
+  useEffect(() => {
+    let active = true;
+    fetchMyReadCursor(id).then((c) => {
+      if (active) setInitialCursor(c);
+    });
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  const otherId = other?.id;
+  const otherRole = other?.profile.role;
+  useEffect(() => {
+    if (!otherId || !otherRole) return;
+    let active = true;
+    fetchPeerPhone(otherId, otherRole).then((phone) => {
+      if (active) setPeerPhone(phone);
+    });
+    return () => {
+      active = false;
+    };
+  }, [otherId, otherRole]);
 
   useEffect(() => {
     // Bannerul urmează starea `pendingListing`: la null (× sau primul send) dispare.
@@ -129,9 +159,12 @@ export default function DriverChatScreen() {
     // cu ecranul în față: tab-urile păstrează stack-ul montat, iar fără garda de focus
     // un mesaj sosit cât timp userul e pe alt tab se marca singur „citit" (✓✓ false).
     // La revenirea pe ecran (isFocused redevine true) efectul marchează ce s-a strâns.
-    if (!loading && isFocused) markConversationRead(id, messages[messages.length - 1]?.created_at ?? null);
+    // + gardă pe snapshot (7 aug): prima marcare așteaptă citirea cursorului VECHI,
+    // altfel upsert-ul putea câștiga cursa și ancora „Mesaje noi" nu mai apărea.
+    if (!loading && isFocused && initialCursor !== undefined)
+      markConversationRead(id, messages[messages.length - 1]?.created_at ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages.length, loading, id, isFocused]);
+  }, [messages.length, loading, id, isFocused, initialCursor]);
 
   const announcementStatus = useAnnouncementStatus(
     conv?.announcement_id ?? '',
@@ -232,6 +265,8 @@ export default function DriverChatScreen() {
       messageTable="messages"
       readReceipts
       readCursor={readCursor}
+      unreadCursor={initialCursor}
+      phoneNumber={peerPhone}
       onBack={goBack}
     />
     {marketPickerOpen ? (

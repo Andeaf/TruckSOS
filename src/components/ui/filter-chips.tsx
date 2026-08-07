@@ -57,6 +57,9 @@ export function FilterChips<K extends string>({
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
+    // 4 pastile (filtrul „Acceptate", 5 aug) nu mai încap garantat pe o linie
+    // pe ecrane înguste / în germană — fără wrap, ultima s-ar tăia mut.
+    flexWrap: 'wrap',
     gap: 8,
     paddingHorizontal: 22,
     paddingTop: 14,

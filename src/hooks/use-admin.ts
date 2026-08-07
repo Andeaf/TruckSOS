@@ -112,6 +112,14 @@ export interface AdminContextMessage {
   created_at: string;
 }
 
+/** 7 aug: „Vezi conversația" la rapoartele pe utilizator (admin_report_conversation). */
+export interface AdminReportConversation {
+  conversation_id: string;
+  kind: 'announcement' | 'market' | 'direct';
+  created_at: string;
+  messages: (AdminContextMessage & { file_name: string | null })[];
+}
+
 export interface DashboardStats {
   users_total: number;
   users_drivers: number;
@@ -167,6 +175,14 @@ export function fetchReportContext(table: 'messages' | 'channel_messages', messa
   return rpcData<AdminContextMessage[]>('admin_report_context', {
     p_table: table,
     p_message_id: messageId,
+  }, []);
+}
+
+/** Conversațiile DINTRE raportor și raportat (rapoarte pe utilizator) — acces
+ *  mărginit (≤50 mesaje/conversație), condiționat de raport, auditat server-side. */
+export function fetchReportConversation(reportId: string) {
+  return rpcData<AdminReportConversation[]>('admin_report_conversation', {
+    p_report_id: reportId,
   }, []);
 }
 

@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
+import { RequiredMark } from '@/components/ui/input';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
@@ -27,7 +28,13 @@ interface TruckPickerSheetProps {
   visible: boolean;
   trucks: Truck[];
   driverId: string;
-  onSelect: (data: { make: string; model: string; year: number; plate_number: string | null }) => void;
+  onSelect: (data: {
+    make: string;
+    model: string;
+    year: number;
+    plate_number: string | null;
+    chassis_number: string | null;
+  }) => void;
   onRefresh: () => void;
   onClose: () => void;
 }
@@ -49,18 +56,26 @@ export function TruckPickerSheet({
   const [yearStr, setYearStr] = useState('');
   const [nickname, setNickname] = useState('');
   const [plateNumber, setPlateNumber] = useState('');
+  const [chassisNumber, setChassisNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   function handleClose() {
     setAddFormOpen(false);
     setMake(''); setModel(''); setYearStr(''); setNickname(''); setPlateNumber('');
+    setChassisNumber('');
     setError('');
     onClose();
   }
 
   function handleSelect(truck: Truck) {
-    onSelect({ make: truck.make, model: truck.model, year: truck.year, plate_number: truck.plate_number });
+    onSelect({
+      make: truck.make,
+      model: truck.model,
+      year: truck.year,
+      plate_number: truck.plate_number,
+      chassis_number: truck.chassis_number,
+    });
     handleClose();
   }
 
@@ -75,6 +90,7 @@ export function TruckPickerSheet({
     setLoading(true);
     setError('');
     const plate = plateNumber.trim().toUpperCase() || null;
+    const chassis = chassisNumber.trim().toUpperCase() || null;
     const err = await addTruck({
       driver_id: driverId,
       make: make.trim(),
@@ -82,11 +98,12 @@ export function TruckPickerSheet({
       year,
       nickname: nickname.trim() || null,
       plate_number: plate,
+      chassis_number: chassis,
     });
     setLoading(false);
     if (err) { setError(t('truck.errorSave')); return; }
     onRefresh();
-    onSelect({ make: make.trim(), model: model.trim(), year, plate_number: plate });
+    onSelect({ make: make.trim(), model: model.trim(), year, plate_number: plate, chassis_number: chassis });
     handleClose();
   }
 
@@ -143,7 +160,7 @@ export function TruckPickerSheet({
             {addFormOpen ? (
               <View style={styles.miniForm}>
                 <View style={styles.fieldBlock}>
-                  <ThemedText type="smallBold" style={styles.label}>{t('truck.makeLabel')}</ThemedText>
+                  <ThemedText type="smallBold" style={styles.label}>{t('truck.makeLabel')}<RequiredMark /></ThemedText>
                   <TextInput
                     style={[styles.input, { color: theme.text, backgroundColor: theme.background, borderColor: theme.backgroundSelected }]}
                     value={make}
@@ -154,7 +171,7 @@ export function TruckPickerSheet({
                   />
                 </View>
                 <View style={styles.fieldBlock}>
-                  <ThemedText type="smallBold" style={styles.label}>{t('truck.modelLabel')}</ThemedText>
+                  <ThemedText type="smallBold" style={styles.label}>{t('truck.modelLabel')}<RequiredMark /></ThemedText>
                   <TextInput
                     style={[styles.input, { color: theme.text, backgroundColor: theme.background, borderColor: theme.backgroundSelected }]}
                     value={model}
@@ -165,7 +182,7 @@ export function TruckPickerSheet({
                   />
                 </View>
                 <View style={styles.fieldBlock}>
-                  <ThemedText type="smallBold" style={styles.label}>{t('truck.yearLabel')}</ThemedText>
+                  <ThemedText type="smallBold" style={styles.label}>{t('truck.yearLabel')}<RequiredMark /></ThemedText>
                   <TextInput
                     style={[styles.input, { color: theme.text, backgroundColor: theme.background, borderColor: theme.backgroundSelected }]}
                     value={yearStr}
@@ -199,8 +216,24 @@ export function TruckPickerSheet({
                     maxLength={12}
                   />
                 </View>
+                <View style={styles.fieldBlock}>
+                  <ThemedText type="smallBold" style={styles.label}>{t('truck.chassisLabel')}</ThemedText>
+                  <TextInput
+                    style={[styles.input, { color: theme.text, backgroundColor: theme.background, borderColor: theme.backgroundSelected }]}
+                    value={chassisNumber}
+                    onChangeText={setChassisNumber}
+                    placeholder={t('truck.chassisPlaceholder')}
+                    placeholderTextColor={theme.textSecondary}
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    maxLength={20}
+                  />
+                </View>
                 {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
                 <Button title={t('truck.addSheetTitle')} onPress={handleAddSave} loading={loading} />
+                <ThemedText themeColor="textSecondary" type="small" style={styles.requiredNote}>
+                  {t('common.requiredNote')}
+                </ThemedText>
               </View>
             ) : null}
           </ScrollView>
@@ -244,4 +277,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   error: { color: '#ef4444', fontSize: 14 },
+  requiredNote: { textAlign: 'center' },
 });

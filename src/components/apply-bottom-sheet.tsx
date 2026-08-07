@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
+import { RequiredMark } from '@/components/ui/input';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { SUPPORTED_CURRENCIES, DEFAULT_CURRENCY } from '@/constants/currencies';
@@ -158,6 +159,7 @@ export function ApplyBottomSheet({
             <View style={styles.fieldBlock}>
               <ThemedText type="smallBold" style={styles.label}>
                 {t('mechanic.apply.priceAmountLabel')}
+                <RequiredMark />
               </ThemedText>
               <View style={styles.amountRow}>
                 <TextInput
@@ -233,6 +235,10 @@ export function ApplyBottomSheet({
               onPress={handleSubmit}
               loading={loading}
             />
+
+            <ThemedText themeColor="textSecondary" type="small" style={styles.requiredNote}>
+              {t('common.requiredNote')}
+            </ThemedText>
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
@@ -337,4 +343,5 @@ const styles = StyleSheet.create({
     color: '#ef4444',
     fontSize: 14,
   },
+  requiredNote: { textAlign: 'center' },
 });

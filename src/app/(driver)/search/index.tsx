@@ -15,7 +15,18 @@ import { useFavorites } from '@/hooks/use-favorites';
 import { useSearchHistory } from '@/hooks/use-search-history';
 import { useSignedUrls } from '@/hooks/use-signed-urls';
 import { useTheme } from '@/hooks/use-theme';
-import { SEARCH_MIN_LENGTH, useMechanicSearch } from '@/hooks/use-mechanic-search';
+import {
+  SEARCH_MIN_LENGTH,
+  useAllMechanics,
+  useMechanicSearch,
+  type MechanicSearchResult,
+} from '@/hooks/use-mechanic-search';
+
+/** Starea de repaus (fără căutare activă): istoricul + directorul alfabetic,
+ * într-o singură listă virtualizată (rânduri mixte, discriminate prin `kind`). */
+type IdleRow =
+  | { key: string; kind: 'mechanic'; source: 'history' | 'all'; m: MechanicSearchResult }
+  | { key: string; kind: 'allHeader' };
 
 export default function DriverSearchScreen() {
   const { t } = useTranslation();
@@ -27,6 +38,8 @@ export default function DriverSearchScreen() {
   // id-uri, pentru starea plină/contur a stelelor de pe carduri.
   const { favoriteIds, toggleFavorite, refresh: refreshFavorites } = useFavorites();
   const { history, recordSearch, removeEntry, refresh: refreshHistory } = useSearchHistory();
+  // 5 aug: „Toți mecanicii" alfabetic, sub căutările recente (cerința userului).
+  const { mechanics: allMechanics } = useAllMechanics();
 
   useFocusEffect(
     useCallback(() => {
@@ -36,15 +49,25 @@ export default function DriverSearchScreen() {
   );
 
   // Un singur apel batch de URL-uri semnate pentru avatarele de pe ecran
-  // (rezultate + istoric), indiferent ce stare e vizibilă.
+  // (rezultate + istoric + director), indiferent ce stare e vizibilă.
   const avatarPaths = useMemo(
     () =>
-      [...results, ...history]
+      [...results, ...history, ...allMechanics]
         .map((m) => m.avatar_path)
         .filter((p): p is string => !!p),
-    [results, history]
+    [results, history, allMechanics]
   );
   const avatarUrls = useSignedUrls(avatarPaths);
+
+  const idleRows = useMemo<IdleRow[]>(() => {
+    const rows: IdleRow[] = [];
+    for (const m of history) rows.push({ key: `h-${m.id}`, kind: 'mechanic', source: 'history', m });
+    if (allMechanics.length > 0) {
+      rows.push({ key: 'all-header', kind: 'allHeader' });
+      for (const m of allMechanics) rows.push({ key: `a-${m.id}`, kind: 'mechanic', source: 'all', m });
+    }
+    return rows;
+  }, [history, allMechanics]);
 
   const queryActive = query.trim().length >= SEARCH_MIN_LENGTH;
 
@@ -85,31 +108,42 @@ export default function DriverSearchScreen() {
       </View>
 
       {!queryActive ? (
-        history.length > 0 ? (
+        idleRows.length > 0 ? (
           <FlatList
-            data={history}
-            keyExtractor={(item) => item.id}
+            data={idleRows}
+            keyExtractor={(item) => item.key}
             contentContainerStyle={styles.list}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
             keyboardShouldPersistTaps="handled"
             ListHeaderComponent={
-              <View style={styles.sectionHeader}>
-                <MaterialIcons name="history" size={14} color={theme.textSecondary} />
-                <ThemedText themeColor="textSecondary" type="smallBold">
-                  {t('search.historyTitle')}
-                </ThemedText>
-              </View>
+              history.length > 0 ? (
+                <View style={styles.sectionHeader}>
+                  <MaterialIcons name="history" size={14} color={theme.textSecondary} />
+                  <ThemedText themeColor="textSecondary" type="smallBold">
+                    {t('search.historyTitle')}
+                  </ThemedText>
+                </View>
+              ) : null
             }
-            renderItem={({ item }) => (
-              <MechanicCard
-                mechanic={item}
-                avatarUrl={item.avatar_path ? avatarUrls[item.avatar_path] : undefined}
-                isFavorite={favoriteIds.has(item.id)}
-                onToggleFavorite={() => toggleFavorite(item.id)}
-                onRemove={() => removeEntry(item.id)}
-                onPress={() => openProfile(item.id)}
-              />
-            )}
+            renderItem={({ item }) =>
+              item.kind === 'allHeader' ? (
+                <View style={[styles.sectionHeader, history.length > 0 && styles.allHeaderSpacing]}>
+                  <MaterialIcons name="engineering" size={14} color={theme.textSecondary} />
+                  <ThemedText themeColor="textSecondary" type="smallBold">
+                    {t('search.allMechanicsTitle')}
+                  </ThemedText>
+                </View>
+              ) : (
+                <MechanicCard
+                  mechanic={item.m}
+                  avatarUrl={item.m.avatar_path ? avatarUrls[item.m.avatar_path] : undefined}
+                  isFavorite={favoriteIds.has(item.m.id)}
+                  onToggleFavorite={() => toggleFavorite(item.m.id)}
+                  onRemove={item.source === 'history' ? () => removeEntry(item.m.id) : undefined}
+                  onPress={() => openProfile(item.m.id)}
+                />
+              )
+            }
           />
         ) : (
           <EmptyState
@@ -176,4 +210,6 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
     paddingBottom: Spacing.two,
   },
+  // Spațiu de respiro între finalul istoricului și titlul directorului.
+  allHeaderSpacing: { paddingTop: Spacing.three },
 });

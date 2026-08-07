@@ -29,6 +29,10 @@ export function useMyAnnouncements() {
     const { data } = await supabase
       .from('announcements')
       .select('*')
+      // „Ale mele" se cere EXPLICIT, nu se deduce din RLS: pentru admin (modul
+      // „ca șofer"), politica aditivă is_admin() întoarce TOATE anunțurile —
+      // fără filtru, anunțurile altora apăreau drept ale adminului.
+      .eq('driver_id', session.user.id)
       .order('created_at', { ascending: false });
     setAnnouncements((data as Announcement[]) ?? []);
     setLoading(false);
@@ -38,20 +42,25 @@ export function useMyAnnouncements() {
 }
 
 // Hook for mechanic: all open announcements from all drivers
-export function useOpenAnnouncements() {
+// (5 aug) `excludeUserId`: mecanicii pot posta și ei anunțuri — pe feed/hartă
+// propriile anunțuri se exclud (nu-ți poți face ofertă singur; ale tale stau
+// sub segmentul „Ale mele").
+export function useOpenAnnouncements(excludeUserId?: string) {
   const [announcements, setAnnouncements] = useState<AnnouncementWithDriver[]>([]);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
+    let query = supabase
       .from('announcements')
       .select('*, driver:profiles!driver_id(full_name,avatar_path)')
       .eq('status', 'open')
       .order('created_at', { ascending: false });
+    if (excludeUserId) query = query.neq('driver_id', excludeUserId);
+    const { data } = await query;
     setAnnouncements((data as unknown as AnnouncementWithDriver[]) ?? []);
     setLoading(false);
-  }, []);
+  }, [excludeUserId]);
 
   return { announcements, loading, refresh };
 }
@@ -61,6 +70,8 @@ export interface CreateAnnouncementOptions {
   truckModel?: string;
   truckYear?: number | null;
   plateNumber?: string;
+  /** Seria de șasiu (VIN) — obligatorie în formular (validare client-side). */
+  chassisNumber?: string;
   latitude?: number | null;
   longitude?: number | null;
 }
@@ -82,6 +93,7 @@ export async function createAnnouncement(
       truck_model: options.truckModel || null,
       truck_year: options.truckYear ?? null,
       plate_number: options.plateNumber || null,
+      chassis_number: options.chassisNumber || null,
       latitude: options.latitude ?? null,
       longitude: options.longitude ?? null,
     } as never)
@@ -301,7 +313,7 @@ export async function fetchApplicationsForAnnouncement(
 export type ApplicationWithDetails = Application & {
   announcement: Pick<
     Announcement,
-    'id' | 'location' | 'description' | 'status' | 'truck_make' | 'truck_model' | 'truck_year' | 'plate_number' | 'latitude' | 'longitude'
+    'id' | 'location' | 'description' | 'status' | 'truck_make' | 'truck_model' | 'truck_year' | 'plate_number' | 'chassis_number' | 'latitude' | 'longitude'
   > & {
     driver: PublicUser | null;
     conversations: { id: string }[];
@@ -325,7 +337,7 @@ export function useMyApplications() {
       .from('applications')
       .select(
         `*, announcement:announcements!announcement_id(
-          id, location, description, status, truck_make, truck_model, truck_year, plate_number, latitude, longitude,
+          id, location, description, status, truck_make, truck_model, truck_year, plate_number, chassis_number, latitude, longitude,
           driver:profiles!driver_id(full_name,avatar_path),
           conversations(id)
         )`
@@ -350,7 +362,7 @@ export function useApplication(id: string) {
       .from('applications')
       .select(
         `*, announcement:announcements!announcement_id(
-          id, location, description, status, truck_make, truck_model, truck_year, plate_number, latitude, longitude,
+          id, location, description, status, truck_make, truck_model, truck_year, plate_number, chassis_number, latitude, longitude,
           driver:profiles!driver_id(full_name,avatar_path),
           conversations(id)
         )`
