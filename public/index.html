@@ -77,6 +77,37 @@
       body {
         background-color: #081729;
       }
+
+      /* Bara de scroll a casetelor de text (compozitorul de chat): cea implicită
+         a browserului e lată și albă — strident în dark mode (poza din 8 aug). */
+      textarea::-webkit-scrollbar {
+        width: 6px;
+      }
+      textarea::-webkit-scrollbar-thumb {
+        background: rgba(128, 144, 168, 0.45);
+        border-radius: 3px;
+      }
+      textarea::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      textarea {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(128, 144, 168, 0.45) transparent;
+      }
+
+      /* Compozitorul de chat (stil 9c, 8 aug): fără chenar de focus și FĂRĂ
+         scrollbar nativ — bara ieșea peste colțurile rotunjite ale pastilei.
+         Derularea rămâne (rotiță/touch/tastatură); în locul barei, aplicația
+         desenează fade-uri la margini + un indicator plutitor auto-ascuns. */
+      textarea:focus {
+        outline: none;
+      }
+      #chat-composer {
+        scrollbar-width: none;
+      }
+      #chat-composer::-webkit-scrollbar {
+        display: none;
+      }
     </style>
   </head>
 

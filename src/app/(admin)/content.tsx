@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -7,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Radius, Spacing } from '@/constants/theme';
+import { Radius, Shadows, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useWideLayout } from '@/components/web-sidebar';
 import {
   adminDeleteAnnouncement,
   adminDeleteListing,
@@ -33,6 +35,10 @@ const LOCALE_MAP: Record<string, string> = { ro: 'ro-RO', en: 'en-GB', de: 'de-D
 
 export default function AdminContent() {
   const { t, i18n } = useTranslation();
+  const theme = useTheme();
+  // Design 10c: pe web lat — titlu în pagină, tab-uri subliniate cu căutarea pe
+  // același rând, status pe pastile și buton de ștergere conturat.
+  const wide = useWideLayout();
   const [segment, setSegment] = useState<Segment>('announcements');
   const [annQuery, setAnnQuery] = useState('');
   const [announcements, setAnnouncements] = useState<AdminAnnouncement[]>([]);
@@ -88,25 +94,49 @@ export default function AdminContent() {
 
   return (
     <ThemedView style={{ flex: 1 }}>
-      <ScreenHeader title={t('admin.content.title')} />
+      {wide ? (
+        <ThemedText style={w.pageTitle}>{t('admin.content.title')}</ThemedText>
+      ) : (
+        <ScreenHeader title={t('admin.content.title')} />
+      )}
 
-      <View style={styles.segments}>
+      <View style={[styles.segments, wide && [w.segments, { borderBottomColor: theme.separator }]]}>
         {SEGMENTS.map((s) => {
           const active = s === segment;
           return (
             <Pressable
               key={s}
               onPress={() => setSegment(s)}
-              style={[styles.seg, active && { borderBottomColor: '#6366f1', borderBottomWidth: 2 }]}>
-              <ThemedText themeColor={active ? undefined : 'textSecondary'} type="small">
+              style={[
+                styles.seg,
+                active && { borderBottomColor: wide ? theme.brand : '#6366f1', borderBottomWidth: 2 },
+              ]}>
+              <ThemedText
+                themeColor={active ? undefined : 'textSecondary'}
+                type="small"
+                style={wide ? [w.segText, active && { color: theme.brand, fontWeight: '700' }] : null}>
                 {t(`admin.content.tab_${s}`)}
               </ThemedText>
             </Pressable>
           );
         })}
+        {wide && segment === 'announcements' ? (
+          <View style={[w.searchPill, { backgroundColor: theme.backgroundElement }]}>
+            <Feather name="search" size={14} color={theme.textTertiary} />
+            <TextInput
+              value={annQuery}
+              onChangeText={setAnnQuery}
+              placeholder={t('admin.content.searchPlaceholder')}
+              placeholderTextColor={theme.textTertiary}
+              autoCapitalize="none"
+              returnKeyType="search"
+              style={[w.searchInput, { color: theme.text }]}
+            />
+          </View>
+        ) : null}
       </View>
 
-      {segment === 'announcements' ? (
+      {!wide && segment === 'announcements' ? (
         <View style={styles.searchBox}>
           <Input
             value={annQuery}
@@ -123,7 +153,7 @@ export default function AdminContent() {
           data={announcements}
           keyExtractor={(a) => a.id}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, wide && w.list]}
           ListEmptyComponent={
             <ThemedText themeColor="textSecondary" style={styles.empty}>
               {annQuery.trim().length >= 2 ? t('admin.content.noResults') : t('admin.content.empty')}
@@ -132,7 +162,12 @@ export default function AdminContent() {
           renderItem={({ item }) => (
             <Card
               title={item.description}
-              subtitle={`${item.driver_name ?? '—'} · ${t(`status.${item.status}`)} · ${new Date(item.created_at).toLocaleDateString(LOCALE_MAP[i18n.language] ?? 'ro-RO')}`}
+              subtitle={
+                wide
+                  ? `${item.driver_name ?? '—'} · ${new Date(item.created_at).toLocaleDateString(LOCALE_MAP[i18n.language] ?? 'ro-RO')}`
+                  : `${item.driver_name ?? '—'} · ${t(`status.${item.status}`)} · ${new Date(item.created_at).toLocaleDateString(LOCALE_MAP[i18n.language] ?? 'ro-RO')}`
+              }
+              status={wide ? item.status : undefined}
               onDelete={() =>
                 confirmDelete(t('admin.content.deleteAnnouncementConfirm'), () =>
                   adminDeleteAnnouncement(item.id)
@@ -145,7 +180,7 @@ export default function AdminContent() {
         <FlatList
           data={listings}
           keyExtractor={(l) => l.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, wide && w.list]}
           ListEmptyComponent={<Empty />}
           renderItem={({ item }) => (
             <Card
@@ -163,7 +198,7 @@ export default function AdminContent() {
         <FlatList
           data={reviews}
           keyExtractor={(r) => r.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, wide && w.list]}
           ListEmptyComponent={<Empty />}
           renderItem={({ item }) => (
             <Card
@@ -179,7 +214,7 @@ export default function AdminContent() {
         <FlatList
           data={channel}
           keyExtractor={(m) => m.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, wide && w.list]}
           ListEmptyComponent={<Empty />}
           renderItem={({ item }) => (
             <Card
@@ -210,28 +245,61 @@ export default function AdminContent() {
 function Card({
   title,
   subtitle,
+  status,
   onDelete,
 }: {
   title: string;
   subtitle: string;
+  /** Design 10c (doar pe lat): statusul anunțului ca pastilă colorată. */
+  status?: string;
   onDelete?: () => void;
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const wide = useWideLayout();
+
+  // Culorile pastilelor din design: Open verde, Accepted albastru, restul neutre.
+  const pill =
+    status === 'open'
+      ? { bg: theme.successBg, fg: theme.successText }
+      : status === 'accepted'
+        ? { bg: theme.brandSoft, fg: theme.brand }
+        : status === 'cancelled'
+          ? { bg: 'rgba(214,69,69,0.12)', fg: '#D64545' }
+          : { bg: theme.neutralBg, fg: theme.textSecondary };
+
   return (
-    <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
-      <View style={{ flex: 1 }}>
-        <ThemedText numberOfLines={2}>{title}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
+    <View style={[styles.card, { backgroundColor: theme.backgroundElement }, wide && w.card]}>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <ThemedText numberOfLines={2} style={wide ? w.cardTitle : null}>
+          {title}
+        </ThemedText>
+        <ThemedText type="small" themeColor="textSecondary" style={wide ? w.cardMeta : null}>
           {subtitle}
         </ThemedText>
       </View>
-      {onDelete ? (
-        <Pressable onPress={onDelete} style={[styles.delBtn, { borderColor: '#ef4444' }]}>
-          <ThemedText type="small" style={{ color: '#ef4444' }}>
-            {t('admin.common.delete')}
+      {wide && status ? (
+        <View style={[w.statusPill, { backgroundColor: pill.bg }]}>
+          <ThemedText type="small" style={[w.statusPillText, { color: pill.fg }]}>
+            {t(`status.${status}`)}
           </ThemedText>
-        </Pressable>
+        </View>
+      ) : null}
+      {onDelete ? (
+        wide ? (
+          <Pressable onPress={onDelete} style={w.delPill}>
+            <Feather name="trash-2" size={14} color="#D64545" />
+            <ThemedText type="small" style={w.delPillText}>
+              {t('admin.common.delete')}
+            </ThemedText>
+          </Pressable>
+        ) : (
+          <Pressable onPress={onDelete} style={[styles.delBtn, { borderColor: '#ef4444' }]}>
+            <ThemedText type="small" style={{ color: '#ef4444' }}>
+              {t('admin.common.delete')}
+            </ThemedText>
+          </Pressable>
+        )
       ) : null}
     </View>
   );
@@ -260,4 +328,66 @@ const styles = StyleSheet.create({
     borderRadius: Radius.card,
   },
   delBtn: { borderWidth: 1, borderRadius: Radius.control, paddingVertical: Spacing.one, paddingHorizontal: Spacing.two },
+});
+
+/** Stilurile variantei late (design 10c). */
+const w = StyleSheet.create({
+  pageTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    letterSpacing: -0.4,
+    lineHeight: 32,
+    paddingHorizontal: 28,
+    paddingTop: 24,
+    maxWidth: 1060,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  segments: {
+    paddingHorizontal: 28,
+    paddingTop: 14,
+    gap: 22,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    maxWidth: 1060,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  segText: { fontSize: 14, fontWeight: '600' },
+  searchPill: {
+    marginLeft: 'auto',
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 999,
+    paddingVertical: 4,
+    paddingHorizontal: 16,
+    width: 320,
+    ...Shadows.chip,
+  },
+  searchInput: { flex: 1, fontSize: 13, paddingVertical: 5 },
+  list: { maxWidth: 1060, width: '100%', alignSelf: 'center', paddingHorizontal: 28, gap: 10 },
+  card: {
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    gap: 16,
+    ...Shadows.card,
+  },
+  cardTitle: { fontSize: 15, fontWeight: '700' },
+  cardMeta: { fontSize: 12.5, fontWeight: '600', marginTop: 5 },
+  statusPill: { borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10 },
+  statusPillText: { fontSize: 12, fontWeight: '700' },
+  delPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1.5,
+    borderColor: '#F3C6C6',
+    borderRadius: 999,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+  },
+  delPillText: { color: '#D64545', fontSize: 13, fontWeight: '700' },
 });

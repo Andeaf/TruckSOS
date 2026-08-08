@@ -8,6 +8,10 @@
     },
     "logout": "Ieșire din cont",
     "backToAdmin": "Înapoi la modul admin",
+    "sidebar": {
+      "section": "Administrare",
+      "role": "Administrator"
+    },
     "common": {
       "error": "Eroare",
       "cancel": "Anulează",
@@ -43,6 +47,8 @@
       "filter_dismissed": "Respinse",
       "filter_all": "Toate",
       "empty": "Niciun raport.",
+      "emptyTitlePending": "Niciun raport în așteptare",
+      "emptyHint": "Când un utilizator raportează un anunț, o recenzie sau un mesaj, apare aici pentru moderare.",
       "reason_spam": "Spam",
       "reason_harassment": "Hărțuire",
       "reason_inappropriate": "Conținut nepotrivit",
@@ -71,6 +77,8 @@
       "searchLabel": "Caută",
       "searchPlaceholder": "Nume sau email",
       "empty": "Caută un utilizator după nume sau email.",
+      "emptyTitle": "Caută un utilizator",
+      "emptyHint": "Scrie un nume sau un email în câmpul de sus. Rezultatele apar aici, cu rol, status și acțiuni de moderare.",
       "noResults": "Niciun rezultat.",
       "role_driver": "Șofer",
       "role_mechanic": "Mecanic",
@@ -128,6 +136,7 @@
       "cancel": "Cancel"
     },
     "login": {
+      "title": "Sign in",
       "subtitle": "Sign in to your account",
       "emailLabel": "Email",
       "emailPlaceholder": "email@example.com",
@@ -138,6 +147,13 @@
       "registerLink": "Sign up",
       "errorEmpty": "Please enter your email and password.",
       "forgotPassword": "Forgot your password?"
+    },
+    "hero": {
+      "headline": "Help on the road, in minutes.",
+      "description": "Connects stranded drivers with available mechanics nearby — breakdown posts, direct chat and Market parts, all in one place.",
+      "bullet1": "Emergency posts with map location",
+      "bullet2": "Direct driver–mechanic chat",
+      "bullet3": "Marketplace for parts and trucks"
     },
     "register": {
       "subtitle": "Create your account",
@@ -497,6 +513,7 @@
     "historyRemove": "Remove from history"
   },
   "profile": {
+    "viewProfile": "View profile",
     "tabTitle": "Profile",
     "myProfileTitle": "My profile",
     "editTitle": "Edit profile",

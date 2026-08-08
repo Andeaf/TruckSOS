@@ -1,13 +1,15 @@
 import { useCallback, useRef, useState } from 'react';
 import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Radius, Spacing } from '@/constants/theme';
+import { Radius, Shadows, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useWideLayout } from '@/components/web-sidebar';
 import {
   adminDeleteMessage,
   fetchReportContext,
@@ -29,6 +31,9 @@ export default function AdminReports() {
   const { t } = useTranslation();
   const theme = useTheme();
   const router = useRouter();
+  // Design 10e: pe web lat — titlu în pagină, filtre pe pastile în stilul
+  // aplicației (activ = navy plin) și empty state pozitiv.
+  const wide = useWideLayout();
   const [filter, setFilter] = useState<ReportStatus | 'all'>('pending');
   const [reports, setReports] = useState<AdminReport[]>([]);
   // F18.6: pe lângă mesaje ținem și id-ul mesajului RAPORTAT — cu fereastra 25+25
@@ -97,11 +102,35 @@ export default function AdminReports() {
 
   return (
     <ThemedView style={{ flex: 1 }}>
-      <ScreenHeader title={t('admin.reports.title')} />
+      {wide ? (
+        <ThemedText style={w.pageTitle}>{t('admin.reports.title')}</ThemedText>
+      ) : (
+        <ScreenHeader title={t('admin.reports.title')} />
+      )}
 
-      <View style={styles.filters}>
+      <View style={[styles.filters, wide && w.filters]}>
         {FILTERS.map((f) => {
           const active = f === filter;
+          if (wide) {
+            return (
+              <Pressable
+                key={f}
+                onPress={() => setFilter(f)}
+                style={[
+                  w.chip,
+                  active
+                    ? { backgroundColor: theme.primary }
+                    : [{ backgroundColor: theme.backgroundElement }, Shadows.chip],
+                ]}>
+                <ThemedText
+                  type="small"
+                  style={[w.chipText, active && { color: '#FFFFFF' }]}
+                  themeColor={active ? undefined : 'textSecondary'}>
+                  {t(`admin.reports.filter_${f}`)}
+                </ThemedText>
+              </Pressable>
+            );
+          }
           return (
             <Pressable
               key={f}
@@ -125,11 +154,25 @@ export default function AdminReports() {
       <FlatList
         data={reports}
         keyExtractor={(r) => r.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, wide && w.list]}
         ListEmptyComponent={
-          <ThemedText themeColor="textSecondary" style={styles.empty}>
-            {t('admin.reports.empty')}
-          </ThemedText>
+          wide ? (
+            <View style={w.emptyWrap}>
+              <View style={[w.emptyIcon, { backgroundColor: theme.successBg }]}>
+                <Feather name="check" size={30} color={theme.successText} />
+              </View>
+              <ThemedText style={w.emptyTitle}>
+                {filter === 'pending' ? t('admin.reports.emptyTitlePending') : t('admin.reports.empty')}
+              </ThemedText>
+              <ThemedText themeColor="textTertiary" style={w.emptyHint}>
+                {t('admin.reports.emptyHint')}
+              </ThemedText>
+            </View>
+          ) : (
+            <ThemedText themeColor="textSecondary" style={styles.empty}>
+              {t('admin.reports.empty')}
+            </ThemedText>
+          )
         }
         renderItem={({ item }) => (
           <ReportCard
@@ -397,4 +440,46 @@ const styles = StyleSheet.create({
   closeBtn: { alignSelf: 'flex-end', marginTop: Spacing.two, padding: Spacing.two },
   convSection: { marginBottom: Spacing.three },
   convHead: { marginBottom: Spacing.one, textTransform: 'uppercase', letterSpacing: 0.5 },
+});
+
+/** Stilurile variantei late (design 10e). */
+const w = StyleSheet.create({
+  pageTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    letterSpacing: -0.4,
+    lineHeight: 32,
+    paddingHorizontal: 28,
+    paddingTop: 24,
+    maxWidth: 1060,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  filters: {
+    paddingHorizontal: 28,
+    paddingTop: 16,
+    gap: 8,
+    maxWidth: 1060,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  chip: { borderRadius: 999, paddingVertical: 7, paddingHorizontal: 16 },
+  chipText: { fontSize: 13, fontWeight: '600' },
+  list: { maxWidth: 1060, width: '100%', alignSelf: 'center', paddingHorizontal: 28 },
+  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 120 },
+  emptyIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: { fontSize: 16, fontWeight: '700' },
+  emptyHint: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    textAlign: 'center',
+    maxWidth: 340,
+    lineHeight: 20,
+  },
 });

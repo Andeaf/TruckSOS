@@ -3,6 +3,7 @@ import { Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
+import { AppTabBar, useWideLayout } from '@/components/web-sidebar';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useUnreadCounts } from '@/hooks/use-chat';
@@ -68,14 +69,19 @@ function MechanicTabs() {
     markSeen: markAppsSeen,
   } = useApplicationsBadge(userId);
 
+  // Web pe ecran lat: aceleași rute, dar ca bară laterală (design „Web Redesign").
+  const wide = useWideLayout();
+
   return (
     <Tabs
       // Back-ul fizic duce MEREU spre tab-ul de start (Harta), nu prin istoricul
       // de tab-uri (cerere 7 aug, consecvent cu șoferul); de pe Hartă,
       // useExitConfirm întreabă dacă închide aplicația.
       backBehavior="initialRoute"
+      tabBar={(props) => <AppTabBar {...props} />}
       screenOptions={{
         headerShown: false,
+        tabBarPosition: wide ? 'left' : 'bottom',
         tabBarActiveTintColor: theme.brand,
         tabBarInactiveTintColor: theme.textTertiary,
         tabBarStyle: {

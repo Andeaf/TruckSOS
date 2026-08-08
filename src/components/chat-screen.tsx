@@ -259,6 +259,28 @@ function userColor(userId: string) {
 
 /** Pauza care rupe un grup de mesaje consecutive (ca la WhatsApp). */
 const GROUP_GAP_MS = 10 * 60 * 1000;
+
+/**
+ * Compozitorul crește cu textul până la 2,5× înălțimea de bază (cerere 8 aug);
+ * abia DUPĂ plafon textul derulează în interior. lineHeight explicit — altfel
+ * „2,5×" ar depinde de fontul fiecărei platforme.
+ *
+ * Padding-ul vertical și colțurile rotunde stau pe ÎNVELIȘ (inputWrap), nu pe
+ * TextInput: la un element derulabil padding-ul face parte din zona derulată,
+ * deci textul intra sub marginile rotunjite la scroll (bug raportat 8 aug, cu
+ * poză). Cu învelișul nederulabil, textul rămâne mereu între padding-uri.
+ * Constantele INNER_* sunt înălțimile TEXTULUI; caseta vizibilă = text + 22.
+ */
+const COMPOSER_LINE_HEIGHT = 20;
+const COMPOSER_V_PADDING = 11;
+const COMPOSER_INNER_BASE = COMPOSER_LINE_HEIGHT; // caseta de bază: 42 vizibil
+// Plafonul casetei VIZIBILE = 2,5 × 42 = 105 → zona de text = 105 − 22 = 83.
+const COMPOSER_INNER_MAX =
+  Math.round(2.5 * (COMPOSER_LINE_HEIGHT + 2 * COMPOSER_V_PADDING)) - 2 * COMPOSER_V_PADDING;
+// Forma ca la WhatsApp (referință 8 aug, cu poze): pastilă la 1–3 rânduri, iar de
+// la al 4-lea caseta devine dreptunghi cu colțuri moderat rotunjite.
+const COMPOSER_TALL_THRESHOLD = 3 * COMPOSER_LINE_HEIGHT;
+const COMPOSER_RECT_RADIUS = 20;
 /** Lățimea avatarului din chatul de grup — și a indentării mesajelor 2+ din grup. */
 const GROUP_AVATAR_SIZE = 34;
 
@@ -1008,6 +1030,128 @@ export function ChatScreen<M extends ChatMessageBase>({
   const [attachOpen, setAttachOpen] = useState(false);
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
   const listRef = useRef<FlatList<M>>(null);
+
+  // Creșterea compozitorului (8 aug), per platformă:
+  //  • Android — nimic manual: inputul multiline crește nativ între minHeight și
+  //    maxHeight; o înălțime forțată din state doar l-ar face să „sară".
+  //  • iOS — onContentSizeChange raportează DOAR textul (independent de cutie),
+  //    deci și micșorarea; adăugăm noi padding-ul.
+  //  • web — react-native-web raportează scrollHeight, care la înălțime FIXĂ nu
+  //    coboară niciodată sub ea → caseta nu s-ar mai strânge la ștergerea
+  //    textului (bug prins la test, 8 aug). Măsurăm noi, pe efect de text, cu
+  //    trucul clasic: înălțime 0 → citește scrollHeight (include padding-ul) →
+  //    repune imediat valoarea plafonată, ca să nu existe niciun cadru gol.
+  // iOS: singura platformă cu înălțimea în state (onContentSizeChange e rar și
+  // raportează valori discrete). Pe WEB nu trece NIMIC prin state: prima variantă
+  // făcea setState la fiecare tastă (măsurare în efect de text) și, la tastare
+  // foarte rapidă, cascada render+efect a lovit „Maximum update depth" (8 aug).
+  // Acum înălțimea se scrie DOAR imperativ pe nodul DOM — React nici nu are
+  // `height` în stilul de web, deci n-o suprascrie la re-render.
+  const [composerHeight, setComposerHeight] = useState(COMPOSER_INNER_BASE);
+  // Forma pastilă → dreptunghi. DOAR pe nativ trece prin state (onContentSizeChange
+  // e rar — fix la schimbarea numărului de rânduri). Pe web NU: s-a dovedit (de
+  // două ori, 8 aug) că ORICE setState din efectul de text — chiar și cu aceeași
+  // valoare — dărâmă limita de actualizări React la tastare foarte rapidă, pentru
+  // că scurtcircuitul „valoare identică" nu se aplică atâta timp cât există deja
+  // actualizări în așteptare de la setText. Pe web forma se scrie imperativ.
+  const [composerTall, setComposerTall] = useState(false);
+  const composerRef = useRef<TextInput>(null);
+  const handleComposerSize = useCallback(
+    (e: { nativeEvent: { contentSize: { height: number } } }) => {
+      const wanted = Math.ceil(e.nativeEvent.contentSize.height);
+      // Android intră aici DOAR pentru formă (înălțimea lui e nativă, min/max).
+      if (Platform.OS === 'ios') {
+        setComposerHeight(Math.min(COMPOSER_INNER_MAX, Math.max(COMPOSER_INNER_BASE, wanted)));
+      }
+      setComposerTall(wanted > COMPOSER_TALL_THRESHOLD);
+    },
+    []
+  );
+  // Overlay-urile compozitorului pe web (stil 9c, 8 aug): fade sus/jos cât timp
+  // mai e text în afara vederii + indicator plutitor care apare doar la derulare.
+  // Toate IMPERATIVE (lecția din Fix 3) — React doar le randează cu opacity 0.
+  const fadeTopRef = useRef<View>(null);
+  const fadeBottomRef = useRef<View>(null);
+  const thumbRef = useRef<View>(null);
+  const thumbTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const updateFadesRef = useRef<(() => void) | null>(null);
+  // Când blocarea îngheață compozitorul, inputul se demontează — la revenire
+  // efectul trebuie să se re-lege de nodul DOM nou (peerBlocked e declarat mai
+  // jos; recalculăm aici din aceleași surse).
+  const composerFrozen = !!headerUserId && blockedIds.has(headerUserId);
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const node = composerRef.current as unknown as HTMLTextAreaElement | null;
+    if (!node) return;
+    const wrap = node.parentElement;
+    const fadeTop = fadeTopRef.current as unknown as HTMLElement | null;
+    const fadeBottom = fadeBottomRef.current as unknown as HTMLElement | null;
+    const thumb = thumbRef.current as unknown as HTMLElement | null;
+
+    // Tranzițiile (formă + opacități) se pun o singură dată, tot imperativ —
+    // ATENȚIE: fără „height" în listă, altfel măsurarea 0px→final ar anima urât.
+    if (wrap) wrap.style.transition = 'border-radius 180ms ease';
+    if (fadeTop) fadeTop.style.transition = 'opacity 150ms ease';
+    if (fadeBottom) fadeBottom.style.transition = 'opacity 150ms ease';
+    if (thumb) thumb.style.transition = 'opacity 300ms ease';
+
+    const updateFades = () => {
+      const canScroll = node.scrollHeight > node.clientHeight + 1;
+      if (fadeTop) fadeTop.style.opacity = canScroll && node.scrollTop > 2 ? '1' : '0';
+      if (fadeBottom) {
+        fadeBottom.style.opacity =
+          canScroll && node.scrollTop + node.clientHeight < node.scrollHeight - 2 ? '1' : '0';
+      }
+    };
+    updateFadesRef.current = updateFades;
+
+    const onScroll = () => {
+      updateFades();
+      if (!thumb) return;
+      const track = node.clientHeight;
+      const h = Math.max(24, (track * track) / node.scrollHeight);
+      const denom = node.scrollHeight - track;
+      const top = denom > 0 ? (node.scrollTop / denom) * (track - h - 16) + 8 : 8;
+      thumb.style.height = `${h}px`;
+      // + padding-ul învelișului: absolutul e relativ la pastilă, nu la textarea.
+      thumb.style.top = `${COMPOSER_V_PADDING + top}px`;
+      thumb.style.opacity = '1';
+      if (thumbTimer.current) clearTimeout(thumbTimer.current);
+      thumbTimer.current = setTimeout(() => {
+        thumb.style.opacity = '0';
+      }, 800);
+    };
+
+    node.addEventListener('scroll', onScroll);
+    node.addEventListener('input', updateFades);
+    return () => {
+      node.removeEventListener('scroll', onScroll);
+      node.removeEventListener('input', updateFades);
+      if (thumbTimer.current) clearTimeout(thumbTimer.current);
+      updateFadesRef.current = null;
+    };
+  }, [composerFrozen]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const node = composerRef.current as unknown as HTMLTextAreaElement | null;
+    if (!node?.style) return;
+    // Trucul clasic de auto-mărire: scrollHeight nu coboară sub înălțimea fixată,
+    // deci măsurăm de la 0 și repunem imediat valoarea plafonată (fără cadru gol).
+    node.style.height = '0px';
+    const clamped = Math.min(COMPOSER_INNER_MAX, Math.max(COMPOSER_INNER_BASE, node.scrollHeight));
+    node.style.height = `${clamped}px`;
+    // Forma, tot imperativ: peste prag colțuri de dreptunghi, sub prag înapoi la
+    // pastila din stil (string gol = câștigă clasa CSS a învelișului). Pe web
+    // composerTall rămâne veșnic false → React nu atinge niciodată borderRadius.
+    const wrap = node.parentElement;
+    if (wrap) {
+      wrap.style.borderRadius =
+        clamped > COMPOSER_TALL_THRESHOLD ? `${COMPOSER_RECT_RADIUS}px` : '';
+    }
+    // Fade-urile depind de noua înălțime (ex. golire → dispar amândouă).
+    updateFadesRef.current?.();
+  }, [text]);
 
   // Android (SDK 54, edge-to-edge): fereastra NU se redimensionează la tastatură, iar
   // KeyboardAvoidingView e defect în ambele moduri ('height' nu-și revine la închidere,
@@ -1763,19 +1907,70 @@ export function ChatScreen<M extends ChatMessageBase>({
           {/* TextInput-ul multiline NU stă direct în rândul flex: pe Android, când
               crește pe verticală se re-măsoară cu lățime necontrânsă și textul se
               întindea peste butoanele „+"/trimite — wrapper-ul îi fixează lățimea. */}
-          <View style={styles.inputWrap}>
+          <View
+            style={[
+              styles.inputWrap,
+              { backgroundColor: theme.background },
+              composerTall && styles.inputWrapTall,
+            ]}>
             <TextInput
+              ref={composerRef}
               style={[
                 styles.input,
-                { color: theme.text, backgroundColor: theme.background },
+                { color: theme.text },
+                Platform.OS === 'android'
+                  ? { minHeight: COMPOSER_INNER_BASE, maxHeight: COMPOSER_INNER_MAX }
+                  : Platform.OS === 'ios'
+                    ? { height: composerHeight }
+                    : // Web: înălțimea e gestionată imperativ (efectul de mai sus).
+                      null,
               ]}
               value={text}
               onChangeText={setText}
+              onContentSizeChange={Platform.OS === 'web' ? undefined : handleComposerSize}
+              // Sub plafon derularea stă oprită pe iOS (altfel rămâne un bounce
+              // fantomă); la plafon se aprinde și preia textul care nu mai încape.
+              scrollEnabled={
+                Platform.OS === 'ios' ? composerHeight >= COMPOSER_INNER_MAX : undefined
+              }
               placeholder={t('chat.inputPlaceholder')}
               placeholderTextColor={theme.textTertiary}
               multiline
               maxLength={1000}
+              // id-ul DOM pe web (CSS-ul din public/index.html îi ascunde
+              // scrollbarul nativ și chenarul de focus); inert pe telefon.
+              nativeID="chat-composer"
             />
+            {Platform.OS === 'web' ? (
+              <>
+                {/* Fade-urile de overflow + indicatorul plutitor (stil 9c).
+                    Vizibilitatea o scriu efectele, imperativ — aici doar schelet
+                    cu opacity 0, ca React să nu se atingă de ea la re-render. */}
+                <View ref={fadeTopRef} pointerEvents="none" style={styles.composerFadeTop}>
+                  <LinearGradient
+                    colors={[theme.background, `${theme.background}00`]}
+                    style={styles.composerFadeFill}
+                  />
+                </View>
+                <View ref={fadeBottomRef} pointerEvents="none" style={styles.composerFadeBottom}>
+                  <LinearGradient
+                    colors={[`${theme.background}00`, theme.background]}
+                    style={styles.composerFadeFill}
+                  />
+                </View>
+                <View
+                  ref={thumbRef}
+                  pointerEvents="none"
+                  style={[
+                    styles.composerThumb,
+                    {
+                      backgroundColor:
+                        scheme === 'dark' ? 'rgba(123,167,224,0.45)' : 'rgba(14,58,125,0.35)',
+                    },
+                  ]}
+                />
+              </>
+            ) : null}
           </View>
           {/* Meniul „+" (19.5) — în DREAPTA casetei text (decizie 25 iul), doar dacă
               ecranul furnizează măcar o opțiune de atașare; ascuns în modul editare. */}
@@ -2151,13 +2346,45 @@ const styles = StyleSheet.create({
     gap: 10,
     borderTopWidth: 1,
   },
-  inputWrap: { flex: 1 },
-  input: {
+  // Pastila (colțuri + padding + fundal) e a ÎNVELIȘULUI, ca zona derulabilă să
+  // rămână strict între padding-uri — textul nu mai atinge marginile rotunjite.
+  inputWrap: {
+    flex: 1,
     borderRadius: Radius.badge,
     paddingHorizontal: 16,
-    paddingVertical: 11,
+    paddingVertical: COMPOSER_V_PADDING,
+    overflow: 'hidden',
+  },
+  // De la al 4-lea rând pastila devine dreptunghi rotunjit (stil WhatsApp).
+  inputWrapTall: { borderRadius: COMPOSER_RECT_RADIUS },
+  // Overlay-urile compozitorului (doar web): schelet cu opacity 0 — vizibilitatea
+  // și poziția indicatorului le scriu efectele, direct pe DOM.
+  composerFadeTop: { position: 'absolute', top: 0, left: 0, right: 0, height: 18, opacity: 0 },
+  composerFadeBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 18,
+    opacity: 0,
+  },
+  composerFadeFill: { flex: 1 },
+  composerThumb: {
+    position: 'absolute',
+    right: 8,
+    top: COMPOSER_V_PADDING,
+    width: 4,
+    height: 24,
+    borderRadius: Radius.circle,
+    opacity: 0,
+  },
+  input: {
+    padding: 0,
     fontSize: 14,
-    maxHeight: 120,
+    lineHeight: COMPOSER_LINE_HEIGHT,
+    textAlignVertical: 'top',
+    // Înălțimea vine per platformă (inline): Android min/max nativ, iOS/web
+    // explicit din onContentSizeChange — vezi COMPOSER_* și handleComposerSize.
   },
   sendButton: {
     width: 44,

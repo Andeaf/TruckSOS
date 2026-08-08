@@ -8,6 +8,10 @@
     },
     "logout": "Ieșire din cont",
     "backToAdmin": "Înapoi la modul admin",
+    "sidebar": {
+      "section": "Administrare",
+      "role": "Administrator"
+    },
     "common": {
       "error": "Eroare",
       "cancel": "Anulează",
@@ -43,6 +47,8 @@
       "filter_dismissed": "Respinse",
       "filter_all": "Toate",
       "empty": "Niciun raport.",
+      "emptyTitlePending": "Niciun raport în așteptare",
+      "emptyHint": "Când un utilizator raportează un anunț, o recenzie sau un mesaj, apare aici pentru moderare.",
       "reason_spam": "Spam",
       "reason_harassment": "Hărțuire",
       "reason_inappropriate": "Conținut nepotrivit",
@@ -71,6 +77,8 @@
       "searchLabel": "Caută",
       "searchPlaceholder": "Nume sau email",
       "empty": "Caută un utilizator după nume sau email.",
+      "emptyTitle": "Caută un utilizator",
+      "emptyHint": "Scrie un nume sau un email în câmpul de sus. Rezultatele apar aici, cu rol, status și acțiuni de moderare.",
       "noResults": "Niciun rezultat.",
       "role_driver": "Șofer",
       "role_mechanic": "Mecanic",
@@ -128,6 +136,7 @@
       "cancel": "Abbrechen"
     },
     "login": {
+      "title": "Anmelden",
       "subtitle": "Melde dich in deinem Konto an",
       "emailLabel": "E-Mail",
       "emailPlaceholder": "email@beispiel.com",
@@ -138,6 +147,13 @@
       "registerLink": "Registrieren",
       "errorEmpty": "Bitte E-Mail und Passwort eingeben.",
       "forgotPassword": "Passwort vergessen?"
+    },
+    "hero": {
+      "headline": "Hilfe unterwegs, in wenigen Minuten.",
+      "description": "Verbindet liegengebliebene Fahrer mit verfügbaren Mechanikern in der Nähe — Pannenmeldungen, Direktchat und Markt-Teile an einem Ort.",
+      "bullet1": "Pannenmeldungen mit Standort auf der Karte",
+      "bullet2": "Direkter Chat Fahrer–Mechaniker",
+      "bullet3": "Markt für Teile und Lkw"
     },
     "register": {
       "subtitle": "Erstelle dein Konto",
@@ -497,6 +513,7 @@
     "historyRemove": "Aus dem Verlauf entfernen"
   },
   "profile": {
+    "viewProfile": "Profil ansehen",
     "tabTitle": "Profil",
     "myProfileTitle": "Mein Profil",
     "editTitle": "Profil bearbeiten",

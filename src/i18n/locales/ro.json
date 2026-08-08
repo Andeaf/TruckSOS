@@ -8,6 +8,10 @@
     },
     "logout": "Ieșire din cont",
     "backToAdmin": "Înapoi la modul admin",
+    "sidebar": {
+      "section": "Administrare",
+      "role": "Administrator"
+    },
     "common": {
       "error": "Eroare",
       "cancel": "Anulează",
@@ -43,6 +47,8 @@
       "filter_dismissed": "Respinse",
       "filter_all": "Toate",
       "empty": "Niciun raport.",
+      "emptyTitlePending": "Niciun raport în așteptare",
+      "emptyHint": "Când un utilizator raportează un anunț, o recenzie sau un mesaj, apare aici pentru moderare.",
       "reason_spam": "Spam",
       "reason_harassment": "Hărțuire",
       "reason_inappropriate": "Conținut nepotrivit",
@@ -71,6 +77,8 @@
       "searchLabel": "Caută",
       "searchPlaceholder": "Nume sau email",
       "empty": "Caută un utilizator după nume sau email.",
+      "emptyTitle": "Caută un utilizator",
+      "emptyHint": "Scrie un nume sau un email în câmpul de sus. Rezultatele apar aici, cu rol, status și acțiuni de moderare.",
       "noResults": "Niciun rezultat.",
       "role_driver": "Șofer",
       "role_mechanic": "Mecanic",
@@ -128,6 +136,7 @@
       "cancel": "Anulează"
     },
     "login": {
+      "title": "Autentificare",
       "subtitle": "Autentifică-te în cont",
       "emailLabel": "Email",
       "emailPlaceholder": "email@exemplu.com",
@@ -138,6 +147,13 @@
       "registerLink": "Înregistrează-te",
       "errorEmpty": "Completează email-ul și parola.",
       "forgotPassword": "Ai uitat parola?"
+    },
+    "hero": {
+      "headline": "Ajutor pe traseu, în câteva minute.",
+      "description": "Conectează șoferii rămași în pană cu mecanici disponibili din zonă — anunțuri, chat direct și piese din Market, într-un singur loc.",
+      "bullet1": "Anunțuri de urgență cu locație pe hartă",
+      "bullet2": "Chat direct șofer–mecanic",
+      "bullet3": "Market de piese și camioane"
     },
     "register": {
       "subtitle": "Creează-ți contul",
@@ -661,6 +677,7 @@
     "discardOk": "Renunță"
   },
   "profile": {
+    "viewProfile": "Vezi profilul",
     "tabTitle": "Profil",
     "myProfileTitle": "Profilul meu",
     "editTitle": "Editează profilul",

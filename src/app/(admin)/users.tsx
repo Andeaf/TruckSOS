@@ -8,8 +8,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  TextInput,
   View,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -18,8 +20,9 @@ import { Input } from '@/components/ui/input';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Radius, Spacing } from '@/constants/theme';
+import { Radius, Shadows, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useWideLayout } from '@/components/web-sidebar';
 import {
   adminUpdateProfile,
   banUser,
@@ -37,6 +40,10 @@ const LOCALE_MAP: Record<string, string> = { ro: 'ro-RO', en: 'en-GB', de: 'de-D
 
 export default function AdminUsers() {
   const { t } = useTranslation();
+  const theme = useTheme();
+  // Design 10d: pe web lat — titlu + căutare constrânsă pe același rând și
+  // empty state cu conținut în locul textului simplu.
+  const wide = useWideLayout();
   const { uid } = useLocalSearchParams<{ uid?: string }>();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<AdminUserRow[]>([]);
@@ -73,28 +80,63 @@ export default function AdminUsers() {
 
   return (
     <ThemedView style={{ flex: 1 }}>
-      <ScreenHeader title={t('admin.users.title')} />
-
-      <View style={styles.searchRow}>
-        <Input
-          label={t('admin.users.searchLabel')}
-          value={query}
-          onChangeText={setQuery}
-          placeholder={t('admin.users.searchPlaceholder')}
-          autoCapitalize="none"
-          returnKeyType="search"
-        />
-      </View>
+      {wide ? (
+        <View style={w.headRow}>
+          <ThemedText style={w.pageTitle}>{t('admin.users.title')}</ThemedText>
+          <View style={[w.searchPill, { backgroundColor: theme.backgroundElement }]}>
+            <Feather name="search" size={15} color={theme.textTertiary} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder={t('admin.users.searchPlaceholder')}
+              placeholderTextColor={theme.textTertiary}
+              autoCapitalize="none"
+              returnKeyType="search"
+              style={[w.searchInput, { color: theme.text }]}
+            />
+          </View>
+        </View>
+      ) : (
+        <>
+          <ScreenHeader title={t('admin.users.title')} />
+          <View style={styles.searchRow}>
+            <Input
+              label={t('admin.users.searchLabel')}
+              value={query}
+              onChangeText={setQuery}
+              placeholder={t('admin.users.searchPlaceholder')}
+              autoCapitalize="none"
+              returnKeyType="search"
+            />
+          </View>
+        </>
+      )}
 
       <FlatList
         data={results}
         keyExtractor={(u) => u.id}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, wide && w.list]}
         ListEmptyComponent={
-          <ThemedText themeColor="textSecondary" style={styles.empty}>
-            {query.trim().length < 2 ? t('admin.users.empty') : t('admin.users.noResults')}
-          </ThemedText>
+          wide ? (
+            <View style={w.emptyWrap}>
+              <View style={[w.emptyIcon, { backgroundColor: theme.brandSoft }]}>
+                <Feather name="search" size={30} color={theme.brand} />
+              </View>
+              <ThemedText style={w.emptyTitle}>
+                {query.trim().length < 2 ? t('admin.users.emptyTitle') : t('admin.users.noResults')}
+              </ThemedText>
+              {query.trim().length < 2 ? (
+                <ThemedText themeColor="textTertiary" style={w.emptyHint}>
+                  {t('admin.users.emptyHint')}
+                </ThemedText>
+              ) : null}
+            </View>
+          ) : (
+            <ThemedText themeColor="textSecondary" style={styles.empty}>
+              {query.trim().length < 2 ? t('admin.users.empty') : t('admin.users.noResults')}
+            </ThemedText>
+          )
         }
         renderItem={({ item }) => (
           <Pressable onPress={() => openDetail(item.id)}>
@@ -539,4 +581,47 @@ const styles = StyleSheet.create({
   closeBtn: { alignSelf: 'center', marginTop: Spacing.two, padding: Spacing.two },
   editForm: { gap: Spacing.two, paddingBottom: Spacing.two },
   requiredNote: { textAlign: 'center' },
+});
+
+/** Stilurile variantei late (design 10d). */
+const w = StyleSheet.create({
+  headRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    paddingHorizontal: 28,
+    paddingTop: 24,
+    maxWidth: 1060,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  pageTitle: { fontSize: 26, fontWeight: '800', letterSpacing: -0.4, lineHeight: 32 },
+  searchPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 999,
+    paddingVertical: 5,
+    paddingHorizontal: 16,
+    width: 380,
+    ...Shadows.chip,
+  },
+  searchInput: { flex: 1, fontSize: 14, paddingVertical: 5 },
+  list: { maxWidth: 1060, width: '100%', alignSelf: 'center', paddingHorizontal: 28 },
+  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 120 },
+  emptyIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: { fontSize: 16, fontWeight: '700' },
+  emptyHint: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    textAlign: 'center',
+    maxWidth: 340,
+    lineHeight: 20,
+  },
 });
