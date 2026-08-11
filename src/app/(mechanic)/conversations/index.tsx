@@ -19,7 +19,7 @@ import { HeaderGradient, HeaderGradientDirection, Radius, Shadows, Spacing } fro
 import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
-import { useConversations, deleteConversations, otherParticipant, startDirectConversation, useUnreadCounts, type ChatParticipant, type ConversationWithDetails } from '@/hooks/use-chat';
+import { conversationActivityAt, useConversations, deleteConversations, otherParticipant, startDirectConversation, useUnreadCounts, type ChatParticipant, type ConversationWithDetails } from '@/hooks/use-chat';
 import { useChannels, useChannelUnreadCount } from '@/hooks/use-channel-chat';
 import { useSignedUrls } from '@/hooks/use-signed-urls';
 import { useTimeAgo } from '@/hooks/use-time-ago';
@@ -55,18 +55,20 @@ function ChannelCard({
               <ThemedText type="smallBold" numberOfLines={1} style={styles.name}>
                 {t(`channel.name.${channel.type}`)}
               </ThemedText>
-              {unreadCount > 0 ? (
-                <View style={styles.unreadBadge}>
-                  <ThemedText style={styles.unreadText}>
-                    {formatBadge(unreadCount)}
-                  </ThemedText>
-                </View>
-              ) : null}
             </View>
             <ThemedText themeColor="textSecondary" type="small" numberOfLines={1}>
               {t('channel.subtitle')}
             </ThemedText>
           </View>
+          {/* Bulina stă în rândul cardului, nu lângă nume: centrată vertical,
+              aliniată cu rotița (feedback user, 10 aug). */}
+          {unreadCount > 0 ? (
+            <View style={styles.unreadBadge}>
+              <ThemedText style={styles.unreadText}>
+                {formatBadge(unreadCount)}
+              </ThemedText>
+            </View>
+          ) : null}
           <Pressable
             onPress={onOpenSettings}
             hitSlop={12}
@@ -133,7 +135,7 @@ function ConversationCard({
                   </View>
                 ) : null}
                 <ThemedText themeColor="textSecondary" type="small" style={styles.time}>
-                  {timeAgo(item.created_at)}
+                  {timeAgo(conversationActivityAt(item))}
                 </ThemedText>
               </View>
             </View>

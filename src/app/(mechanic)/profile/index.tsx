@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +13,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
 import { useSettings } from '@/hooks/use-settings';
+import { PLAY_STORE_URL, shareApp } from '@/lib/share-app';
 
 /**
  * Profilul mecanicului (PLAN_FAZA10.md §4): read-only + navigație.
@@ -91,7 +92,23 @@ export default function MechanicProfileScreen() {
             label={t('profile.privacy')}
             onPress={() => router.push('/(mechanic)/profile/privacy' as never)}
           />
+          {/* Pe web nu există sheet de share — în locul rândului stă textul de mai jos. */}
+          {Platform.OS !== 'web' ? (
+            <ListRow icon="share" label={t('profile.shareApp')} onPress={() => shareApp(t)} />
+          ) : null}
         </RowGroup>
+
+        {Platform.OS === 'web' ? (
+          <ThemedText themeColor="textSecondary" type="small" style={styles.mobileHint}>
+            {t('profile.mobileAppsHint')}{' '}
+            <ThemedText
+              type="small"
+              themeColor="brand"
+              onPress={() => Linking.openURL(PLAY_STORE_URL)}>
+              {t('profile.mobileAppsLink')}
+            </ThemedText>
+          </ThemedText>
+        ) : null}
 
         {profile?.role === 'admin' ? (
           <View style={styles.signOut}>
@@ -134,5 +151,6 @@ const styles = StyleSheet.create({
   },
   detail: { gap: Spacing.one },
   detailHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  mobileHint: { marginHorizontal: Spacing.one },
   signOut: { marginTop: Spacing.three },
 });

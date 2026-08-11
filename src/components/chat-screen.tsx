@@ -257,9 +257,6 @@ function userColor(userId: string) {
   return USER_COLORS[hash % USER_COLORS.length];
 }
 
-/** Pauza care rupe un grup de mesaje consecutive (ca la WhatsApp). */
-const GROUP_GAP_MS = 10 * 60 * 1000;
-
 /**
  * Compozitorul crește cu textul până la 2,5× înălțimea de bază (cerere 8 aug);
  * abia DUPĂ plafon textul derulează în interior. lineHeight explicit — altfel
@@ -331,7 +328,7 @@ interface MessageBubbleProps<M extends ChatMessageBase> {
   onLongPress?: () => void;
   /** Tap pe citat → derulează la mesajul original (dacă e încărcat). */
   onPressQuote?: () => void;
-  /** Tap pe avatarul expeditorului (chat de grup) → profilul lui. */
+  /** Tap pe avatarul SAU numele expeditorului (chat de grup) → profilul lui. */
   onPressAvatar?: () => void;
   /** Bife (doar chat privat, mesaj propriu): trimis (✓) / citit (✓✓). Null = fără bife. */
   readState?: 'sent' | 'read' | null;
@@ -417,10 +414,13 @@ function MessageBubble<M extends ChatMessageBase>({
   const uc = userColor(message.sender_id);
   const nameColor = scheme === 'dark' ? uc.dark : uc.base;
   // Numele + rolul apar O dată per grup, ÎN prima bulă (nu deasupra ei, ca înainte).
+  // Tap pe nume = tap pe avatar (profilul expeditorului) — cerere user, 10 aug.
   const senderHeader =
     !isMe && isFirstOfGroup && senderName ? (
       <Text
         numberOfLines={1}
+        onPress={onPressAvatar}
+        suppressHighlighting
         style={[styles.senderHeader, !isDeleted && !!message.image_path && styles.senderHeaderOnImage]}>
         <Text style={[styles.senderHeaderName, { color: nameColor }]}>{senderName}</Text>
         {senderRole ? (
@@ -524,7 +524,11 @@ function MessageBubble<M extends ChatMessageBase>({
         }}>
         {/* Mesaj doar-card (fără bulă): numele nu are bulă în care să stea → deasupra cardului. */}
         {!showBubble && !isMe && isFirstOfGroup && senderName ? (
-          <Text numberOfLines={1} style={styles.senderLabelOutside}>
+          <Text
+            numberOfLines={1}
+            onPress={onPressAvatar}
+            suppressHighlighting
+            style={styles.senderLabelOutside}>
             <Text style={[styles.senderHeaderName, { color: nameColor }]}>{senderName}</Text>
             {senderRole ? (
               <Text style={[styles.senderHeaderRole, { color: theme.textTertiary }]}>
@@ -904,8 +908,10 @@ interface ChatScreenProps<M extends ChatMessageBase> {
   headerAvatarPath?: string | null;
   /** Id-ul interlocutorului din antet — pentru tap pe avatar → profil (chat 1-la-1). */
   headerUserId?: string;
-  /** Tap pe avatar (antet sau bulă) → profilul acelui utilizator. Rutarea o decide ecranul. */
-  onPressUser?: (userId: string) => void;
+  /** Tap pe avatar sau pe nume (antet sau bulă) → profilul acelui utilizator. Rutarea o
+   * decide ecranul; mesajul însoțește id-ul (când există) ca ecranul să poată alege ruta
+   * după rolul expeditorului. Din antet (chat 1-la-1) vine fără mesaj. */
+  onPressUser?: (userId: string, message?: M) => void;
   /** Faza 19.4: tap pe cardul de anunț atașat unui mesaj → detaliul anunțului. */
   onPressListing?: (listingId: string) => void;
   /**
@@ -1269,8 +1275,17 @@ export function ChatScreen<M extends ChatMessageBase>({
     [t, onDeleteMessage],
   );
 
-  // Inverted FlatList needs data in descending order (newest first = shown at bottom)
-  const reversedMessages = useMemo(() => [...messages].reverse(), [messages]);
+  // Lista inversată vrea datele descrescător (cel mai nou primul = afișat jos).
+  // Sortăm, nu doar inversăm: starea crește în ordinea SOSIRII (răspuns INSERT vs.
+  // eveniment Realtime), deci la trimiteri rapide un mesaj putea ateriza în array
+  // înaintea unuia mai vechi — gruparea compară vecinii din array și rupea grupul.
+  const reversedMessages = useMemo(
+    () =>
+      [...messages].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      ),
+    [messages]
+  );
 
   // Eticheta pastilei de dată: Astăzi / Ieri / dată în limba aplicației.
   const dateLabel = useCallback(
@@ -1634,14 +1649,14 @@ export function ChatScreen<M extends ChatMessageBase>({
               const older = reversedMessages[index + 1];
               const showDate = !older || dayKey(older.created_at) !== dayKey(item.created_at);
               // Grupare WhatsApp (stil 7a): mesajele consecutive de la același expeditor
-              // formează un grup; grupul se rupe la zi nouă, la pauze >10 min și la
+              // formează un grup; grupul se rupe la zi nouă, la alt expeditor și la
               // separatorul „Mesaje noi" (un grup tăiat de separator ar rămâne fără nume).
+              // Intenționat FĂRĂ prag de timp (scos 9 aug): pauzele >10 min spațiau
+              // vizual mesajele aceluiași expeditor — separarea în timp o dă pastila de zi.
               const isFirstOfGroup =
                 showDate ||
                 !older ||
                 older.sender_id !== item.sender_id ||
-                new Date(item.created_at).getTime() - new Date(older.created_at).getTime() >
-                  GROUP_GAP_MS ||
                 item.id === unreadAnchorId;
               return (
               // 14px între grupuri, 3px între mesajele aceluiași grup (spațierea 7a).
@@ -1698,7 +1713,7 @@ export function ChatScreen<M extends ChatMessageBase>({
                   item.reply_to_id ? () => scrollToQuoted(item.reply_to_id!) : undefined
                 }
                 onPressAvatar={
-                  onPressUser ? () => onPressUser(item.sender_id) : undefined
+                  onPressUser ? () => onPressUser(item.sender_id, item) : undefined
                 }
                 onPressListing={onPressListing}
                 onPressMechanic={onPressMechanic}

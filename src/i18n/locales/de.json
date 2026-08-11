@@ -450,7 +450,8 @@
   },
   "publicProfile": {
     "title": "Profil",
-    "notFound": "Profil nicht verfügbar"
+    "notFound": "Profil nicht verfügbar",
+    "startConversation": "Privates Gespräch beginnen"
   },
   "report": {
     "title": "Melden",
@@ -559,7 +560,11 @@
     "sectionAccount": "Konto",
     "sectionDetails": "Details",
     "terms": "Nutzungsbedingungen",
-    "privacy": "Datenschutz"
+    "privacy": "Datenschutz",
+    "shareApp": "App weiterempfehlen",
+    "shareMessage": "Hallo! Ich empfehle TruckSOS – die Plattform, die Lkw-Fahrer mit Lkw-Werkstätten verbindet. Lade die App bei Google Play herunter: {{url}}",
+    "mobileAppsHint": "TruckSOS gibt es auch als Handy-App, mit Benachrichtigungen für neue Nachrichten und Anzeigen.",
+    "mobileAppsLink": "Jetzt bei Google Play laden"
   },
   "truck": {
     "sectionToggleAdd": "LKW-Details hinzufügen",

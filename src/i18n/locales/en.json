@@ -450,7 +450,8 @@
   },
   "publicProfile": {
     "title": "Profile",
-    "notFound": "Profile unavailable"
+    "notFound": "Profile unavailable",
+    "startConversation": "Start a private conversation"
   },
   "report": {
     "title": "Report",
@@ -559,7 +560,11 @@
     "sectionAccount": "Account",
     "sectionDetails": "Details",
     "terms": "Terms and conditions",
-    "privacy": "Privacy"
+    "privacy": "Privacy",
+    "shareApp": "Share this app",
+    "shareMessage": "Hi! I recommend TruckSOS — the platform that connects truck drivers with truck mechanics. Get the app on Google Play: {{url}}",
+    "mobileAppsHint": "TruckSOS is also available as a mobile app, with notifications for new messages and announcements.",
+    "mobileAppsLink": "Get it on Google Play"
   },
   "truck": {
     "sectionToggleAdd": "Add truck details",

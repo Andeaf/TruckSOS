@@ -21,13 +21,16 @@ export function usePushNavigation() {
     if (!profile || !pushAvailable()) return;
     const role = profile.role;
 
+    // `navigate`, nu `push`: dacă ecranul e deja în stivă (ai ieșit din aplicație
+    // de pe el și revii prin notificare), push ar crea o DUBLURĂ — back te lăsa
+    // tot pe același ecran (bug 10 aug). navigate revine la instanța existentă.
     function open(data: PushData) {
       if (!data.id) return;
       const params = { id: data.id };
 
       switch (data.type) {
         case 'conversation':
-          router.push({
+          router.navigate({
             pathname:
               role === 'driver'
                 ? '/(driver)/conversations/[id]'
@@ -36,17 +39,17 @@ export function usePushNavigation() {
           });
           break;
         case 'announcement':
-          router.push({ pathname: '/(driver)/announcements/[id]' as never, params });
+          router.navigate({ pathname: '/(driver)/announcements/[id]' as never, params });
           break;
         case 'feed':
-          router.push({ pathname: '/(mechanic)/feed/[id]' as never, params });
+          router.navigate({ pathname: '/(mechanic)/feed/[id]' as never, params });
           break;
         case 'application':
-          router.push({ pathname: '/(mechanic)/applications/[id]' as never, params });
+          router.navigate({ pathname: '/(mechanic)/applications/[id]' as never, params });
           break;
         // Notificările opt-in ale canalului global (5 aug).
         case 'channel':
-          router.push({
+          router.navigate({
             pathname:
               role === 'driver'
                 ? '/(driver)/conversations/channel/[id]'

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useSettings } from '@/hooks/use-settings';
 import { useSavedTrucks, addTruck, updateTruck, deleteTruck } from '@/hooks/use-trucks';
+import { PLAY_STORE_URL, shareApp } from '@/lib/share-app';
 import type { Truck } from '@/types/database';
 
 /**
@@ -181,7 +182,23 @@ export default function DriverProfileScreen() {
             label={t('profile.privacy')}
             onPress={() => router.push('/(driver)/profile/privacy' as never)}
           />
+          {/* Pe web nu există sheet de share — în locul rândului stă textul de mai jos. */}
+          {Platform.OS !== 'web' ? (
+            <ListRow icon="share" label={t('profile.shareApp')} onPress={() => shareApp(t)} />
+          ) : null}
         </RowGroup>
+
+        {Platform.OS === 'web' ? (
+          <ThemedText themeColor="textSecondary" type="small" style={styles.mobileHint}>
+            {t('profile.mobileAppsHint')}{' '}
+            <ThemedText
+              type="small"
+              themeColor="brand"
+              onPress={() => Linking.openURL(PLAY_STORE_URL)}>
+              {t('profile.mobileAppsLink')}
+            </ThemedText>
+          </ThemedText>
+        ) : null}
 
         {profile?.role === 'admin' ? (
           <View style={styles.signOut}>
@@ -242,5 +259,6 @@ const styles = StyleSheet.create({
   truckInfo: { flex: 1, gap: 2 },
   truckLabel: { fontSize: 14 },
   truckActions: { flexDirection: 'row', gap: Spacing.three, marginLeft: Spacing.two },
+  mobileHint: { marginHorizontal: Spacing.one },
   signOut: { marginTop: Spacing.three },
 });

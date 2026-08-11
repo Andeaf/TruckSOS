@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
@@ -15,10 +15,11 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
 import { useBlocked } from '@/hooks/use-blocked';
+import { startDirectConversation } from '@/hooks/use-chat';
 import { useTheme } from '@/hooks/use-theme';
 import { useSignedUrl } from '@/hooks/use-signed-urls';
 import { displayName, isDeletedUser } from '@/lib/display-name';
-import type { Profile } from '@/types/database';
+import type { Profile, Role } from '@/types/database';
 
 /**
  * Profil public generic (Faza 14.4), refolosit de ambele grupuri de rute prin câte
@@ -45,13 +46,14 @@ async function fetchPublicProfile(userId: string): Promise<PublicProfile | null>
   return (data as unknown as PublicProfile) ?? null;
 }
 
-export function PublicProfileScreen() {
+export function PublicProfileScreen({ role }: { role: Role }) {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
   // Ecran mereu deschis prin push (din chat) → back-ul urcă în stivă; fallback-ul „/"
   // (index → redirect pe grupul corect) acoperă doar cazul rar fără istoric.
   const goBack = useBack('/');
   const theme = useTheme();
+  const router = useRouter();
   const { session } = useAuth();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -84,6 +86,37 @@ export function PublicProfileScreen() {
       ]);
     }
   }, [isBlocked, id, t, block, unblock]);
+
+  // „Începe o conversație privată" (10 aug) — același flux ca „Contactează" de pe
+  // ecranul bogat de mecanic: start_direct_conversation e universal (19.6), serverul
+  // întoarce conversația existentă dacă perechea are deja una.
+  const [contacting, setContacting] = useState(false);
+  const handleStartConversation = useCallback(async () => {
+    if (contacting) return;
+    if (isBlocked) {
+      Alert.alert(t('block.blockedByYouTitle'), t('block.blockedByYou'), [
+        { text: t('block.cancel'), style: 'cancel' },
+        { text: t('block.unblock'), onPress: () => unblock(id) },
+      ]);
+      return;
+    }
+    setContacting(true);
+    const { conversationId, error } = await startDirectConversation(id);
+    setContacting(false);
+    if (error === 'blocked_by_you') {
+      Alert.alert(t('newConversation.blockedTitle'), t('newConversation.blockedBody'));
+      return;
+    }
+    if (error || !conversationId) {
+      Alert.alert(t('common.error'));
+      return;
+    }
+    router.push({
+      pathname:
+        role === 'driver' ? '/(driver)/conversations/[id]' : '/(mechanic)/conversations/[id]',
+      params: { id: conversationId },
+    } as never);
+  }, [contacting, isBlocked, id, t, unblock, router, role]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -227,6 +260,27 @@ export function PublicProfileScreen() {
             {profile.contact_email || t('profile.emptyField')}
           </ThemedText>
         </ThemedView>
+
+        {/* Aceleași condiții ca raportarea: nu pe tine însuți, nu pe un cont șters. */}
+        {canReport ? (
+          <Pressable
+            onPress={handleStartConversation}
+            disabled={contacting}
+            style={({ pressed }) => [
+              styles.contactButton,
+              { backgroundColor: theme.primary },
+              (pressed || contacting) && styles.pressed,
+            ]}>
+            {contacting ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <MaterialIcons name="chat" size={18} color="#fff" />
+            )}
+            <ThemedText style={styles.contactButtonText}>
+              {t('publicProfile.startConversation')}
+            </ThemedText>
+          </Pressable>
+        ) : null}
       </ScrollView>
 
       {reportVisible ? (
@@ -252,4 +306,16 @@ const styles = StyleSheet.create({
   section: { borderRadius: Radius.card, padding: Spacing.three, gap: Spacing.two },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  contactButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+    paddingVertical: Spacing.three,
+    borderRadius: Radius.control,
+    // backgroundColor vine inline din theme.primary.
+    marginTop: Spacing.two,
+  },
+  contactButtonText: { color: '#ffffff', fontSize: 15, fontWeight: '600' },
+  pressed: { opacity: 0.7 },
 });

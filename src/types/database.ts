@@ -114,6 +114,9 @@ export interface Conversation {
   /** Faza 19: conversație de MARKET (NOT NULL) — contextul e anunțul de vânzare; SET NULL la ștergere. */
   listing_id: string | null;
   created_at: string;
+  /** 11 aug: created_at al ultimului mesaj (trigger, migrarea 20260811) — sortarea listei.
+   * Absent pe schema veche → clientul cade pe created_at. */
+  last_message_at?: string | null;
 }
 
 export interface Message {

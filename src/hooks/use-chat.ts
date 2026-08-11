@@ -131,6 +131,12 @@ export async function fetchMessageAnnouncementContext(
   return (data as unknown as MessageAnnouncementContext) ?? null;
 }
 
+/** Ultima activitate a conversației: ultimul mesaj (migrarea 20260811) sau, pe schema
+ * veche / fără mesaje, crearea. Sortarea listei ȘI ora de pe card folosesc același reper. */
+export function conversationActivityAt(conv: Conversation): string {
+  return conv.last_message_at ?? conv.created_at;
+}
+
 /** Selectul comun al listei/detaliului de conversație (embeds pe ambele sloturi + contexte). */
 const CONVERSATION_SELECT =
   '*, announcement:announcements!announcement_id(location,status,description), ' +
@@ -168,7 +174,17 @@ export function useConversations(userId: string | undefined) {
     }
 
     const { data } = await query;
-    setConversations((data as unknown as ConversationWithDetails[]) ?? []);
+    const rows = (data as unknown as ConversationWithDetails[]) ?? [];
+    // Sortare PE CLIENT după ultima activitate, nu ORDER BY last_message_at pe server:
+    // coloana există abia după migrarea 20260811, iar un ORDER BY pe o coloană lipsă
+    // ar goli lista. Fallback-ul din conversationActivityAt ține sortarea corectă
+    // (după creare) și pe schema veche.
+    rows.sort(
+      (a, b) =>
+        new Date(conversationActivityAt(b)).getTime() -
+        new Date(conversationActivityAt(a)).getTime()
+    );
+    setConversations(rows);
     setLoading(false);
   }, [userId]);
 
@@ -603,10 +619,14 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
       .from('conversations')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .select('id').or(`driver_id.eq.${userId},mechanic_id.eq.${userId}` as any);
-    const convs = ((allConvs ?? []) as unknown as { id: string }[]).filter(
-      (c) => !deletedIds.has(c.id),
-    );
-    setConvIdsKey(convs.map((c) => c.id).sort().join(','));
+    const all = (allConvs ?? []) as unknown as { id: string }[];
+    // Filtrul Realtime acoperă TOATE conversațiile mele, inclusiv cele șterse: un
+    // mesaj nou într-o conversație ștearsă o reînvie server-side (trigger 20260811),
+    // iar evenimentul lui trebuie să declanșeze recalculul — refetch-ul de mai sus
+    // vede rândul de ștergere deja dispărut și o numără. Fără asta, bulina apărea
+    // abia la următorul focus/foreground.
+    setConvIdsKey(all.map((c) => c.id).sort().join(','));
+    const convs = all.filter((c) => !deletedIds.has(c.id));
     if (convs.length === 0) { setCounts({}); return; }
 
     const { data: reads } = await supabase

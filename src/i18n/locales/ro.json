@@ -452,7 +452,8 @@
   },
   "publicProfile": {
     "title": "Profil",
-    "notFound": "Profil indisponibil"
+    "notFound": "Profil indisponibil",
+    "startConversation": "Începe o conversație privată"
   },
   "report": {
     "title": "Raportează",
@@ -723,7 +724,11 @@
     "sectionAccount": "Cont",
     "sectionDetails": "Detalii",
     "terms": "Termeni și condiții",
-    "privacy": "Confidențialitate"
+    "privacy": "Confidențialitate",
+    "shareApp": "Recomandă aplicația",
+    "shareMessage": "Salut! Îți recomand TruckSOS — platforma care conectează transportatorii cu mecanicii de camioane. Descarcă aplicația din Google Play: {{url}}",
+    "mobileAppsHint": "TruckSOS există și ca aplicație de telefon, cu notificări pentru mesaje și anunțuri noi.",
+    "mobileAppsLink": "Descarc-o din Google Play"
   },
   "truck": {
     "sectionToggleAdd": "Adaugă detalii camion",

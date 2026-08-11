@@ -129,8 +129,16 @@ export default function DriverChannelChatScreen() {
       onLoadOlder={loadOlder}
       renderSenderName={(message) => displayName(message.sender, t)}
       renderSenderAvatarPath={(message) => message.sender.avatar_path}
-      onPressUser={(userId) =>
-        router.push({ pathname: '/(driver)/public-profile/[id]' as never, params: { id: userId } })
+      onPressUser={(userId, message) =>
+        // Rutare pe rolul REAL al expeditorului (ca în chatul privat): mecanicii ajung
+        // pe ecranul bogat (Contact/rating/favorite), restul pe profilul public generic.
+        router.push({
+          pathname:
+            message?.sender.role === 'mechanic'
+              ? '/(driver)/mechanic-profile/[id]'
+              : '/(driver)/public-profile/[id]',
+          params: { id: userId },
+        } as never)
       }
       renderSenderRole={(message) => t(`auth.roleSelect.${message.sender.role}Title`)}
       onSend={async (content, replyToId) => {
