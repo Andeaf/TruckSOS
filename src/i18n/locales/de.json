@@ -793,6 +793,8 @@
     "sectionTitle": "Fotos",
     "counter": "{{current}} / {{total}}",
     "close": "Schließen",
+    "prevPhoto": "Vorheriges Foto",
+    "nextPhoto": "Nächstes Foto",
     "download": "Herunterladen",
     "downloadOk": "Foto in der Galerie gespeichert.",
     "downloadFailed": "Das Foto konnte nicht gespeichert werden.",

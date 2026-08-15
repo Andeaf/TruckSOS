@@ -1,23 +1,14 @@
-import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
+import { TAB_BAR_WEB_STYLE, tabLabel, useTabLabelFontSize } from '@/components/tab-label';
 import { AppTabBar, useWideLayout } from '@/components/web-sidebar';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useUnreadCounts } from '@/hooks/use-chat';
 import { useChannels, useChannelUnreadCount } from '@/hooks/use-channel-chat';
 import { formatBadge } from '@/lib/badge';
-
-/** Eticheta de tab din design: 11px, weight 700 pe activ / 600 pe inactiv. */
-function tabLabel(label: string) {
-  return function TabLabel({ focused, color }: { focused: boolean; color: string }) {
-    return (
-      <Text style={{ fontSize: 11, fontWeight: focused ? '700' : '600', color }}>{label}</Text>
-    );
-  };
-}
 
 export default function DriverLayout() {
   const theme = useTheme();
@@ -30,6 +21,13 @@ export default function DriverLayout() {
   const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0) + channelUnread;
   // Web pe ecran lat: aceleași rute, dar ca bară laterală (design „Web Redesign").
   const wide = useWideLayout();
+  // Font comun pentru toate etichetele barei — cea mai lungă dictează mărimea.
+  const tabFontSize = useTabLabelFontSize([
+    t('driver.tabs.announcements'),
+    t('driver.tabs.conversations'),
+    t('search.tabTitle'),
+    t('market.tabTitle'),
+  ]);
 
   return (
     <Tabs
@@ -44,16 +42,19 @@ export default function DriverLayout() {
         tabBarActiveTintColor: theme.brand,
         tabBarInactiveTintColor: theme.textTertiary,
         tabBarStyle: {
+          ...TAB_BAR_WEB_STYLE,
           backgroundColor: theme.barBackground,
           borderTopWidth: 1,
           borderTopColor: theme.separator,
         },
+        // Iconița+eticheta stau ancorate sus în bară — le coborâm puțin spre centru.
+        tabBarItemStyle: { paddingTop: 4 },
       }}>
       <Tabs.Screen
         name="announcements"
         options={{
           title: t('driver.tabs.announcements'),
-          tabBarLabel: tabLabel(t('driver.tabs.announcements')),
+          tabBarLabel: tabLabel(t('driver.tabs.announcements'), tabFontSize),
           tabBarIcon: ({ color, size }) => <Feather name="list" size={size} color={color} />,
         }}
       />
@@ -61,7 +62,7 @@ export default function DriverLayout() {
         name="conversations"
         options={{
           title: t('driver.tabs.conversations'),
-          tabBarLabel: tabLabel(t('driver.tabs.conversations')),
+          tabBarLabel: tabLabel(t('driver.tabs.conversations'), tabFontSize),
           tabBarBadge: totalUnread > 0 ? formatBadge(totalUnread) : undefined,
           tabBarIcon: ({ color, size }) => (
             <Feather name="message-circle" size={size} color={color} />
@@ -79,7 +80,7 @@ export default function DriverLayout() {
         name="search"
         options={{
           title: t('search.tabTitle'),
-          tabBarLabel: tabLabel(t('search.tabTitle')),
+          tabBarLabel: tabLabel(t('search.tabTitle'), tabFontSize),
           tabBarIcon: ({ color, size }) => <Feather name="search" size={size} color={color} />,
         }}
       />
@@ -88,7 +89,7 @@ export default function DriverLayout() {
         name="market"
         options={{
           title: t('market.tabTitle'),
-          tabBarLabel: tabLabel(t('market.tabTitle')),
+          tabBarLabel: tabLabel(t('market.tabTitle'), tabFontSize),
           tabBarIcon: ({ color, size }) => <Feather name="shopping-bag" size={size} color={color} />,
         }}
       />

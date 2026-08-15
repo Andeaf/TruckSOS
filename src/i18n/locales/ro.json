@@ -795,6 +795,8 @@
     "sectionTitle": "Poze",
     "counter": "{{current}} / {{total}}",
     "close": "Închide",
+    "prevPhoto": "Poza anterioară",
+    "nextPhoto": "Poza următoare",
     "download": "Descarcă",
     "downloadOk": "Poza a fost salvată în galerie.",
     "downloadFailed": "Poza nu a putut fi salvată.",

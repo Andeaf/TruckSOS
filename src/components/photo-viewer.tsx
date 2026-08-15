@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   FlatList,
   Linking,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   useWindowDimensions,
@@ -183,6 +184,18 @@ function ZoomablePhoto({ url, width, height, isActive, onZoomChange }: ZoomableP
     transform: [{ translateX: tx.value }, { translateY: ty.value }, { scale: scale.value }],
   }));
 
+  // Pe web, GestureDetector pune `touch-action: none` pe poză → omoară scroll-ul
+  // nativ orizontal al FlatList-ului (swipe-ul nu pornea deloc, 15 aug). Zoom-ul
+  // cu gesturi rămâne pe nativ; pe web navigarea se face prin swipe + săgețile
+  // din PhotoViewer.
+  if (Platform.OS === 'web') {
+    return (
+      <View style={{ width, height }}>
+        <Image source={{ uri: url }} style={styles.zoomImage} contentFit="contain" transition={150} />
+      </View>
+    );
+  }
+
   return (
     <GestureDetector gesture={gesture}>
       <Animated.View style={[{ width, height }, animatedStyle]}>
@@ -206,6 +219,33 @@ export function PhotoViewer({
   const [downloading, setDownloading] = useState(false);
   // Poza activă e zoomată → paginarea se oprește (pan-ul aparține pozei).
   const [zoomed, setZoomed] = useState(false);
+  const listRef = useRef<FlatList<ViewerPhoto>>(null);
+
+  // React Native Web nu aplică `initialScrollIndex` (ScrollView-ul web nu suportă
+  // contentOffset la montare) — lista pornea mereu de la PRIMA poză a conversației,
+  // indiferent de cea atinsă. În plus, Safari pe iOS ANULEAZĂ scrollLeft setat
+  // înainte de layout (containerul cu scroll-snap sare înapoi la 0) — de aceea
+  // derulăm și din onLayout, și cu reîncercări scurte, nu o singură dată.
+  const initialScrollDone = useRef(Platform.OS !== 'web' || initialIndex <= 0);
+  const applyInitialScroll = useCallback(() => {
+    if (initialScrollDone.current) return;
+    listRef.current?.scrollToIndex({ index: initialIndex, animated: false });
+  }, [initialIndex]);
+  useEffect(() => {
+    if (initialScrollDone.current) return;
+    applyInitialScroll();
+    const retry = setTimeout(applyInitialScroll, 120);
+    const settle = setTimeout(() => {
+      applyInitialScroll();
+      initialScrollDone.current = true;
+    }, 350);
+    return () => {
+      clearTimeout(retry);
+      clearTimeout(settle);
+    };
+    // Doar la montare: viewerul se montează proaspăt la fiecare deschidere.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const current = photos[index];
 
@@ -238,6 +278,7 @@ export function PhotoViewer({
           fără root-ul ăsta, gesturile RNGH (pinch/pan/tap) nu pornesc pe Android. */}
       <GestureHandlerRootView style={styles.container}>
         <FlatList
+          ref={listRef}
           data={photos}
           keyExtractor={(item) => item.id}
           horizontal
@@ -249,6 +290,15 @@ export function PhotoViewer({
           onMomentumScrollEnd={(e) =>
             setIndex(Math.round(e.nativeEvent.contentOffset.x / width))
           }
+          // Pe web nu există momentum → indexul (contorul + poza activă) se ține
+          // din onScroll; setIndex cu aceeași valoare nu re-renderizează.
+          onScroll={
+            Platform.OS === 'web'
+              ? (e) => setIndex(Math.round(e.nativeEvent.contentOffset.x / width))
+              : undefined
+          }
+          scrollEventThrottle={64}
+          onLayout={applyInitialScroll}
           renderItem={({ item }) => (
             <ZoomablePhoto
               url={item.url}
@@ -290,6 +340,27 @@ export function PhotoViewer({
             </ThemedText>
           </View>
         ) : null}
+
+        {/* Pe web, schimbarea pozei are nevoie de ținte explicite: cu mouse-ul nu
+            există swipe, iar pe touch săgețile dublează swipe-ul nativ. */}
+        {Platform.OS === 'web' && photos.length > 1 && index > 0 ? (
+          <Pressable
+            onPress={() => listRef.current?.scrollToIndex({ index: index - 1, animated: true })}
+            style={[styles.iconButton, styles.navButton, styles.navLeft]}
+            hitSlop={12}
+            accessibilityLabel={t('photos.prevPhoto')}>
+            <MaterialIcons name="chevron-left" size={30} color="#fff" />
+          </Pressable>
+        ) : null}
+        {Platform.OS === 'web' && photos.length > 1 && index < photos.length - 1 ? (
+          <Pressable
+            onPress={() => listRef.current?.scrollToIndex({ index: index + 1, animated: true })}
+            style={[styles.iconButton, styles.navButton, styles.navRight]}
+            hitSlop={12}
+            accessibilityLabel={t('photos.nextPhoto')}>
+            <MaterialIcons name="chevron-right" size={30} color="#fff" />
+          </Pressable>
+        ) : null}
       </GestureHandlerRootView>
     </Modal>
   );
@@ -309,6 +380,9 @@ const styles = StyleSheet.create({
   },
   closeButton: { left: Spacing.four },
   downloadButton: { right: Spacing.four },
+  navButton: { top: '50%', marginTop: -20 },
+  navLeft: { left: Spacing.four },
+  navRight: { right: Spacing.four },
   counter: {
     position: 'absolute',
     alignSelf: 'center',

@@ -2230,7 +2230,11 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 5,
   },
-  bubbleText: { fontSize: 14, lineHeight: 20 },
+  // Android (RN 0.81/Fabric): lineHeight pe un Text aflat într-un RÂND flex
+  // declanșează un bug de măsurare care ascunde ultimul glif — emoji-ul dintr-un
+  // mesaj gen „Vai 😂" rămânea un spațiu gol (facebook/react-native#53286,
+  // #53344, #53666; fix upstream în lucru). Android stă pe înălțimea implicită.
+  bubbleText: { fontSize: 14, ...(Platform.OS === 'android' ? null : { lineHeight: 20 }) },
   bubbleTime: { fontSize: 11, lineHeight: 14, fontWeight: '600' },
   // Stil 7a: textul + ora pe același rând flex — la mesaje scurte bula se lățește
   // cât textul + ora; la mesaje lungi ora coboară în colțul dreapta-jos, lângă

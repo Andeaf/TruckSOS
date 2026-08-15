@@ -793,6 +793,8 @@
     "sectionTitle": "Photos",
     "counter": "{{current}} / {{total}}",
     "close": "Close",
+    "prevPhoto": "Previous photo",
+    "nextPhoto": "Next photo",
     "download": "Download",
     "downloadOk": "Photo saved to your gallery.",
     "downloadFailed": "The photo could not be saved.",

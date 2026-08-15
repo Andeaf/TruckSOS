@@ -1,8 +1,9 @@
-import { Text, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
+import { TAB_BAR_WEB_STYLE, tabLabel, useTabLabelFontSize } from '@/components/tab-label';
 import { AppTabBar, useWideLayout } from '@/components/web-sidebar';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
@@ -30,15 +31,6 @@ function TabIcon({
       {dot ? <View style={styles.dot} /> : null}
     </View>
   );
-}
-
-/** Eticheta de tab din design: 11px, weight 700 pe activ / 600 pe inactiv. */
-function tabLabel(label: string) {
-  return function TabLabel({ focused, color }: { focused: boolean; color: string }) {
-    return (
-      <Text style={{ fontSize: 11, fontWeight: focused ? '700' : '600', color }}>{label}</Text>
-    );
-  };
 }
 
 export default function MechanicLayout() {
@@ -71,6 +63,14 @@ function MechanicTabs() {
 
   // Web pe ecran lat: aceleași rute, dar ca bară laterală (design „Web Redesign").
   const wide = useWideLayout();
+  // Font comun pentru toate etichetele barei — cea mai lungă dictează mărimea.
+  const tabFontSize = useTabLabelFontSize([
+    t('mechanic.tabs.map'),
+    t('mechanic.tabs.feed'),
+    t('mechanic.tabs.applications'),
+    t('mechanic.tabs.conversations'),
+    t('market.tabTitle'),
+  ]);
 
   return (
     <Tabs
@@ -85,17 +85,20 @@ function MechanicTabs() {
         tabBarActiveTintColor: theme.brand,
         tabBarInactiveTintColor: theme.textTertiary,
         tabBarStyle: {
+          ...TAB_BAR_WEB_STYLE,
           backgroundColor: theme.barBackground,
           borderTopWidth: 1,
           borderTopColor: theme.separator,
         },
+        // Iconița+eticheta stau ancorate sus în bară — le coborâm puțin spre centru.
+        tabBarItemStyle: { paddingTop: 4 },
       }}>
       {/* Harta prima, lângă Feed: sunt două vederi peste aceleași anunțuri deschise. */}
       <Tabs.Screen
         name="map"
         options={{
           title: t('mechanic.tabs.map'),
-          tabBarLabel: tabLabel(t('mechanic.tabs.map')),
+          tabBarLabel: tabLabel(t('mechanic.tabs.map'), tabFontSize),
           tabBarIcon: ({ color, size }) => <TabIcon name="map" size={size} color={color} />,
         }}
         listeners={{
@@ -109,7 +112,7 @@ function MechanicTabs() {
         name="feed"
         options={{
           title: t('mechanic.tabs.feed'),
-          tabBarLabel: tabLabel(t('mechanic.tabs.feed')),
+          tabBarLabel: tabLabel(t('mechanic.tabs.feed'), tabFontSize),
           tabBarIcon: ({ color, size }) => (
             <TabIcon name="truck" size={size} color={color} dot={feedNew} />
           ),
@@ -126,7 +129,7 @@ function MechanicTabs() {
         name="applications"
         options={{
           title: t('mechanic.tabs.applications'),
-          tabBarLabel: tabLabel(t('mechanic.tabs.applications')),
+          tabBarLabel: tabLabel(t('mechanic.tabs.applications'), tabFontSize),
           tabBarIcon: ({ color, size }) => (
             <TabIcon name="clipboard" size={size} color={color} dot={appsNew} />
           ),
@@ -142,7 +145,7 @@ function MechanicTabs() {
         name="conversations"
         options={{
           title: t('mechanic.tabs.conversations'),
-          tabBarLabel: tabLabel(t('mechanic.tabs.conversations')),
+          tabBarLabel: tabLabel(t('mechanic.tabs.conversations'), tabFontSize),
           tabBarBadge: totalUnread > 0 ? formatBadge(totalUnread) : undefined,
           tabBarIcon: ({ color, size }) => (
             <TabIcon name="message-circle" size={size} color={color} />
@@ -163,7 +166,7 @@ function MechanicTabs() {
         name="market"
         options={{
           title: t('market.tabTitle'),
-          tabBarLabel: tabLabel(t('market.tabTitle')),
+          tabBarLabel: tabLabel(t('market.tabTitle'), tabFontSize),
           tabBarIcon: ({ color, size }) => <TabIcon name="shopping-bag" size={size} color={color} />,
         }}
         listeners={{
