@@ -147,6 +147,8 @@ export interface Message {
   file_path: string | null;
   file_name: string | null;
   file_size: number | null;
+  /** 24 aug: durata în secunde, doar la videoclipuri (meta „Videoclip · 0:12"). */
+  file_duration: number | null;
   created_at: string;
 }
 
@@ -256,6 +258,8 @@ export interface ChannelMessage {
   file_path: string | null;
   file_name: string | null;
   file_size: number | null;
+  /** 24 aug: durata în secunde, doar la videoclipuri (paritate cu chatul privat). */
+  file_duration: number | null;
   created_at: string;
 }
 

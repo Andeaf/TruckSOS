@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Link } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
@@ -97,9 +98,7 @@ export default function LoginScreen() {
           end={{ x: 0.25, y: 1 }}
           style={styles.hero}>
           <View style={styles.heroBrand}>
-            <View style={styles.heroBrandMark}>
-              <Feather name="truck" size={22} color="#FFFFFF" />
-            </View>
+            <Image source={require('@/assets/images/icon.png')} style={styles.heroBrandMark} />
             <Text style={styles.heroBrandName}>{t('auth.appName')}</Text>
           </View>
           <View style={styles.heroBody}>
@@ -145,6 +144,7 @@ export default function LoginScreen() {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
+            <Image source={require('@/assets/images/icon.png')} style={styles.logo} />
             <ThemedText type="title">{t('auth.appName')}</ThemedText>
             <ThemedText themeColor="textSecondary">{t('auth.login.subtitle')}</ThemedText>
           </View>
@@ -168,6 +168,7 @@ const styles = StyleSheet.create({
     gap: Spacing.five,
   },
   header: { alignItems: 'center', gap: Spacing.two },
+  logo: { width: 72, height: 72, borderRadius: 16, marginBottom: Spacing.one },
   form: { gap: Spacing.three },
   error: { color: '#ef4444', textAlign: 'center', fontSize: 14 },
   footer: {
@@ -184,13 +185,14 @@ const styles = StyleSheet.create({
   wideContainer: { flex: 1, flexDirection: 'row' },
   hero: { width: '46%', padding: 48 },
   heroBrand: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  // Iconița reală a aplicației; chenarul subțire o desprinde de gradientul navy,
+  // aproape identic cu fundalul iconiței.
   heroBrandMark: {
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.35)',
   },
   heroBrandName: { color: '#FFFFFF', fontSize: 22, fontWeight: '800', letterSpacing: -0.3 },
   heroBody: { marginTop: 'auto' },

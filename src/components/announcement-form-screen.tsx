@@ -376,6 +376,12 @@ export function AnnouncementFormScreen({ role }: { role: 'driver' | 'mechanic' }
           <ThemedText themeColor="textSecondary" type="small" style={styles.requiredNote}>
             {t('common.requiredNote')}
           </ThemedText>
+
+          {/* Expirare automată (23 aug): anunțurile deschise se anulează singure la
+              72h, iar pozele se șterg — userul află DE LA POSTARE, nu cu surpriză. */}
+          <ThemedText themeColor="textSecondary" type="small" style={styles.requiredNote}>
+            {t('driver.announcements.autoExpireNote')}
+          </ThemedText>
         </ScrollView>
       </KeyboardAvoidingView>
 

@@ -246,6 +246,7 @@
       "descriptionLabel": "Problem description",
       "descriptionPlaceholder": "e.g.: Engine won't start, smoke from engine, flat tyre...",
       "submitButton": "Post announcement",
+      "autoExpireNote": "Open announcements expire automatically after 72 hours and their photos are deleted.",
       "photosLabel": "Photos",
       "photosHint": "Attach photos of the problem — visible to mechanics.",
       "photosFailedTitle": "Photos not uploaded",
@@ -446,6 +447,8 @@
     "cancelEdit": "Cancel editing",
     "cancelReply": "Cancel reply",
     "photo": "📷 Photo",
+    "photoLabel": "Photo",
+    "video": "Video",
     "you": "You"
   },
   "publicProfile": {
@@ -661,6 +664,8 @@
     "fileBlockedTitle": "File type not allowed",
     "fileBlockedBody": "Executable files cannot be sent.",
     "downloadError": "Download failed. Try again.",
+    "mediaSourceTitle": "Add photos or video",
+    "videoRecord": "Record a video",
     "searchUsers": "Search by name…",
     "recent": "Recent",
     "bandMechanic": "Recommendation · Mechanic",

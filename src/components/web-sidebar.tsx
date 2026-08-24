@@ -1,6 +1,7 @@
 import { Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { BottomTabBar, type BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
@@ -57,9 +58,7 @@ function WebSidebar({ state, descriptors, navigation, admin }: BottomTabBarProps
   const inner = (
     <>
       <View style={styles.brand}>
-        <View style={styles.brandMark}>
-          <Feather name="truck" size={18} color="#FFFFFF" />
-        </View>
+        <Image source={require('@/assets/images/icon.png')} style={styles.brandMark} />
         <Text style={styles.brandName}>TruckSOS</Text>
       </View>
 
@@ -189,13 +188,14 @@ const styles = StyleSheet.create({
     paddingTop: 2,
     paddingBottom: 18,
   },
+  // Iconița reală a aplicației; chenarul subțire o desprinde de fundalul navy,
+  // care e aproape identic cu fundalul iconiței.
   brandMark: {
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.35)',
   },
   brandName: { color: '#FFFFFF', fontSize: 17, fontWeight: '800', letterSpacing: -0.2 },
   sidebarAdmin: { backgroundColor: '#0B1F3D' },

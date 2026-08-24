@@ -279,6 +279,8 @@ export async function sendChannelFileMessage(
       file_path: path,
       file_name: file.name,
       file_size: file.size,
+      // 24 aug: durata videoclipurilor (secunde) — null la fișierele obișnuite.
+      file_duration: file.durationS ?? null,
     } as never)
     .select(
       '*, sender:profiles!sender_id(full_name,role,avatar_path,deleted_at)' +

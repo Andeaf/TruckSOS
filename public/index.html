@@ -35,9 +35,9 @@
     <meta name="apple-mobile-web-app-title" content="TruckSOS" />
     <meta name="mobile-web-app-capable" content="yes" />
 
-    <!-- Previzualizarea linkului (WhatsApp, Facebook, Messenger). `og:image` se
-         adaugă odată cu domeniul definitiv: scraper-ele cer URL ABSOLUT, iar pe
-         linkul temporar .expo.app ar da 404. -->
+    <!-- Previzualizarea linkului (WhatsApp, Facebook, Messenger). Scraper-ele cer
+         URL ABSOLUT la og:image — de aceea trimite la domeniul definitiv, nu la o
+         cale relativă; fișierul vine din public/logo.png (copia iconiței navy). -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="TruckSOS" />
     <meta property="og:title" content="TruckSOS — ajutor rapid pentru camioane în pană" />
@@ -45,7 +45,12 @@
       property="og:description"
       content="Anunțuri de depanare cu poziție GPS, mecanici în apropiere, chat direct și piese de vânzare — într-o singură aplicație."
     />
+    <meta property="og:image" content="https://trucksos.net/logo.png" />
+    <meta property="og:image:width" content="1024" />
+    <meta property="og:image:height" content="1024" />
     <meta name="twitter:card" content="summary" />
+    <meta name="twitter:image" content="https://trucksos.net/logo.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
 
     <!-- The `react-native-web` recommended style reset -->
     <style id="expo-reset">

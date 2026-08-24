@@ -421,6 +421,8 @@ export async function sendFileMessage(
       file_path: path,
       file_name: file.name,
       file_size: file.size,
+      // 24 aug: durata videoclipurilor (secunde) — null la fișierele obișnuite.
+      file_duration: file.durationS ?? null,
     } as never)
     .select('*' + (v14 ? replyEmbed() : '') + MESSAGE_ATTACH_EMBEDS)
     .single();

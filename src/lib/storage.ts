@@ -88,11 +88,18 @@ export interface PickedFile {
   name: string;
   size: number;
   mimeType?: string;
+  /** Durata în SECUNDE, doar la videoclipuri (24 aug) — ajunge în file_duration
+   *  și hrănește meta „Videoclip · 0:12" din citat + badge-ul de pe bulă. */
+  durationS?: number | null;
 }
 
 /** Limita de mărime pentru fișierele din chat (decizie F19.5): 10 MB. */
 export const MAX_FILE_SIZE = 10 * 1024 * 1024;
 export const MAX_FILE_SIZE_MB = 10;
+/** Videoclipurile au plafon propriu, mai generos (cerere user 23 aug: 10 MB era
+ *  prea puțin; compresie reală nu există în Expo Go, deci plafonul E limita). */
+export const MAX_VIDEO_SIZE = 50 * 1024 * 1024;
+export const MAX_VIDEO_SIZE_MB = 50;
 /** Executabile blocate — restul extensiilor sunt permise (B2B: PDF-uri, devize, arhive). */
 export const BLOCKED_FILE_EXTENSIONS = ['apk', 'exe', 'bat', 'cmd', 'sh', 'msi'];
 
@@ -100,6 +107,20 @@ export const BLOCKED_FILE_EXTENSIONS = ['apk', 'exe', 'bat', 'cmd', 'sh', 'msi']
 export function fileExtension(name: string): string {
   const i = name.lastIndexOf('.');
   return i > 0 ? name.slice(i + 1).toLowerCase() : '';
+}
+
+/** Extensii redate ca bulă-video în chat (23 aug). Restul fișierelor video exotice
+ *  rămân bule-fișier obișnuite (descărcare + deschidere externă) — nicio regresie. */
+export const VIDEO_FILE_EXTENSIONS = ['mp4', 'mov', 'm4v', 'webm', '3gp'];
+
+/** Un mesaj-fișier e videoclip? Decis pe numele ORIGINAL, cu fallback pe path
+ *  (path-ul din Storage păstrează extensia reală: `chat/{conv}/{uuid}.{ext}`). */
+export function isVideoFile(
+  fileName: string | null | undefined,
+  filePath?: string | null,
+): boolean {
+  const source = fileName || filePath || '';
+  return VIDEO_FILE_EXTENSIONS.includes(fileExtension(source));
 }
 
 /**

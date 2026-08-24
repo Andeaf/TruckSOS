@@ -84,7 +84,7 @@
         {
           "photosPermission": "TruckSOS accesses your photo library so you can attach photos to your breakdown announcements and conversations.",
           "cameraPermission": "TruckSOS uses the camera so you can photograph the breakdown and attach the photo to your announcement or send it in a conversation.",
-          "microphonePermission": false
+          "microphonePermission": "TruckSOS uses the microphone to record audio when you capture a video to send in a conversation."
         }
       ],
       [
@@ -94,7 +94,8 @@
           "savePhotosPermission": "TruckSOS saves photos received in conversations to your photo library, only when you tap the download button.",
           "isAccessMediaLocationEnabled": false
         }
-      ]
+      ],
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true

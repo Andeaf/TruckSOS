@@ -41,6 +41,7 @@ import { Toast } from '@/components/toast';
 import { HeaderText, ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { VideoPlayerModal } from '@/components/video-player-modal';
 import {
   ActiveGradient,
   HeaderGradientDirection,
@@ -52,13 +53,24 @@ import { useBlocked } from '@/hooks/use-blocked';
 import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { useSignedUrls } from '@/hooks/use-signed-urls';
+import { useVideoThumbnail } from '@/hooks/use-video-thumbnail';
 import { displayName } from '@/lib/display-name';
-import { MAX_PHOTOS, pickFromCamera, pickFromLibrary, type PickedImage } from '@/lib/media';
+import {
+  MAX_PHOTOS,
+  pickFromCamera,
+  pickMediaFromLibrary,
+  recordVideo,
+  type PickedImage,
+  type PickedVideo,
+} from '@/lib/media';
 import {
   BLOCKED_FILE_EXTENSIONS,
   MAX_FILE_SIZE,
   MAX_FILE_SIZE_MB,
+  MAX_VIDEO_SIZE,
+  MAX_VIDEO_SIZE_MB,
   fileExtension,
+  isVideoFile,
   signedUrl,
   type PickedFile,
 } from '@/lib/storage';
@@ -83,6 +95,12 @@ export interface ChatMessageBase {
     id: string;
     content: string;
     image_path: string | null;
+    /** 23 aug: numele fișierului/videoclipului citat — fără el snippetul era gol. */
+    file_name?: string | null;
+    /** 24 aug: path-ul fișierului citat — sursa miniaturii video din citat. */
+    file_path?: string | null;
+    /** 24 aug: durata videoclipului citat (secunde) — meta „Videoclip · 0:12". */
+    file_duration?: number | null;
     sender_id: string;
     deleted_at: string | null;
     sender?: { full_name: string } | null;
@@ -118,6 +136,8 @@ export interface ChatMessageBase {
   file_path?: string | null;
   file_name?: string | null;
   file_size?: number | null;
+  /** 24 aug: durata în secunde, doar la videoclipuri (badge pe bulă + meta citat). */
+  file_duration?: number | null;
   /** Faza 19.6: anunțul de depanare distribuit (share). NULL = șters/invizibil prin RLS. */
   announcement_id?: string | null;
   announcement?: {
@@ -135,6 +155,21 @@ function listingCoverPath(
   const photos = listing?.market_listing_photos;
   if (!photos || photos.length === 0) return null;
   return [...photos].sort((a, b) => a.position - b.position)[0].storage_path;
+}
+
+/** Citatul unui mesaj, normalizat defensiv (vechiul embed self-join întorcea ARRAY —
+ *  vezi comentariul din MessageBubble). Folosit și de părinte (semnarea path-urilor
+ *  citate pentru miniaturile din citat, 24 aug). */
+function replyOf(m: ChatMessageBase): ChatMessageBase['reply_to'] {
+  const raw = m.reply_to as unknown;
+  return (Array.isArray(raw) ? raw[0] : raw) as ChatMessageBase['reply_to'];
+}
+
+/** Durata unui videoclip, stil player: „0:12", „1:05", „12:40". */
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.max(0, Math.round(seconds % 60));
+  return `${m}:${String(s).padStart(2, '0')}`;
 }
 
 /** Mărimea fișierului, lizibilă: sub 1 MB în KB, altfel în MB cu o zecimală. */
@@ -173,6 +208,30 @@ const CARD_TOKENS = {
     star: '#F5A623',
     separator: '#202B3E',
     photoBg: '#212C40',
+  },
+} as const;
+
+/**
+ * Stil 11b (spec user, 24 aug): tokens pentru CARDUL DE CITAT MEDIA (reply la
+ * poză/videoclip) — fundal per direcție (bulă trimisă/primită), meta și
+ * placeholder-ul de thumbnail, comutate de temă. Numele în bula primită se
+ * colorează cu paleta stabilă a utilizatorului citat (userColor), în cea trimisă
+ * rămâne alb.
+ */
+const QUOTE_TOKENS = {
+  light: {
+    sentBg: 'rgba(255,255,255,0.14)',
+    recvBg: '#EEF2F7',
+    sentMeta: 'rgba(255,255,255,0.75)',
+    recvMeta: '#5B6472',
+    thumbFallback: '#D7DFEA',
+  },
+  dark: {
+    sentBg: 'rgba(255,255,255,0.12)',
+    recvBg: '#0F1622',
+    sentMeta: 'rgba(255,255,255,0.7)',
+    recvMeta: '#96A1B1',
+    thumbFallback: '#202B3E',
   },
 } as const;
 
@@ -346,6 +405,17 @@ interface MessageBubbleProps<M extends ChatMessageBase> {
   /** Faza 19.5: tap pe bula-fișier → descarcă + deschide; spinner cât timp descarcă. */
   onPressFile?: () => void;
   downloadingFile?: boolean;
+  /** Video în chat (23 aug): URL-ul SEMNAT al fișierului — sursa thumbnail-ului
+   * generat pe device (bula-video). Absent la fișierele non-video. */
+  fileUrl?: string;
+  /** Tap pe bula-video → playerul full-screen. */
+  onPressVideo?: () => void;
+  /** Miniaturi în CITAT (24 aug, ca pe WhatsApp): URL-urile semnate ale pozei,
+   * respectiv videoclipului citat (din ele se derivă thumbnail-ul pe device). */
+  quoteImageUrl?: string;
+  quoteVideoUrl?: string;
+  /** Mesajul citat îi aparține utilizatorului curent → numele devine „Tu" (11b). */
+  quoteIsMine?: boolean;
   /** Faza 19.6: tap pe cardul de anunț de depanare distribuit → detaliul lui. */
   onPressAnnouncement?: (announcementId: string) => void;
 }
@@ -371,6 +441,11 @@ function MessageBubble<M extends ChatMessageBase>({
   listingCoverUrl,
   onPressFile,
   downloadingFile,
+  fileUrl,
+  onPressVideo,
+  quoteImageUrl,
+  quoteVideoUrl,
+  quoteIsMine,
   onPressAnnouncement,
 }: MessageBubbleProps<M>) {
   const theme = useTheme();
@@ -379,6 +454,10 @@ function MessageBubble<M extends ChatMessageBase>({
   const isDeleted = !!message.deleted_at;
   const isImage = !isDeleted && !!message.image_path;
   const isFile = !isDeleted && !isImage && !!message.file_path;
+  // Video (23 aug): un mesaj-fișier cu extensie video devine bulă-video (thumbnail +
+  // play). Hook-ul rulează necondiționat (regula hooks); fără URL nu generează nimic.
+  const isVideo = isFile && isVideoFile(message.file_name, message.file_path);
+  const videoThumb = useVideoThumbnail(message.id, isVideo ? fileUrl : undefined);
   // Stil 6b: contextele se randează ca AttachmentCard ÎN AFARA bulei; bula apare doar
   // dacă mesajul mai are și altceva de arătat (text/poză/fișier/tombstone).
   const hasContext =
@@ -421,7 +500,7 @@ function MessageBubble<M extends ChatMessageBase>({
         numberOfLines={1}
         onPress={onPressAvatar}
         suppressHighlighting
-        style={[styles.senderHeader, !isDeleted && !!message.image_path && styles.senderHeaderOnImage]}>
+        style={[styles.senderHeader, (isImage || isVideo) && styles.senderHeaderOnImage]}>
         <Text style={[styles.senderHeaderName, { color: nameColor }]}>{senderName}</Text>
         {senderRole ? (
           <Text style={[styles.senderHeaderRole, { color: secondaryColor }]}>
@@ -442,18 +521,39 @@ function MessageBubble<M extends ChatMessageBase>({
   // `<tabel>!reply_to_id` era rezolvat de PostgREST în direcția inversă (o2m) și
   // întorcea ARRAY — `[]` truthy randa un chenar quote gol, iar reply-urile reale
   // rămâneau fără citat („Mesaj indisponibil", bug reparat 7 aug).
-  const rawReply = message.reply_to as unknown;
-  const rt = (Array.isArray(rawReply) ? rawReply[0] : rawReply) as ChatMessageBase['reply_to'];
+  const rt = replyOf(message);
   const quote = !isDeleted && rt && rt.id ? rt : null;
+  // Miniatura din citat (24 aug): la video se generează pe device din URL-ul semnat
+  // (cache-ul e pe id-ul mesajului CITAT — dacă originalul e în listă, e deja caldă).
+  const quoteIsVideo = !!quote && !quote.deleted_at && isVideoFile(quote.file_name, quote.file_path);
+  const quoteIsImage = !!quote && !quote.deleted_at && !!quote.image_path;
+  const quoteVideoThumb = useVideoThumbnail(
+    quoteIsVideo && quote ? quote.id : '',
+    quoteIsVideo ? quoteVideoUrl : undefined,
+  );
+  // Sursa thumbnail-ului din cardul de citat media (stil 11b): poza = URL semnat
+  // direct; videoclipul = cadrul generat pe device. Lipsă → placeholder neutru.
+  const quoteMediaThumb = quoteIsVideo ? quoteVideoThumb : quoteIsImage ? quoteImageUrl : undefined;
+  const qtk = QUOTE_TOKENS[scheme];
+  const quoteUserColor = quote ? userColor(quote.sender_id) : null;
+  const quoteNameColor = quoteUserColor
+    ? scheme === 'dark'
+      ? quoteUserColor.dark
+      : quoteUserColor.base
+    : theme.brand;
   // reply_to_id există dar embed-ul vine gol: originalul e invizibil prin RLS (chat
   // global — mesaj dinaintea creării contului) sau șters definitiv → „Mesaj indisponibil".
   const quoteUnavailable = !isDeleted && !!message.reply_to_id && !quote;
+  // Video/fișier (23 aug): mesajele-atașament au content='' — fără ramurile pe
+  // file_name citatul era GOL (bug raportat de user la primul test video).
   const quoteSnippet = quote
     ? quote.deleted_at
       ? t('chat.deletedMessage')
       : quote.image_path
         ? t('chat.photo')
-        : quote.content
+        : quote.file_name
+          ? (isVideoFile(quote.file_name) ? '🎥 ' : '📎 ') + quote.file_name
+          : quote.content
     : '';
 
   // Swipe la dreapta → reply (ambele platforme). Detectorul stă pe ÎNTREGUL rând al
@@ -682,7 +782,7 @@ function MessageBubble<M extends ChatMessageBase>({
             // Umbra stă pe suprafața cu fundal (altfel Android nu desenează elevation);
             // în dark, bulele primite rămân plate — decizie de design.
             isMe && (scheme === 'light' ? styles.sentShadowLight : styles.sentShadowDark),
-            isImage && styles.bubbleImage,
+            (isImage || isVideo) && styles.bubbleImage,
             !isMe && { backgroundColor: theme.backgroundElement },
           ]}>
           {senderHeader}
@@ -724,6 +824,45 @@ function MessageBubble<M extends ChatMessageBase>({
                   <ActivityIndicator size="small" color={theme.textSecondary} />
                 </View>
               )}
+              <View style={styles.imageTimePill}>
+                <Text style={styles.imageTimeText}>{formatTime(message.created_at)}</Text>
+                {tick}
+              </View>
+            </Pressable>
+          ) : isVideo ? (
+            // Video (23 aug): tile ca la poze — thumbnail generat pe device + buton
+            // play; tap = playerul full-screen (expo-video). Fără thumbnail (web /
+            // generare eșuată) rămâne tile-ul întunecat cu play — tot funcțional.
+            <Pressable
+              onPress={onPressVideo}
+              onLongPress={onLongPress}
+              delayLongPress={300}
+              disabled={!onPressVideo}
+              style={({ pressed }) => [styles.imageWrap, pressed && styles.pressed]}>
+              {videoThumb ? (
+                <Image
+                  source={{ uri: videoThumb }}
+                  style={styles.imageThumb}
+                  contentFit="cover"
+                  transition={150}
+                />
+              ) : (
+                <View style={[styles.imageThumb, styles.videoPlaceholder]} />
+              )}
+              <View style={styles.videoPlayOverlay} pointerEvents="none">
+                <View style={styles.videoPlayCircle}>
+                  <MaterialIcons name="play-arrow" size={30} color="#fff" />
+                </View>
+              </View>
+              {/* Durata (24 aug, ca în mockup 11b): pastilă stânga-jos — dreapta-jos
+                  e ocupată de oră, ca la poze. Doar când durata e cunoscută. */}
+              {message.file_duration ? (
+                <View style={[styles.imageTimePill, styles.videoDurationPill]}>
+                  <Text style={styles.imageTimeText}>
+                    {formatDuration(message.file_duration)}
+                  </Text>
+                </View>
+              ) : null}
               <View style={styles.imageTimePill}>
                 <Text style={styles.imageTimeText}>{formatTime(message.created_at)}</Text>
                 {tick}
@@ -774,7 +913,62 @@ function MessageBubble<M extends ChatMessageBase>({
             </>
           ) : (
             <>
-              {quote ? (
+              {quote && (quoteIsVideo || quoteIsImage) ? (
+                // Stil 11b (spec user, 24 aug): citat media = card cu thumbnail
+                // PĂTRAT 52px în STÂNGA (colțuri 8, niciodată cerc), nume + meta
+                // („Videoclip"/„Poză") lângă el, FĂRĂ bara colorată; play-badge
+                // (cerc 22px) doar la video, și pe placeholderul fără thumbnail.
+                <Pressable
+                  onPress={onPressQuote}
+                  onLongPress={onLongPress}
+                  delayLongPress={300}
+                  style={[
+                    styles.quoteMedia,
+                    { backgroundColor: isMe ? qtk.sentBg : qtk.recvBg },
+                  ]}>
+                  <View style={styles.quoteThumbWrap}>
+                    {quoteMediaThumb ? (
+                      <Image
+                        source={{ uri: quoteMediaThumb }}
+                        style={styles.quoteThumb}
+                        contentFit="cover"
+                      />
+                    ) : (
+                      <View
+                        style={[styles.quoteThumb, { backgroundColor: qtk.thumbFallback }]}
+                      />
+                    )}
+                    {quoteIsVideo ? (
+                      <View style={styles.quotePlayOverlay} pointerEvents="none">
+                        <View style={styles.quotePlayBadge}>
+                          <MaterialIcons name="play-arrow" size={14} color="#fff" />
+                        </View>
+                      </View>
+                    ) : null}
+                  </View>
+                  <View style={styles.quoteMediaCol}>
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.quoteMediaName,
+                        { color: isMe ? '#ffffff' : quoteNameColor },
+                      ]}>
+                      {quoteIsMine ? t('chat.you') : (quote.sender?.full_name ?? '')}
+                    </Text>
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.quoteMediaMeta,
+                        { color: isMe ? qtk.sentMeta : qtk.recvMeta },
+                      ]}>
+                      {quoteIsVideo
+                        ? t('chat.video') +
+                          (quote.file_duration ? ` · ${formatDuration(quote.file_duration)}` : '')
+                        : t('chat.photoLabel')}
+                    </Text>
+                  </View>
+                </Pressable>
+              ) : quote ? (
                 <Pressable
                   onPress={onPressQuote}
                   onLongPress={onLongPress}
@@ -786,14 +980,18 @@ function MessageBubble<M extends ChatMessageBase>({
                       borderLeftColor: isMe ? '#ffffff' : theme.brand,
                     },
                   ]}>
-                  <Text
-                    numberOfLines={1}
-                    style={[styles.quoteName, { color: isMe ? '#ffffff' : theme.brand }]}>
-                    {quote.sender?.full_name ?? ''}
-                  </Text>
-                  <Text numberOfLines={1} style={[styles.quoteSnippet, { color: secondaryColor }]}>
-                    {quoteSnippet}
-                  </Text>
+                  <View style={styles.quoteTextCol}>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.quoteName, { color: isMe ? '#ffffff' : theme.brand }]}>
+                      {quote.sender?.full_name ?? ''}
+                    </Text>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.quoteSnippet, { color: secondaryColor }]}>
+                      {quoteSnippet}
+                    </Text>
+                  </View>
                 </Pressable>
               ) : quoteUnavailable ? (
                 // Fără Pressable: nu există mesaj la care să derulăm.
@@ -1035,6 +1233,8 @@ export function ChatScreen<M extends ChatMessageBase>({
   // Faza 19.5: meniul „+" + descărcarea de fișiere (un singur download odată).
   const [attachOpen, setAttachOpen] = useState(false);
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
+  // Video în chat (23 aug): playerul full-screen deschis (sursa = sheet-ul de poze).
+  const [videoUrlOpen, setVideoUrlOpen] = useState<string | null>(null);
   const listRef = useRef<FlatList<M>>(null);
 
   // Creșterea compozitorului (8 aug), per platformă:
@@ -1393,11 +1593,30 @@ export function ChatScreen<M extends ChatMessageBase>({
     const avatarPaths = renderSenderAvatarPath ? messages.map(renderSenderAvatarPath) : [];
     const mechanicAvatars = messages.map((m) => m.mechanic?.avatar_path);
     const listingCovers = messages.map((m) => listingCoverPath(m.listing));
+    // Video (23 aug): fișierele-video intră în batch-ul semnat — URL-ul hrănește
+    // thumbnail-ul bulei și playerul. Fișierele obișnuite NU (se semnează la tap).
+    const videoPaths = messages.map((m) =>
+      !m.deleted_at && m.file_path && isVideoFile(m.file_name, m.file_path)
+        ? m.file_path
+        : null,
+    );
+    // Miniaturile din citat (24 aug): poza/videoclipul mesajului CITAT — originalul
+    // poate fi în afara paginii încărcate, deci nu ne bazăm pe path-urile de mai sus.
+    const quoteMediaPaths = messages.flatMap((m) => {
+      const rt = replyOf(m);
+      if (!rt || rt.deleted_at) return [];
+      return [
+        rt.image_path ?? null,
+        rt.file_path && isVideoFile(rt.file_name, rt.file_path) ? rt.file_path : null,
+      ];
+    });
     return [
       ...imagePaths,
       ...avatarPaths,
       ...mechanicAvatars,
       ...listingCovers,
+      ...videoPaths,
+      ...quoteMediaPaths,
       headerAvatarPath,
     ].filter((p): p is string => !!p);
   }, [messages, renderSenderAvatarPath, headerAvatarPath]);
@@ -1423,10 +1642,14 @@ export function ChatScreen<M extends ChatMessageBase>({
         size = 0;
       }
     }
-    if (size > MAX_FILE_SIZE) {
+    // Videoclipurile au plafonul lor mai generos și prin pickerul de fișiere —
+    // aceeași limită indiferent de drumul de intrare (bula oricum devine video).
+    const isVideo = isVideoFile(asset.name);
+    const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_FILE_SIZE;
+    if (size > maxSize) {
       Alert.alert(
         t('attach.fileTooLargeTitle'),
-        t('attach.fileTooLargeBody', { max: MAX_FILE_SIZE_MB }),
+        t('attach.fileTooLargeBody', { max: isVideo ? MAX_VIDEO_SIZE_MB : MAX_FILE_SIZE_MB }),
       );
       return;
     }
@@ -1434,6 +1657,56 @@ export function ChatScreen<M extends ChatMessageBase>({
     await onSendFile({ uri: asset.uri, name: asset.name, size, mimeType: asset.mimeType });
     setUploading(false);
   }, [onSendFile, uploading, t]);
+
+  // Video (23 aug): EXACT conducta de fișiere (uploadFile + mesaj cu file_path) —
+  // nicio coloană nouă în DB. Compresie reală nu există în Expo Go, deci plafonul
+  // de mărime E limita (50 MB, plafon propriu — cel de fișiere rămâne 10).
+  // Videoclipurile sosesc din pickerul MIXT de galerie sau din „Filmează".
+  const sendVideos = useCallback(
+    async (videos: PickedVideo[]) => {
+      if (!onSendFile || videos.length === 0) return;
+      const sendable = videos.filter((v) => v.size <= MAX_VIDEO_SIZE);
+      if (sendable.length < videos.length) {
+        Alert.alert(
+          t('attach.fileTooLargeTitle'),
+          t('attach.fileTooLargeBody', { max: MAX_VIDEO_SIZE_MB }),
+        );
+      }
+      if (sendable.length === 0) return;
+      setUploading(true);
+      // Secvențial, ca pozele: fiecare videoclip devine mesajul lui, în ordine.
+      for (const video of sendable) {
+        await onSendFile({
+          uri: video.uri,
+          name: video.name,
+          size: video.size,
+          mimeType: video.mimeType,
+          // Durata (secunde) pentru meta „Videoclip · 0:12" + badge-ul de pe bulă.
+          durationS:
+            video.durationMs !== null ? Math.round(video.durationMs / 1000) : null,
+        });
+      }
+      setUploading(false);
+    },
+    [onSendFile, t],
+  );
+
+  // Tap pe bula-video → playerul full-screen. URL-ul vine de regulă din batch-ul
+  // semnat; fallback-ul semnează la cerere (mesaj abia sosit, batch încă pe drum).
+  const handleOpenVideo = useCallback(
+    async (m: M) => {
+      if (!m.file_path) return;
+      const known = urls[m.file_path];
+      if (known) {
+        setVideoUrlOpen(known);
+        return;
+      }
+      const url = await signedUrl(m.file_path);
+      if (url) setVideoUrlOpen(url);
+      else setToast(t('attach.downloadError'));
+    },
+    [urls, t],
+  );
 
   // Descarcă fișierul (URL semnat → cache) și îl deschide prin share sheet-ul nativ —
   // de acolo utilizatorul îl poate vizualiza sau salva. Numele original e păstrat.
@@ -1625,6 +1898,9 @@ export function ChatScreen<M extends ChatMessageBase>({
             data={reversedMessages}
             keyExtractor={(item) => item.id}
             inverted
+            // Pe web bara de scroll a browserului stă permanent peste chat — o
+            // ascundem (lista rămâne derulabilă); pe telefon indicatorul nativ rămâne.
+            showsVerticalScrollIndicator={Platform.OS !== 'web'}
             // Cu tastatura deschisă, tap-urile pe listă erau consumate de închiderea
             // tastaturii → long-press-ul pe bule nu pornea (bug 26 iul). „handled"
             // lasă gesturile să ajungă la bule; scroll-ul închide tastatura.
@@ -1729,6 +2005,19 @@ export function ChatScreen<M extends ChatMessageBase>({
                   !item.deleted_at && item.file_path ? () => handleOpenFile(item) : undefined
                 }
                 downloadingFile={downloadingFileId === item.id}
+                fileUrl={item.file_path ? urls[item.file_path] : undefined}
+                onPressVideo={
+                  !item.deleted_at && item.file_path ? () => handleOpenVideo(item) : undefined
+                }
+                {...(() => {
+                  // Miniaturile din citat (24 aug): URL-urile semnate ale media citate.
+                  const rt = replyOf(item);
+                  return {
+                    quoteImageUrl: rt?.image_path ? urls[rt.image_path] : undefined,
+                    quoteVideoUrl: rt?.file_path ? urls[rt.file_path] : undefined,
+                    quoteIsMine: rt?.sender_id === currentUserId,
+                  };
+                })()}
                 readState={
                   readReceipts && item.sender_id === currentUserId && !item.deleted_at
                     ? readCursor &&
@@ -1846,7 +2135,10 @@ export function ChatScreen<M extends ChatMessageBase>({
                   ? t('chat.deletedMessage')
                   : replyTarget.image_path
                     ? t('chat.photo')
-                    : replyTarget.content}
+                    : replyTarget.file_name
+                      ? (isVideoFile(replyTarget.file_name, replyTarget.file_path) ? '🎥 ' : '📎 ') +
+                        replyTarget.file_name
+                      : replyTarget.content}
               </Text>
             </View>
             <Pressable onPress={cancelReply} hitSlop={8} accessibilityLabel={t('chat.cancelReply')}>
@@ -2104,23 +2396,46 @@ export function ChatScreen<M extends ChatMessageBase>({
         senderBlocked={menuMessage ? blockedIds.has(menuMessage.sender_id) : false}
       />
 
+      {/* Poze ȘI video la un loc, ca pe WhatsApp (cerere user 23 aug): galeria e
+          mixtă (pickerul acceptă ambele tipuri), iar „Filmează" stă lângă
+          „Fă o poză". Pe web camera lipsește — rămâne doar galeria. */}
       <ActionSheet
         visible={photoSourceOpen}
-        title={t('photos.sourceTitle')}
+        title={t('attach.mediaSourceTitle')}
         actions={[
           {
             label: t('photos.sourceLibrary'),
             icon: 'photo-library',
-            onPress: async () => sendImages(await pickFromLibrary()),
+            onPress: async () => {
+              const media = await pickMediaFromLibrary();
+              await sendImages(media.images);
+              await sendVideos(media.videos);
+            },
           },
           {
             label: t('photos.sourceCamera'),
             icon: 'photo-camera',
             onPress: async () => sendImages(await pickFromCamera()),
           },
+          ...(Platform.OS !== 'web'
+            ? [
+                {
+                  label: t('attach.videoRecord'),
+                  icon: 'videocam' as const,
+                  onPress: async () => {
+                    const video = await recordVideo();
+                    if (video) await sendVideos([video]);
+                  },
+                },
+              ]
+            : []),
         ]}
         onClose={() => setPhotoSourceOpen(false)}
       />
+
+      {videoUrlOpen ? (
+        <VideoPlayerModal url={videoUrlOpen} onClose={() => setVideoUrlOpen(null)} />
+      ) : null}
 
       {reportTarget && messageTable ? (
         <ReportSheet
@@ -2323,10 +2638,44 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.one,
     marginBottom: Spacing.one,
-    gap: 1,
+    // 24 aug: rând (texte + miniatura media la dreapta); fără miniatură arată identic.
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
   },
   quoteName: { fontSize: 12, fontWeight: '700' },
   quoteSnippet: { fontSize: 13 },
+  quoteTextCol: { flex: 1, gap: 1 },
+  // Cardul de citat MEDIA (stil 11b, 24 aug): thumbnail pătrat 52px în STÂNGA,
+  // nume + meta lângă el; fără bara colorată. Culorile vin din QUOTE_TOKENS.
+  quoteMedia: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 8,
+    borderRadius: 10,
+    marginBottom: 6,
+    minWidth: 216,
+  },
+  quoteMediaCol: { flex: 1, minWidth: 0, gap: 1 },
+  quoteMediaName: { fontSize: 12.5, fontWeight: '800' },
+  quoteMediaMeta: { fontSize: 12, fontWeight: '600' },
+  quoteThumbWrap: { width: 52, height: 52, borderRadius: 8, overflow: 'hidden' },
+  quoteThumb: { width: 52, height: 52, borderRadius: 8 },
+  // Play-badge-ul citatului: cerc 22px centrat, fără voal pe restul cadrului (11b).
+  quotePlayOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quotePlayBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(10,20,40,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   // Bula-imagine: padding 6, poza rotunjită 12 înăuntru (design 22 iul).
   bubbleImage: { paddingHorizontal: 6, paddingVertical: 6, overflow: 'hidden' },
   imageWrap: { width: 220, height: 150 },
@@ -2336,6 +2685,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#00000015',
   },
+  // Video (23 aug): tile-ul refolosește imageWrap/imageThumb; astea sunt doar
+  // placeholder-ul (fără thumbnail) + butonul de play suprapus.
+  videoPlaceholder: { backgroundColor: '#10151F' },
+  videoPlayOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoPlayCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // Pastila de durată a bulei video (24 aug): refolosește stilul pastilei de oră,
+  // dar în colțul stânga-jos (dreapta-jos rămâne al orei).
+  videoDurationPill: { right: undefined, left: 6 },
   imageTimePill: {
     position: 'absolute',
     right: 6,

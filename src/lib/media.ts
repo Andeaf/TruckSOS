@@ -64,6 +64,97 @@ export async function pickFromCamera(): Promise<PickedImage[]> {
   return toPicked(result.assets);
 }
 
+/** Videoclip ales/filmat pentru chat (23 aug). Singura limită reală e MĂRIMEA
+ *  (`MAX_VIDEO_SIZE`, 50 MB — cerere user 23 aug: 10 era prea puțin), validată în
+ *  chat-screen; durata plafonează DOAR înregistrarea din aplicație (nativ). */
+export const MAX_VIDEO_DURATION_S = 60;
+
+export interface PickedVideo {
+  uri: string;
+  name: string;
+  size: number;
+  mimeType?: string;
+  /** Milisecunde; null când pickerul nu o raportează (unele galerii Android). */
+  durationMs: number | null;
+}
+
+/** Numele fișierului pentru un videoclip: cel din picker sau unul generat cu
+ *  extensia reală din URI (iOS filmează .mov, Android .mp4). */
+function videoAsset(asset: ImagePicker.ImagePickerAsset): PickedVideo {
+  const extMatch = /\.(\w{2,4})$/.exec(asset.uri);
+  const ext = (extMatch?.[1] ?? 'mp4').toLowerCase();
+  let size = asset.fileSize ?? 0;
+  if (!size && Platform.OS !== 'web') {
+    try {
+      size = new File(asset.uri).size ?? 0;
+    } catch {
+      size = 0;
+    }
+  }
+  return {
+    uri: asset.uri,
+    name: asset.fileName ?? `video-${Date.now()}.${ext}`,
+    size,
+    mimeType: asset.mimeType ?? `video/${ext === 'mov' ? 'quicktime' : ext}`,
+    durationMs: asset.duration ?? null,
+  };
+}
+
+export interface PickedMedia {
+  images: PickedImage[];
+  videos: PickedVideo[];
+}
+
+/**
+ * Galerie MIXTĂ poze + video (cerere user 23 aug, „ca pe WhatsApp"): o singură
+ * selecție servește ambele tipuri — chat-screen trimite pozele prin conducta de
+ * imagini și videoclipurile prin cea de fișiere. Anunțurile rămân pe
+ * `pickFromLibrary` (doar poze, intenționat).
+ */
+export async function pickMediaFromLibrary(): Promise<PickedMedia> {
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ['images', 'videos'],
+    allowsMultipleSelection: true,
+    selectionLimit: MAX_PHOTOS,
+    quality: 1,
+  });
+  if (result.canceled) return { images: [], videos: [] };
+  const images: PickedImage[] = [];
+  const videos: PickedVideo[] = [];
+  for (const asset of result.assets) {
+    if (asset.type === 'video') videos.push(videoAsset(asset));
+    else images.push({ uri: asset.uri, width: asset.width, height: asset.height });
+  }
+  return { images, videos };
+}
+
+/**
+ * Filmare din aplicație — plafonată nativ la `MAX_VIDEO_DURATION_S` (60s). Pe iOS
+ * cerem calitate medie (H.264, rezoluție moderată) ca un clip întreg să încapă
+ * lejer în plafonul video de 50 MB; Android nu oferă transcodare la picker —
+ * rămâne plafonul din chat-screen. Compresie reală nu există în Expo Go.
+ */
+export async function recordVideo(): Promise<PickedVideo | null> {
+  const perm = await ImagePicker.requestCameraPermissionsAsync();
+  if (!perm.granted) {
+    // Aceeași UX ca la poze: la refuz persistent, singura ieșire e din setările OS.
+    if (!perm.canAskAgain) {
+      Alert.alert(i18n.t('photos.cameraDeniedTitle'), i18n.t('photos.cameraDeniedBody'), [
+        { text: i18n.t('photos.cancel'), style: 'cancel' },
+        { text: i18n.t('photos.openSettings'), onPress: () => Linking.openSettings() },
+      ]);
+    }
+    return null;
+  }
+  const result = await ImagePicker.launchCameraAsync({
+    mediaTypes: ['videos'],
+    videoMaxDuration: MAX_VIDEO_DURATION_S,
+    videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium,
+  });
+  if (result.canceled || !result.assets?.[0]) return null;
+  return videoAsset(result.assets[0]);
+}
+
 export type GalleryDownloadResult = 'saved' | 'permission-denied' | 'error';
 
 /**

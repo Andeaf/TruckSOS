@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { Link } from 'expo-router';
+import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -98,6 +99,7 @@ export default function RegisterScreen() {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
+            <Image source={require('@/assets/images/icon.png')} style={styles.logo} />
             <ThemedText type="title">{t('auth.appName')}</ThemedText>
             <ThemedText themeColor="textSecondary">{t('auth.register.subtitle')}</ThemedText>
           </View>
@@ -236,6 +238,7 @@ const styles = StyleSheet.create({
     gap: Spacing.five,
   },
   header: { alignItems: 'center', gap: Spacing.two },
+  logo: { width: 64, height: 64, borderRadius: 14, marginBottom: Spacing.one },
   form: { gap: Spacing.three },
   error: { color: '#ef4444', textAlign: 'center', fontSize: 14 },
   footer: {

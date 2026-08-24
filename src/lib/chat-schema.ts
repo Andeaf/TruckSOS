@@ -43,7 +43,10 @@ export async function hasChatV14(): Promise<boolean> {
  * pe `messages` și `channel_messages`, deci fragmentul nu mai depinde de tabel.
  */
 export function replyEmbed(): string {
-  return ', reply_to:reply_to_id(id,content,image_path,sender_id,deleted_at,sender:profiles!sender_id(full_name))';
+  // file_name (23 aug): citatul unui mesaj-fișier/video era GOL fără el —
+  // content='' și image_path=null la astfel de mesaje. file_path (24 aug):
+  // sursa miniaturii video din citat (URL semnat → thumbnail pe device).
+  return ', reply_to:reply_to_id(id,content,image_path,file_name,file_path,file_duration,sender_id,deleted_at,sender:profiles!sender_id(full_name))';
 }
 
 /** Forma rândului întors de embed-ul `reply_to` (vezi replyEmbed). */
@@ -51,6 +54,10 @@ export type ReplyEmbedRow = {
   id: string;
   content: string;
   image_path: string | null;
+  file_name: string | null;
+  file_path: string | null;
+  /** Secunde; null la fișiere non-video și la mesajele dinainte de 24 aug. */
+  file_duration: number | null;
   sender_id: string;
   deleted_at: string | null;
   sender?: { full_name: string } | null;
@@ -69,7 +76,7 @@ export async function fetchReplyEmbed(
 ): Promise<ReplyEmbedRow | null> {
   const { data } = await supabase
     .from(table)
-    .select('id,content,image_path,sender_id,deleted_at,sender:profiles!sender_id(full_name)')
+    .select('id,content,image_path,file_name,file_path,file_duration,sender_id,deleted_at,sender:profiles!sender_id(full_name)')
     .eq('id', replyToId)
     .maybeSingle();
   return (data as unknown as ReplyEmbedRow) ?? null;

@@ -246,6 +246,7 @@
       "descriptionLabel": "Descrierea problemei",
       "descriptionPlaceholder": "ex: Motor nu pornește, fum din motor, roatã spartã...",
       "submitButton": "Trimite anunțul",
+      "autoExpireNote": "Anunțurile deschise expiră automat după 72 de ore, iar pozele lor se șterg.",
       "photosLabel": "Poze",
       "photosHint": "Atașează poze cu defecțiunea — vizibile mecanicilor.",
       "photosFailedTitle": "Poze neurcate",
@@ -448,6 +449,8 @@
     "cancelEdit": "Anulează editarea",
     "cancelReply": "Anulează răspunsul",
     "photo": "📷 Poză",
+    "photoLabel": "Poză",
+    "video": "Videoclip",
     "you": "Tu"
   },
   "publicProfile": {
@@ -577,6 +580,8 @@
     "fileBlockedTitle": "Tip de fișier neacceptat",
     "fileBlockedBody": "Fișierele executabile nu pot fi trimise.",
     "downloadError": "Descărcarea a eșuat. Încearcă din nou.",
+    "mediaSourceTitle": "Adaugă poze sau video",
+    "videoRecord": "Filmează",
     "searchUsers": "Caută după nume…",
     "recent": "Recente",
     "bandMechanic": "Recomandare · Mecanic",

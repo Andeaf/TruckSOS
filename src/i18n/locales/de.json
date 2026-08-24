@@ -246,6 +246,7 @@
       "descriptionLabel": "Problembeschreibung",
       "descriptionPlaceholder": "z.B.: Motor startet nicht, Rauch aus dem Motor, Reifenpanne...",
       "submitButton": "Anzeige veröffentlichen",
+      "autoExpireNote": "Offene Anzeigen laufen nach 72 Stunden automatisch ab und ihre Fotos werden gelöscht.",
       "photosLabel": "Fotos",
       "photosHint": "Füge Fotos des Problems hinzu — für Mechaniker sichtbar.",
       "photosFailedTitle": "Fotos nicht hochgeladen",
@@ -446,6 +447,8 @@
     "cancelEdit": "Bearbeiten abbrechen",
     "cancelReply": "Antwort abbrechen",
     "photo": "📷 Foto",
+    "photoLabel": "Foto",
+    "video": "Video",
     "you": "Du"
   },
   "publicProfile": {
@@ -675,6 +678,8 @@
     "fileBlockedTitle": "Dateityp nicht erlaubt",
     "fileBlockedBody": "Ausführbare Dateien können nicht gesendet werden.",
     "downloadError": "Download fehlgeschlagen. Versuch es erneut.",
+    "mediaSourceTitle": "Fotos oder Video hinzufügen",
+    "videoRecord": "Video aufnehmen",
     "searchUsers": "Nach Name suchen…",
     "recent": "Zuletzt",
     "bandMechanic": "Empfehlung · Mechaniker",
