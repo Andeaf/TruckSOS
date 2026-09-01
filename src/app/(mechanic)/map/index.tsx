@@ -6,10 +6,9 @@
  * mechanic-map-screen.web.tsx pe web), exact ca la mini-map.
  */
 import MechanicMapScreen from '@/components/mechanic-map-screen';
-import { useExitConfirm } from '@/hooks/use-exit-confirm';
 
 export default function MechanicMapRoute() {
-  // Tab-ul de start al mecanicului: back-ul de aici întreabă dacă închide aplicația.
-  useExitConfirm();
+  // Tab-ul de start al mecanicului e Feed-ul (26 aug) — back-ul de aici duce
+  // acolo, iar useExitConfirm trăiește pe Feed.
   return <MechanicMapScreen />;
 }

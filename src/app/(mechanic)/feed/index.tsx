@@ -22,6 +22,7 @@ import {
   Shadows,
   Spacing,
 } from '@/constants/theme';
+import { useExitConfirm } from '@/hooks/use-exit-confirm';
 import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
@@ -43,6 +44,8 @@ type ViewMode = 'compact' | 'extended';
 type StatusFilter = 'all' | 'active' | 'accepted' | 'resolved';
 
 export default function MechanicFeedScreen() {
+  // Tab-ul de start al mecanicului: back-ul de aici întreabă dacă închide aplicația.
+  useExitConfirm();
   const { profile, session } = useAuth();
   const { t } = useTranslation();
   const theme = useTheme();

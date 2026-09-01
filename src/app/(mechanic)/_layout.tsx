@@ -74,10 +74,13 @@ function MechanicTabs() {
 
   return (
     <Tabs
-      // Back-ul fizic duce MEREU spre tab-ul de start (Harta), nu prin istoricul
-      // de tab-uri (cerere 7 aug, consecvent cu șoferul); de pe Hartă,
-      // useExitConfirm întreabă dacă închide aplicația.
+      // Back-ul fizic duce MEREU spre tab-ul de start, nu prin istoricul de
+      // tab-uri (cerere 7 aug, consecvent cu șoferul); de pe tab-ul de start,
+      // useExitConfirm întreabă dacă închide aplicația. Startul e FEED-ul (acolo
+      // aterizează intrarea ca mecanic), nu Harta — fără `initialRouteName`,
+      // „initialRoute" ar cădea pe primul tab declarat, adică Harta (bug 26 aug).
       backBehavior="initialRoute"
+      initialRouteName="feed"
       tabBar={(props) => <AppTabBar {...props} />}
       screenOptions={{
         headerShown: false,

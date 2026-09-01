@@ -33,8 +33,11 @@ export default function DriverLayout() {
     <Tabs
       // Back-ul fizic duce MEREU spre tab-ul de start (Anunțuri), nu prin istoricul
       // de tab-uri (cerere 7 aug: „de oriunde ajung pe pagina de anunțuri"); de pe
-      // Anunțuri, useExitConfirm întreabă dacă închide aplicația.
+      // Anunțuri, useExitConfirm întreabă dacă închide aplicația. `initialRouteName`
+      // explicit (26 aug): fără el, „initialRoute" cade pe primul tab DECLARAT —
+      // corect azi, dar fragil la orice reordonare (vezi bug-ul de la mecanic).
       backBehavior="initialRoute"
+      initialRouteName="announcements"
       tabBar={(props) => <AppTabBar {...props} />}
       screenOptions={{
         headerShown: false,
