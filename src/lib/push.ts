@@ -52,13 +52,16 @@ function getNotifications(): NotificationsModule {
   return notifications;
 }
 
+/** Userul a refuzat permisiunea în rularea asta → nu mai insistăm la fiecare foreground. */
+let permissionRefused = false;
+
 /**
  * Cere permisiunea, obține tokenul Expo și îl salvează în `push_tokens`.
  * Întoarce tokenul (ca să-l putem șterge la logout) sau `null` dacă push-ul
  * nu e disponibil ori userul a refuzat.
  */
 export async function registerPushToken(userId: string): Promise<string | null> {
-  if (!pushAvailable()) return null;
+  if (!pushAvailable() || permissionRefused) return null;
 
   try {
     const Notifications = getNotifications();
@@ -77,7 +80,13 @@ export async function registerPushToken(userId: string): Promise<string | null> 
     const granted =
       existing.granted ||
       (await Notifications.requestPermissionsAsync()).granted;
-    if (!granted) return null;
+    if (!granted) {
+      // Refuzul e persistent (iOS nici nu mai afișează dialogul a doua oară), iar de
+      // pe 2 sept încercarea se reia la fiecare revenire în prim-plan — memorăm, ca
+      // să nu mai batem la ușă degeaba tot restul sesiunii.
+      permissionRefused = true;
+      return null;
+    }
 
     const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
     if (!projectId) return null;
@@ -90,13 +99,20 @@ export async function registerPushToken(userId: string): Promise<string | null> 
     // ajunge pe dispozitivul greșit. Vezi 20260715_faza14_fix_push_token_claim.sql.
     // Supabase NU aruncă la eșec (întoarce {error}) — netratat, tokenul ar părea
     // înregistrat deși n-a intrat în DB (bug găsit 22 iul: RPC-ul lipsea din Studio).
-    const { error } = await supabase.rpc('claim_push_token', { p_token: token } as never);
-    if (error) {
-      console.warn('[push] claim_push_token a eșuat:', error.message);
-      return null;
+    // 2 sept 2026: un singur apel, fără retry, a costat 83% din tokenuri — orice
+    // eșec (cursă cu crearea profilului, rețea proastă pe drum, DB ocupată) lăsa
+    // dispozitivul fără notificări până la următoarea repornire a aplicației.
+    // Trei încercări cu pauză crescătoare; apelantul reia oricum la foreground.
+    let lastError: string | null = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const { error } = await supabase.rpc('claim_push_token', { p_token: token } as never);
+      if (!error) return token;
+      lastError = error.message;
+      console.warn(`[push] claim_push_token a eșuat (încercarea ${attempt}/3):`, error.message);
+      if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 1500));
     }
-
-    return token;
+    console.warn('[push] tokenul NU a intrat în push_tokens:', lastError);
+    return null;
   } catch (e) {
     // Push-ul e un plus, nu o funcție critică: o eroare aici nu blochează login-ul.
     // Logăm totuși (adb logcat / consola dev): FIS_AUTH_ERROR pe buildul din Play

@@ -435,15 +435,8 @@ function EditProfileModal({
       Alert.alert(t('profile.errorPhoneInvalid'));
       return;
     }
+    // Adresă + TVA: OPȚIONALE la toate rolurile (2 sept 2026 — vezi role-select).
     const vat = normalizeVat(vatNumber);
-    if (isMechanic && !address.trim()) {
-      Alert.alert(t('profile.errorAddressRequired'));
-      return;
-    }
-    if (isMechanic && !vat) {
-      Alert.alert(t('profile.errorVatRequired'));
-      return;
-    }
     if (vat && !isValidVat(vatNumber)) {
       Alert.alert(t('profile.errorVatInvalid'));
       return;
@@ -502,7 +495,6 @@ function EditProfileModal({
                 value={address}
                 onChangeText={setAddress}
                 autoCapitalize="sentences"
-                required={isMechanic}
               />
               <Input
                 label={t('profile.vatLabel')}
@@ -510,7 +502,6 @@ function EditProfileModal({
                 onChangeText={setVatNumber}
                 autoCapitalize="characters"
                 autoCorrect={false}
-                required={isMechanic}
               />
               <Input
                 label={t('profile.companyLabel')}

@@ -82,17 +82,9 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
       setError(t('profile.errorPhoneInvalid'));
       return;
     }
-    // Adresă + TVA: obligatorii la mecanici (prestatori, afișate public),
-    // opționale la transportatori. Formatul TVA se verifică oriunde e completat.
-    if (isMechanic && !address.trim()) {
-      setError(t('profile.errorAddressRequired'));
-      return;
-    }
+    // Adresă + TVA: OPȚIONALE la toate rolurile (2 sept 2026 — vezi role-select).
+    // Formatul TVA se verifică în continuare oriunde e completat.
     const vat = normalizeVat(vatNumber);
-    if (isMechanic && !vat) {
-      setError(t('profile.errorVatRequired'));
-      return;
-    }
     if (vat && !isValidVat(vatNumber)) {
       setError(t('profile.errorVatInvalid'));
       return;
@@ -177,7 +169,8 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
             </>
           ) : null}
 
-          {/* Faza 18: adresă + TVA — obligatorii la mecanic (afișate public), opționale la șofer. */}
+          {/* Adresă + TVA — opționale la ambele roluri (2 sept 2026); la mecanic
+              rămâne doar sugestia că sunt publice și cresc încrederea. */}
           <View>
             <Input
               label={t('profile.addressLabel')}
@@ -185,7 +178,6 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
               onChangeText={setAddress}
               placeholder={t('profile.addressPlaceholder')}
               autoCapitalize="sentences"
-              required={isMechanic}
             />
             {isMechanic ? (
               <ThemedText themeColor="textSecondary" type="small" style={styles.phoneHint}>
@@ -201,7 +193,6 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
             placeholder={t('profile.vatPlaceholder')}
             autoCapitalize="characters"
             autoCorrect={false}
-            required={isMechanic}
           />
 
           <View>

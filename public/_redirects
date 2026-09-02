@@ -1,3 +1,13 @@
+# Scurtături de instalare pentru textele promoționale (2 sept 2026).
+# Motiv: linkul Play `.../details?id=com.andeaf.trucksos` se taie la `?` în unele
+# terminale și clienți de mail, iar `.../details` fără parametru dă „the requested
+# URL was not found on this server". Astea n-au query string, deci nu se pot rupe.
+# 302, nu 301: destinația se poate schimba fără redirecturi rămase în cache.
+# ATENȚIE: regulile se evaluează ÎN ORDINE, prima potrivire câștigă — trebuie să
+# stea ÎNAINTEA fallback-ului `/*`, altfel nu se ajunge niciodată la ele.
+/android    https://play.google.com/store/apps/details?id=com.andeaf.trucksos    302
+/ios        https://apps.apple.com/app/trucksos/id6801003473                     302
+
 # Fallback SPA: orice rută necunoscută servește aplicația, nu 404.
 # Necesar pe Netlify și Cloudflare Pages (EAS Hosting o face singur, pentru
 # `web.output: "single"`); fișierul e inofensiv acolo unde nu e folosit.

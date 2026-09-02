@@ -56,17 +56,11 @@ export default function RoleSelectScreen() {
       setError(t('profile.errorPhoneInvalid'));
       return;
     }
+    // 2 sept 2026: adresa și TVA/CUI sunt OPȚIONALE și la mecanici — mulți lucrează
+    // fără formă juridică și rămâneau blocați la înregistrare. Doar telefonul e
+    // obligatoriu (contactul e funcția centrală a aplicației). Formatul TVA se
+    // verifică în continuare oriunde e completat.
     const vat = normalizeVat(vatNumber);
-    if (role === 'mechanic') {
-      if (!address.trim()) {
-        setError(t('profile.errorAddressRequired'));
-        return;
-      }
-      if (!vat) {
-        setError(t('profile.errorVatRequired'));
-        return;
-      }
-    }
     if (vat && !isValidVat(vatNumber)) {
       setError(t('profile.errorVatInvalid'));
       return;
@@ -180,7 +174,6 @@ export default function RoleSelectScreen() {
                 onChangeText={setAddress}
                 placeholder={t('profile.addressPlaceholder')}
                 autoCapitalize="sentences"
-                required
               />
               <Input
                 label={t('profile.vatLabel')}
@@ -189,7 +182,6 @@ export default function RoleSelectScreen() {
                 placeholder={t('profile.vatPlaceholder')}
                 autoCapitalize="characters"
                 autoCorrect={false}
-                required
               />
               <ThemedText themeColor="textSecondary" type="small">
                 {t('auth.roleSelect.mechanicFieldsHint')}

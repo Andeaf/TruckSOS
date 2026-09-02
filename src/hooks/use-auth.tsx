@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { AppState } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
 
 import { translateAuthError } from '@/lib/auth-errors';
@@ -33,6 +34,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   // Tokenul acestui dispozitiv, ținut ca să-l putem șterge exact pe el la logout.
   const pushTokenRef = useRef<string | null>(null);
+  // Contul pentru care tokenul de mai sus e deja revendicat — ca reîncercările să
+  // știe când chiar n-au ce face și când trebuie să re-lege tokenul (alt cont).
+  const pushOwnerRef = useRef<string | null>(null);
 
   async function fetchProfile(userId: string) {
     try {
@@ -107,13 +111,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Înregistrăm tokenul de fiecare dată când avem sesiune (login sau repornire).
   // În Expo Go `registerPushToken` iese tăcut → nimic nu se schimbă acolo.
+  //
+  // 2 sept 2026 — bugul „nu primește nimeni notificări": dependența era DOAR
+  // `session?.user.id`, deci exista o SINGURĂ încercare, imediat după login — adică
+  // înainte ca rândul din `profiles` să existe (se creează la alegerea rolului).
+  // Vechiul FK `push_tokens.user_id → profiles(id)` respingea INSERT-ul (23503 → 409)
+  // și nimic nu mai reîncerca: 83% dintre conturi rămâneau fără token. Serverul e
+  // reparat (migrarea 20260902 mută FK-ul pe auth.users), aici punem plasa de
+  // siguranță pe client — se reîncearcă și când APARE profilul, și la fiecare
+  // revenire în prim-plan, până când tokenul e confirmat pentru contul curent.
+  const profileId = profile?.id;
   useEffect(() => {
     const userId = session?.user.id;
     if (!userId) return;
-    registerPushToken(userId).then((token) => {
-      pushTokenRef.current = token;
+
+    let cancelled = false;
+    let attemptsLeft = 5;
+
+    const attempt = () => {
+      // Deja înregistrat PENTRU CONTUL ĂSTA → nu mai facem nimic. Comparația cu
+      // `pushOwnerRef` păstrează revendicarea de la Faza 14: pe schimbarea contului
+      // pe același telefon tokenul TREBUIE re-legat, altfel notificările contului
+      // vechi ar continua să ajungă aici.
+      if (cancelled || attemptsLeft <= 0) return;
+      if (pushTokenRef.current && pushOwnerRef.current === userId) return;
+      attemptsLeft -= 1;
+      registerPushToken(userId).then((token) => {
+        if (cancelled) return;
+        pushTokenRef.current = token;
+        pushOwnerRef.current = token ? userId : null;
+      });
+    };
+
+    attempt();
+
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') attempt();
     });
-  }, [session?.user.id]);
+
+    return () => {
+      cancelled = true;
+      sub.remove();
+    };
+  }, [session?.user.id, profileId]);
 
   async function signOut() {
     // Întâi scoatem tokenul: altfel telefonul ar primi notificările contului vechi.
@@ -122,6 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await unregisterPushToken(token);
       pushTokenRef.current = null;
     }
+    pushOwnerRef.current = null;
     await supabase.auth.signOut();
   }
 
