@@ -8,7 +8,8 @@ interface ButtonProps {
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
-  variant?: 'primary' | 'secondary' | 'danger';
+  /** `success` = verde plin, aceeași înălțime ca `primary` (buton de contact pe anunț). */
+  variant?: 'primary' | 'secondary' | 'danger' | 'success';
 }
 
 export function Button({
@@ -23,6 +24,7 @@ export function Button({
 
   function variantStyle() {
     if (variant === 'danger') return styles.danger;
+    if (variant === 'success') return { backgroundColor: theme.successSolid };
     if (variant === 'secondary')
       return { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: theme.brand };
     return { backgroundColor: theme.primary };

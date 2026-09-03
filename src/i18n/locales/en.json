@@ -391,6 +391,8 @@
     "apply": {
       "buttonInterested": "I'm interested",
       "interestedHint": "Send a price offer to the carrier. They will choose the right mechanic.",
+      "buttonContact": "Message directly",
+      "contactHint": "Or message the poster directly if you need details first.",
       "sheetTitle": "Submit application",
       "priceTypeLabel": "Price type",
       "priceTypeFixed": "Fixed price",

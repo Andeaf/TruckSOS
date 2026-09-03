@@ -3,7 +3,12 @@ import { Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
-import { TAB_BAR_WEB_STYLE, tabLabel, useTabLabelFontSize } from '@/components/tab-label';
+import {
+  TAB_BAR_WEB_STYLE,
+  tabLabel,
+  useTabBarNativeStyle,
+  useTabLabelFontSize,
+} from '@/components/tab-label';
 import { AppTabBar, useWideLayout } from '@/components/web-sidebar';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
@@ -63,6 +68,8 @@ function MechanicTabs() {
 
   // Web pe ecran lat: aceleași rute, dar ca bară laterală (design „Web Redesign").
   const wide = useWideLayout();
+  // Inaltimea + respiroul de jos ale barei pe nativ (vezi nota din tab-label).
+  const tabBarNative = useTabBarNativeStyle();
   // Font comun pentru toate etichetele barei — cea mai lungă dictează mărimea.
   const tabFontSize = useTabLabelFontSize([
     t('mechanic.tabs.map'),
@@ -89,6 +96,7 @@ function MechanicTabs() {
         tabBarInactiveTintColor: theme.textTertiary,
         tabBarStyle: {
           ...TAB_BAR_WEB_STYLE,
+          ...tabBarNative,
           backgroundColor: theme.barBackground,
           borderTopWidth: 1,
           borderTopColor: theme.separator,

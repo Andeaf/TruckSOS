@@ -1,4 +1,5 @@
 import { Platform, Text, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /** Mărimea din design; sub ea coborâm doar cât cere cea mai lungă etichetă. */
 const DESIGN_FONT_SIZE = 11;
@@ -22,6 +23,36 @@ const ITEM_H_INSET = Platform.OS === 'web' ? 16 : 12;
  * Cheia trebuie să lipsească de tot pe nativ.
  */
 export const TAB_BAR_WEB_STYLE = Platform.OS === 'web' ? ({ height: 56 } as const) : null;
+
+/** Inaltimea de continut a barei — implicitul react-navigation, pe care il reproducem. */
+const TAB_BAR_CONTENT_HEIGHT = 49;
+/** Respiro sub eticheta. Fara el, pe telefoanele cu bara de butoane OPACA textul
+ *  sta lipit de marginea de jos, la un fir de butoanele Android (poza user, 2 sept). */
+const TAB_BAR_EXTRA_BOTTOM = 8;
+
+/**
+ * Stilul nativ al barei de taburi (2 sept). Doua situatii de acoperit deodata:
+ *
+ *  - navigatie GESTUALA / bara translucida: insets.bottom > 0; react-navigation
+ *    calculeaza singur 49 + inset, dar il recalculam identic ca sa putem adauga
+ *    respiro fara sa pierdem safe-area;
+ *  - bara de butoane OPACA (cazul din poza): insets.bottom e 0, fereastra se
+ *    termina deasupra butoanelor, iar bara ramane exact 49px — cu paddingTop 4
+ *    din layout-uri, eticheta ajunge pe marginea de jos.
+ *
+ * Dam o valoare NUMERICA, niciodata undefined: react-navigation pune stilul
+ * userului peste cel calculat, iar un height undefined ar sterge inaltimea cu tot
+ * cu safe-area (bug patit pe 15 aug, vezi nota de la TAB_BAR_WEB_STYLE).
+ */
+export function useTabBarNativeStyle() {
+  const insets = useSafeAreaInsets();
+  if (Platform.OS === 'web') return null;
+  // Respiroul se adauga DOAR pe Android: pe iOS insets.bottom (indicatorul home,
+  // ~34px) lasa deja loc destul, iar bara arata corect azi — nu o schimbam.
+  const extra = Platform.OS === 'android' ? TAB_BAR_EXTRA_BOTTOM : 0;
+  const bottom = insets.bottom + extra;
+  return { height: TAB_BAR_CONTENT_HEIGHT + bottom, paddingBottom: bottom };
+}
 
 /**
  * O mărime de font COMUNĂ pentru toate etichetele barei: cea mai lungă etichetă

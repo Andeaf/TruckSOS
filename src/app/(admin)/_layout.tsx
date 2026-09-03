@@ -3,7 +3,12 @@ import { Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
-import { TAB_BAR_WEB_STYLE, tabLabel, useTabLabelFontSize } from '@/components/tab-label';
+import {
+  TAB_BAR_WEB_STYLE,
+  tabLabel,
+  useTabBarNativeStyle,
+  useTabLabelFontSize,
+} from '@/components/tab-label';
 import { AdminTabBar, useWideLayout } from '@/components/web-sidebar';
 import { useTheme } from '@/hooks/use-theme';
 import { fetchPendingReportsCount } from '@/hooks/use-admin';
@@ -16,6 +21,8 @@ export default function AdminLayout() {
   const [pending, setPending] = useState(0);
   // Web pe ecran lat: sidebar-ul admin din design (10b–10e), cu logout jos.
   const wide = useWideLayout();
+  // Inaltimea + respiroul de jos ale barei pe nativ (vezi nota din tab-label).
+  const tabBarNative = useTabBarNativeStyle();
 
   // Badge rapoarte: query de count, reîmprospătat la fiecare tap pe tab (fără Realtime — lecția Fazei 6).
   const refreshPending = useCallback(() => {
@@ -45,6 +52,7 @@ export default function AdminLayout() {
         tabBarInactiveTintColor: theme.textTertiary,
         tabBarStyle: {
           ...TAB_BAR_WEB_STYLE,
+          ...tabBarNative,
           backgroundColor: theme.barBackground,
           borderTopWidth: 1,
           borderTopColor: theme.separator,

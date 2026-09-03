@@ -29,6 +29,8 @@ export const Colors = {
     onHeader: '#FFFFFF',
     successText: '#1C7C3C',
     successBg: '#E7F6EC',
+    /** Verde PLIN de buton (alb pe el) — altul decât `successText`, care e text pe fundal deschis. */
+    successSolid: '#1C7C3C',
     neutralBg: '#EEF1F5',
     /** Barele fixe (composer chat, bottom nav) — în dark, mai închise decât cardurile. */
     barBackground: '#FFFFFF',
@@ -51,6 +53,8 @@ export const Colors = {
     onHeader: '#FFFFFF',
     successText: '#4BC07A',
     successBg: '#14301F',
+    // Ton mediu, ca `primary` în dark: `successText` (#4BC07A) e prea deschis sub alb.
+    successSolid: '#2E9E57',
     neutralBg: '#222D3C',
     barBackground: '#141D2C',
     brandSoft: '#1E2A40',

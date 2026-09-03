@@ -148,6 +148,34 @@ export default function MechanicAnnouncementDetailScreen() {
   const { photos } = useAnnouncementPhotos(id);
   const driverAvatarUrl = useSignedUrl(announcement?.driver?.avatar_path);
 
+  // Contact direct cu autorul anunțului (2 sept). Refolosește exact conducta de la
+  // share: conversație directă + `announcementId` pe rută, care face ca PRIMUL mesaj
+  // să poarte cardul anunțului — destinatarul vede din prima despre ce e vorba
+  // (comportamentul introdus la Market în Faza 19.4). Diferența față de share e doar
+  // destinatarul: autorul anunțului, nu un terț ales din picker.
+  const [contacting, setContacting] = useState(false);
+  const handleContactAuthor = async () => {
+    // Autorul poate fi șofer SAU mecanic — mecanicii își postează propriile anunțuri
+    // în aceeași tabelă (coloana se numește `driver_id` din motive istorice).
+    const authorId = announcement?.driver_id;
+    if (contacting || !authorId) return;
+    setContacting(true);
+    const { conversationId, error } = await startDirectConversation(authorId);
+    setContacting(false);
+    if (error === 'blocked_by_you') {
+      Alert.alert(t('newConversation.blockedTitle'), t('newConversation.blockedBody'));
+      return;
+    }
+    if (error || !conversationId) {
+      Alert.alert(t('common.error'));
+      return;
+    }
+    router.push({
+      pathname: '/(mechanic)/conversations/[id]' as never,
+      params: { id: conversationId, announcementId: id },
+    });
+  };
+
   async function load() {
     setLoading(true);
     try {
@@ -352,8 +380,14 @@ export default function MechanicAnnouncementDetailScreen() {
               title={t('mechanic.apply.buttonInterested')}
               onPress={() => { setResubmitMode(false); setSheetVisible(true); }}
             />
+            <Button
+              title={t('mechanic.apply.buttonContact')}
+              variant="success"
+              loading={contacting}
+              onPress={handleContactAuthor}
+            />
             <ThemedText themeColor="textSecondary" style={styles.hint}>
-              {t('mechanic.apply.interestedHint')}
+              {t('mechanic.apply.interestedHint')} {t('mechanic.apply.contactHint')}
             </ThemedText>
           </>
         )}

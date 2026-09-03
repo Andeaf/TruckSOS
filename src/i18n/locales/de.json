@@ -391,6 +391,8 @@
     "apply": {
       "buttonInterested": "Ich bin interessiert",
       "interestedHint": "Sende dem Transporteur ein Preisangebot. Er wählt den passenden Mechaniker aus.",
+      "buttonContact": "Direkt schreiben",
+      "contactHint": "Oder schreibe dem Ersteller direkt, wenn du zuerst Details brauchst.",
       "sheetTitle": "Bewerbung einreichen",
       "priceTypeLabel": "Preisart",
       "priceTypeFixed": "Festpreis",

@@ -391,6 +391,8 @@
     "apply": {
       "buttonInterested": "Sunt interesat",
       "interestedHint": "Trimite o ofertă de preț transportatorului. El va alege mecanicul potrivit.",
+      "buttonContact": "Contactează direct",
+      "contactHint": "Sau scrie-i direct autorului, dacă vrei întâi detalii.",
       "sheetTitle": "Trimite candidatura",
       "priceTypeLabel": "Tip preț",
       "priceTypeFixed": "Preț fix",
