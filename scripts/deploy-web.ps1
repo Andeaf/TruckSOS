@@ -18,7 +18,13 @@ $nmDir = "dist/assets/node_modules"
 $nmNew = "dist/assets/nm"
 if (Test-Path $nmDir) {
     if (Test-Path $nmNew) { Remove-Item -Recurse -Force $nmNew }
-    Rename-Item $nmDir "nm"
+    # COPIERE + STERGERE, nu Rename-Item (3 sept 2026). Pe Windows redenumirea
+    # folderului pica intermitent cu "Access to the path ... is denied", desi
+    # copierea si stergerea aceluiasi folder merg imediat dupa: un handle ramas
+    # de la Metro/antivirus blocheaza rename-ul, dar nu si celelalte operatii.
+    New-Item -ItemType Directory -Force $nmNew | Out-Null
+    Copy-Item (Join-Path $nmDir '*') $nmNew -Recurse -Force
+    Remove-Item $nmDir -Recurse -Force
 }
 
 Get-ChildItem "dist/_expo/static/js/web" -Filter *.js | ForEach-Object {
