@@ -31,6 +31,7 @@ import {
   acceptApplication,
   rejectApplication,
   resolveAnnouncement,
+  resolveOpenAnnouncement,
   cancelAnnouncement,
   deleteAnnouncement,
   type AnnouncementWithMechanic,
@@ -265,8 +266,14 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
 
   async function handleResolve() {
     setResolving(true);
-    const err = await resolveAnnouncement(id);
-    if (err) { setError(err); setResolving(false); return; }
+    // `open` → RPC-ul din migrarea 20260904 (RLS permite doar accepted → resolved
+    // prin UPDATE direct; RPC-ul respinge și candidaturile pending, atomic).
+    // `accepted` → drumul vechi, neschimbat.
+    const err =
+      announcement?.status === 'open'
+        ? await resolveOpenAnnouncement(id)
+        : await resolveAnnouncement(id);
+    if (err) { setError(t('driver.announcements.errorResolve')); setResolving(false); return; }
     await load();
     setResolving(false);
   }
@@ -530,6 +537,7 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
             title={t('driver.announcements.resolveButton')}
             onPress={handleResolve}
             loading={resolving}
+            variant="success"
           />
         ) : null}
 
@@ -538,6 +546,15 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
             <ThemedText themeColor="textSecondary" style={styles.hint}>
               {t('driver.announcements.hintOpen')}
             </ThemedText>
+            {/* 5 sept 2026: „rezolvat" și pe anunț ÎNCĂ deschis (problema rezolvată în
+                afara aplicației) — merge prin RPC, vezi handleResolve. */}
+            <Button
+              title={t('driver.announcements.resolveButton')}
+              onPress={handleResolve}
+              loading={resolving}
+              disabled={cancelling}
+              variant="success"
+            />
             <Button
               title={t('driver.announcements.cancelButton')}
               onPress={handleCancelPress}
@@ -564,7 +581,11 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
             {/* Hint-ul pomenește Istoricul — ecran pe care doar șoferul îl are. */}
             {role === 'driver' ? (
               <ThemedText themeColor="textSecondary" style={styles.hint}>
-                {t('driver.announcements.hintResolved')}
+                {t(
+                  announcement.mechanic_id
+                    ? 'driver.announcements.hintResolved'
+                    : 'driver.announcements.hintResolvedNoMechanic'
+                )}
               </ThemedText>
             ) : null}
           </>

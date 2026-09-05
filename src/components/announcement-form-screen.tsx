@@ -378,7 +378,8 @@ export function AnnouncementFormScreen({ role }: { role: 'driver' | 'mechanic' }
           </ThemedText>
 
           {/* Expirare automată (23 aug): anunțurile deschise se anulează singure la
-              72h, iar pozele se șterg — userul află DE LA POSTARE, nu cu surpriză. */}
+              30h (era 72h până pe 4 sept 2026), iar pozele se șterg — userul află DE LA
+              POSTARE, nu cu surpriză. Pragul real e HOURS din EF cleanup-announcements. */}
           <ThemedText themeColor="textSecondary" type="small" style={styles.requiredNote}>
             {t('driver.announcements.autoExpireNote')}
           </ThemedText>

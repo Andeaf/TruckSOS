@@ -2,6 +2,10 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
+import {
+  AnnouncementResolvePrompt,
+  type AnnouncementResolvePromptProps,
+} from '@/components/announcement-resolve-prompt';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -33,11 +37,18 @@ interface AnnouncementCardProps {
   selectable?: boolean;
   onLongPress?: () => void;
   onToggleSelect?: () => void;
+  /**
+   * Șofer (4 sept): caseta „Și-a găsit anunțul rezolvarea?" — prezentă = se randează
+   * în card, sub metadate, iar cardul primește conturul chihlimbar. Ignorată în
+   * modul de selecție (cardul are alt contur și alt sens la apăsare).
+   */
+  resolvePrompt?: AnnouncementResolvePromptProps;
 }
 
-export function AnnouncementCard({ announcement, onPress, driverName, compact = false, rejectedByUser = false, appliedByUser = false, isNew = false, distanceKm, applicantCount = 0, selectionMode, selected, selectable = true, onLongPress, onToggleSelect }: AnnouncementCardProps) {
+export function AnnouncementCard({ announcement, onPress, driverName, compact = false, rejectedByUser = false, appliedByUser = false, isNew = false, distanceKm, applicantCount = 0, selectionMode, selected, selectable = true, onLongPress, onToggleSelect, resolvePrompt }: AnnouncementCardProps) {
   const theme = useTheme();
   const { t } = useTranslation();
+  const promptVisible = resolvePrompt !== undefined && !selectionMode;
 
   function timeAgo(dateStr: string): string {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -88,7 +99,9 @@ export function AnnouncementCard({ announcement, onPress, driverName, compact = 
         pressed && !selectionMode && styles.pressed,
         selectionMode && !selectable && styles.dimmed,
       ]}>
-      <ThemedView type="backgroundElement" style={[styles.card, selected && styles.cardSelected]}>
+      <ThemedView
+        type="backgroundElement"
+        style={[styles.card, promptVisible && styles.cardPrompted, selected && styles.cardSelected]}>
         <View style={styles.cardRow}>
           {selectionMode && selectable ? (
             <MaterialIcons
@@ -169,6 +182,8 @@ export function AnnouncementCard({ announcement, onPress, driverName, compact = 
                 </View>
               </View>
             ) : null}
+
+            {promptVisible && resolvePrompt ? <AnnouncementResolvePrompt {...resolvePrompt} /> : null}
           </View>
         </View>
       </ThemedView>
@@ -185,6 +200,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     gap: 6,
     ...Shadows.card,
+  },
+  // Cardul cu caseta „rezolvat?" (design 12c): contur chihlimbar + umbră un pic mai
+  // pronunțată — `0 10px 26px rgba(20,40,80,.12)`, mapată ca Shadows.card.
+  cardPrompted: {
+    borderWidth: 1.5,
+    borderColor: '#f0c471',
+    shadowColor: '#142850',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 26,
+    elevation: 5,
   },
   cardSelected: { borderWidth: 1.5, borderColor: '#22c55e' },
   cardRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },

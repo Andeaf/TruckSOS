@@ -23,12 +23,29 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import {
   useMyAnnouncements,
+  cancelAnnouncement,
   deleteAnnouncement,
   fetchPendingApplicationCounts,
+  resolveAnnouncement,
+  resolveOpenAnnouncement,
 } from '@/hooks/use-announcements';
+import { useResolvePromptSnooze } from '@/hooks/use-resolve-prompt-snooze';
 import type { Announcement } from '@/types/database';
 
 type StatusFilter = 'all' | 'active' | 'accepted' | 'resolved';
+
+/**
+ * Caseta „Și-a găsit anunțul rezolvarea?" (4 sept 2026): pe anunțurile încă vii
+ * (`open`/`accepted`) pe care șoferul nu le-a mai atins de 12h+ — `updated_at`
+ * (trigger) se mișcă la orice schimbare de status sau editare, deci e exact
+ * „ultima modificare a lui". Cele `open` expiră oricum la 30h (EF cleanup).
+ */
+const RESOLVE_PROMPT_AFTER_MS = 12 * 60 * 60 * 1000;
+
+function isResolvePromptDue(a: Announcement, now: number): boolean {
+  if (a.status !== 'open' && a.status !== 'accepted') return false;
+  return now - new Date(a.updated_at).getTime() >= RESOLVE_PROMPT_AFTER_MS;
+}
 
 /**
  * Lista „Anunțurile mele" a șoferului (extrasă din ruta de tab la 5 aug; mecanicul
@@ -56,10 +73,18 @@ export function AnnouncementsListScreen() {
     return announcements;
   }, [announcements, filter]);
 
+  // Caseta „rezolvat?": amânările (local, 24h) + momentul de referință pentru
+  // pragul de 12h, ambele reluate la focus / pull-to-refresh, odată cu lista.
+  const { isSnoozed, snooze, refresh: refreshSnoozes } = useResolvePromptSnooze(profile?.id);
+  const [now, setNow] = useState(() => Date.now());
+  const [promptBusyId, setPromptBusyId] = useState<string | null>(null);
+
   useFocusEffect(
     useCallback(() => {
+      setNow(Date.now());
       refresh();
-    }, [refresh])
+      refreshSnoozes();
+    }, [refresh, refreshSnoozes])
   );
 
   // Pull-to-refresh separat de load-ul programatic: pe iOS, `refreshing=true` setat
@@ -67,6 +92,7 @@ export function AnnouncementsListScreen() {
   const [pullRefreshing, setPullRefreshing] = useState(false);
   const onPullRefresh = useCallback(async () => {
     setPullRefreshing(true);
+    setNow(Date.now());
     await refresh();
     setPullRefreshing(false);
   }, [refresh]);
@@ -126,6 +152,52 @@ export function AnnouncementsListScreen() {
     );
   }, [t, selectedIds, announcements, refresh]);
 
+  // „Marchează ca rezolvat" din casetă. `accepted` → UPDATE-ul direct de la detalii;
+  // `open` → RPC-ul resolve_open_announcement (migrarea 20260904): RLS nu permite
+  // open→resolved direct, iar candidaturile rămase se resping în aceeași tranzacție.
+  const handlePromptResolve = useCallback(
+    async (a: Announcement) => {
+      setPromptBusyId(a.id);
+      const err =
+        a.status === 'open' ? await resolveOpenAnnouncement(a.id) : await resolveAnnouncement(a.id);
+      setPromptBusyId(null);
+      if (err) {
+        Alert.alert(t('driver.announcements.errorResolve'), err);
+        return;
+      }
+      refresh();
+    },
+    [t, refresh]
+  );
+
+  // „Anulează anunțul" din casetă — aceeași confirmare ca butonul de la detalii.
+  const handlePromptCancel = useCallback(
+    (a: Announcement) => {
+      Alert.alert(
+        t('driver.announcements.cancelConfirmTitle'),
+        t('driver.announcements.cancelConfirmMessage'),
+        [
+          { text: t('driver.announcements.cancelConfirmCancel'), style: 'cancel' },
+          {
+            text: t('driver.announcements.cancelConfirmOk'),
+            style: 'destructive',
+            onPress: async () => {
+              setPromptBusyId(a.id);
+              const err = await cancelAnnouncement(a.id);
+              setPromptBusyId(null);
+              if (err) {
+                Alert.alert(t('driver.announcements.errorCancel'), err);
+                return;
+              }
+              refresh();
+            },
+          },
+        ]
+      );
+    },
+    [t, refresh]
+  );
+
   return (
     <ThemedView style={styles.container}>
       {selectionMode ? (
@@ -174,6 +246,7 @@ export function AnnouncementsListScreen() {
         onRefresh={onPullRefresh}
         renderItem={({ item }) => {
           const selectable = isSelectable(item);
+          const promptDue = !selectionMode && isResolvePromptDue(item, now) && !isSnoozed(item.id);
           return (
             <AnnouncementCard
               announcement={item}
@@ -189,6 +262,18 @@ export function AnnouncementsListScreen() {
               }
               onLongPress={() => { if (selectable) enterSelection(item.id); }}
               onToggleSelect={() => toggleSelect(item.id)}
+              resolvePrompt={
+                promptDue
+                  ? {
+                      onResolve: () => handlePromptResolve(item),
+                      onNotNow: () => snooze(item.id),
+                      // Anularea există doar din `open` (RLS + ecranul de detalii):
+                      // pe `accepted` linkul „Anulează anunțul" lipsește.
+                      onCancel: item.status === 'open' ? () => handlePromptCancel(item) : undefined,
+                      busy: promptBusyId === item.id,
+                    }
+                  : undefined
+              }
             />
           );
         }}

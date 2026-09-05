@@ -246,7 +246,7 @@
       "descriptionLabel": "Problem description",
       "descriptionPlaceholder": "e.g.: Engine won't start, smoke from engine, flat tyre...",
       "submitButton": "Post announcement",
-      "autoExpireNote": "Open announcements expire automatically after 72 hours and their photos are deleted.",
+      "autoExpireNote": "Open announcements expire automatically after 30 hours and their photos are deleted.",
       "photosLabel": "Photos",
       "photosHint": "Attach photos of the problem — visible to mechanics.",
       "photosFailedTitle": "Photos not uploaded",
@@ -277,6 +277,7 @@
       "resolveButton": "Mark as resolved",
       "hintOpen": "Your announcement is visible to available mechanics.",
       "hintResolved": "Problem resolved. You can view the conversation history in the Conversations tab.",
+      "hintResolvedNoMechanic": "Problem resolved. The announcement was closed without a mechanic chosen in the app.",
       "hintCancelled": "The announcement has been cancelled and is no longer visible to mechanics.",
       "cancelButton": "Cancel announcement",
       "cancelConfirmTitle": "Cancel announcement?",
@@ -303,7 +304,10 @@
       "deleteSelectedConfirmMessageWithOpen": "Mechanics who applied will be automatically rejected. This action cannot be undone.",
       "deleteSelectedConfirmOk": "Yes, delete",
       "applicantsBadgeOne": "1 mechanic interested! 👀",
-      "applicantsBadge": "{{count}} mechanics interested! 👀"
+      "applicantsBadge": "{{count}} mechanics interested! 👀",
+      "resolvePromptTitle": "Has your announcement been resolved?",
+      "resolvePromptNotNow": "Not yet",
+      "errorResolve": "Error marking the announcement as resolved."
     },
     "profile": {
       "phoneHint": "Visible to the mechanic only if you have an active conversation."

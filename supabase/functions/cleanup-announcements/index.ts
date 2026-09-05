@@ -1,9 +1,9 @@
 // 23 aug 2026 — Edge Function `cleanup-announcements`
 // Rulează ORAR (pg_cron + pg_net, vezi migrarea 20260823_cleanup_cron.sql) și aplică
 // politica de retenție decisă pe 23 aug:
-//   1. Anunțurile `open` mai vechi de 72h → `cancelled` (expiră: dispar din feed,
+//   1. Anunțurile `open` mai vechi de 30h → `cancelled` (expiră: dispar din feed,
 //      dar RÂNDUL rămâne — istoricul șoferului și RLS-ul de rating au nevoie de el).
-//   2. Pozele TUTUROR anunțurilor mai vechi de 72h se șterg din Storage — cu EXCEPȚIA
+//   2. Pozele TUTUROR anunțurilor mai vechi de 30h se șterg din Storage — cu EXCEPȚIA
 //      celor `accepted` (reparație în curs: mecanicul are nevoie de poze; se șterg
 //      la prima rulare de după resolved/cancelled).
 //
@@ -26,7 +26,7 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const HOURS = 72;
+const HOURS = 30; // 4 sept 2026: 72h → 30h (decizia userului; 72h era prea mult)
 /** Plafon per rulare — orice backlog se drenează în rulările următoare (orare). */
 const MAX_PHOTOS_PER_RUN = 500;
 const CHUNK = 100;
@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
   const admin = createClient(url, serviceKey);
   const cutoff = new Date(Date.now() - HOURS * 3600 * 1000).toISOString();
 
-  // ── 1. Expiră anunțurile `open` >72h (trigger-ul ban_guard e no-op la uid NULL). ──
+  // ── 1. Expiră anunțurile `open` >30h (trigger-ul ban_guard e no-op la uid NULL). ──
   const { data: expired, error: expireErr } = await admin
     .from('announcements')
     .update({ status: 'cancelled' })
@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
     .select('id');
   if (expireErr) return json(500, { error: 'expire_failed', detail: expireErr.message });
 
-  // ── 2. Pozele anunțurilor >72h, minus cele `accepted` (join pe FK, filtru embed). ──
+  // ── 2. Pozele anunțurilor >30h, minus cele `accepted` (join pe FK, filtru embed). ──
   const { data: photos, error: photosErr } = await admin
     .from('announcement_photos')
     .select('id, storage_path, announcements!inner(id)')

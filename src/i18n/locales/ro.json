@@ -246,7 +246,7 @@
       "descriptionLabel": "Descrierea problemei",
       "descriptionPlaceholder": "ex: Motor nu pornește, fum din motor, roatã spartã...",
       "submitButton": "Trimite anunțul",
-      "autoExpireNote": "Anunțurile deschise expiră automat după 72 de ore, iar pozele lor se șterg.",
+      "autoExpireNote": "Anunțurile deschise expiră automat după 30 de ore, iar pozele lor se șterg.",
       "photosLabel": "Poze",
       "photosHint": "Atașează poze cu defecțiunea — vizibile mecanicilor.",
       "photosFailedTitle": "Poze neurcate",
@@ -277,6 +277,7 @@
       "resolveButton": "Marchează ca rezolvat",
       "hintOpen": "Anunțul este vizibil mecanicilor disponibili.",
       "hintResolved": "Problemă rezolvată. Poți vedea istoricul conversației în tab-ul Conversații.",
+      "hintResolvedNoMechanic": "Problemă rezolvată. Anunțul a fost închis fără un mecanic ales din aplicație.",
       "hintCancelled": "Anunțul a fost anulat și nu mai este vizibil mecanicilor.",
       "cancelButton": "Anulează anunțul",
       "cancelConfirmTitle": "Anulezi anunțul?",
@@ -303,7 +304,10 @@
       "deleteSelectedConfirmMessageWithOpen": "Mecanicii care au candidat vor fi respinși automat. Acțiunea nu poate fi anulată.",
       "deleteSelectedConfirmOk": "Da, șterge",
       "applicantsBadgeOne": "1 mecanic interesat! 👀",
-      "applicantsBadge": "{{count}} mecanici interesați! 👀"
+      "applicantsBadge": "{{count}} mecanici interesați! 👀",
+      "resolvePromptTitle": "Și-a găsit anunțul rezolvarea?",
+      "resolvePromptNotNow": "Încă nu",
+      "errorResolve": "Eroare la marcarea anunțului ca rezolvat."
     },
     "profile": {
       "phoneHint": "Vizibil mecanicului doar dacă aveți o conversație activă."

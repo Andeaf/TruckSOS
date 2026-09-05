@@ -118,6 +118,19 @@ export async function cancelAnnouncement(id: string): Promise<string | null> {
   return error?.message ?? null;
 }
 
+/**
+ * „Marchează ca rezolvat" pe un anunț ÎNCĂ `open` (caseta din „Anunțurile mele",
+ * 4 sept): RPC-ul din migrarea 20260904 — rezolvă + respinge candidaturile `pending`
+ * atomic (RLS nu permite `open → resolved` prin UPDATE direct, iar respingerile nu
+ * se pot face din client). Pentru `accepted` rămâne resolveAnnouncement().
+ */
+export async function resolveOpenAnnouncement(id: string): Promise<string | null> {
+  const { error } = await supabase.rpc('resolve_open_announcement', {
+    p_announcement_id: id,
+  } as never);
+  return error?.message ?? null;
+}
+
 export async function deleteAnnouncement(id: string): Promise<string | null> {
   // Reject pending applications so mechanics see "Respins" instead of a disappeared entry
   await supabase

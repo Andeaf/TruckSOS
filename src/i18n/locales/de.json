@@ -246,7 +246,7 @@
       "descriptionLabel": "Problembeschreibung",
       "descriptionPlaceholder": "z.B.: Motor startet nicht, Rauch aus dem Motor, Reifenpanne...",
       "submitButton": "Anzeige veröffentlichen",
-      "autoExpireNote": "Offene Anzeigen laufen nach 72 Stunden automatisch ab und ihre Fotos werden gelöscht.",
+      "autoExpireNote": "Offene Anzeigen laufen nach 30 Stunden automatisch ab und ihre Fotos werden gelöscht.",
       "photosLabel": "Fotos",
       "photosHint": "Füge Fotos des Problems hinzu — für Mechaniker sichtbar.",
       "photosFailedTitle": "Fotos nicht hochgeladen",
@@ -277,6 +277,7 @@
       "resolveButton": "Als gelöst markieren",
       "hintOpen": "Deine Anzeige ist für verfügbare Mechaniker sichtbar.",
       "hintResolved": "Problem gelöst. Den Gesprächsverlauf findest du im Tab Gespräche.",
+      "hintResolvedNoMechanic": "Problem gelöst. Die Anzeige wurde ohne einen in der App gewählten Mechaniker geschlossen.",
       "hintCancelled": "Die Anzeige wurde storniert und ist für Mechaniker nicht mehr sichtbar.",
       "cancelButton": "Anzeige stornieren",
       "cancelConfirmTitle": "Anzeige stornieren?",
@@ -303,7 +304,10 @@
       "deleteSelectedConfirmMessageWithOpen": "Mechaniker, die sich beworben haben, werden automatisch abgelehnt. Diese Aktion kann nicht rückgängig gemacht werden.",
       "deleteSelectedConfirmOk": "Ja, löschen",
       "applicantsBadgeOne": "1 Mechaniker interessiert! 👀",
-      "applicantsBadge": "{{count}} Mechaniker interessiert! 👀"
+      "applicantsBadge": "{{count}} Mechaniker interessiert! 👀",
+      "resolvePromptTitle": "Wurde deine Anzeige gelöst?",
+      "resolvePromptNotNow": "Noch nicht",
+      "errorResolve": "Fehler beim Markieren der Anzeige als gelöst."
     },
     "profile": {
       "phoneHint": "Für den Mechaniker nur sichtbar, wenn ihr ein aktives Gespräch habt."
