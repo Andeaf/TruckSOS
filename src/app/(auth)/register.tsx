@@ -32,6 +32,7 @@ export default function RegisterScreen() {
   const [emailSent, setEmailSent] = useState(false);
   const [code, setCode] = useState('');
   const [cooldown, setCooldown] = useState(0);
+  const [resent, setResent] = useState(false);
 
   useEffect(() => {
     if (cooldown === 0) return;
@@ -74,6 +75,7 @@ export default function RegisterScreen() {
     }
     setLoading(true);
     setError('');
+    setResent(false);
     const { error: err } = await supabase.auth.verifyOtp({
       email: email.trim(),
       token: code.trim(),
@@ -86,8 +88,14 @@ export default function RegisterScreen() {
   async function handleResend() {
     setError('');
     const { error: err } = await supabase.auth.resend({ type: 'signup', email: email.trim() });
-    if (err) setError(translateAuthError(err) ?? '');
-    else setCooldown(60);
+    if (err) {
+      setError(translateAuthError(err) ?? '');
+      return;
+    }
+    // Supabase invalidează codul vechi la retrimitere. Spunem explicit, altfel
+    // userul introduce codul din primul email (sosit târziu) și primește „expirat”.
+    setResent(true);
+    setCooldown(60);
   }
 
   return (
@@ -127,6 +135,9 @@ export default function RegisterScreen() {
                 />
 
                 {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
+                {!error && resent ? (
+                  <ThemedText style={styles.notice}>{t('auth.otp.resentNotice')}</ThemedText>
+                ) : null}
 
                 <Button
                   title={t('auth.register.verifyButton')}
@@ -144,6 +155,8 @@ export default function RegisterScreen() {
               </Pressable>
 
               <ThemedText themeColor="textSecondary" style={styles.spamHint}>
+                {t('auth.otp.validityHint')}
+                {'\n'}
                 {t('auth.otp.spamHint')}
               </ThemedText>
 
@@ -154,6 +167,7 @@ export default function RegisterScreen() {
                   setEmailSent(false);
                   setCode('');
                   setError('');
+                  setResent(false);
                 }}>
                 <ThemedText style={styles.link}>{t('auth.otp.changeEmail')}</ThemedText>
               </Pressable>
@@ -241,6 +255,7 @@ const styles = StyleSheet.create({
   logo: { width: 64, height: 64, borderRadius: 14, marginBottom: Spacing.one },
   form: { gap: Spacing.three },
   error: { color: '#ef4444', textAlign: 'center', fontSize: 14 },
+  notice: { color: '#0E3A7D', textAlign: 'center', fontSize: 14 },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',

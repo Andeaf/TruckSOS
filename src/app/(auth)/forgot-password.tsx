@@ -36,6 +36,7 @@ export default function ForgotPasswordScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [resent, setResent] = useState(false);
 
   useEffect(() => {
     if (cooldown === 0) return;
@@ -57,6 +58,9 @@ export default function ForgotPasswordScreen() {
       setError(translateAuthError(err) ?? '');
       return;
     }
+    // Retrimiterea invalidează codul din emailul anterior (Supabase ține un singur
+    // token de recovery). Anunțăm explicit, ca userul să nu-l mai folosească pe cel vechi.
+    setResent(step === 'code');
     setStep('code');
     setCooldown(60);
   }
@@ -76,6 +80,7 @@ export default function ForgotPasswordScreen() {
     }
     setLoading(true);
     setError('');
+    setResent(false);
     const { error: verifyErr } = await supabase.auth.verifyOtp({
       email: email.trim(),
       token: code.trim(),
@@ -160,6 +165,9 @@ export default function ForgotPasswordScreen() {
               />
 
               {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
+              {!error && resent ? (
+                <ThemedText style={styles.notice}>{t('auth.otp.resentNotice')}</ThemedText>
+              ) : null}
 
               <Button title={t('auth.forgot.resetButton')} onPress={handleReset} loading={loading} />
 
@@ -173,6 +181,8 @@ export default function ForgotPasswordScreen() {
               </Pressable>
 
               <ThemedText themeColor="textSecondary" style={styles.spamHint}>
+                {t('auth.otp.validityHint')}
+                {'\n'}
                 {t('auth.otp.spamHint')}
               </ThemedText>
             </View>
@@ -204,6 +214,7 @@ const styles = StyleSheet.create({
   subtitle: { textAlign: 'center', lineHeight: 22 },
   form: { gap: Spacing.three },
   error: { color: '#ef4444', textAlign: 'center', fontSize: 14 },
+  notice: { color: '#0E3A7D', textAlign: 'center', fontSize: 14 },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',

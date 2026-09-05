@@ -195,9 +195,11 @@
       "codeLabel": "Cod de verificare",
       "codePlaceholder": "123456",
       "resend": "Retrimite codul",
-      "resendCooldown": "Retrimite codul ({{s}}s)",
+      "resendCooldown": "Poți cere alt cod în {{s}}s",
       "errorCode": "Introdu codul de 6 cifre primit pe email.",
       "spamHint": "Nu găsești emailul? Verifică și folderul Spam.",
+      "validityHint": "Codul e valabil 60 de minute. Emailul poate întârzia câteva minute.",
+      "resentNotice": "Am trimis un cod nou. Codul din emailul anterior nu mai e valabil.",
       "changeEmail": "Adresă de email greșită? Corecteaz-o"
     },
     "forgot": {
@@ -219,7 +221,7 @@
     "email_not_confirmed": "Email-ul nu e confirmat încă. Verifică-ți inbox-ul.",
     "user_already_exists": "Există deja un cont cu acest email.",
     "email_exists": "Există deja un cont cu acest email.",
-    "otp_expired": "Codul e greșit sau a expirat. Cere unul nou.",
+    "otp_expired": "Codul e greșit sau a expirat. Dacă ai cerut un cod nou, folosește-l pe cel din ultimul email.",
     "over_email_send_rate_limit": "Prea multe email-uri trimise. Așteaptă puțin și încearcă din nou.",
     "over_request_rate_limit": "Prea multe încercări. Așteaptă puțin și încearcă din nou.",
     "same_password": "Parola nouă trebuie să difere de cea veche.",

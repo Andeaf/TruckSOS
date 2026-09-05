@@ -195,9 +195,11 @@
       "codeLabel": "Bestätigungscode",
       "codePlaceholder": "123456",
       "resend": "Code erneut senden",
-      "resendCooldown": "Code erneut senden ({{s}}s)",
+      "resendCooldown": "Neuer Code möglich in {{s}}s",
       "errorCode": "Gib den 6-stelligen Code aus der E-Mail ein.",
       "spamHint": "E-Mail nicht gefunden? Sieh auch im Spam-Ordner nach.",
+      "validityHint": "Der Code ist 60 Minuten gültig. Die E-Mail kann einige Minuten brauchen.",
+      "resentNotice": "Wir haben einen neuen Code gesendet. Der Code aus der vorherigen E-Mail ist nicht mehr gültig.",
       "changeEmail": "Falsche E-Mail-Adresse? Korrigieren"
     },
     "forgot": {
@@ -219,7 +221,7 @@
     "email_not_confirmed": "Deine E-Mail ist noch nicht bestätigt. Sieh in deinem Posteingang nach.",
     "user_already_exists": "Es existiert bereits ein Konto mit dieser E-Mail.",
     "email_exists": "Es existiert bereits ein Konto mit dieser E-Mail.",
-    "otp_expired": "Der Code ist falsch oder abgelaufen. Fordere einen neuen an.",
+    "otp_expired": "Der Code ist falsch oder abgelaufen. Wenn du einen neuen Code angefordert hast, verwende den aus der letzten E-Mail.",
     "over_email_send_rate_limit": "Zu viele E-Mails gesendet. Bitte warte kurz und versuche es erneut.",
     "over_request_rate_limit": "Zu viele Versuche. Bitte warte kurz und versuche es erneut.",
     "same_password": "Das neue Passwort muss sich vom alten unterscheiden.",

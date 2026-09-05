@@ -195,9 +195,11 @@
       "codeLabel": "Verification code",
       "codePlaceholder": "123456",
       "resend": "Resend code",
-      "resendCooldown": "Resend code ({{s}}s)",
+      "resendCooldown": "You can request another code in {{s}}s",
       "errorCode": "Enter the 6-digit code from the email.",
       "spamHint": "Can't find the email? Check your Spam folder too.",
+      "validityHint": "The code is valid for 60 minutes. The email may take a few minutes to arrive.",
+      "resentNotice": "We sent a new code. The code from the previous email no longer works.",
       "changeEmail": "Wrong email address? Fix it"
     },
     "forgot": {
@@ -219,7 +221,7 @@
     "email_not_confirmed": "Your email is not confirmed yet. Check your inbox.",
     "user_already_exists": "An account with this email already exists.",
     "email_exists": "An account with this email already exists.",
-    "otp_expired": "The code is wrong or has expired. Request a new one.",
+    "otp_expired": "The code is wrong or has expired. If you requested a new code, use the one from the latest email.",
     "over_email_send_rate_limit": "Too many emails sent. Please wait a bit and try again.",
     "over_request_rate_limit": "Too many attempts. Please wait a bit and try again.",
     "same_password": "The new password must be different from the old one.",

@@ -40,6 +40,7 @@ export function ChangeEmailScreen({ backPath }: { backPath: string }) {
   const [error, setError] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [resent, setResent] = useState(false);
 
   const currentEmail = session?.user.email ?? '';
 
@@ -83,6 +84,7 @@ export function ChangeEmailScreen({ backPath }: { backPath: string }) {
 
   async function handleVerify() {
     setError(undefined);
+    setResent(false);
     if (code.trim().length !== 6) {
       setError(t('auth.otp.errorCode'));
       return;
@@ -111,8 +113,13 @@ export function ChangeEmailScreen({ backPath }: { backPath: string }) {
       type: 'email_change',
       email: newEmail.trim().toLowerCase(),
     });
-    if (err) setError(translateAuthError(err) ?? undefined);
-    else setCooldown(60);
+    if (err) {
+      setError(translateAuthError(err) ?? undefined);
+      return;
+    }
+    // Codul din emailul anterior nu mai e valabil după retrimitere — spunem explicit.
+    setResent(true);
+    setCooldown(60);
   }
 
   return (
@@ -171,6 +178,11 @@ export function ChangeEmailScreen({ backPath }: { backPath: string }) {
                 error={error}
                 required
               />
+              {!error && resent ? (
+                <ThemedText type="small" style={[styles.centered, { color: theme.brand }]}>
+                  {t('auth.otp.resentNotice')}
+                </ThemedText>
+              ) : null}
 
               <Button
                 title={t('settings.changeEmailScreen.submit')}
@@ -186,6 +198,10 @@ export function ChangeEmailScreen({ backPath }: { backPath: string }) {
                     : t('auth.otp.resend')}
                 </ThemedText>
               </Pressable>
+
+              <ThemedText themeColor="textSecondary" type="small" style={styles.centered}>
+                {t('auth.otp.validityHint')}
+              </ThemedText>
             </>
           )}
         </ScrollView>
@@ -200,4 +216,5 @@ const styles = StyleSheet.create({
   content: { padding: Spacing.four, gap: Spacing.three },
   link: { fontWeight: '600', fontSize: 16, textAlign: 'center' },
   dimmed: { opacity: 0.5 },
+  centered: { textAlign: 'center' },
 });
