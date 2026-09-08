@@ -17,6 +17,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useSettings } from '@/hooks/use-settings';
 import { useSavedTrucks, addTruck, updateTruck, deleteTruck } from '@/hooks/use-trucks';
 import { PLAY_STORE_URL, shareApp } from '@/lib/share-app';
+import { shareContact } from '@/lib/share-contact';
 import type { Truck } from '@/types/database';
 
 /**
@@ -185,6 +186,25 @@ export default function DriverProfileScreen() {
           {/* Pe web nu există sheet de share — în locul rândului stă textul de mai jos. */}
           {Platform.OS !== 'web' ? (
             <ListRow icon="share" label={t('profile.shareApp')} onPress={() => shareApp(t)} />
+          ) : null}
+          {/* Propriul contact, trimis în afara aplicației (7 sept) — și pe web
+              (Web Share API sau clipboard), spre deosebire de recomandarea aplicației. */}
+          {profile ? (
+            <ListRow
+              icon="person-add"
+              label={t('shareContact.actionMine')}
+              onPress={async () => {
+                try {
+                  const result = await shareContact(
+                    { id: profile.id, name: profile.full_name, role: profile.role },
+                    t,
+                  );
+                  if (result === 'copied') Alert.alert(t('shareContact.copied'));
+                } catch {
+                  Alert.alert(t('shareContact.error'));
+                }
+              }}
+            />
           ) : null}
         </RowGroup>
 

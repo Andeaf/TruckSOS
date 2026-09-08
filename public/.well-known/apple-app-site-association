@@ -1,0 +1,17 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["LGGXQ6UG7B.com.andeaf.trucksos"],
+        "appID": "LGGXQ6UG7B.com.andeaf.trucksos",
+        "paths": ["/p/*"],
+        "components": [
+          {
+            "/": "/p/*",
+            "comment": "Profil partajat (contact) — se deschide in aplicatie"
+          }
+        ]
+      }
+    ]
+  }
+}

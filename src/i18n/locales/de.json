@@ -457,7 +457,12 @@
     "photo": "📷 Foto",
     "photoLabel": "Foto",
     "video": "Video",
-    "you": "Du"
+    "you": "Du",
+    "openLinkTitle": "Diesen Link öffnen?",
+    "openLinkBody": "{{url}}\n\nDer Link wird außerhalb von TruckSOS geöffnet. Öffne nur Links von Personen, denen du vertraust.",
+    "openLinkConfirm": "Öffnen",
+    "openLinkError": "Der Link konnte nicht geöffnet werden.",
+    "callError": "Die Telefon-App konnte nicht geöffnet werden."
   },
   "publicProfile": {
     "title": "Profil",
@@ -999,5 +1004,24 @@
         }
       ]
     }
+  },
+  "shareContact": {
+    "action": "Kontakt teilen",
+    "actionMine": "Meinen Kontakt teilen",
+    "dialogTitle": "Kontakt teilen",
+    "message": "Hallo! Ich empfehle {{name}} ({{role}}) auf TruckSOS – der App für Lkw mit Panne.\nHier ist der Kontakt: {{url}}\n\nWenn du die App nicht hast, führt dich der Link zur Installation.",
+    "copied": "Die Nachricht mit dem Link wurde kopiert. Füge sie dort ein, wo du sie senden möchtest.",
+    "error": "Teilen fehlgeschlagen."
+  },
+  "shareLanding": {
+    "title": "Du hast einen Kontakt von TruckSOS erhalten",
+    "body": "Öffne ihn in der TruckSOS-App. Wenn du die App noch nicht hast, kannst du sie kostenlos herunterladen.",
+    "opening": "Die App wird geöffnet… Falls sie nicht installiert ist, wirst du zum App-Store weitergeleitet.",
+    "openApp": "In der App öffnen",
+    "android": "Bei Google Play laden",
+    "ios": "Im App Store laden",
+    "continueWeb": "Im Web fortfahren",
+    "notFound": "Dieser Kontakt ist nicht mehr verfügbar.",
+    "goHome": "Zurück zur App"
   }
 }

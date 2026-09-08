@@ -6,3 +6,8 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=(), browsing-topics=()
   Cross-Origin-Opener-Policy: same-origin
+
+# Universal Links iOS (7 sept 2026): fișierul n-are extensie, iar Apple îl cere servit
+# ca JSON — fără regula asta Cloudflare l-ar da ca octet-stream și iOS l-ar ignora.
+/.well-known/apple-app-site-association
+  Content-Type: application/json

@@ -15,6 +15,7 @@ import { useLangSync } from '@/hooks/use-lang-sync';
 import { usePushNavigation } from '@/hooks/use-push-navigation';
 import { SettingsProvider, useSettings } from '@/hooks/use-settings';
 import { isBanned } from '@/lib/ban';
+import { takePendingLink } from '@/lib/pending-link';
 import i18n from '@/i18n';
 
 function RootLayoutNav() {
@@ -37,22 +38,28 @@ function RootLayoutNav() {
     const onRoleSelect = inAuth && segments[1] === 'role-select';
     const onBanned = inAuth && segments[1] === 'banned';
     const noRoute = segments.length === 0;
+    // Link de profil partajat, trucksos.net/p/<id> (7 sept): ecranul /p/[id] își
+    // decide singur soarta — cu sesiune rezolvă rolul și navighează, fără sesiune ține
+    // linkul minte (pe web arată pagina de instalare). Garda NU-l ricoșează.
+    // (cast: tipurile rutelor se regenerează abia la export/start — fără el tsc se
+    // plânge că segmentul nou nu există.)
+    const inSharedLink = (segments[0] as string) === 'p';
 
     if (!session) {
       // La delogare, un admin care era în mod șofer/mecanic revine implicit la mod admin.
       if (adminViewAs !== 'admin') setAdminViewAs('admin');
-      if (!inAuth) router.replace('/(auth)/login');
+      if (!inAuth && !inSharedLink) router.replace('/(auth)/login');
     } else if (!profile) {
       if (!onRoleSelect) router.replace('/(auth)/role-select');
     } else if (profile.role === 'admin') {
       // Adminul poate „intra ca" șofer/mecanic (Faza 16), altfel stă în (admin).
       // Ramura e ÎNAINTEA check-ului de ban — adminii nu ajung pe ecranul de ban.
       if (adminViewAs === 'driver') {
-        if (!inDriver) router.replace('/(driver)/announcements');
+        if (!inDriver && !inSharedLink) router.replace('/(driver)/announcements');
       } else if (adminViewAs === 'mechanic') {
-        if (!inMechanic) router.replace('/(mechanic)/feed');
-      } else if (!inAdmin) {
-        router.replace('/(admin)/dashboard');
+        if (!inMechanic && !inSharedLink) router.replace('/(mechanic)/feed');
+      } else if (!inAdmin && !inSharedLink) {
+        router.replace((takePendingLink() ?? '/(admin)/dashboard') as never);
       }
     } else if (isBanned(profile)) {
       // Cont banat (aplicativ): capturat pe ecranul de ban. Sesiunea rămâne validă
@@ -60,9 +67,10 @@ function RootLayoutNav() {
       if (!onBanned) router.replace('/(auth)/banned');
     } else if (inAuth || noRoute || inAdmin) {
       // `|| inAdmin`: un non-admin nu are ce căuta în grupul admin → înapoi acasă.
-      router.replace(
-        profile.role === 'driver' ? '/(driver)/announcements' : '/(mechanic)/feed'
-      );
+      // Linkul amânat (profil partajat deschis fără sesiune) are prioritate față de
+      // ecranul de start — utilizatorul s-a logat tocmai ca să vadă acel profil.
+      const home = profile.role === 'driver' ? '/(driver)/announcements' : '/(mechanic)/feed';
+      router.replace((takePendingLink() ?? home) as never);
     }
   }, [session, profile, loading, segments, adminViewAs, setAdminViewAs]);
 

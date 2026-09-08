@@ -2,7 +2,7 @@
   "expo": {
     "name": "TruckSOS",
     "slug": "trucksos",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "trucksos",
@@ -25,6 +25,20 @@
         "android.permission.READ_MEDIA_VIDEO",
         "android.permission.READ_MEDIA_AUDIO",
         "android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "trucksos.net",
+              "pathPrefix": "/p/"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
       ]
     },
     "ios": {
@@ -32,6 +46,7 @@
       "buildNumber": "1",
       "supportsTablet": false,
       "icon": "./assets/images/icon.png",
+      "associatedDomains": ["applinks:trucksos.net"],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleAllowMixedLocalizations": true

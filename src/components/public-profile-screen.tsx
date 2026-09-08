@@ -19,6 +19,7 @@ import { startDirectConversation } from '@/hooks/use-chat';
 import { useTheme } from '@/hooks/use-theme';
 import { useSignedUrl } from '@/hooks/use-signed-urls';
 import { displayName, isDeletedUser } from '@/lib/display-name';
+import { shareContact } from '@/lib/share-contact';
 import type { Profile, Role } from '@/types/database';
 
 /**
@@ -118,6 +119,22 @@ export function PublicProfileScreen({ role }: { role: Role }) {
     } as never);
   }, [contacting, isBlocked, id, t, unblock, router, role]);
 
+  // Partajarea contactului ÎN AFARA aplicației (7 sept): WhatsApp, Messenger, SMS… prin
+  // sheet-ul nativ; linkul deschide profilul în aplicație sau duce la instalare.
+  // Merge și pe propriul profil (își trimite cineva contactul unui client).
+  const handleShare = useCallback(async () => {
+    if (!profile) return;
+    try {
+      const result = await shareContact(
+        { id, name: displayName(profile, t), role: profile.role },
+        t,
+      );
+      if (result === 'copied') Alert.alert(t('shareContact.copied'));
+    } catch {
+      Alert.alert(t('shareContact.error'));
+    }
+  }, [id, profile, t]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setProfile(await fetchPublicProfile(id));
@@ -155,24 +172,34 @@ export function PublicProfileScreen({ role }: { role: Role }) {
         title={t('publicProfile.title')}
         onBack={goBack}
         right={
-          canReport ? (
+          !isDeletedUser(profile) ? (
             <View style={styles.headerActions}>
               <Pressable
-                onPress={() => setReportVisible(true)}
+                onPress={handleShare}
                 hitSlop={12}
-                accessibilityLabel={t('report.title')}>
-                <MaterialIcons name="flag" size={24} color={theme.onHeader} />
+                accessibilityLabel={t('shareContact.action')}>
+                <MaterialIcons name="share" size={24} color={theme.onHeader} />
               </Pressable>
-              <Pressable
-                onPress={handleToggleBlock}
-                hitSlop={12}
-                accessibilityLabel={isBlocked ? t('block.unblockAction') : t('block.action')}>
-                <MaterialIcons
-                  name={isBlocked ? 'person-off' : 'block'}
-                  size={24}
-                  color={theme.onHeader}
-                />
-              </Pressable>
+              {canReport ? (
+                <>
+                  <Pressable
+                    onPress={() => setReportVisible(true)}
+                    hitSlop={12}
+                    accessibilityLabel={t('report.title')}>
+                    <MaterialIcons name="flag" size={24} color={theme.onHeader} />
+                  </Pressable>
+                  <Pressable
+                    onPress={handleToggleBlock}
+                    hitSlop={12}
+                    accessibilityLabel={isBlocked ? t('block.unblockAction') : t('block.action')}>
+                    <MaterialIcons
+                      name={isBlocked ? 'person-off' : 'block'}
+                      size={24}
+                      color={theme.onHeader}
+                    />
+                  </Pressable>
+                </>
+              ) : null}
             </View>
           ) : undefined
         }

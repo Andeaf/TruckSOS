@@ -23,6 +23,8 @@ interface MessageActionSheetProps<M extends ChatMessageBase> {
   canEdit?: boolean;
   onClose: () => void;
   onCopy?: (m: M) => void;
+  /** 7 sept: cardul de persoană recomandată → partajare în afara aplicației (WhatsApp etc.). */
+  onShareContact?: (m: M) => void;
   onReply?: (m: M) => void;
   onEdit?: (m: M) => void;
   onDelete?: (m: M) => void;
@@ -38,6 +40,7 @@ export function MessageActionSheet<M extends ChatMessageBase>({
   canEdit,
   onClose,
   onCopy,
+  onShareContact,
   onReply,
   onEdit,
   onDelete,
@@ -57,6 +60,15 @@ export function MessageActionSheet<M extends ChatMessageBase>({
     }
     if (onCopy && !isImage) {
       actions.push({ label: t('chat.copy'), icon: 'content-copy', onPress: () => onCopy(message) });
+    }
+    // Contactul recomandat (card de persoană) se poate trimite și în afara aplicației;
+    // un cont șters nu mai are profil de arătat → fără acțiune.
+    if (onShareContact && message.mechanic && !message.mechanic.deleted_at) {
+      actions.push({
+        label: t('shareContact.action'),
+        icon: 'share',
+        onPress: () => onShareContact(message),
+      });
     }
     if (onEdit && isMe && !isImage && canEdit) {
       actions.push({ label: t('chat.edit'), icon: 'edit', onPress: () => onEdit(message) });

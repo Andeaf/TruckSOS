@@ -1,4 +1,4 @@
-import { Linking, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Linking, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +14,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
 import { useSettings } from '@/hooks/use-settings';
 import { PLAY_STORE_URL, shareApp } from '@/lib/share-app';
+import { shareContact } from '@/lib/share-contact';
 
 /**
  * Profilul mecanicului (PLAN_FAZA10.md §4): read-only + navigație.
@@ -95,6 +96,25 @@ export default function MechanicProfileScreen() {
           {/* Pe web nu există sheet de share — în locul rândului stă textul de mai jos. */}
           {Platform.OS !== 'web' ? (
             <ListRow icon="share" label={t('profile.shareApp')} onPress={() => shareApp(t)} />
+          ) : null}
+          {/* Propriul contact, trimis în afara aplicației (7 sept) — și pe web
+              (Web Share API sau clipboard), spre deosebire de recomandarea aplicației. */}
+          {profile ? (
+            <ListRow
+              icon="person-add"
+              label={t('shareContact.actionMine')}
+              onPress={async () => {
+                try {
+                  const result = await shareContact(
+                    { id: profile.id, name: profile.full_name, role: profile.role },
+                    t,
+                  );
+                  if (result === 'copied') Alert.alert(t('shareContact.copied'));
+                } catch {
+                  Alert.alert(t('shareContact.error'));
+                }
+              }}
+            />
           ) : null}
         </RowGroup>
 

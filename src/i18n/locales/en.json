@@ -457,7 +457,12 @@
     "photo": "📷 Photo",
     "photoLabel": "Photo",
     "video": "Video",
-    "you": "You"
+    "you": "You",
+    "openLinkTitle": "Open this link?",
+    "openLinkBody": "{{url}}\n\nThe link opens outside TruckSOS. Only open links from people you trust.",
+    "openLinkConfirm": "Open",
+    "openLinkError": "The link could not be opened.",
+    "callError": "The Phone app could not be opened."
   },
   "publicProfile": {
     "title": "Profile",
@@ -999,5 +1004,24 @@
         }
       ]
     }
+  },
+  "shareContact": {
+    "action": "Share contact",
+    "actionMine": "Share my contact",
+    "dialogTitle": "Share contact",
+    "message": "Hi! I recommend {{name}} ({{role}}) on TruckSOS — the app for trucks that break down.\nSee the contact here: {{url}}\n\nIf you do not have the app, the link takes you to the install page.",
+    "copied": "The message with the link was copied. Paste it wherever you want to send it.",
+    "error": "Sharing failed."
+  },
+  "shareLanding": {
+    "title": "You received a contact from TruckSOS",
+    "body": "Open it in the TruckSOS app. If you do not have the app yet, you can download it for free.",
+    "opening": "Opening the app… If it is not installed, you will be taken to the app store.",
+    "openApp": "Open in the app",
+    "android": "Get it on Google Play",
+    "ios": "Download on the App Store",
+    "continueWeb": "Continue on the web",
+    "notFound": "This contact is no longer available.",
+    "goHome": "Back to the app"
   }
 }

@@ -1,0 +1,15 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.andeaf.trucksos",
+      "sha256_cert_fingerprints": [
+        "DB:5D:48:7A:45:70:B6:46:0E:79:0B:29:D2:C5:36:8A:49:0A:CE:D7:F1:1F:F5:B3:4B:A6:0A:CB:ED:6E:A8:57",
+        "68:A4:07:6C:F3:9E:2F:63:AA:53:09:65:0D:97:F2:A5:14:0A:35:4A:EF:00:1E:0B:A4:88:02:EF:5B:1D:CE:DE",
+        "DE:02:7A:FE:9B:C3:65:A6:58:24:5D:A2:05:48:34:F7:9A:CE:36:4F:27:A7:BF:85:80:8D:DF:C8:F9:8B:69:2F",
+        "48:31:3C:79:06:4D:7F:C6:A4:33:B5:57:A7:D0:0A:6B:8B:AE:46:FA:BF:F9:00:3D:57:79:3C:E5:CF:AE:3C:8A"
+      ]
+    }
+  }
+]

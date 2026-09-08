@@ -459,7 +459,12 @@
     "photo": "📷 Poză",
     "photoLabel": "Poză",
     "video": "Videoclip",
-    "you": "Tu"
+    "you": "Tu",
+    "openLinkTitle": "Deschizi acest link?",
+    "openLinkBody": "{{url}}\n\nLinkul se deschide în afara TruckSOS. Deschide doar linkuri primite de la persoane în care ai încredere.",
+    "openLinkConfirm": "Deschide",
+    "openLinkError": "Linkul nu a putut fi deschis.",
+    "callError": "Nu s-a putut deschide aplicația Telefon."
   },
   "publicProfile": {
     "title": "Profil",
@@ -1001,5 +1006,24 @@
         }
       ]
     }
+  },
+  "shareContact": {
+    "action": "Partajează contactul",
+    "actionMine": "Partajează contactul meu",
+    "dialogTitle": "Partajează contactul",
+    "message": "Salut! Îți recomand pe {{name}} ({{role}}) din TruckSOS — aplicația pentru camioane în pană.\nVezi contactul aici: {{url}}\n\nDacă nu ai aplicația, linkul te duce la instalare.",
+    "copied": "Mesajul cu linkul a fost copiat. Lipește-l unde vrei să-l trimiți.",
+    "error": "Partajarea nu a reușit."
+  },
+  "shareLanding": {
+    "title": "Ai primit un contact din TruckSOS",
+    "body": "Deschide-l în aplicația TruckSOS. Dacă nu ai aplicația instalată, o poți descărca gratuit.",
+    "opening": "Se deschide aplicația… Dacă nu e instalată, vei fi trimis la magazinul de aplicații.",
+    "openApp": "Deschide în aplicație",
+    "android": "Descarcă din Google Play",
+    "ios": "Descarcă din App Store",
+    "continueWeb": "Continuă pe web",
+    "notFound": "Acest contact nu mai este disponibil.",
+    "goHome": "Înapoi la aplicație"
   }
 }

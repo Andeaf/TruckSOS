@@ -23,6 +23,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useCanRate, useMechanicReviews, useMyRatingFor } from '@/hooks/use-ratings';
 import { useSignedUrl } from '@/hooks/use-signed-urls';
 import { displayName, isDeletedUser } from '@/lib/display-name';
+import { shareContact } from '@/lib/share-contact';
 import type { Profile } from '@/types/database';
 
 type PublicProfile = Pick<
@@ -50,7 +51,9 @@ export default function MechanicProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
   const theme = useTheme();
-  const goBack = useBack();
+  // Fallback explicit (7 sept): deschis printr-un link partajat (trucksos.net/p/<id>),
+  // ecranul poate fi PRIMUL din stivă — fără istoric, back-ul cade pe rădăcină.
+  const goBack = useBack('/');
 
   const router = useRouter();
   const { session } = useAuth();
@@ -126,6 +129,18 @@ export default function MechanicProfileScreen() {
     }
   }, [isBlocked, id, t, block, unblock]);
 
+  // Partajarea contactului ÎN AFARA aplicației (7 sept): WhatsApp, Messenger, SMS… prin
+  // sheet-ul nativ; linkul deschide profilul în aplicație sau duce la instalare.
+  const handleShare = useCallback(async () => {
+    if (!profile) return;
+    try {
+      const result = await shareContact({ id, name: displayName(profile, t), role: 'mechanic' }, t);
+      if (result === 'copied') Alert.alert(t('shareContact.copied'));
+    } catch {
+      Alert.alert(t('shareContact.error'));
+    }
+  }, [id, profile, t]);
+
   const menuActions: SheetAction[] = [
     {
       label: t('report.title'),
@@ -178,6 +193,12 @@ export default function MechanicProfileScreen() {
         right={
           deleted ? undefined : (
             <View style={styles.headerActions}>
+              <Pressable
+                onPress={handleShare}
+                hitSlop={12}
+                accessibilityLabel={t('shareContact.action')}>
+                <MaterialIcons name="share" size={24} color={theme.onHeader} />
+              </Pressable>
               {/* Pe banda albastră steaua brand nu s-ar vedea → albă (decizie R4). */}
               <Pressable
                 onPress={() => toggleFavorite(id)}

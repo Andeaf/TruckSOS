@@ -34,6 +34,7 @@ import { useTranslation } from 'react-i18next';
 import { ActionSheet } from '@/components/action-sheet';
 import { AttachSheet } from '@/components/attach-sheet';
 import { Avatar } from '@/components/avatar';
+import { LinkifiedText } from '@/components/linkified-text';
 import { MessageActionSheet } from '@/components/message-action-sheet';
 import { PhotoViewer } from '@/components/photo-viewer';
 import { ReportSheet } from '@/components/report-sheet';
@@ -55,6 +56,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useSignedUrls } from '@/hooks/use-signed-urls';
 import { useVideoThumbnail } from '@/hooks/use-video-thumbnail';
 import { displayName } from '@/lib/display-name';
+import { shareContact } from '@/lib/share-contact';
 import {
   MAX_PHOTOS,
   pickFromCamera,
@@ -1015,14 +1017,18 @@ function MessageBubble<M extends ChatMessageBase>({
                   La mesaje scurte bula se lățește cât textul + ora pe același rând. */}
               {message.content !== '' ? (
                 <View style={styles.textTimeRow}>
-                  <Text
+                  {/* Linkuri + telefoane apăsabile (7 sept): pe bula trimisă rămân
+                      albe (subliniate), pe cea primită iau culoarea brand. */}
+                  <LinkifiedText
+                    text={message.content}
                     style={[
                       styles.bubbleText,
                       styles.textShrink,
                       { color: isMe ? '#ffffff' : theme.text },
-                    ]}>
-                    {message.content}
-                  </Text>
+                    ]}
+                    linkStyle={{ color: isMe ? '#ffffff' : theme.brand }}
+                    onLongPress={onLongPress}
+                  />
                   <View style={styles.metaInline}>
                     {message.edited_at ? (
                       <Text
@@ -1413,6 +1419,26 @@ export function ChatScreen<M extends ChatMessageBase>({
     [editTarget]
   );
   const cancelReply = useCallback(() => setReplyTarget(null), []);
+
+  // Partajare în afara aplicației (7 sept): cardul de persoană recomandată → sheet-ul
+  // nativ de share (WhatsApp, Messenger…). Pe web fără Web Share API textul ajunge
+  // în clipboard, de unde toast-ul.
+  const handleShareContact = useCallback(
+    async (m: M) => {
+      const person = m.mechanic;
+      if (!person) return;
+      try {
+        const result = await shareContact(
+          { id: person.id, name: displayName(person, t), role: person.role },
+          t,
+        );
+        if (result === 'copied') setToast(t('shareContact.copied'));
+      } catch {
+        Alert.alert(t('shareContact.error'));
+      }
+    },
+    [t],
+  );
 
   const handleCopy = useCallback(
     async (m: M) => {
@@ -2388,6 +2414,7 @@ export function ChatScreen<M extends ChatMessageBase>({
         canEdit={menuMessage && canEditMessage ? canEditMessage(menuMessage) : false}
         onClose={() => setMenuMessage(null)}
         onCopy={handleCopy}
+        onShareContact={handleShareContact}
         onReply={enterReplyMode}
         onEdit={onEditMessage ? enterEditMode : undefined}
         onDelete={onDeleteMessage ? handleDelete : undefined}
