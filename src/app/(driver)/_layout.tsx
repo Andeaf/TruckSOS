@@ -1,5 +1,4 @@
 import { Tabs } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -13,6 +12,8 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useUnreadCounts } from '@/hooks/use-chat';
 import { useChannels, useChannelUnreadCount } from '@/hooks/use-channel-chat';
+import { TabIcon } from '@/components/ui/tab-icon';
+import { useMarketBadge } from '@/hooks/use-market-badge';
 import { formatBadge } from '@/lib/badge';
 
 export default function DriverLayout() {
@@ -24,6 +25,12 @@ export default function DriverLayout() {
   const globalChannel = channels.find((c) => c.type === 'global');
   const { count: channelUnread } = useChannelUnreadCount(session?.user.id, globalChannel?.id);
   const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0) + channelUnread;
+  // Bulina de Market (8 sept): „a apărut ceva nou de la ultima ta vizită".
+  const {
+    hasNew: marketNew,
+    refresh: refreshMarket,
+    markSeen: markMarketSeen,
+  } = useMarketBadge(session?.user.id);
   // Web pe ecran lat: aceleași rute, dar ca bară laterală (design „Web Redesign").
   const wide = useWideLayout();
   // Inaltimea + respiroul de jos ale barei pe nativ (vezi nota din tab-label).
@@ -66,8 +73,9 @@ export default function DriverLayout() {
         options={{
           title: t('driver.tabs.announcements'),
           tabBarLabel: tabLabel(t('driver.tabs.announcements'), tabFontSize),
-          tabBarIcon: ({ color, size }) => <Feather name="list" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <TabIcon name="list" size={size} color={color} />,
         }}
+        listeners={{ tabPress: () => refreshMarket() }}
       />
       <Tabs.Screen
         name="conversations"
@@ -76,7 +84,7 @@ export default function DriverLayout() {
           tabBarLabel: tabLabel(t('driver.tabs.conversations'), tabFontSize),
           tabBarBadge: totalUnread > 0 ? formatBadge(totalUnread) : undefined,
           tabBarIcon: ({ color, size }) => (
-            <Feather name="message-circle" size={size} color={color} />
+            <TabIcon name="message-circle" size={size} color={color} />
           ),
         }}
         listeners={({ navigation }) => ({
@@ -84,6 +92,7 @@ export default function DriverLayout() {
           tabPress: (e) => {
             e.preventDefault();
             navigation.navigate('conversations', { screen: 'index' });
+            refreshMarket();
           },
         })}
       />
@@ -92,8 +101,9 @@ export default function DriverLayout() {
         options={{
           title: t('search.tabTitle'),
           tabBarLabel: tabLabel(t('search.tabTitle'), tabFontSize),
-          tabBarIcon: ({ color, size }) => <Feather name="search" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <TabIcon name="search" size={size} color={color} />,
         }}
+        listeners={{ tabPress: () => refreshMarket() }}
       />
       {/* Faza 19: Market ia locul Profilului în bară (strict — restul ordinii neatins). */}
       <Tabs.Screen
@@ -101,7 +111,13 @@ export default function DriverLayout() {
         options={{
           title: t('market.tabTitle'),
           tabBarLabel: tabLabel(t('market.tabTitle'), tabFontSize),
-          tabBarIcon: ({ color, size }) => <Feather name="shopping-bag" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon name="shopping-bag" size={size} color={color} dot={marketNew} />
+          ),
+        }}
+        listeners={{
+          // Deschiderea Marketului = „văzut": stinge bulina (scrie market_last_seen).
+          tabPress: () => markMarketSeen(),
         }}
       />
       {/* Profilul se deschide din butonul-avatar al antetului (ScreenHeader.profileButton). */}

@@ -368,7 +368,10 @@
       "searchClose": "Închide căutarea",
       "searchPlaceholder": "Caută: șofer, locație, problemă, camion…",
       "searchEmptyTitle": "Niciun rezultat",
-      "searchEmptyDescription": "Niciun anunț nu se potrivește căutării. Încearcă alte cuvinte."
+      "searchEmptyDescription": "Niciun anunț nu se potrivește căutării. Încearcă alte cuvinte.",
+      "locationWithout": "Fără locație",
+      "locationEmptyWithout": "Niciun anunț fără locație",
+      "locationEmptyDescription": "Toate anunțurile deschise au locație acum și apar pe hartă."
     },
     "applications": {
       "title": "Candidaturile mele",
@@ -427,6 +430,7 @@
       "missingCount_one": "{{count}} anunț fără locație",
       "missingCount_few": "{{count}} anunțuri fără locație",
       "missingCount_other": "{{count}} de anunțuri fără locație",
+      "missingOpen": "Vezi anunțurile fără locație",
       "webBody": "Harta interactivă nu este disponibilă în browser. Anunțurile cu locație rămân vizibile în listă, în feed.",
       "webCta": "Deschide feedul"
     }
@@ -464,7 +468,10 @@
     "openLinkBody": "{{url}}\n\nLinkul se deschide în afara TruckSOS. Deschide doar linkuri primite de la persoane în care ai încredere.",
     "openLinkConfirm": "Deschide",
     "openLinkError": "Linkul nu a putut fi deschis.",
-    "callError": "Nu s-a putut deschide aplicația Telefon."
+    "callError": "Nu s-a putut deschide aplicația Telefon.",
+    "quoteRecommendation": "👤 Recomandare: {{name}}",
+    "quoteListing": "🏷️ Market: {{title}}",
+    "quoteAnnouncement": "📍 Anunț: {{location}}"
   },
   "publicProfile": {
     "title": "Profil",
@@ -888,6 +895,7 @@
     },
     "notifications": "Notificări",
     "pushEnabled": "Notificări push",
+    "marketPushEnabled": "Anunțuri noi pe Market",
     "radius": "Rază anunțuri noi",
     "radiusOff": "Fără limită",
     "radiusKm": "{{km}} km",

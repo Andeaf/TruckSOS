@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -29,7 +29,9 @@ import {
   type MessageListingContext,
   type MessageMechanicContext,
 } from '@/hooks/use-chat';
+import { searchMentionUsers } from '@/hooks/use-mechanic-search';
 import { displayName } from '@/lib/display-name';
+import type { MentionUser } from '@/lib/mention-search';
 import type { Channel } from '@/types/database';
 
 export default function DriverChannelChatScreen() {
@@ -42,6 +44,24 @@ export default function DriverChannelChatScreen() {
   const { messages, loading, loadingMore, loadOlder, addMessage, patchMessage } =
     useChannelMessages(id);
   const isFocused = useIsFocused();
+  // Menționări „@" (10 sept): expeditorii încărcați, cei mai recenți primii, fără mine
+  // și fără conturi șterse; numele care lipsesc vin din căutarea pe server.
+  const myId = session?.user.id;
+  const mentionCandidates = useMemo<MentionUser[]>(() => {
+    const seen = new Map<string, MentionUser>();
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.sender_id === myId || m.sender.deleted_at || !m.sender.full_name) continue;
+      if (seen.has(m.sender_id)) continue;
+      seen.set(m.sender_id, {
+        id: m.sender_id,
+        full_name: m.sender.full_name,
+        avatar_path: m.sender.avatar_path,
+        role: m.sender.role,
+      });
+    }
+    return [...seen.values()];
+  }, [messages, myId]);
   // Faza 19.5: atașamente (paritate cu chatul privat) — stări pending + pickere.
   const [pendingListing, setPendingListing] = useState<string | null>(null);
   const [pendingListingInfo, setPendingListingInfo] = useState<MessageListingContext | null>(null);
@@ -141,9 +161,10 @@ export default function DriverChannelChatScreen() {
         } as never)
       }
       renderSenderRole={(message) => t(`auth.roleSelect.${message.sender.role}Title`)}
-      onSend={async (content, replyToId) => {
+      onSend={async (content, replyToId, mentions) => {
         const { message } = await sendChannelMessage(
-          id, session.user.id, content, null, replyToId, pendingListing, pendingMechanic
+          id, session.user.id, content, null, replyToId, pendingListing, pendingMechanic,
+          mentions ?? null
         );
         if (message) {
           addMessage(message);
@@ -151,6 +172,8 @@ export default function DriverChannelChatScreen() {
           if (pendingMechanic) setPendingMechanic(null);
         }
       }}
+      mentionCandidates={mentionCandidates}
+      searchMentionUsers={searchMentionUsers}
       onPressListing={(lid) =>
         router.push({ pathname: '/(driver)/market/[id]', params: { id: lid } } as never)
       }

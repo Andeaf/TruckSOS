@@ -1,6 +1,4 @@
-import { View, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -14,29 +12,11 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useUnreadCounts } from '@/hooks/use-chat';
 import { useChannels, useChannelUnreadCount } from '@/hooks/use-channel-chat';
+import { TabIcon } from '@/components/ui/tab-icon';
 import { useFeedBadge, useApplicationsBadge } from '@/hooks/use-mechanic-badges';
+import { useMarketBadge } from '@/hooks/use-market-badge';
 import { RadiusFilterProvider } from '@/hooks/use-radius-filter';
 import { formatBadge } from '@/lib/badge';
-
-/** Iconiță de tab cu buline-punct opțională (noutăți Feed/Candidaturi, Faza 14.10). */
-function TabIcon({
-  name,
-  color,
-  size,
-  dot,
-}: {
-  name: keyof typeof Feather.glyphMap;
-  color: string;
-  size: number;
-  dot?: boolean;
-}) {
-  return (
-    <View>
-      <Feather name={name} size={size} color={color} />
-      {dot ? <View style={styles.dot} /> : null}
-    </View>
-  );
-}
 
 export default function MechanicLayout() {
   // RadiusFilterProvider trebuie să învelească componenta care citește `useRadiusFilter`
@@ -65,6 +45,11 @@ function MechanicTabs() {
     refresh: refreshApps,
     markSeen: markAppsSeen,
   } = useApplicationsBadge(userId);
+  const {
+    hasNew: marketNew,
+    refresh: refreshMarket,
+    markSeen: markMarketSeen,
+  } = useMarketBadge(userId);
 
   // Web pe ecran lat: aceleași rute, dar ca bară laterală (design „Web Redesign").
   const wide = useWideLayout();
@@ -116,6 +101,7 @@ function MechanicTabs() {
           tabPress: () => {
             refreshFeed();
             refreshApps();
+            refreshMarket();
           },
         }}
       />
@@ -133,6 +119,7 @@ function MechanicTabs() {
           tabPress: () => {
             markFeedSeen();
             refreshApps();
+            refreshMarket();
           },
         }}
       />
@@ -149,6 +136,7 @@ function MechanicTabs() {
           tabPress: () => {
             markAppsSeen();
             refreshFeed();
+            refreshMarket();
           },
         }}
       />
@@ -169,6 +157,7 @@ function MechanicTabs() {
             navigation.navigate('conversations', { screen: 'index' });
             refreshFeed();
             refreshApps();
+            refreshMarket();
           },
         })}
       />
@@ -178,10 +167,14 @@ function MechanicTabs() {
         options={{
           title: t('market.tabTitle'),
           tabBarLabel: tabLabel(t('market.tabTitle'), tabFontSize),
-          tabBarIcon: ({ color, size }) => <TabIcon name="shopping-bag" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon name="shopping-bag" size={size} color={color} dot={marketNew} />
+          ),
         }}
         listeners={{
+          // Deschiderea Marketului = „văzut": stinge bulina (scrie market_last_seen).
           tabPress: () => {
+            markMarketSeen();
             refreshFeed();
             refreshApps();
           },
@@ -193,15 +186,3 @@ function MechanicTabs() {
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  dot: {
-    position: 'absolute',
-    top: -3,
-    right: -5,
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: '#ef4444',
-  },
-});

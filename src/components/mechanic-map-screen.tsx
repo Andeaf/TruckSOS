@@ -113,6 +113,15 @@ export default function MechanicMapScreen() {
   const missingCount = announcements.length - located.length;
   const visible = applyRadiusFilter(located, radiusKm, coords);
 
+  // Tap pe bula „N anunțuri fără locație" (10 sept): feedul, cu filtrul „Fără
+  // locație" gata activat — acolo pot fi citite. `nonce` unic per tap (vezi feed).
+  function openMissing() {
+    router.navigate({
+      pathname: '/(mechanic)/feed',
+      params: { location: 'without', nonce: String(Date.now()) },
+    } as never);
+  }
+
   // „Anunțuri în rază": încadrează harta pe anunțurile din raza aleasă, ca mecanicul
   // să vadă dintr-o privire toți șoferii cu probleme din jur.
   function handleFitRange() {
@@ -196,14 +205,22 @@ export default function MechanicMapScreen() {
             ))}
           </MapView>
 
-          <View style={styles.banners} pointerEvents="none">
+          {/* box-none: bula „fără locație" primește tap-uri, restul zonei lasă harta. */}
+          <View style={styles.banners} pointerEvents="box-none">
             {missingCount > 0 ? (
-              <ThemedView type="backgroundElement" style={styles.missingBanner}>
-                <MaterialIcons name="location-off" size={14} color={theme.textSecondary} />
-                <ThemedText themeColor="textSecondary" type="small">
-                  {t('mechanic.map.missingCount', { count: missingCount })}
-                </ThemedText>
-              </ThemedView>
+              <Pressable
+                onPress={openMissing}
+                accessibilityRole="button"
+                accessibilityLabel={t('mechanic.map.missingOpen')}
+                style={({ pressed }) => pressed && styles.pressed}>
+                <ThemedView type="backgroundElement" style={styles.missingBanner}>
+                  <MaterialIcons name="location-off" size={14} color={theme.textSecondary} />
+                  <ThemedText themeColor="textSecondary" type="small">
+                    {t('mechanic.map.missingCount', { count: missingCount })}
+                  </ThemedText>
+                  <MaterialIcons name="chevron-right" size={16} color={theme.textSecondary} />
+                </ThemedView>
+              </Pressable>
             ) : null}
             {radiusKm != null && coords == null && locationError != null ? (
               <ThemedView type="backgroundElement" style={styles.missingBanner}>

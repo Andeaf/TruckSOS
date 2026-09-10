@@ -26,7 +26,10 @@ import Animated, {
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
+  withSequence,
   withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 
@@ -35,6 +38,7 @@ import { ActionSheet } from '@/components/action-sheet';
 import { AttachSheet } from '@/components/attach-sheet';
 import { Avatar } from '@/components/avatar';
 import { LinkifiedText } from '@/components/linkified-text';
+import { MentionPanel } from '@/components/mention-panel';
 import { MessageActionSheet } from '@/components/message-action-sheet';
 import { PhotoViewer } from '@/components/photo-viewer';
 import { ReportSheet } from '@/components/report-sheet';
@@ -55,7 +59,9 @@ import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { useSignedUrls } from '@/hooks/use-signed-urls';
 import { useVideoThumbnail } from '@/hooks/use-video-thumbnail';
+import type { MessageMention } from '@/lib/chat-schema';
 import { displayName } from '@/lib/display-name';
+import { mentionQueryAt, rankMentionCandidates, type MentionUser } from '@/lib/mention-search';
 import { shareContact } from '@/lib/share-contact';
 import {
   MAX_PHOTOS,
@@ -106,6 +112,14 @@ export interface ChatMessageBase {
     sender_id: string;
     deleted_at: string | null;
     sender?: { full_name: string } | null;
+    /** 10 sept: contextele mesajului citat — fără ele citatul unei recomandări
+     * (mesaj doar-card, content='') era gol. Embed-ul poate lipsi cu id-ul prezent. */
+    recommended_mechanic_id?: string | null;
+    listing_id?: string | null;
+    announcement_id?: string | null;
+    mechanic?: { full_name: string; deleted_at: string | null; role?: string } | null;
+    listing?: { title: string } | null;
+    announcement?: { location: string } | null;
   } | null;
   /** Faza 19.4: contextul de anunț de market atașat mesajului („Sunt interesat"). */
   listing_id?: string | null;
@@ -148,6 +162,8 @@ export interface ChatMessageBase {
     status: string;
     description?: string | null;
   } | null;
+  /** 10 sept: menționările „@Nume" din text — evidențiate + apăsabile în bulă. */
+  mentions?: MessageMention[] | null;
 }
 
 /** Cover-ul unui anunț de market din embed-ul de poze (poziția minimă = cover). */
@@ -165,6 +181,54 @@ function listingCoverPath(
 function replyOf(m: ChatMessageBase): ChatMessageBase['reply_to'] {
   const raw = m.reply_to as unknown;
   return (Array.isArray(raw) ? raw[0] : raw) as ChatMessageBase['reply_to'];
+}
+
+/** Ce știe un citat / o țintă de reply despre mesaj — comun bulei și bannerului. */
+type SnippetSource = {
+  content: string;
+  image_path?: string | null;
+  file_name?: string | null;
+  file_path?: string | null;
+  deleted_at?: string | null;
+  recommended_mechanic_id?: string | null;
+  listing_id?: string | null;
+  announcement_id?: string | null;
+  mechanic?: { full_name?: string | null; deleted_at?: string | null; role?: string } | null;
+  listing?: { title: string } | null;
+  announcement?: { location: string } | null;
+};
+
+type Translate = (key: string, options?: Record<string, unknown>) => string;
+
+/**
+ * Rândul de text al unui citat (bula cu reply) și al bannerului „Răspunzi la…":
+ * șters → marcaj; poză/fișier/video → etichetă; text → textul; altfel CONTEXTUL
+ * atașat (10 sept — reply la o recomandare / anunț din Market / anunț de depanare
+ * arăta un citat complet gol, fiindcă astfel de mesaje au content=''). Cu embed-ul
+ * lipsă (RLS, rând dispărut) rămâne eticheta generică a benzii cardului.
+ */
+function contextSnippet(m: SnippetSource, t: Translate): string {
+  if (m.deleted_at) return t('chat.deletedMessage');
+  if (m.image_path) return t('chat.photo');
+  if (m.file_name) return (isVideoFile(m.file_name, m.file_path) ? '🎥 ' : '📎 ') + m.file_name;
+  if (m.content) return m.content;
+  if (m.recommended_mechanic_id) {
+    const name = m.mechanic ? displayName(m.mechanic, t) : '';
+    return name
+      ? t('chat.quoteRecommendation', { name })
+      : t(m.mechanic?.role === 'driver' ? 'attach.bandDriver' : 'attach.bandMechanic');
+  }
+  if (m.listing_id) {
+    return m.listing?.title
+      ? t('chat.quoteListing', { title: m.listing.title })
+      : t('attach.bandMarket');
+  }
+  if (m.announcement_id) {
+    return m.announcement?.location
+      ? t('chat.quoteAnnouncement', { location: m.announcement.location })
+      : t('attach.bandAnnouncement');
+  }
+  return '';
 }
 
 /** Durata unui videoclip, stil player: „0:12", „1:05", „12:40". */
@@ -420,6 +484,9 @@ interface MessageBubbleProps<M extends ChatMessageBase> {
   quoteIsMine?: boolean;
   /** Faza 19.6: tap pe cardul de anunț de depanare distribuit → detaliul lui. */
   onPressAnnouncement?: (announcementId: string) => void;
+  /** Evidențiere scurtă a rândului (saltul din citat, 10 sept): fiecare valoare
+   * nenulă nouă pornește animația; 0/absent = nimic. */
+  flashNonce?: number;
 }
 
 function MessageBubble<M extends ChatMessageBase>({
@@ -449,6 +516,7 @@ function MessageBubble<M extends ChatMessageBase>({
   quoteVideoUrl,
   quoteIsMine,
   onPressAnnouncement,
+  flashNonce,
 }: MessageBubbleProps<M>) {
   const theme = useTheme();
   const scheme = useResolvedScheme();
@@ -546,17 +614,24 @@ function MessageBubble<M extends ChatMessageBase>({
   // reply_to_id există dar embed-ul vine gol: originalul e invizibil prin RLS (chat
   // global — mesaj dinaintea creării contului) sau șters definitiv → „Mesaj indisponibil".
   const quoteUnavailable = !isDeleted && !!message.reply_to_id && !quote;
-  // Video/fișier (23 aug): mesajele-atașament au content='' — fără ramurile pe
-  // file_name citatul era GOL (bug raportat de user la primul test video).
-  const quoteSnippet = quote
-    ? quote.deleted_at
-      ? t('chat.deletedMessage')
-      : quote.image_path
-        ? t('chat.photo')
-        : quote.file_name
-          ? (isVideoFile(quote.file_name) ? '🎥 ' : '📎 ') + quote.file_name
-          : quote.content
-    : '';
+  // Video/fișier (23 aug) și contexte atașate (10 sept): mesajele-atașament au
+  // content='' — fără ramurile dedicate citatul era GOL (vezi contextSnippet).
+  const quoteSnippet = quote ? contextSnippet(quote, t) : '';
+
+  // Evidențiere la saltul din citat (10 sept, ca pe WhatsApp): rândul se colorează
+  // scurt în brand, ține puțin, apoi se stinge. Pornește la fiecare nonce nou —
+  // inclusiv la MONTARE, dacă ținta nu era randată când s-a cerut saltul
+  // (virtualizare: scrollToIndex o aduce în viewport abia după retry).
+  const flash = useSharedValue(0);
+  useEffect(() => {
+    if (!flashNonce) return;
+    flash.value = 0;
+    flash.value = withSequence(
+      withTiming(1, { duration: 120 }),
+      withDelay(700, withTiming(0, { duration: 900 })),
+    );
+  }, [flashNonce, flash]);
+  const flashStyle = useAnimatedStyle(() => ({ opacity: flash.value * 0.18 }));
 
   // Swipe la dreapta → reply (ambele platforme). Detectorul stă pe ÎNTREGUL rând al
   // mesajului, nu doar pe bulă — la mesajele scurte bula e îngustă și degetul nimerea
@@ -598,6 +673,11 @@ function MessageBubble<M extends ChatMessageBase>({
   return (
     <GestureDetector gesture={swipeGesture}>
     <View style={[styles.bubbleRow, isMe ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
+      {/* Banda de evidențiere pe toată lățimea rândului (inclusiv padding-ul listei). */}
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.flashOverlay, { backgroundColor: theme.brand }, flashStyle]}
+      />
       {showSenderAvatar && !isMe ? (
         isFirstOfGroup ? (
           // Avatarul apare O dată per grup, aliniat SUS, în dreptul primului mesaj.
@@ -789,9 +869,17 @@ function MessageBubble<M extends ChatMessageBase>({
           ]}>
           {senderHeader}
           {isDeleted ? (
-            // Tombstone (Faza 14): bula rămâne, textul e discret (italic/gri).
+            // Tombstone (Faza 14): bula rămâne, textul e discret (gri, cu iconița
+            // „interzis" în față ca pe WhatsApp; italic doar unde Android nu-l
+            // măsoară greșit — vezi deletedText).
             // Faza 16: marcaj DISTINCT dacă ștergerea a fost făcută de un moderator.
             <View style={styles.textTimeRow}>
+              <MaterialIcons
+                name="block"
+                size={13}
+                color={secondaryColor}
+                style={styles.deletedIcon}
+              />
               <Text
                 style={[
                   styles.bubbleText,
@@ -1027,6 +1115,8 @@ function MessageBubble<M extends ChatMessageBase>({
                       { color: isMe ? '#ffffff' : theme.text },
                     ]}
                     linkStyle={{ color: isMe ? '#ffffff' : theme.brand }}
+                    mentions={message.mentions}
+                    mentionStyle={{ color: isMe ? '#ffffff' : theme.brand }}
                     onLongPress={onLongPress}
                   />
                   <View style={styles.metaInline}>
@@ -1096,7 +1186,20 @@ interface ChatScreenProps<M extends ChatMessageBase> {
   loading: boolean;
   loadingMore?: boolean;
   onLoadOlder?: () => void;
-  onSend: (content: string, replyToId?: string | null) => Promise<void>;
+  /** `mentions` (10 sept): persoanele menționate cu „@" care mai apar în text la trimitere. */
+  onSend: (
+    content: string,
+    replyToId?: string | null,
+    mentions?: MessageMention[] | null,
+  ) => Promise<void>;
+  /**
+   * Menționări „@" (10 sept): persoanele propuse imediat ce se tastează „@" —
+   * canal: expeditorii încărcați (cei mai recenți primii); privat: interlocutorul.
+   * Fără candidați ȘI fără căutare, „@" rămâne text simplu.
+   */
+  mentionCandidates?: MentionUser[];
+  /** Căutare în toată aplicația pentru numele care nu sunt printre candidați (≥ 2 litere). */
+  searchMentionUsers?: (query: string) => Promise<MentionUser[]>;
   /**
    * Trimite o poză ca mesaj propriu (o poză = o bulă). Când lipsește, butonul de
    * atașare nu apare — așa ținem funcționalitatea oprită acolo unde n-a fost încă
@@ -1222,6 +1325,8 @@ export function ChatScreen<M extends ChatMessageBase>({
   unreadCursor,
   phoneNumber,
   onOpenSettings,
+  mentionCandidates,
+  searchMentionUsers,
 }: ChatScreenProps<M>) {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
@@ -1567,12 +1672,31 @@ export function ChatScreen<M extends ChatMessageBase>({
     []
   );
 
-  // Tap pe citat → derulează la mesajul original, dacă e în pagina încărcată.
+  // Evidențierea țintei saltului (10 sept): {id, nonce} — nonce-ul nou reaprinde
+  // animația și la un al doilea tap pe același citat; se stinge singur după ~2 s.
+  const [flash, setFlash] = useState<{ id: string; nonce: number } | null>(null);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (flashTimer.current) clearTimeout(flashTimer.current);
+    },
+    [],
+  );
+
+  // Tap pe citat → derulează la mesajul original, dacă e în pagina încărcată,
+  // apoi îl evidențiază scurt (ca pe WhatsApp — altfel era greu de văzut CARE e).
   // Dacă e mai vechi decât paginarea (canal, 50/pagină) → no-op discret.
   const scrollToQuoted = useCallback(
     (quotedId: string) => {
       const index = reversedMessages.findIndex((m) => m.id === quotedId);
-      if (index >= 0) scrollToIndexSafe(index, 0.5, true);
+      if (index < 0) return;
+      scrollToIndexSafe(index, 0.5, true);
+      if (flashTimer.current) clearTimeout(flashTimer.current);
+      // Mică întârziere: evidențierea pornește când derularea (animată) a ajuns.
+      flashTimer.current = setTimeout(() => {
+        setFlash({ id: quotedId, nonce: Date.now() });
+        flashTimer.current = setTimeout(() => setFlash(null), 2200);
+      }, 260);
     },
     [reversedMessages, scrollToIndexSafe],
   );
@@ -1792,6 +1916,106 @@ export function ChatScreen<M extends ChatMessageBase>({
   const hasPendingAttach = !!(pendingListing || pendingMechanic || pendingAnnouncement);
   const sendEnabled = (!!text.trim() || (hasPendingAttach && !editTarget)) && !sending;
 
+  // ── Menționări „@" (10 sept 2026, ca pe WhatsApp) ─────────────────────────────
+  // Cursorul: ținut în ref (sursa de adevăr) + în state (derivarea interogării
+  // trebuie să re-randeze). onSelectionChange e autoritatea; onChangeText îl
+  // avansează provizoriu (ordinea celor două evenimente diferă între platforme,
+  // iar pe web caret-ul nu emite mereu onSelectionChange) — „la coadă rămâne la coadă".
+  const selectionRef = useRef({ start: 0, end: 0 });
+  const [cursor, setCursor] = useState(0);
+  // Selecția forțată O SINGURĂ dată după inserarea unei menționări (cursorul după
+  // „@Nume "); revine la undefined la primul onSelectionChange, ca inputul să
+  // rămână necontrolat pe selecție (controlat permanent = salturi pe Android).
+  const [pendingSelection, setPendingSelection] = useState<{ start: number; end: number } | null>(
+    null,
+  );
+  // Persoanele alese în timpul compunerii (id → nume); la trimitere rămân doar cele
+  // al căror „@Nume" mai există în text (userul poate șterge o menționare manual).
+  const pickedMentions = useRef(new Map<string, string>());
+  const mentionsEnabled = !!(mentionCandidates?.length || searchMentionUsers);
+  const mention = useMemo(
+    () => (mentionsEnabled && !editTarget ? mentionQueryAt(text, cursor) : null),
+    [mentionsEnabled, editTarget, text, cursor],
+  );
+  const mentionQuery = mention?.query ?? null;
+
+  // Rezultatele de pe server pentru interogarea curentă (≥ 2 litere, debounce scurt —
+  // lista locală răspunde instant, serverul completează numele care nu sunt în chat).
+  const [remoteUsers, setRemoteUsers] = useState<MentionUser[]>([]);
+  useEffect(() => {
+    const q = mentionQuery?.trim() ?? '';
+    if (!searchMentionUsers || q.length < 2) {
+      setRemoteUsers((prev) => (prev.length ? [] : prev));
+      return;
+    }
+    let active = true;
+    const timer = setTimeout(() => {
+      searchMentionUsers(q).then((users) => {
+        if (active) setRemoteUsers(users);
+      });
+    }, 200);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [mentionQuery, searchMentionUsers]);
+
+  const mentionUsers = useMemo(() => {
+    if (!mention) return [];
+    const local = mentionCandidates ?? [];
+    const seen = new Set(local.map((u) => u.id));
+    const merged = [
+      ...local,
+      ...remoteUsers.filter((u) => u.id !== currentUserId && !seen.has(u.id)),
+    ];
+    return rankMentionCandidates(mention.query, merged, 10);
+  }, [mention, mentionCandidates, remoteUsers, currentUserId]);
+
+  const handleChangeText = useCallback(
+    (next: string) => {
+      const sel = selectionRef.current;
+      const atEnd = sel.end >= text.length;
+      const pos = atEnd
+        ? next.length
+        : Math.max(0, Math.min(sel.end + (next.length - text.length), next.length));
+      selectionRef.current = { start: pos, end: pos };
+      setCursor(pos);
+      setText(next);
+      // Orice tastare după o inserare = selecția forțată nu mai are rost (plasă de
+      // siguranță dacă onSelectionChange n-a apucat s-o stingă).
+      setPendingSelection((prev) => (prev ? null : prev));
+    },
+    [text],
+  );
+
+  const handleSelectionChange = useCallback(
+    (e: { nativeEvent: { selection: { start: number; end: number } } }) => {
+      selectionRef.current = e.nativeEvent.selection;
+      setCursor(e.nativeEvent.selection.end);
+      setPendingSelection((prev) => (prev ? null : prev));
+    },
+    [],
+  );
+
+  // Tap pe o persoană din fereastră: „@interogare" devine „@Nume " (cu spațiu, ca
+  // tastarea să continue natural), cursorul sare după ea, tastatura rămâne deschisă.
+  const insertMention = useCallback(
+    (user: MentionUser) => {
+      const m = mentionQueryAt(text, cursor);
+      if (!m) return;
+      const inserted = `@${user.full_name} `;
+      const next = text.slice(0, m.start) + inserted + text.slice(Math.min(cursor, text.length));
+      const pos = m.start + inserted.length;
+      pickedMentions.current.set(user.id, user.full_name);
+      selectionRef.current = { start: pos, end: pos };
+      setCursor(pos);
+      setText(next);
+      setPendingSelection({ start: pos, end: pos });
+      composerRef.current?.focus();
+    },
+    [text, cursor],
+  );
+
   async function handleSend() {
     const trimmed = text.trim();
     if (sending) return;
@@ -1807,9 +2031,16 @@ export function ChatScreen<M extends ChatMessageBase>({
       if (!trimmed && !hasPendingAttach) return;
       setSending(true);
       const replyId = replyTarget?.id ?? null;
+      // Doar menționările care au supraviețuit în text (id + numele exact inserat).
+      const mentions = [...pickedMentions.current]
+        .filter(([, name]) => trimmed.includes(`@${name}`))
+        .map(([id, name]) => ({ id, name }));
+      pickedMentions.current.clear();
+      selectionRef.current = { start: 0, end: 0 };
+      setCursor(0);
       setText('');
       setReplyTarget(null);
-      await onSend(trimmed, replyId);
+      await onSend(trimmed, replyId, mentions.length > 0 ? mentions : null);
     }
     setSending(false);
   }
@@ -1907,6 +2138,10 @@ export function ChatScreen<M extends ChatMessageBase>({
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 
+        {/* Zona listei: învelișul dă ancora ferestrei de menționări (absolut, jos),
+            care se suprapune peste ultimele mesaje, lipită de bannere/caseta text —
+            și rămâne în limitele părintelui (Android nu livrează tap-uri în afara lor). */}
+        <View style={styles.flex}>
         {loading ? (
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={theme.brand} />
@@ -2052,12 +2287,20 @@ export function ChatScreen<M extends ChatMessageBase>({
                       : 'sent'
                     : null
                 }
+                flashNonce={flash?.id === item.id ? flash.nonce : 0}
               />
               </View>
               );
             }}
           />
         )}
+        {/* Fereastra de menționări (10 sept): apare doar cu „@" activ ȘI cu rezultate. */}
+        {mention && mentionUsers.length > 0 ? (
+          <View style={styles.mentionAnchor} pointerEvents="box-none">
+            <MentionPanel users={mentionUsers} onPick={insertMention} />
+          </View>
+        ) : null}
+        </View>
 
         {/* Bannerul „anunț atașat" (Faza 19.4): stă deasupra celor de reply/editare —
             atașarea privește următorul mesaj trimis, indiferent dacă e și reply. */}
@@ -2157,14 +2400,7 @@ export function ChatScreen<M extends ChatMessageBase>({
               <Text
                 style={[styles.editBannerText, { color: theme.textSecondary }]}
                 numberOfLines={1}>
-                {replyTarget.deleted_at
-                  ? t('chat.deletedMessage')
-                  : replyTarget.image_path
-                    ? t('chat.photo')
-                    : replyTarget.file_name
-                      ? (isVideoFile(replyTarget.file_name, replyTarget.file_path) ? '🎥 ' : '📎 ') +
-                        replyTarget.file_name
-                      : replyTarget.content}
+                {contextSnippet(replyTarget, t)}
               </Text>
             </View>
             <Pressable onPress={cancelReply} hitSlop={8} accessibilityLabel={t('chat.cancelReply')}>
@@ -2259,7 +2495,11 @@ export function ChatScreen<M extends ChatMessageBase>({
                       null,
               ]}
               value={text}
-              onChangeText={setText}
+              onChangeText={handleChangeText}
+              // Menționări: poziția cursorului decide dacă suntem după un „@";
+              // `selection` e setat DOAR o clipă după inserarea unei menționări.
+              onSelectionChange={handleSelectionChange}
+              selection={pendingSelection ?? undefined}
               onContentSizeChange={Platform.OS === 'web' ? undefined : handleComposerSize}
               // Sub plafon derularea stă oprită pe iOS (altfel rămâne un bounce
               // fantomă); la plafon se aprinde și preia textul care nu mai încape.
@@ -2589,12 +2829,30 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
     marginLeft: 'auto',
   },
-  // paddingRight: Android măsoară textul italic cu lățimea glifelor drepte (o
-  // subestimează) → ultimul cuvânt se tăia la marginea bulei („This message was…”).
-  // Padding-ul mută zona tăiată pe spațiu gol, nu pe text.
-  deletedText: { fontStyle: 'italic', paddingRight: 3 },
+  // Android măsoară textul italic (sintetic — fontul n-are variantă italic) cu
+  // lățimea glifelor drepte, deci îl SUBESTIMEAZĂ: la desenare textul nu mai încape
+  // pe rândul măsurat, se rupe pe un al doilea rând pe care Yoga nu l-a prevăzut și
+  // ultimul cuvânt dispare cu totul („This message was" fără „deleted" — bug
+  // raportat 10 sept; padding-ul de 3px de dinainte acoperea doar câțiva pixeli,
+  // nu un cuvânt întreg). Pe Android renunțăm la italic (gri + iconiță fac oricum
+  // marcajul distinct); iOS/web măsoară corect și păstrează stilul.
+  deletedText: { fontStyle: Platform.OS === 'android' ? 'normal' : 'italic', paddingRight: 3 },
+  deletedIcon: { alignSelf: 'center', marginRight: 5 },
   metaRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-end', gap: Spacing.one },
-  editedLabel: { fontStyle: 'italic', paddingRight: 2 }, // italic: același clip ca deletedText
+  // Același italic sintetic ca deletedText → aceeași regulă per platformă.
+  editedLabel: { fontStyle: Platform.OS === 'android' ? 'normal' : 'italic', paddingRight: 2 },
+  // Evidențierea rândului la saltul din citat (10 sept): bandă absolută pe toată
+  // lățimea rândului + padding-ul listei (margini negative), opacitate animată.
+  flashOverlay: {
+    position: 'absolute',
+    top: -3,
+    bottom: -3,
+    left: -Spacing.three,
+    right: -Spacing.three,
+    opacity: 0,
+  },
+  // Ancora ferestrei de menționări: jos, peste ultimele mesaje, lipită de compozitor.
+  mentionAnchor: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   // Stil 6b (26 iul): „atașament etichetat" — card pe suprafață proprie, ÎN AFARA bulei.
   attachCard: {
     borderRadius: 16,

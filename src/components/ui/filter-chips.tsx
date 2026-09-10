@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
 import { Radius, Shadows } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -13,6 +14,8 @@ import { useTheme } from '@/hooks/use-theme';
 export interface FilterChipOption<K extends string> {
   key: K;
   label: string;
+  /** Iconiță mică înaintea etichetei (10 sept: filtrul de locație din feed). */
+  icon?: keyof typeof MaterialIcons.glyphMap;
 }
 
 export function FilterChips<K extends string>({
@@ -29,6 +32,7 @@ export function FilterChips<K extends string>({
     <View style={styles.row}>
       {options.map((opt) => {
         const active = opt.key === value;
+        const color = active ? '#FFFFFF' : theme.textSecondary;
         return (
           <Pressable
             key={opt.key}
@@ -42,9 +46,8 @@ export function FilterChips<K extends string>({
                 ? { backgroundColor: theme.brand }
                 : { backgroundColor: theme.backgroundElement, ...Shadows.chip },
             ]}>
-            <Text
-              style={[styles.label, { color: active ? '#FFFFFF' : theme.textSecondary }]}
-              maxFontSizeMultiplier={1.2}>
+            {opt.icon ? <MaterialIcons name={opt.icon} size={14} color={color} /> : null}
+            <Text style={[styles.label, { color }]} maxFontSizeMultiplier={1.2}>
               {opt.label}
             </Text>
           </Pressable>
@@ -66,6 +69,9 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     paddingHorizontal: 16,
     paddingVertical: 7,
     borderRadius: Radius.badge,

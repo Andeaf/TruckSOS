@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -41,7 +41,13 @@ import { matchesSearch } from '@/lib/search';
 
 const VIEW_MODE_KEY = 'mechanic_feed_view_mode';
 type ViewMode = 'compact' | 'extended';
-type StatusFilter = 'all' | 'active' | 'accepted' | 'resolved';
+/** `nolocation` (10 sept): pastila „Fără locație" stă în același rând cu cele de status
+ * (decizie user) — toate statusurile, dar doar anunțurile fără coordonate. */
+type StatusFilter = 'all' | 'active' | 'accepted' | 'resolved' | 'nolocation';
+
+function hasLocation(a: { latitude: number | null; longitude: number | null }): boolean {
+  return a.latitude != null && a.longitude != null;
+}
 
 export default function MechanicFeedScreen() {
   // Tab-ul de start al mecanicului: back-ul de aici întreabă dacă închide aplicația.
@@ -58,6 +64,17 @@ export default function MechanicFeedScreen() {
   const { announcements: myAnnouncements, refresh: refreshMine } = useMyAnnouncements();
   const [applicantCounts, setApplicantCounts] = useState<Record<string, number>>({});
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  // Harta poate preseta „Fără locație" (10 sept): tap pe bula „N anunțuri fără
+  // locație" navighează aici cu ?location=without — `nonce` diferă la fiecare tap,
+  // altfel al doilea tap (după ce userul a schimbat manual filtrul) n-ar mai
+  // re-declanșa efectul.
+  const { location: locationParam, nonce: locationNonce } = useLocalSearchParams<{
+    location?: string;
+    nonce?: string;
+  }>();
+  useEffect(() => {
+    if (locationParam === 'without') setStatusFilter('nolocation');
+  }, [locationParam, locationNonce]);
   const router = useRouter();
   const [viewMode, setViewMode] = useState<ViewMode>('extended');
   const [rejectedIds, setRejectedIds] = useState<Set<string>>(new Set());
@@ -77,7 +94,11 @@ export default function MechanicFeedScreen() {
   // gestionat, nu de găsit), apoi feedul altora. Chips-urile de status se aplică
   // peste tot: ale altora sunt mereu `open`, deci apar doar la Toate/Active;
   // Acceptate/Rezolvate rămân practic vederile propriilor anunțuri.
+  // „Fără locație" = ca „Toate", dar doar anunțurile fără coordonate (ale mele + ale
+  // altora). Cele fără coordonate trec oricum de filtrul de rază (applyRadiusFilter
+  // le păstrează), deci pastila arată exact anunțurile care lipsesc de pe hartă.
   const merged = useMemo<AnnouncementWithDriver[]>(() => {
+    const noLocationOnly = statusFilter === 'nolocation';
     const mineFiltered = myAnnouncements.filter((a) => {
       if (statusFilter === 'active') return a.status === 'open';
       if (statusFilter === 'accepted') return a.status === 'accepted';
@@ -85,8 +106,10 @@ export default function MechanicFeedScreen() {
       return true;
     });
     const mineWithDriver = mineFiltered.map((a) => ({ ...a, driver: null }));
-    const others = statusFilter === 'all' || statusFilter === 'active' ? filtered : [];
-    return [...mineWithDriver, ...others];
+    const others =
+      statusFilter === 'all' || statusFilter === 'active' || noLocationOnly ? filtered : [];
+    const all = [...mineWithDriver, ...others];
+    return noLocationOnly ? all.filter((a) => !hasLocation(a)) : all;
   }, [myAnnouncements, statusFilter, filtered]);
 
   // Căutarea filtrează local peste lista deja filtrată de rază (toate anunțurile
@@ -173,13 +196,15 @@ export default function MechanicFeedScreen() {
 
       {/* Filtrele de status (5 aug, rev. 2 — fără pagină separată „Ale mele"):
           aceleași 4 chips ca la transportatori; ale altora sunt mereu `open`,
-          deci Acceptate/Rezolvate arată propriile anunțuri. */}
+          deci Acceptate/Rezolvate arată propriile anunțuri. + „Fără locație"
+          (10 sept, aceeași iconiță ca pe hartă) — în același rând, decizie user. */}
       <FilterChips
         options={[
           { key: 'all', label: t('driver.announcements.filterAll') },
           { key: 'active', label: t('driver.announcements.filterActive') },
           { key: 'accepted', label: t('driver.announcements.filterAccepted') },
           { key: 'resolved', label: t('driver.announcements.filterResolved') },
+          { key: 'nolocation', label: t('mechanic.feed.locationWithout'), icon: 'location-off' },
         ]}
         value={statusFilter}
         onChange={setStatusFilter}
@@ -281,6 +306,13 @@ export default function MechanicFeedScreen() {
                 icon="search-off"
                 title={t('mechanic.feed.searchEmptyTitle')}
                 description={t('mechanic.feed.searchEmptyDescription')}
+              />
+            ) : statusFilter === 'nolocation' ? (
+              // „Fără locație" n-a lăsat nimic — mesaj dedicat, cu iconița pastilei.
+              <EmptyState
+                icon="location-off"
+                title={t('mechanic.feed.locationEmptyWithout')}
+                description={t('mechanic.feed.locationEmptyDescription')}
               />
             ) : announcements.length > 0 && radiusKm != null ? (
               // Filtrul a ascuns tot — altă cauză decât „nu există anunțuri".

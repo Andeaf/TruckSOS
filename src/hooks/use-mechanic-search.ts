@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
+import type { MentionUser } from '@/lib/mention-search';
 import type { Profile, Role } from '@/types/database';
 
 export type MechanicSearchResult = Pick<
@@ -118,6 +119,24 @@ export function useUserSearch(query: string) {
   }, [query]);
 
   return { results, loading };
+}
+
+/**
+ * Menționări „@" (10 sept): candidații din TOATĂ aplicația, pentru numele care nu
+ * sunt printre expeditorii deja încărcați în chat. Același RPC ca pickerul de
+ * utilizatori (fără sine, admini, ștersși sau perechi blocate); ordonarea fină o
+ * face clientul (rankMentionCandidates), amestecând rezultatele cu cele locale.
+ */
+export async function searchMentionUsers(query: string): Promise<MentionUser[]> {
+  const trimmed = query.trim();
+  if (trimmed.length < SEARCH_MIN_LENGTH) return [];
+  const { data } = await supabase.rpc('search_users', { p_query: trimmed } as never);
+  return (((data ?? []) as unknown) as UserSearchResult[]).map((u) => ({
+    id: u.id,
+    full_name: u.full_name,
+    avatar_path: u.avatar_path,
+    role: u.role,
+  }));
 }
 
 /**

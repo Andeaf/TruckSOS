@@ -368,7 +368,10 @@
       "searchClose": "Close search",
       "searchPlaceholder": "Search: driver, location, issue, truck…",
       "searchEmptyTitle": "No results",
-      "searchEmptyDescription": "No announcement matches your search. Try different words."
+      "searchEmptyDescription": "No announcement matches your search. Try different words.",
+      "locationWithout": "No location",
+      "locationEmptyWithout": "No announcements without a location",
+      "locationEmptyDescription": "Every open announcement has a location right now and shows up on the map."
     },
     "applications": {
       "title": "My applications",
@@ -425,6 +428,7 @@
       "pinCount_other": "{{count}} announcements on the map",
       "missingCount_one": "{{count}} announcement without a location",
       "missingCount_other": "{{count}} announcements without a location",
+      "missingOpen": "See the announcements without a location",
       "webBody": "The interactive map isn't available in the browser. Announcements with a location are still listed in the feed.",
       "webCta": "Open the feed"
     }
@@ -462,7 +466,10 @@
     "openLinkBody": "{{url}}\n\nThe link opens outside TruckSOS. Only open links from people you trust.",
     "openLinkConfirm": "Open",
     "openLinkError": "The link could not be opened.",
-    "callError": "The Phone app could not be opened."
+    "callError": "The Phone app could not be opened.",
+    "quoteRecommendation": "👤 Recommendation: {{name}}",
+    "quoteListing": "🏷️ Market: {{title}}",
+    "quoteAnnouncement": "📍 Announcement: {{location}}"
   },
   "publicProfile": {
     "title": "Profile",
@@ -886,6 +893,7 @@
     },
     "notifications": "Notifications",
     "pushEnabled": "Push notifications",
+    "marketPushEnabled": "New listings on Market",
     "radius": "New announcement radius",
     "radiusOff": "No limit",
     "radiusKm": "{{km}} km",

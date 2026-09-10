@@ -368,7 +368,10 @@
       "searchClose": "Suche schließen",
       "searchPlaceholder": "Suche: Fahrer, Ort, Problem, Lkw…",
       "searchEmptyTitle": "Keine Ergebnisse",
-      "searchEmptyDescription": "Keine Anzeige entspricht deiner Suche. Versuche andere Wörter."
+      "searchEmptyDescription": "Keine Anzeige entspricht deiner Suche. Versuche andere Wörter.",
+      "locationWithout": "Ohne Standort",
+      "locationEmptyWithout": "Keine Anzeigen ohne Standort",
+      "locationEmptyDescription": "Alle offenen Anzeigen haben derzeit einen Standort und erscheinen auf der Karte."
     },
     "applications": {
       "title": "Meine Bewerbungen",
@@ -425,6 +428,7 @@
       "pinCount_other": "{{count}} Anzeigen auf der Karte",
       "missingCount_one": "{{count}} Anzeige ohne Standort",
       "missingCount_other": "{{count}} Anzeigen ohne Standort",
+      "missingOpen": "Anzeigen ohne Standort anzeigen",
       "webBody": "Die interaktive Karte ist im Browser nicht verfügbar. Anzeigen mit Standort findest du weiterhin in der Liste im Feed.",
       "webCta": "Feed öffnen"
     }
@@ -462,7 +466,10 @@
     "openLinkBody": "{{url}}\n\nDer Link wird außerhalb von TruckSOS geöffnet. Öffne nur Links von Personen, denen du vertraust.",
     "openLinkConfirm": "Öffnen",
     "openLinkError": "Der Link konnte nicht geöffnet werden.",
-    "callError": "Die Telefon-App konnte nicht geöffnet werden."
+    "callError": "Die Telefon-App konnte nicht geöffnet werden.",
+    "quoteRecommendation": "👤 Empfehlung: {{name}}",
+    "quoteListing": "🏷️ Market: {{title}}",
+    "quoteAnnouncement": "📍 Anzeige: {{location}}"
   },
   "publicProfile": {
     "title": "Profil",
@@ -886,6 +893,7 @@
     },
     "notifications": "Benachrichtigungen",
     "pushEnabled": "Push-Benachrichtigungen",
+    "marketPushEnabled": "Neue Anzeigen im Markt",
     "radius": "Radius für neue Anzeigen",
     "radiusOff": "Ohne Limit",
     "radiusKm": "{{km}} km",

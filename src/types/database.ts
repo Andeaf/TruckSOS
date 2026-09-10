@@ -26,6 +26,8 @@ export interface Profile {
   rating_count: number;
   /** Comutatorul global de notificări din Setări. */
   push_enabled: boolean;
+  /** 8 sept 2026: notificări la anunț nou pe Market. Pornit implicit; push_enabled îl domină. */
+  market_push_enabled: boolean;
   /** Mecanic: raza (km) peste care nu mai vrea anunțuri noi. NULL = primește tot. */
   notify_radius_km: number | null;
   /** Mecanic: poziția de referință (atelier/domiciliu), pentru filtrul de rază. */
@@ -46,6 +48,14 @@ export interface Profile {
 
 /** Ce arătăm despre un alt utilizator în liste/carduri: nume + avatar (+ marcaj de cont șters). */
 export type PublicUser = Pick<Profile, 'full_name' | 'avatar_path' | 'deleted_at'>;
+
+/** Menționare „@Nume" pe un mesaj (10 sept 2026, coloana jsonb `mentions`, migrarea
+ * 20260910): id-ul persoanei + numele EXACT inserat în text — bula evidențiază acel
+ * „@Nume" și îl face apăsabil (→ profil). */
+export interface MessageMention {
+  id: string;
+  name: string;
+}
 
 /** Mecanic favorit al unui șofer. PK compus (driver_id, mechanic_id). */
 export interface FavoriteMechanic {
@@ -149,6 +159,8 @@ export interface Message {
   file_size: number | null;
   /** 24 aug: durata în secunde, doar la videoclipuri (meta „Videoclip · 0:12"). */
   file_duration: number | null;
+  /** 10 sept: menționările „@Nume" din text (null/lipsă = niciuna sau schemă veche). */
+  mentions?: MessageMention[] | null;
   created_at: string;
 }
 
@@ -260,6 +272,8 @@ export interface ChannelMessage {
   file_size: number | null;
   /** 24 aug: durata în secunde, doar la videoclipuri (paritate cu chatul privat). */
   file_duration: number | null;
+  /** 10 sept: menționările „@Nume" din text (paritate cu chatul privat). */
+  mentions?: MessageMention[] | null;
   created_at: string;
 }
 

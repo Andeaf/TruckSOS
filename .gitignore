@@ -90,3 +90,11 @@ $RECYCLE.BIN/
 # ─── Supabase local dev (dacă folosești supabase CLI local) ──────────────────
 supabase/.branches/
 supabase/.temp/
+
+# ─── Documentație internă & configurări de asistent (10 sept 2026) ───────────
+# Pe Git rămân doar fișierele pe care le ține lumea vizibile: README.md și LICENSE.
+# Restul .md-urilor (App Review, Play, metadate ASC, checklist-uri, prompturi) și
+# folderul .claude/ sunt documente de lucru — trăiesc doar local.
+*.md
+!README.md
+.claude/

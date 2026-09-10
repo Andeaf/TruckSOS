@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -10,7 +10,9 @@ import { MechanicPickerSheet } from '@/components/mechanic-picker-sheet';
 import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
+import { searchMentionUsers } from '@/hooks/use-mechanic-search';
 import { displayName } from '@/lib/display-name';
+import type { MentionUser } from '@/lib/mention-search';
 import {
   deleteMessage,
   editMessage,
@@ -91,6 +93,23 @@ export default function DriverChatScreen() {
 
   const otherId = other?.id;
   const otherRole = other?.profile.role;
+  const otherProfile = other?.profile;
+  // Menționări „@" (10 sept): în chatul 1-la-1 candidatul local e interlocutorul;
+  // orice alt nume (o recomandare „vorbește cu @Ion Popescu") vine din căutare.
+  const mentionCandidates = useMemo<MentionUser[]>(
+    () =>
+      otherId && otherProfile && !otherProfile.deleted_at && otherProfile.full_name
+        ? [
+            {
+              id: otherId,
+              full_name: otherProfile.full_name,
+              avatar_path: otherProfile.avatar_path,
+              role: otherProfile.role,
+            },
+          ]
+        : [],
+    [otherId, otherProfile],
+  );
   useEffect(() => {
     if (!otherId || !otherRole) return;
     let active = true;
@@ -204,10 +223,10 @@ export default function DriverChatScreen() {
       }
       messages={messages}
       loading={loading}
-      onSend={async (content, replyToId) => {
+      onSend={async (content, replyToId, mentions) => {
         const { message } = await sendMessage(
           id, session.user.id, content, null, replyToId,
-          pendingListing, pendingMechanic, pendingAnnouncement
+          pendingListing, pendingMechanic, pendingAnnouncement, mentions ?? null
         );
         if (message) {
           addMessage(message);
@@ -216,6 +235,8 @@ export default function DriverChatScreen() {
           if (pendingAnnouncement) setPendingAnnouncement(null);
         }
       }}
+      mentionCandidates={mentionCandidates}
+      searchMentionUsers={searchMentionUsers}
       onPressListing={(lid) =>
         router.push({ pathname: '/(driver)/market/[id]', params: { id: lid } } as never)
       }

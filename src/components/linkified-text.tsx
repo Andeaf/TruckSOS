@@ -3,13 +3,17 @@ import { StyleSheet, Text, type StyleProp, type TextStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
-import { tokenize } from '@/lib/linkify';
+import { tokenize, type MentionRef } from '@/lib/linkify';
 import { confirmOpenUrl, openPhone } from '@/lib/open-link';
 
 interface LinkifiedTextProps extends Omit<ComponentProps<typeof Text>, 'children'> {
   text: string;
   /** Stilul bucăților apăsabile (culoare per bulă: alb pe trimis, brand pe primit). */
   linkStyle?: StyleProp<TextStyle>;
+  /** Menționările „@Nume" stocate pe mesaj (10 sept) — se evidențiază și duc la profil. */
+  mentions?: MentionRef[] | null;
+  /** Stilul menționărilor (bold + culoare, fără subliniere — ca pe WhatsApp). */
+  mentionStyle?: StyleProp<TextStyle>;
   /** Apăsarea lungă pe un link/telefon → același meniu ca pe restul bulei. */
   onLongPress?: () => void;
 }
@@ -26,11 +30,20 @@ interface LinkifiedTextProps extends Omit<ComponentProps<typeof Text>, 'children
  * NU primește handler: apăsarea lungă pe el urcă la Pressable-ul bulei, ca până acum;
  * doar linkurile au nevoie de `onLongPress` explicit, altfel ar înghiți gestul.
  */
-export function LinkifiedText({ text, linkStyle, onLongPress, ...rest }: LinkifiedTextProps) {
+export function LinkifiedText({
+  text,
+  linkStyle,
+  mentions,
+  mentionStyle,
+  onLongPress,
+  ...rest
+}: LinkifiedTextProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const tokens = useMemo(() => tokenize(text), [text]);
+  const tokens = useMemo(() => tokenize(text, mentions), [text, mentions]);
 
+  // Ruta /p/[id] rezolvă singură rolul persoanei și SARE pe ecranul de profil
+  // potrivit privitorului (aceeași cale ca linkurile trucksos.net/p/<id>).
   const openProfile = (userId: string) =>
     router.push({ pathname: '/p/[id]', params: { id: userId } } as never);
 
@@ -43,6 +56,16 @@ export function LinkifiedText({ text, linkStyle, onLongPress, ...rest }: Linkifi
       {tokens.map((tok, i) =>
         tok.type === 'text' ? (
           tok.value
+        ) : tok.type === 'mention' ? (
+          <Text
+            key={i}
+            style={[styles.mention, mentionStyle]}
+            suppressHighlighting
+            accessibilityRole="link"
+            onPress={() => openProfile(tok.userId)}
+            onLongPress={onLongPress}>
+            {tok.value}
+          </Text>
         ) : (
           <Text
             key={i}
@@ -65,4 +88,5 @@ export function LinkifiedText({ text, linkStyle, onLongPress, ...rest }: Linkifi
 
 const styles = StyleSheet.create({
   link: { textDecorationLine: 'underline', fontWeight: '600' },
+  mention: { fontWeight: '700' },
 });

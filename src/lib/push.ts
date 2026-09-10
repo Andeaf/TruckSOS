@@ -18,7 +18,7 @@ import { supabase } from '@/lib/supabase';
 
 /** Datele pe care le trimite serverul, ca tapul să deschidă ecranul potrivit. */
 export interface PushData {
-  type?: 'conversation' | 'announcement' | 'application' | 'feed' | 'channel';
+  type?: 'conversation' | 'announcement' | 'application' | 'feed' | 'channel' | 'listing';
   id?: string;
 }
 

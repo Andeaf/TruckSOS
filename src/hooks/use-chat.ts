@@ -1,8 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
-import { fetchReplyEmbed, hasChatV14, replyEmbed, type ReplyEmbedRow } from '@/lib/chat-schema';
+import {
+  fetchReplyEmbed,
+  hasChatV14,
+  hasMentionsColumn,
+  replyEmbed,
+  type MessageMention,
+  type ReplyEmbedRow,
+} from '@/lib/chat-schema';
 import { emitReadsChanged, onReadsChanged } from '@/lib/read-events';
 import { dismissThreadNotifications } from '@/lib/push';
 import { uploadFile, uploadPhoto, type PickedFile } from '@/lib/storage';
@@ -137,6 +144,86 @@ export function conversationActivityAt(conv: Conversation): string {
   return conv.last_message_at ?? conv.created_at;
 }
 
+/**
+ * Catch-up după fundal (10 sept 2026). Bug raportat: tap pe notificarea unui mesaj
+ * foarte recent → ecranul de chat (deja montat, aplicația stătuse în fundal) NU
+ * arăta mesajul până la ieșire + reintrare. Cauza: în fundal sistemul închide
+ * websocket-ul Realtime; la revenire supabase-js se reconectează și re-abonează,
+ * dar evenimentele din intervalul mort sunt PIERDUTE (nu există replay) — exact
+ * nota din useUnreadCounts. Bulina se recalcula prin AppState, lista nu.
+ *
+ * Remediul: la revenirea în prim-plan ȘI la fiecare RE-abonare Realtime, aducem
+ * din nou tot ce e mai nou decât al N-lea mesaj cunoscut de la coadă (fereastra
+ * de suprapunere prinde și tombstone-urile/editările ratate pe ultimele mesaje)
+ * și îmbinăm în listă după id.
+ */
+const CATCH_UP_OVERLAP = 20;
+
+/**
+ * Îmbină rândurile aduse de un catch-up în lista curentă: cele cunoscute se
+ * actualizează dacă s-au schimbat (tombstone/editare ratate), cele noi se adaugă;
+ * ordinea rămâne cronologică. Întoarce ACEEAȘI referință dacă nimic nu s-a
+ * schimbat — fără re-render degeaba la fiecare revenire în aplicație.
+ */
+export function mergeMessages<
+  T extends {
+    id: string;
+    created_at: string;
+    content: string;
+    deleted_at?: string | null;
+    edited_at?: string | null;
+  },
+>(prev: T[], incoming: T[]): T[] {
+  if (incoming.length === 0) return prev;
+  const index = new Map(prev.map((m, i) => [m.id, i] as const));
+  let next: T[] | null = null;
+  for (const row of incoming) {
+    const at = index.get(row.id);
+    if (at === undefined) {
+      next ??= prev.slice();
+      next.push(row);
+      continue;
+    }
+    const old = prev[at];
+    if (
+      old.content === row.content &&
+      (old.deleted_at ?? null) === (row.deleted_at ?? null) &&
+      (old.edited_at ?? null) === (row.edited_at ?? null)
+    ) {
+      continue;
+    }
+    next ??= prev.slice();
+    next[at] = { ...old, ...row };
+  }
+  if (!next) return prev;
+  next.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  return next;
+}
+
+/**
+ * Rulează `catchUp` la revenirea aplicației în prim-plan, cu o pauză scurtă
+ * (rețeaua și tokenul se reașază după fundal) și o reîncercare dacă a picat
+ * (întoarce false). Comun chatului privat și canalului.
+ */
+export function useCatchUpOnResume(catchUp: () => Promise<boolean>) {
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const run = async (attempt: number) => {
+      const ok = await catchUp();
+      if (!ok && attempt < 2) timer = setTimeout(() => void run(attempt + 1), 2500);
+    };
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => void run(0), 300);
+    });
+    return () => {
+      sub.remove();
+      if (timer) clearTimeout(timer);
+    };
+  }, [catchUp]);
+}
+
 /** Selectul comun al listei/detaliului de conversație (embeds pe ambele sloturi + contexte). */
 const CONVERSATION_SELECT =
   '*, announcement:announcements!announcement_id(location,status,description), ' +
@@ -194,6 +281,31 @@ export function useConversations(userId: string | undefined) {
 export function useMessages(conversationId: string) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const messagesRef = useRef<Message[]>([]);
+  messagesRef.current = messages;
+  // Catch-up-ul are sens doar după încărcarea inițială (altfel ar dubla-o).
+  const loadedRef = useRef(false);
+
+  // Vezi CATCH_UP_OVERLAP: readuce ce e mai nou decât al 20-lea mesaj de la coadă.
+  const catchUp = useCallback(async (): Promise<boolean> => {
+    if (!loadedRef.current) return true;
+    const known = messagesRef.current;
+    const cutoff =
+      known.length > 0 ? known[Math.max(0, known.length - CATCH_UP_OVERLAP)].created_at : null;
+    const v14 = await hasChatV14();
+    let query = supabase
+      .from('messages')
+      .select('*' + (v14 ? replyEmbed() : '') + MESSAGE_ATTACH_EMBEDS)
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true });
+    if (cutoff) query = query.gte('created_at', cutoff);
+    const { data, error } = await query;
+    if (error || !data || !loadedRef.current) return false;
+    setMessages((prev) => mergeMessages(prev, data as unknown as Message[]));
+    return true;
+  }, [conversationId]);
+
+  useCatchUpOnResume(catchUp);
 
   // Adaugă un mesaj; la id duplicat ÎMBINĂ rândurile în loc să-l ignore pe al doilea.
   // Cursa Realtime vs. optimist: dacă evenimentul Realtime (rând brut) sosea înaintea
@@ -227,6 +339,7 @@ export function useMessages(conversationId: string) {
       if (active) {
         setMessages((data as unknown as Message[]) ?? []);
         setLoading(false);
+        loadedRef.current = true;
       }
     })();
 
@@ -234,6 +347,9 @@ export function useMessages(conversationId: string) {
     // la remount/Fast Refresh cleanup-ul (removeChannel) e asincron — un nume determinist ar
     // returna canalul vechi deja subscribe()-uit, și .on() ar arunca „after subscribe()".
     // (Același motiv pentru care useReadCursor/useUnreadCounts folosesc deja Math.random().)
+    // Prima abonare nu are ce recupera (încărcarea inițială e în curs); RE-abonările
+    // (după reconectarea socket-ului) recuperează ce s-a pierdut între timp.
+    let subscribedOnce = false;
     const channel = supabase
       .channel(`messages:${conversationId}:${Math.random()}`)
       .on(
@@ -299,13 +415,18 @@ export function useMessages(conversationId: string) {
           );
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (!active || String(status) !== 'SUBSCRIBED') return;
+        if (subscribedOnce) void catchUp();
+        subscribedOnce = true;
+      });
 
     return () => {
       active = false;
+      loadedRef.current = false;
       supabase.removeChannel(channel);
     };
-  }, [conversationId]);
+  }, [conversationId, catchUp]);
 
   return { messages, loading, addMessage, patchMessage };
 }
@@ -370,7 +491,8 @@ export async function sendMessage(
   replyToId: string | null = null,
   listingId: string | null = null,
   mechanicId: string | null = null,
-  announcementId: string | null = null
+  announcementId: string | null = null,
+  mentions: MessageMention[] | null = null
 ): Promise<{ message: Message | null; error: string | null }> {
   const v14 = await hasChatV14();
   const row: Record<string, unknown> = {
@@ -387,6 +509,8 @@ export async function sendMessage(
   if (mechanicId) row.recommended_mechanic_id = mechanicId;
   // Faza 19.6: anunțul de depanare distribuit (butonul de share de pe detaliu).
   if (announcementId) row.announcement_id = announcementId;
+  // 10 sept: menționările „@Nume" — doar dacă schema are coloana (migrarea 20260910).
+  if (mentions && mentions.length > 0 && (await hasMentionsColumn())) row.mentions = mentions;
   const { data, error } = await supabase
     .from('messages')
     .insert(row as never)

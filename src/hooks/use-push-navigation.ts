@@ -47,7 +47,7 @@ export function usePushNavigation() {
       const params = { id: data.id };
 
       // Fiecare tip de notificare trăiește pe o „parte" fixă a aplicației;
-      // conversațiile și canalul există pe ambele — rămân pe modul curent.
+      // conversațiile, canalul și Marketul există pe ambele — rămân pe modul curent.
       const side: 'driver' | 'mechanic' =
         data.type === 'announcement'
           ? 'driver'
@@ -78,6 +78,17 @@ export function usePushNavigation() {
           break;
         case 'application':
           router.navigate({ pathname: '/(mechanic)/applications/[id]' as never, params });
+          break;
+        // Anunț nou pe Market (8 sept): ruta există în ambele grupuri, deci
+        // rămâne pe partea curentă — 'listing' cade pe ramura `chatSide` de mai sus.
+        case 'listing':
+          router.navigate({
+            pathname:
+              side === 'driver'
+                ? '/(driver)/market/[id]'
+                : ('/(mechanic)/market/[id]' as never),
+            params,
+          });
           break;
         // Notificările opt-in ale canalului global (5 aug).
         case 'channel':

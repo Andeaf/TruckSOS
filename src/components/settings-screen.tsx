@@ -149,6 +149,18 @@ export function SettingsScreen({
             }}
           />
 
+          {/* 8 sept 2026: Marketul notifică TOȚI utilizatorii la anunț nou, deci are
+              nevoie de propriul opt-out. Ascuns cât timp comutatorul global e oprit —
+              atunci nu pleacă oricum nimic, iar alegerea rămâne salvată pe server. */}
+          {(profile?.push_enabled ?? true) ? (
+            <SwitchRow
+              icon="storefront"
+              label={t('settings.marketPushEnabled')}
+              value={profile?.market_push_enabled ?? true}
+              onValueChange={(next) => updateProfile({ market_push_enabled: next })}
+            />
+          ) : null}
+
           {/* Raza și poziția au sens doar pentru mecanic: el primește anunțurile noi. */}
           {isMechanic ? (
             <>

@@ -1,4 +1,7 @@
 import { supabase } from '@/lib/supabase';
+import type { MessageMention } from '@/types/database';
+
+export type { MessageMention };
 
 /**
  * Detecție de capabilitate pentru schema Faza 14 (coloane reply_to_id/deleted_at/
@@ -30,6 +33,28 @@ export async function hasChatV14(): Promise<boolean> {
 }
 
 /**
+ * Detecție de capabilitate pentru coloana `mentions` (migrarea 20260910): până
+ * la rularea ei, menționările rămân text simplu („@Nume" fără evidențiere), iar
+ * INSERT-ul NU trimite coloana — altfel orice mesaj cu menționare ar eșua (400).
+ * Același tipar ca hasChatV14 (probă o dată pe sesiune, pesimist la eroare).
+ */
+let mentionsCached: boolean | null = null;
+let mentionsInflight: Promise<boolean> | null = null;
+
+export async function hasMentionsColumn(): Promise<boolean> {
+  if (mentionsCached !== null) return mentionsCached;
+  if (!mentionsInflight) {
+    mentionsInflight = (async () => {
+      const { error } = await supabase.from('messages').select('mentions').limit(1);
+      mentionsCached = !error;
+      mentionsInflight = null;
+      return mentionsCached;
+    })();
+  }
+  return mentionsInflight;
+}
+
+/**
  * Fragmentul de embed pentru citat, doar dacă schema îl suportă.
  *
  * ⚠️ Direcția self-join-ului (bug „Mesaj indisponibil", reparat 7 aug): forma veche
@@ -42,11 +67,27 @@ export async function hasChatV14(): Promise<boolean> {
  * forțează direcția many-to-one (obiect/null, nu array); coloana se numește la fel
  * pe `messages` și `channel_messages`, deci fragmentul nu mai depinde de tabel.
  */
+/**
+ * Coloanele citatului. Contextele atașate (10 sept): un mesaj doar-card
+ * (recomandare de persoană / anunț din Market / anunț de depanare) are content=''
+ * — fără id-urile + embed-urile lor, citatul unei recomandări era complet GOL
+ * (bug raportat de user). Embed-urile pe FK-uri din interiorul self-join-ului
+ * sunt permise de PostgREST; sender/mechanic arată amândouă spre profiles, dar
+ * cu hint-uri de coloană diferite, ca în CHANNEL_ATTACH_EMBEDS.
+ */
+const REPLY_COLUMNS =
+  'id,content,image_path,file_name,file_path,file_duration,sender_id,deleted_at,' +
+  'recommended_mechanic_id,listing_id,announcement_id,' +
+  'sender:profiles!sender_id(full_name),' +
+  'mechanic:profiles!recommended_mechanic_id(full_name,deleted_at,role),' +
+  'listing:market_listings!listing_id(title),' +
+  'announcement:announcements!announcement_id(location)';
+
 export function replyEmbed(): string {
   // file_name (23 aug): citatul unui mesaj-fișier/video era GOL fără el —
   // content='' și image_path=null la astfel de mesaje. file_path (24 aug):
   // sursa miniaturii video din citat (URL semnat → thumbnail pe device).
-  return ', reply_to:reply_to_id(id,content,image_path,file_name,file_path,file_duration,sender_id,deleted_at,sender:profiles!sender_id(full_name))';
+  return `, reply_to:reply_to_id(${REPLY_COLUMNS})`;
 }
 
 /** Forma rândului întors de embed-ul `reply_to` (vezi replyEmbed). */
@@ -61,6 +102,14 @@ export type ReplyEmbedRow = {
   sender_id: string;
   deleted_at: string | null;
   sender?: { full_name: string } | null;
+  /** Contextele atașate mesajului citat (10 sept) — id + embed-ul minim pentru snippet.
+   * Embed-ul poate fi null cu id-ul prezent (RLS / rând dispărut) → etichetă generică. */
+  recommended_mechanic_id?: string | null;
+  listing_id?: string | null;
+  announcement_id?: string | null;
+  mechanic?: { full_name: string; deleted_at: string | null; role?: string } | null;
+  listing?: { title: string } | null;
+  announcement?: { location: string } | null;
 };
 
 /**
@@ -76,7 +125,7 @@ export async function fetchReplyEmbed(
 ): Promise<ReplyEmbedRow | null> {
   const { data } = await supabase
     .from(table)
-    .select('id,content,image_path,file_name,file_path,file_duration,sender_id,deleted_at,sender:profiles!sender_id(full_name)')
+    .select(REPLY_COLUMNS)
     .eq('id', replyToId)
     .maybeSingle();
   return (data as unknown as ReplyEmbedRow) ?? null;

@@ -2,13 +2,22 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
-import { fetchReplyEmbed, hasChatV14, replyEmbed, type ReplyEmbedRow } from '@/lib/chat-schema';
+import {
+  fetchReplyEmbed,
+  hasChatV14,
+  hasMentionsColumn,
+  replyEmbed,
+  type MessageMention,
+  type ReplyEmbedRow,
+} from '@/lib/chat-schema';
 import { emitReadsChanged, onReadsChanged } from '@/lib/read-events';
 import { dismissThreadNotifications } from '@/lib/push';
 import { useBlocked } from '@/hooks/use-blocked';
 import {
   fetchMessageListingContext,
   fetchMessageMechanicContext,
+  mergeMessages,
+  useCatchUpOnResume,
   type MessageAnnouncementContext,
   type MessageListingContext,
   type MessageMechanicContext,
@@ -18,6 +27,9 @@ import type { PickedImage } from '@/lib/media';
 import type { Channel, ChannelMessage, PublicUser, Role } from '@/types/database';
 
 const PAGE_SIZE = 50;
+/** Catch-up după fundal (vezi use-chat.ts): suprapunere pe ultimele N mesaje + plafon. */
+const CATCH_UP_OVERLAP = 20;
+const CATCH_UP_LIMIT = 200;
 
 export type ChannelMessageWithSender = ChannelMessage & {
   sender: PublicUser & { role: Role };
@@ -37,6 +49,16 @@ const CHANNEL_ATTACH_EMBEDS =
   ', listing:market_listings!listing_id(id,title,price,currency,status,category,description,market_listing_photos(storage_path,position))' +
   ', mechanic:profiles!recommended_mechanic_id(id,full_name,avatar_path,deleted_at,role,rating_avg,rating_count,specialization,activity_zone)' +
   ', announcement:announcements!announcement_id(id,location,status,description)';
+
+/** Selectul complet al unui mesaj de canal (expeditor + citat + contexte). */
+async function channelMessageSelect(): Promise<string> {
+  const v14 = await hasChatV14();
+  return (
+    '*, sender:profiles!sender_id(full_name,role,avatar_path,deleted_at)' +
+    (v14 ? replyEmbed() : '') +
+    CHANNEL_ATTACH_EMBEDS
+  );
+}
 
 export function useChannels() {
   const [channels, setChannels] = useState<Channel[]>([]);
@@ -76,6 +98,33 @@ export function useChannelMessages(channelId: string) {
   const [hasMore, setHasMore] = useState(true);
   const messagesRef = useRef<ChannelMessageWithSender[]>([]);
   messagesRef.current = messages;
+  // Catch-up-ul are sens doar după încărcarea inițială (altfel ar dubla-o).
+  const loadedRef = useRef(false);
+
+  // Catch-up după fundal / re-abonare (10 sept, vezi use-chat.ts): readuce ce e
+  // mai nou decât al 20-lea mesaj de la coadă și îmbină după id. Cel mai nou
+  // primul + plafon, ca la o pauză foarte lungă să nu pierdem tocmai ultimele
+  // mesaje (dacă plafonul se atinge, poate rămâne o gaură în mijloc — acceptat).
+  const catchUp = useCallback(async (): Promise<boolean> => {
+    if (!loadedRef.current) return true;
+    const known = messagesRef.current;
+    const cutoff =
+      known.length > 0 ? known[Math.max(0, known.length - CATCH_UP_OVERLAP)].created_at : null;
+    let query = supabase
+      .from('channel_messages')
+      .select(await channelMessageSelect())
+      .eq('channel_id', channelId)
+      .order('created_at', { ascending: false })
+      .limit(cutoff ? CATCH_UP_LIMIT : PAGE_SIZE);
+    if (cutoff) query = query.gte('created_at', cutoff);
+    const { data, error } = await query;
+    if (error || !data || !loadedRef.current) return false;
+    const rows = (data as unknown as ChannelMessageWithSender[]).slice().reverse();
+    setMessages((prev) => mergeMessages(prev, rows));
+    return true;
+  }, [channelId]);
+
+  useCatchUpOnResume(catchUp);
 
   // Adaugă un mesaj; la id duplicat ÎMBINĂ rândurile în loc să-l ignore pe al doilea.
   // Cursa Realtime vs. optimist: dacă evenimentul Realtime (rând brut) sosea înaintea
@@ -103,14 +152,9 @@ export function useChannelMessages(channelId: string) {
     setMessages([]);
 
     (async () => {
-      const v14 = await hasChatV14();
       const { data } = await supabase
         .from('channel_messages')
-        .select(
-          '*, sender:profiles!sender_id(full_name,role,avatar_path,deleted_at)' +
-            (v14 ? replyEmbed() : '') +
-            CHANNEL_ATTACH_EMBEDS
-        )
+        .select(await channelMessageSelect())
         .eq('channel_id', channelId)
         .order('created_at', { ascending: false })
         .limit(PAGE_SIZE);
@@ -119,10 +163,13 @@ export function useChannelMessages(channelId: string) {
       setMessages(page);
       setHasMore(page.length === PAGE_SIZE);
       setLoading(false);
+      loadedRef.current = true;
     })();
 
     // Nume UNIC per abonare (vezi use-chat.ts): altfel remount/Fast Refresh refolosește un
     // canal deja subscribe()-uit și .on() aruncă „after subscribe()".
+    // RE-abonările (după reconectarea socket-ului) recuperează ce s-a pierdut între timp.
+    let subscribedOnce = false;
     const channel = supabase
       .channel(`channel-messages:${channelId}:${Math.random()}`)
       .on(
@@ -188,26 +235,26 @@ export function useChannelMessages(channelId: string) {
           );
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (!active || String(status) !== 'SUBSCRIBED') return;
+        if (subscribedOnce) void catchUp();
+        subscribedOnce = true;
+      });
 
     return () => {
       active = false;
+      loadedRef.current = false;
       supabase.removeChannel(channel);
     };
-  }, [channelId, addMessage]);
+  }, [channelId, addMessage, catchUp]);
 
   const loadOlder = useCallback(async () => {
     if (loadingMore || !hasMore || messagesRef.current.length === 0) return;
     setLoadingMore(true);
     const oldest = messagesRef.current[0].created_at;
-    const v14 = await hasChatV14();
     const { data } = await supabase
       .from('channel_messages')
-      .select(
-        '*, sender:profiles!sender_id(full_name,role,avatar_path,deleted_at)' +
-          (v14 ? replyEmbed() : '') +
-          CHANNEL_ATTACH_EMBEDS
-      )
+      .select(await channelMessageSelect())
       .eq('channel_id', channelId)
       .lt('created_at', oldest)
       .order('created_at', { ascending: false })
@@ -233,7 +280,8 @@ export async function sendChannelMessage(
   imagePath: string | null = null,
   replyToId: string | null = null,
   listingId: string | null = null,
-  mechanicId: string | null = null
+  mechanicId: string | null = null,
+  mentions: MessageMention[] | null = null
 ): Promise<{ message: ChannelMessageWithSender | null; error: string | null }> {
   const v14 = await hasChatV14();
   const row: Record<string, unknown> = {
@@ -246,14 +294,12 @@ export async function sendChannelMessage(
   // Faza 19.5: contextele din meniul „+" (paritate cu chatul privat).
   if (listingId) row.listing_id = listingId;
   if (mechanicId) row.recommended_mechanic_id = mechanicId;
+  // 10 sept: menționările „@Nume" — doar dacă schema are coloana (migrarea 20260910).
+  if (mentions && mentions.length > 0 && (await hasMentionsColumn())) row.mentions = mentions;
   const { data, error } = await supabase
     .from('channel_messages')
     .insert(row as never)
-    .select(
-      '*, sender:profiles!sender_id(full_name,role,avatar_path,deleted_at)' +
-        (v14 ? replyEmbed() : '') +
-        CHANNEL_ATTACH_EMBEDS
-    )
+    .select(await channelMessageSelect())
     .single();
   return { message: (data as unknown as ChannelMessageWithSender) ?? null, error: error?.message ?? null };
 }
@@ -269,7 +315,6 @@ export async function sendChannelFileMessage(
     console.warn('[channel] upload fișier eșuat:', error);
     return { message: null, error: error ?? 'upload_failed' };
   }
-  const v14 = await hasChatV14();
   const { data, error: insertError } = await supabase
     .from('channel_messages')
     .insert({
@@ -282,11 +327,7 @@ export async function sendChannelFileMessage(
       // 24 aug: durata videoclipurilor (secunde) — null la fișierele obișnuite.
       file_duration: file.durationS ?? null,
     } as never)
-    .select(
-      '*, sender:profiles!sender_id(full_name,role,avatar_path,deleted_at)' +
-        (v14 ? replyEmbed() : '') +
-        CHANNEL_ATTACH_EMBEDS
-    )
+    .select(await channelMessageSelect())
     .single();
   return { message: (data as unknown as ChannelMessageWithSender) ?? null, error: insertError?.message ?? null };
 }

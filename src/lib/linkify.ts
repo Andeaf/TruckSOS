@@ -19,7 +19,15 @@
 export type LinkToken =
   | { type: 'text'; value: string }
   | { type: 'url'; value: string; href: string }
-  | { type: 'phone'; value: string; number: string };
+  | { type: 'phone'; value: string; number: string }
+  /** Menționare „@Nume" (10 sept): apăsabilă → profilul persoanei. */
+  | { type: 'mention'; value: string; userId: string };
+
+/** Menționarea așa cum e stocată pe mesaj: id + numele exact inserat după „@". */
+export interface MentionRef {
+  id: string;
+  name: string;
+}
 
 // TLD-uri pentru domeniile scrise FĂRĂ „http(s)://" sau „www." („trucksos.net/p/…").
 // Lista e intenționat scurtă (țările din jur + generice uzuale): orice „a.b" cu un
@@ -115,10 +123,9 @@ function phoneTokens(text: string, out: LinkToken[]): void {
   if (cursor < text.length) out.push({ type: 'text', value: text.slice(cursor) });
 }
 
-/** Sparge textul în bucăți: text simplu, linkuri și telefoane, în ordinea din mesaj. */
-export function tokenize(text: string): LinkToken[] {
-  const out: LinkToken[] = [];
-  if (!text) return out;
+/** Linkuri + telefoane dintr-o bucată de text simplu (fără menționări). */
+function linkTokens(text: string, out: LinkToken[]): void {
+  if (!text) return;
   let cursor = 0;
   URL_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
@@ -139,5 +146,64 @@ export function tokenize(text: string): LinkToken[] {
     URL_RE.lastIndex = end;
   }
   if (cursor < text.length) phoneTokens(text.slice(cursor), out);
+}
+
+type MentionSpan = { start: number; end: number; userId: string };
+
+/**
+ * Pozițiile menționărilor din text: „@" + numele stocat, la început sau după
+ * spațiu și NEurmat de literă/cifră („@Ion" nu se aprinde în „@Ionel"). Căutare
+ * fără diferență de majuscule (numele poate fi retastat) — dacă lowercase-ul
+ * schimbă lungimea (cazuri Unicode rare), cădem pe potrivirea exactă.
+ */
+function mentionSpans(text: string, mentions: MentionRef[]): MentionSpan[] {
+  const lower = text.toLowerCase();
+  const caseless = lower.length === text.length;
+  const hay = caseless ? lower : text;
+  const spans: MentionSpan[] = [];
+  for (const m of mentions) {
+    const name = (m.name ?? '').trim();
+    if (!name || !m.id) continue;
+    const needleRaw = '@' + name;
+    const needle = caseless ? needleRaw.toLowerCase() : needleRaw;
+    let from = 0;
+    for (;;) {
+      const start = hay.indexOf(needle, from);
+      if (start < 0) break;
+      const end = start + needle.length;
+      from = end;
+      if (start > 0 && !/\s/.test(text[start - 1])) continue;
+      if (isAlnum(text[end])) continue;
+      spans.push({ start, end, userId: m.id });
+    }
+  }
+  // Sortate; la același început câștigă cea mai lungă; suprapunerile se aruncă.
+  spans.sort((a, b) => a.start - b.start || b.end - a.end);
+  const kept: MentionSpan[] = [];
+  let last = -1;
+  for (const s of spans) {
+    if (s.start < last) continue;
+    kept.push(s);
+    last = s.end;
+  }
+  return kept;
+}
+
+/**
+ * Sparge textul în bucăți: text simplu, linkuri, telefoane și menționări, în
+ * ordinea din mesaj. Menționările se decupează ÎNTÂI (numele e cunoscut exact),
+ * linkurile/telefoanele doar în textul rămas între ele.
+ */
+export function tokenize(text: string, mentions?: MentionRef[] | null): LinkToken[] {
+  const out: LinkToken[] = [];
+  if (!text) return out;
+  const spans = mentions && mentions.length > 0 ? mentionSpans(text, mentions) : [];
+  let cursor = 0;
+  for (const s of spans) {
+    if (s.start > cursor) linkTokens(text.slice(cursor, s.start), out);
+    out.push({ type: 'mention', value: text.slice(s.start, s.end), userId: s.userId });
+    cursor = s.end;
+  }
+  if (cursor < text.length) linkTokens(text.slice(cursor), out);
   return out;
 }
