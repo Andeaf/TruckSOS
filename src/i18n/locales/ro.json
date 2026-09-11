@@ -38,7 +38,27 @@
       "messages": "Mesaje",
       "sectionUserMode": "Mod utilizator",
       "enterAsDriver": "Intră ca șofer",
-      "enterAsMechanic": "Intră ca mecanic"
+      "enterAsMechanic": "Intră ca mecanic",
+      "chart": {
+        "titleUsers": "Utilizatori noi",
+        "titleAnnouncements": "Anunțuri postate",
+        "period_30d": "30 zile",
+        "period_12w": "12 săptămâni",
+        "period_12m": "12 luni",
+        "legendDrivers": "Șoferi",
+        "legendMechanics": "Mecanici",
+        "legendActive": "Active",
+        "legendResolved": "Rezolvate",
+        "legendCancelled": "Anulate",
+        "totalUsers": "conturi noi în perioada aleasă",
+        "totalAnnouncements": "anunțuri postate în perioada aleasă",
+        "tooltipUsers": "{{date}}: {{total}} conturi · {{drivers}} șoferi · {{mechanics}} mecanici",
+        "tooltipAnnouncements": "{{date}}: {{total}} postate · {{resolved}} rezolvate · {{cancelled}} anulate · {{active}} active",
+        "hint": "Apasă pe o coloană pentru detalii",
+        "empty": "Nimic în perioada aleasă",
+        "loadError": "Datele nu s-au putut încărca",
+        "close": "Închide"
+      }
     },
     "reports": {
       "title": "Rapoarte",

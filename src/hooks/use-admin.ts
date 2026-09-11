@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { ReportReason, ReportStatus } from '@/types/database';
+import type { AnnouncementStatus, ReportReason, ReportStatus } from '@/types/database';
 
 /**
  * Stratul de date admin (Faza 16). Toate trec prin RPC-uri SECURITY DEFINER care încep cu
@@ -250,4 +250,60 @@ export function adminDeleteReview(id: string) {
 
 export function fetchChannelMessages() {
   return rpcData<AdminChannelMessage[]>('admin_list_channel_messages', {}, []);
+}
+
+// ── Serii pentru graficele din dashboard (11 sept 2026) ─────────────────────
+// Citire directă din tabele (nu RPC): RLS-ul de admin permite SELECT pe toate
+// anunțurile (politica announcements_select_admin), iar profilurile sunt publice.
+// PostgREST plafonează un răspuns la 1000 de rânduri → paginare cu range().
+export interface ProfileSeriesRow {
+  created_at: string;
+  role: 'driver' | 'mechanic';
+}
+
+export interface AnnouncementSeriesRow {
+  created_at: string;
+  status: AnnouncementStatus;
+}
+
+const SERIES_PAGE = 1000;
+
+async function fetchPaged<T>(
+  page: (from: number, to: number) => PromiseLike<{ data: unknown; error: { message: string } | null }>
+): Promise<{ data: T[]; error: string | null }> {
+  const out: T[] = [];
+  for (let from = 0; ; from += SERIES_PAGE) {
+    const { data, error } = await page(from, from + SERIES_PAGE - 1);
+    if (error) return { data: out, error: error.message };
+    const rows = (data ?? []) as T[];
+    out.push(...rows);
+    if (rows.length < SERIES_PAGE) break;
+  }
+  return { data: out, error: null };
+}
+
+/** Conturi cu profil (nu șterse), șoferi + mecanici, create de la `since` încoace. */
+export function fetchUsersSeries(since: string) {
+  return fetchPaged<ProfileSeriesRow>((from, to) =>
+    supabase
+      .from('profiles')
+      .select('created_at, role')
+      .is('deleted_at', null)
+      .in('role', ['driver', 'mechanic'])
+      .gte('created_at', since)
+      .order('created_at', { ascending: true })
+      .range(from, to)
+  );
+}
+
+/** Anunțuri postate de la `since` încoace, cu starea curentă. */
+export function fetchAnnouncementsSeries(since: string) {
+  return fetchPaged<AnnouncementSeriesRow>((from, to) =>
+    supabase
+      .from('announcements')
+      .select('created_at, status')
+      .gte('created_at', since)
+      .order('created_at', { ascending: true })
+      .range(from, to)
+  );
 }

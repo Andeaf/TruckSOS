@@ -14,6 +14,7 @@ import { useSettings, type AdminViewAs } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { useWideLayout } from '@/components/web-sidebar';
 import { fetchDashboardStats, type DashboardStats } from '@/hooks/use-admin';
+import { StatsChartModal, type StatsChartKind } from '@/components/admin/stats-chart-modal';
 
 /** Roșul/ambra din design-ul 10b — folosite doar ca accente pe valori. */
 const DANGER = '#D64545';
@@ -26,6 +27,9 @@ export default function AdminDashboard() {
   const { signOut } = useAuth();
   const { setAdminViewAs } = useSettings();
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  // Graficele (11 sept): tap pe orice card de utilizatori/anunțuri deschide modalul.
+  const [chart, setChart] = useState<StatsChartKind | null>(null);
+  const chartModal = <StatsChartModal kind={chart} onClose={() => setChart(null)} />;
   // Design 10b: pe web lat, statisticile devin carduri pe grilă; pe telefon
   // rămâne lista pe secțiuni. Logout-ul e în sidebar, deci fără ScreenHeader.
   const wide = useWideLayout();
@@ -58,12 +62,12 @@ export default function AdminDashboard() {
               {t('admin.dashboard.sectionUsers')}
             </ThemedText>
             <View style={w.grid}>
-              <MiniStat label={t('admin.dashboard.usersTotal')} value={stats?.users_total} />
-              <MiniStat label={t('admin.dashboard.drivers')} value={stats?.users_drivers} />
-              <MiniStat label={t('admin.dashboard.mechanics')} value={stats?.users_mechanics} />
-              <MiniStat label={t('admin.dashboard.banned')} value={stats?.users_banned} color={DANGER} />
-              <MiniStat label={t('admin.dashboard.new7d')} value={stats?.users_new_7d} color={theme.price} />
-              <MiniStat label={t('admin.dashboard.new30d')} value={stats?.users_new_30d} color={theme.price} />
+              <MiniStat label={t('admin.dashboard.usersTotal')} value={stats?.users_total} onPress={() => setChart('users')} />
+              <MiniStat label={t('admin.dashboard.drivers')} value={stats?.users_drivers} onPress={() => setChart('users')} />
+              <MiniStat label={t('admin.dashboard.mechanics')} value={stats?.users_mechanics} onPress={() => setChart('users')} />
+              <MiniStat label={t('admin.dashboard.banned')} value={stats?.users_banned} color={DANGER} onPress={() => setChart('users')} />
+              <MiniStat label={t('admin.dashboard.new7d')} value={stats?.users_new_7d} color={theme.price} onPress={() => setChart('users')} />
+              <MiniStat label={t('admin.dashboard.new30d')} value={stats?.users_new_30d} color={theme.price} onPress={() => setChart('users')} />
             </View>
           </View>
 
@@ -77,6 +81,7 @@ export default function AdminDashboard() {
                 tileBg={theme.brandSoft}
                 tileColor={theme.brand}
                 label={t('admin.dashboard.annOpen')}
+                onPress={() => setChart('announcements')}
                 value={stats?.ann_open}
               />
               <IconStat
@@ -84,6 +89,7 @@ export default function AdminDashboard() {
                 tileBg={theme.brandSoft}
                 tileColor={theme.brand}
                 label={t('admin.dashboard.annAccepted')}
+                onPress={() => setChart('announcements')}
                 value={stats?.ann_accepted}
               />
               <IconStat
@@ -91,6 +97,7 @@ export default function AdminDashboard() {
                 tileBg={theme.successBg}
                 tileColor={theme.successText}
                 label={t('admin.dashboard.annResolved')}
+                onPress={() => setChart('announcements')}
                 value={stats?.ann_resolved}
               />
               <IconStat
@@ -98,6 +105,7 @@ export default function AdminDashboard() {
                 tileBg="rgba(214,69,69,0.12)"
                 tileColor={DANGER}
                 label={t('admin.dashboard.annCancelled')}
+                onPress={() => setChart('announcements')}
                 value={stats?.ann_cancelled}
               />
             </View>
@@ -154,6 +162,7 @@ export default function AdminDashboard() {
             </View>
           </View>
         </ScrollView>
+        {chartModal}
       </ThemedView>
     );
   }
@@ -170,19 +179,19 @@ export default function AdminDashboard() {
       />
       <ScrollView contentContainerStyle={styles.scroll}>
         <Section title={t('admin.dashboard.sectionUsers')}>
-          <Stat label={t('admin.dashboard.usersTotal')} value={stats?.users_total} />
-          <Stat label={t('admin.dashboard.drivers')} value={stats?.users_drivers} />
-          <Stat label={t('admin.dashboard.mechanics')} value={stats?.users_mechanics} />
-          <Stat label={t('admin.dashboard.banned')} value={stats?.users_banned} />
-          <Stat label={t('admin.dashboard.new7d')} value={stats?.users_new_7d} />
-          <Stat label={t('admin.dashboard.new30d')} value={stats?.users_new_30d} />
+          <Stat label={t('admin.dashboard.usersTotal')} value={stats?.users_total} onPress={() => setChart('users')} />
+          <Stat label={t('admin.dashboard.drivers')} value={stats?.users_drivers} onPress={() => setChart('users')} />
+          <Stat label={t('admin.dashboard.mechanics')} value={stats?.users_mechanics} onPress={() => setChart('users')} />
+          <Stat label={t('admin.dashboard.banned')} value={stats?.users_banned} onPress={() => setChart('users')} />
+          <Stat label={t('admin.dashboard.new7d')} value={stats?.users_new_7d} onPress={() => setChart('users')} />
+          <Stat label={t('admin.dashboard.new30d')} value={stats?.users_new_30d} onPress={() => setChart('users')} />
         </Section>
 
         <Section title={t('admin.dashboard.sectionAnnouncements')}>
-          <Stat label={t('admin.dashboard.annOpen')} value={stats?.ann_open} />
-          <Stat label={t('admin.dashboard.annAccepted')} value={stats?.ann_accepted} />
-          <Stat label={t('admin.dashboard.annResolved')} value={stats?.ann_resolved} />
-          <Stat label={t('admin.dashboard.annCancelled')} value={stats?.ann_cancelled} />
+          <Stat label={t('admin.dashboard.annOpen')} value={stats?.ann_open} onPress={() => setChart('announcements')} />
+          <Stat label={t('admin.dashboard.annAccepted')} value={stats?.ann_accepted} onPress={() => setChart('announcements')} />
+          <Stat label={t('admin.dashboard.annResolved')} value={stats?.ann_resolved} onPress={() => setChart('announcements')} />
+          <Stat label={t('admin.dashboard.annCancelled')} value={stats?.ann_cancelled} onPress={() => setChart('announcements')} />
         </Section>
 
         <Section title={t('admin.dashboard.sectionActivity')}>
@@ -207,6 +216,7 @@ export default function AdminDashboard() {
           />
         </View>
       </ScrollView>
+      {chartModal}
     </ThemedView>
   );
 }
@@ -223,28 +233,68 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Stat({ label, value, highlight }: { label: string; value?: number; highlight?: boolean }) {
+function Stat({
+  label,
+  value,
+  highlight,
+  onPress,
+}: {
+  label: string;
+  value?: number;
+  highlight?: boolean;
+  onPress?: () => void;
+}) {
   const theme = useTheme();
   return (
-    <View style={[styles.row, { borderColor: theme.background }]}>
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      style={({ pressed }) => [
+        styles.row,
+        { borderColor: theme.background },
+        pressed && onPress ? styles.pressed : null,
+      ]}>
       <ThemedText>{label}</ThemedText>
-      <ThemedText style={[styles.value, highlight && value ? { color: '#ef4444' } : null]}>
-        {value ?? '—'}
-      </ThemedText>
-    </View>
+      <View style={styles.valueWrap}>
+        <ThemedText style={[styles.value, highlight && value ? { color: '#ef4444' } : null]}>
+          {value ?? '—'}
+        </ThemedText>
+        {onPress ? <Feather name="bar-chart-2" size={16} color={theme.textTertiary} /> : null}
+      </View>
+    </Pressable>
   );
 }
 
 /** Card mic de statistică (grila „Utilizatori" din 10b): valoare mare + etichetă. */
-function MiniStat({ label, value, color }: { label: string; value?: number; color?: string }) {
+function MiniStat({
+  label,
+  value,
+  color,
+  onPress,
+}: {
+  label: string;
+  value?: number;
+  color?: string;
+  onPress?: () => void;
+}) {
   const theme = useTheme();
   return (
-    <View style={[w.card, w.miniCard, { backgroundColor: theme.backgroundElement }]}>
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      style={({ pressed }) => [
+        w.card,
+        w.miniCard,
+        { backgroundColor: theme.backgroundElement },
+        pressed && onPress ? styles.pressed : null,
+      ]}>
       <ThemedText style={[w.miniValue, color ? { color } : null]}>{value ?? '—'}</ThemedText>
       <ThemedText themeColor="textTertiary" style={w.cardLabel}>
         {label}
       </ThemedText>
-    </View>
+    </Pressable>
   );
 }
 
@@ -255,16 +305,27 @@ function IconStat({
   tileColor,
   label,
   value,
+  onPress,
 }: {
   icon: keyof typeof Feather.glyphMap;
   tileBg: string;
   tileColor: string;
   label: string;
   value?: number;
+  onPress?: () => void;
 }) {
   const theme = useTheme();
   return (
-    <View style={[w.card, w.iconCard, { backgroundColor: theme.backgroundElement }]}>
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      style={({ pressed }) => [
+        w.card,
+        w.iconCard,
+        { backgroundColor: theme.backgroundElement },
+        pressed && onPress ? styles.pressed : null,
+      ]}>
       <View style={[w.iconTile, { backgroundColor: tileBg }]}>
         <Feather name={icon} size={19} color={tileColor} />
       </View>
@@ -274,7 +335,7 @@ function IconStat({
           {label}
         </ThemedText>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -293,6 +354,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   value: { fontWeight: '700', fontSize: 16 },
+  valueWrap: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  pressed: { opacity: 0.8 },
 });
 
 /** Stilurile variantei late (design 10b). */
