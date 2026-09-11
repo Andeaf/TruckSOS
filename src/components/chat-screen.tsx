@@ -14,6 +14,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import type { LayoutChangeEvent } from 'react-native';
 import { Image } from 'expo-image';
 import * as DocumentPicker from 'expo-document-picker';
 import { File, Paths } from 'expo-file-system';
@@ -1348,42 +1349,54 @@ export function ChatScreen<M extends ChatMessageBase>({
   const [videoUrlOpen, setVideoUrlOpen] = useState<string | null>(null);
   const listRef = useRef<FlatList<M>>(null);
 
-  // Creșterea compozitorului (8 aug), per platformă:
+  // Creșterea compozitorului (8 aug; iOS refăcut 11 sept), per platformă:
   //  • Android — nimic manual: inputul multiline crește nativ între minHeight și
   //    maxHeight; o înălțime forțată din state doar l-ar face să „sară".
-  //  • iOS — onContentSizeChange raportează DOAR textul (independent de cutie),
-  //    deci și micșorarea; adăugăm noi padding-ul.
+  //    onContentSizeChange (de încredere pe Android) decide DOAR forma.
+  //  • iOS — ACELAȘI mecanism nativ (min/max). Până la 11 sept înălțimea venea
+  //    din state, setată din onContentSizeChange — pe arhitectura nouă (RN 0.81,
+  //    implicită în SDK 54) iOS emite evenimentul DOAR când se schimbă cadrul
+  //    view-ului (RCTTextInputComponentView.updateLayoutMetrics), nu la tastare;
+  //    cu înălțimea fixă cadrul nu se schimba niciodată → caseta rămânea pe un
+  //    rând (reclamație 11 sept: „apar doar primele 4 cuvinte"; RN #52854,
+  //    gifted-chat #2552 — același simptom, aceeași soluție). Forma și derularea
+  //    se iau din onLayout: înălțimea AȘEZATĂ, emisă de shadow tree la orice
+  //    schimbare de layout — singurul semnal de încredere pe Fabric.
   //  • web — react-native-web raportează scrollHeight, care la înălțime FIXĂ nu
   //    coboară niciodată sub ea → caseta nu s-ar mai strânge la ștergerea
   //    textului (bug prins la test, 8 aug). Măsurăm noi, pe efect de text, cu
   //    trucul clasic: înălțime 0 → citește scrollHeight (include padding-ul) →
   //    repune imediat valoarea plafonată, ca să nu existe niciun cadru gol.
-  // iOS: singura platformă cu înălțimea în state (onContentSizeChange e rar și
-  // raportează valori discrete). Pe WEB nu trece NIMIC prin state: prima variantă
-  // făcea setState la fiecare tastă (măsurare în efect de text) și, la tastare
-  // foarte rapidă, cascada render+efect a lovit „Maximum update depth" (8 aug).
-  // Acum înălțimea se scrie DOAR imperativ pe nodul DOM — React nici nu are
-  // `height` în stilul de web, deci n-o suprascrie la re-render.
+  // Pe WEB nu trece NIMIC prin state: prima variantă făcea setState la fiecare
+  // tastă (măsurare în efect de text) și, la tastare foarte rapidă, cascada
+  // render+efect a lovit „Maximum update depth" (8 aug). Acum înălțimea se scrie
+  // DOAR imperativ pe nodul DOM — React nici nu are `height` în stilul de web,
+  // deci n-o suprascrie la re-render.
+  // iOS: înălțimea AȘEZATĂ a zonei de text (din onLayout, între INNER_BASE și
+  // INNER_MAX) — decide doar derularea; NU se mai scrie în stil.
   const [composerHeight, setComposerHeight] = useState(COMPOSER_INNER_BASE);
-  // Forma pastilă → dreptunghi. DOAR pe nativ trece prin state (onContentSizeChange
-  // e rar — fix la schimbarea numărului de rânduri). Pe web NU: s-a dovedit (de
+  // Forma pastilă → dreptunghi. DOAR pe nativ trece prin state (evenimentele vin
+  // rar — fix la schimbarea numărului de rânduri). Pe web NU: s-a dovedit (de
   // două ori, 8 aug) că ORICE setState din efectul de text — chiar și cu aceeași
   // valoare — dărâmă limita de actualizări React la tastare foarte rapidă, pentru
   // că scurtcircuitul „valoare identică" nu se aplică atâta timp cât există deja
   // actualizări în așteptare de la setText. Pe web forma se scrie imperativ.
   const [composerTall, setComposerTall] = useState(false);
   const composerRef = useRef<TextInput>(null);
+  // Android: conținutul (contentSize) — înălțimea lui e nativă, min/max.
   const handleComposerSize = useCallback(
     (e: { nativeEvent: { contentSize: { height: number } } }) => {
-      const wanted = Math.ceil(e.nativeEvent.contentSize.height);
-      // Android intră aici DOAR pentru formă (înălțimea lui e nativă, min/max).
-      if (Platform.OS === 'ios') {
-        setComposerHeight(Math.min(COMPOSER_INNER_MAX, Math.max(COMPOSER_INNER_BASE, wanted)));
-      }
-      setComposerTall(wanted > COMPOSER_TALL_THRESHOLD);
+      setComposerTall(Math.ceil(e.nativeEvent.contentSize.height) > COMPOSER_TALL_THRESHOLD);
     },
     []
   );
+  // iOS: cadrul așezat al TextInput-ului (fără padding — acela e pe înveliș),
+  // deci direct comparabil cu constantele COMPOSER_INNER_*.
+  const handleComposerLayout = useCallback((e: LayoutChangeEvent) => {
+    const laid = Math.round(e.nativeEvent.layout.height);
+    setComposerHeight(laid);
+    setComposerTall(laid > COMPOSER_TALL_THRESHOLD);
+  }, []);
   // Overlay-urile compozitorului pe web (stil 9c, 8 aug): fade sus/jos cât timp
   // mai e text în afara vederii + indicator plutitor care apare doar la derulare.
   // Toate IMPERATIVE (lecția din Fix 3) — React doar le randează cu opacity 0.
@@ -2487,12 +2500,12 @@ export function ChatScreen<M extends ChatMessageBase>({
               style={[
                 styles.input,
                 { color: theme.text },
-                Platform.OS === 'android'
-                  ? { minHeight: COMPOSER_INNER_BASE, maxHeight: COMPOSER_INNER_MAX }
-                  : Platform.OS === 'ios'
-                    ? { height: composerHeight }
-                    : // Web: înălțimea e gestionată imperativ (efectul de mai sus).
-                      null,
+                // Nativ (Android + iOS): creștere nativă între min și max, fără
+                // înălțime din state — vezi COMPOSER_* și nota de la composerHeight.
+                // Web: înălțimea e gestionată imperativ (efectul de mai sus).
+                Platform.OS === 'web'
+                  ? null
+                  : { minHeight: COMPOSER_INNER_BASE, maxHeight: COMPOSER_INNER_MAX },
               ]}
               value={text}
               onChangeText={handleChangeText}
@@ -2500,11 +2513,18 @@ export function ChatScreen<M extends ChatMessageBase>({
               // `selection` e setat DOAR o clipă după inserarea unei menționări.
               onSelectionChange={handleSelectionChange}
               selection={pendingSelection ?? undefined}
-              onContentSizeChange={Platform.OS === 'web' ? undefined : handleComposerSize}
-              // Sub plafon derularea stă oprită pe iOS (altfel rămâne un bounce
-              // fantomă); la plafon se aprinde și preia textul care nu mai încape.
+              // Android: onContentSizeChange decide forma. iOS: onLayout (înălțimea
+              // așezată) decide forma și derularea — pe Fabric, iOS emite
+              // onContentSizeChange doar la schimbarea cadrului, nu la tastare.
+              onContentSizeChange={Platform.OS === 'android' ? handleComposerSize : undefined}
+              onLayout={Platform.OS === 'ios' ? handleComposerLayout : undefined}
+              // iOS: derularea pornește de la al 4-lea rând (pragul formei), adică
+              // ÎNAINTE ca textul să poată depăși plafonul — cu derularea oprită,
+              // UITextView nu aduce cursorul în vedere, iar rândul 5 ar rămâne
+              // ascuns. Sub prag stă oprită: altfel UITextView „saltă" (bounce
+              // fantomă) și când textul încape.
               scrollEnabled={
-                Platform.OS === 'ios' ? composerHeight >= COMPOSER_INNER_MAX : undefined
+                Platform.OS === 'ios' ? composerHeight > COMPOSER_TALL_THRESHOLD : undefined
               }
               placeholder={t('chat.inputPlaceholder')}
               placeholderTextColor={theme.textTertiary}
@@ -3055,8 +3075,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: COMPOSER_LINE_HEIGHT,
     textAlignVertical: 'top',
-    // Înălțimea vine per platformă (inline): Android min/max nativ, iOS/web
-    // explicit din onContentSizeChange — vezi COMPOSER_* și handleComposerSize.
+    // Înălțimea vine per platformă (inline): Android + iOS min/max nativ, web
+    // imperativ din efectul de text — vezi COMPOSER_* și handleComposerLayout.
   },
   sendButton: {
     width: 44,
