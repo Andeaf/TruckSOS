@@ -16,7 +16,8 @@
       "error": "Eroare",
       "cancel": "Anulează",
       "delete": "Șterge",
-      "close": "Închide"
+      "close": "Închide",
+      "refresh": "Reîncarcă"
     },
     "dashboard": {
       "title": "Panou de administrare",
@@ -138,7 +139,8 @@
       "deleteAnnouncementConfirm": "Anunțul și pozele lui vor fi șterse definitiv. Continui?",
       "deleteListingConfirm": "Anunțul de vânzare și pozele lui vor fi șterse definitiv. Continui?",
       "deleteReviewConfirm": "Recenzia va fi ștearsă și media recalculată. Continui?",
-      "deleteMessageConfirm": "Mesajul devine „șters de moderator”. Continui?"
+      "deleteMessageConfirm": "Mesajul devine „șters de moderator”. Continui?",
+      "views": "Vizualizări: {{n}}"
     }
   },
   "auth": {
@@ -167,6 +169,13 @@
       "registerLink": "Sign up",
       "errorEmpty": "Please enter your email and password.",
       "forgotPassword": "Forgot your password?"
+    },
+    "social": {
+      "or": "or",
+      "google": "Continue with Google",
+      "errorGeneric": "Sign-in failed. Please try again.",
+      "errorPlayServices": "Google Play services are not available on this phone.",
+      "errorNoToken": "We did not receive sign-in data from the provider. Please try again."
     },
     "hero": {
       "headline": "Help on the road, in minutes.",
@@ -247,7 +256,8 @@
     "same_password": "The new password must be different from the old one.",
     "weak_password": "The password is too weak. Choose a longer one.",
     "email_address_invalid": "The email address is not valid.",
-    "validation_failed": "The entered data is not valid."
+    "validation_failed": "The entered data is not valid.",
+    "provider_disabled": "Signing in with this provider is not enabled right now."
   },
   "driver": {
     "tabs": {
@@ -301,6 +311,13 @@
       "hintResolved": "Problem resolved. You can view the conversation history in the Conversations tab.",
       "hintResolvedNoMechanic": "Problem resolved. The announcement was closed without a mechanic chosen in the app.",
       "hintCancelled": "The announcement has been cancelled and is no longer visible to mechanics.",
+      "hintCancelledOwner": "The announcement has been cancelled and is no longer visible to mechanics. If the problem has been solved in the meantime, you can mark it as resolved.",
+      "hintExpiredOwner": "The announcement expired after 30 hours and is no longer visible to mechanics. If the problem has been solved, mark it as resolved; if not, you can repost it for another 30 hours.",
+      "repostButton": "Repost for 30 hours",
+      "repostConfirmTitle": "Repost the announcement?",
+      "repostConfirmMessage": "The announcement returns to the mechanics' feed for another 30 hours and nearby mechanics get a notification, just like for a new announcement. Photos removed at expiry will not come back.",
+      "repostConfirmOk": "Yes, repost",
+      "errorRepost": "Error reposting the announcement.",
       "cancelButton": "Cancel announcement",
       "cancelConfirmTitle": "Cancel announcement?",
       "cancelConfirmMessage": "The announcement will be removed from the mechanics' feed. This action cannot be undone.",
@@ -471,6 +488,7 @@
     "deletedByModerator": "Removed by a moderator",
     "unavailableMessage": "Message unavailable",
     "newMessages": "New messages",
+    "scrollToBottom": "Jump to the latest message",
     "callPeer": "Call",
     "deleteConfirmTitle": "Delete message?",
     "deleteConfirmBody": "The message will be deleted for everyone. This can't be undone.",
@@ -674,7 +692,8 @@
     "timeNow": "just now",
     "timeMinsAgo": "{{count}} min ago",
     "timeHoursAgo": "{{count}}h ago",
-    "timeDaysAgo": "{{count}} days ago",
+    "timeDaysAgo_one": "{{count}} day ago",
+    "timeDaysAgo_other": "{{count}} days ago",
     "defaultUser": "User",
     "deletedUser": "Deleted user",
     "noSession": "No active session",
@@ -870,6 +889,7 @@
     "editProfile": "Edit profile",
     "changePassword": "Change password",
     "changeEmail": "Sign-in email",
+    "signedInWith": "Signed in with {{provider}}",
     "changePasswordScreen": {
       "title": "Change password",
       "currentLabel": "Current password",
@@ -935,6 +955,10 @@
       "passwordPlaceholder": "Password",
       "passwordRequired": "Enter your password to confirm.",
       "passwordWrong": "Incorrect password.",
+      "socialHint": "Your account is linked through {{provider}}, without a password. Confirm the deletion by typing the word below.",
+      "confirmWord": "DELETE",
+      "confirmWordLabel": "Type {{word}} to confirm",
+      "confirmWordRequired": "Type the word exactly as shown.",
       "submit": "Delete permanently",
       "finalTitle": "Are you absolutely sure?",
       "finalBody": "Your account and data will be deleted immediately and cannot be recovered.",
@@ -942,6 +966,12 @@
       "cancel": "Cancel",
       "error": "The account could not be deleted. Please try again."
     }
+  },
+  "updatePrompt": {
+    "title": "New version available",
+    "body": "TruckSOS {{version}} is ready to install. Update to get the latest improvements and fixes.",
+    "later": "Later",
+    "update": "Update"
   },
   "legal": {
     "terms": {

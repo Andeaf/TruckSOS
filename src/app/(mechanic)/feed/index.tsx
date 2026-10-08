@@ -37,6 +37,7 @@ import {
 import { applyRadiusFilter, useRadiusFilter } from '@/hooks/use-radius-filter';
 import { useViewedAnnouncements } from '@/hooks/use-viewed-announcements';
 import { distanceKm } from '@/lib/location';
+import { dismissNotificationsOfType } from '@/lib/push';
 import { matchesSearch } from '@/lib/search';
 
 const VIEW_MODE_KEY = 'mechanic_feed_view_mode';
@@ -156,6 +157,9 @@ export default function MechanicFeedScreen() {
     useCallback(() => {
       refresh();
       refreshMine();
+      // Feed-ul e în față → push-urile „anunț nou în zona ta" (`type: 'feed'`) dispar din
+      // bara de notificări (6 oct; ca pe Market și ca celulele de chat la citire).
+      void dismissNotificationsOfType('feed');
       // La întoarcerea din detaliu, anunțul tocmai deschis nu mai e „Nou".
       refreshViewed();
       // Poziția pentru filtrul de rază — throttle intern, nu interoghează GPS-ul mereu.

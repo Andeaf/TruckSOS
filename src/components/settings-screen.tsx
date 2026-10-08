@@ -15,6 +15,7 @@ import { useBack } from '@/hooks/use-back';
 import { useSettings } from '@/hooks/use-settings';
 import { getCurrentCoords } from '@/lib/location';
 import { registerPushToken } from '@/lib/push';
+import { hasPasswordIdentity, socialProviderLabel } from '@/lib/social-auth';
 import type { LangPref, ThemePref } from '@/lib/preferences';
 
 /**
@@ -105,17 +106,30 @@ export function SettingsScreen({
             label={t('settings.editProfile')}
             onPress={() => router.push(editPath as never)}
           />
-          <ListRow
-            icon="lock-outline"
-            label={t('settings.changePassword')}
-            onPress={() => router.push(changePasswordPath as never)}
-          />
-          <ListRow
-            icon="alternate-email"
-            label={t('settings.changeEmail')}
-            value={session?.user.email ?? undefined}
-            onPress={() => router.push(changeEmailPath as never)}
-          />
+          {hasPasswordIdentity(session?.user) ? (
+            <>
+              <ListRow
+                icon="lock-outline"
+                label={t('settings.changePassword')}
+                onPress={() => router.push(changePasswordPath as never)}
+              />
+              <ListRow
+                icon="alternate-email"
+                label={t('settings.changeEmail')}
+                value={session?.user.email ?? undefined}
+                onPress={() => router.push(changeEmailPath as never)}
+              />
+            </>
+          ) : (
+            // 6 oct: cont Google/Apple, fără parolă — parola și emailul se gestionează la
+            // furnizor; aici doar arătăm cu ce e conectat contul.
+            <ListRow
+              icon="verified-user"
+              label={t('settings.signedInWith', { provider: socialProviderLabel(session?.user) ?? '' })}
+              value={session?.user.email ?? undefined}
+              chevron={false}
+            />
+          )}
         </RowGroup>
 
         <SectionLabel>{t('settings.appearance')}</SectionLabel>

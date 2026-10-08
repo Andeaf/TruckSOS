@@ -1,4 +1,4 @@
-import { useMemo, type ComponentProps } from 'react';
+import { useMemo, type ComponentProps, type ReactNode } from 'react';
 import { StyleSheet, Text, type StyleProp, type TextStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,11 @@ interface LinkifiedTextProps extends Omit<ComponentProps<typeof Text>, 'children
   mentionStyle?: StyleProp<TextStyle>;
   /** Apăsarea lungă pe un link/telefon → același meniu ca pe restul bulei. */
   onLongPress?: () => void;
+  /**
+   * Conținut randat ÎN ACELAȘI `Text`, după mesaj (8 oct): distanțierul invizibil care
+   * rezervă loc orei din colț la bulele cu font mărit — vezi MessageBubble.
+   */
+  trailing?: ReactNode;
 }
 
 /**
@@ -36,6 +41,7 @@ export function LinkifiedText({
   mentions,
   mentionStyle,
   onLongPress,
+  trailing,
   ...rest
 }: LinkifiedTextProps) {
   const { t } = useTranslation();
@@ -48,7 +54,12 @@ export function LinkifiedText({
     router.push({ pathname: '/p/[id]', params: { id: userId } } as never);
 
   if (!tokens.some((tok) => tok.type !== 'text')) {
-    return <Text {...rest}>{text}</Text>;
+    return (
+      <Text {...rest}>
+        {text}
+        {trailing}
+      </Text>
+    );
   }
 
   return (
@@ -82,6 +93,7 @@ export function LinkifiedText({
           </Text>
         ),
       )}
+      {trailing}
     </Text>
   );
 }

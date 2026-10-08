@@ -16,7 +16,8 @@
       "error": "Eroare",
       "cancel": "Anulează",
       "delete": "Șterge",
-      "close": "Închide"
+      "close": "Închide",
+      "refresh": "Reîncarcă"
     },
     "dashboard": {
       "title": "Panou de administrare",
@@ -138,7 +139,8 @@
       "deleteAnnouncementConfirm": "Anunțul și pozele lui vor fi șterse definitiv. Continui?",
       "deleteListingConfirm": "Anunțul de vânzare și pozele lui vor fi șterse definitiv. Continui?",
       "deleteReviewConfirm": "Recenzia va fi ștearsă și media recalculată. Continui?",
-      "deleteMessageConfirm": "Mesajul devine „șters de moderator”. Continui?"
+      "deleteMessageConfirm": "Mesajul devine „șters de moderator”. Continui?",
+      "views": "Vizualizări: {{n}}"
     }
   },
   "auth": {
@@ -167,6 +169,13 @@
       "registerLink": "Înregistrează-te",
       "errorEmpty": "Completează email-ul și parola.",
       "forgotPassword": "Ai uitat parola?"
+    },
+    "social": {
+      "or": "sau",
+      "google": "Continuă cu Google",
+      "errorGeneric": "Conectarea nu a reușit. Încearcă din nou.",
+      "errorPlayServices": "Serviciile Google Play nu sunt disponibile pe acest telefon.",
+      "errorNoToken": "Nu am primit datele de conectare de la furnizor. Încearcă din nou."
     },
     "hero": {
       "headline": "Ajutor pe traseu, în câteva minute.",
@@ -247,7 +256,8 @@
     "same_password": "Parola nouă trebuie să difere de cea veche.",
     "weak_password": "Parola e prea slabă. Alege una mai lungă.",
     "email_address_invalid": "Adresa de email nu e validă.",
-    "validation_failed": "Datele introduse nu sunt valide."
+    "validation_failed": "Datele introduse nu sunt valide.",
+    "provider_disabled": "Conectarea cu acest furnizor nu este activată momentan."
   },
   "driver": {
     "tabs": {
@@ -301,6 +311,13 @@
       "hintResolved": "Problemă rezolvată. Poți vedea istoricul conversației în tab-ul Conversații.",
       "hintResolvedNoMechanic": "Problemă rezolvată. Anunțul a fost închis fără un mecanic ales din aplicație.",
       "hintCancelled": "Anunțul a fost anulat și nu mai este vizibil mecanicilor.",
+      "hintCancelledOwner": "Anunțul a fost anulat și nu mai este vizibil mecanicilor. Dacă problema s-a rezolvat între timp, îl poți marca drept rezolvat.",
+      "hintExpiredOwner": "Anunțul a expirat după 30 de ore și nu mai este vizibil mecanicilor. Dacă problema s-a rezolvat, marchează-l ca rezolvat; dacă nu, îl poți reposta pentru încă 30 de ore.",
+      "repostButton": "Repostează pentru 30 de ore",
+      "repostConfirmTitle": "Repostezi anunțul?",
+      "repostConfirmMessage": "Anunțul revine în feed-ul mecanicilor pentru încă 30 de ore, iar mecanicii din zonă primesc o notificare, ca la un anunț nou. Pozele șterse la expirare nu revin.",
+      "repostConfirmOk": "Da, repostează",
+      "errorRepost": "Eroare la repostarea anunțului.",
       "cancelButton": "Anulează anunțul",
       "cancelConfirmTitle": "Anulezi anunțul?",
       "cancelConfirmMessage": "Anunțul va dispărea din feed-ul mecanicilor. Acțiunea nu poate fi anulată.",
@@ -473,6 +490,7 @@
     "deletedByModerator": "Șters de moderator",
     "unavailableMessage": "Mesaj indisponibil",
     "newMessages": "Mesaje noi",
+    "scrollToBottom": "Mergi la ultimul mesaj",
     "callPeer": "Sună",
     "deleteConfirmTitle": "Ștergi mesajul?",
     "deleteConfirmBody": "Mesajul va fi șters pentru toți. Această acțiune nu poate fi anulată.",
@@ -590,7 +608,9 @@
     "timeNow": "acum",
     "timeMinsAgo": "{{count}} min. în urmă",
     "timeHoursAgo": "{{count}}h în urmă",
-    "timeDaysAgo": "{{count}} zile în urmă",
+    "timeDaysAgo_one": "{{count}} zi în urmă",
+    "timeDaysAgo_few": "{{count}} zile în urmă",
+    "timeDaysAgo_other": "{{count}} de zile în urmă",
     "defaultUser": "Utilizator",
     "deletedUser": "Utilizator șters",
     "noSession": "Sesiune inexistentă",
@@ -872,6 +892,7 @@
     "editProfile": "Editare profil",
     "changePassword": "Schimbă parola",
     "changeEmail": "Email autentificare",
+    "signedInWith": "Conectat cu {{provider}}",
     "changePasswordScreen": {
       "title": "Schimbă parola",
       "currentLabel": "Parola curentă",
@@ -937,6 +958,10 @@
       "passwordPlaceholder": "Parola",
       "passwordRequired": "Introdu parola pentru a confirma.",
       "passwordWrong": "Parolă incorectă.",
+      "socialHint": "Contul tău este conectat prin {{provider}}, fără parolă. Confirmă ștergerea scriind cuvântul de mai jos.",
+      "confirmWord": "ȘTERGE",
+      "confirmWordLabel": "Scrie {{word}} pentru a confirma",
+      "confirmWordRequired": "Scrie cuvântul exact așa cum apare.",
       "submit": "Șterge definitiv",
       "finalTitle": "Ești absolut sigur?",
       "finalBody": "Contul și datele tale vor fi șterse imediat și nu pot fi recuperate.",
@@ -944,6 +969,12 @@
       "cancel": "Anulează",
       "error": "Contul nu a putut fi șters. Încearcă din nou."
     }
+  },
+  "updatePrompt": {
+    "title": "Versiune nouă disponibilă",
+    "body": "TruckSOS {{version}} e gata de instalare. Actualizează ca să ai ultimele îmbunătățiri și corecturi.",
+    "later": "Mai târziu",
+    "update": "Actualizează"
   },
   "legal": {
     "terms": {

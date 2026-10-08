@@ -36,6 +36,7 @@ import {
   useMarketListings,
   type MarketSort,
 } from '@/hooks/use-market';
+import { dismissNotificationsOfType } from '@/lib/push';
 import type { MarketCategory, Role } from '@/types/database';
 
 /**
@@ -93,9 +94,12 @@ export function MarketFeedScreen({ role }: MarketFeedScreenProps) {
     });
 
   // Datele pot fi editate pe ecranele push-uite (detaliu/editare) → refresh la focus.
+  // Tot la focus (6 oct): push-urile „anunț nou pe Market" dispar din bara de notificări —
+  // userul are lista în față, deci n-au ce să mai anunțe (ca celulele de chat la citire).
   useFocusEffect(
     useCallback(() => {
       refresh();
+      void dismissNotificationsOfType('listing');
     }, [refresh]),
   );
 

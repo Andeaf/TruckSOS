@@ -34,6 +34,9 @@ import {
   resolveOpenAnnouncement,
   cancelAnnouncement,
   deleteAnnouncement,
+  repostAnnouncement,
+  canRepostAnnouncement,
+  recordAnnouncementView,
   type AnnouncementWithMechanic,
   type ApplicationWithMechanic,
 } from '@/hooks/use-announcements';
@@ -202,6 +205,7 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
   const [loading, setLoading] = useState(true);
   const [resolving, setResolving] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [reposting, setReposting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   const [applications, setApplications] = useState<ApplicationWithMechanic[]>([]);
@@ -238,6 +242,12 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
 
   useEffect(() => { load(); }, [id]);
 
+  // Vizualizarea pentru admin (24 sept). Ecranul e al proprietarului, dar îl deschid
+  // și alții (ex. șoferul care primește anunțul prin share); pe autor serverul îl sare.
+  useEffect(() => {
+    if (announcement?.id) recordAnnouncementView(announcement.id);
+  }, [announcement?.id]);
+
   useEffect(() => {
     if (announcement?.status === 'open') {
       fetchApplicationsForAnnouncement(id).then(setApplications);
@@ -266,16 +276,39 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
 
   async function handleResolve() {
     setResolving(true);
-    // `open` → RPC-ul din migrarea 20260904 (RLS permite doar accepted → resolved
-    // prin UPDATE direct; RPC-ul respinge și candidaturile pending, atomic).
-    // `accepted` → drumul vechi, neschimbat.
+    // `open` / `cancelled` (expirat, 15 sept) → RPC-ul din migrările 20260904/20260915
+    // (RLS permite doar accepted → resolved prin UPDATE direct; RPC-ul respinge și
+    // candidaturile pending, atomic). `accepted` → drumul vechi, neschimbat.
     const err =
-      announcement?.status === 'open'
+      announcement?.status === 'open' || announcement?.status === 'cancelled'
         ? await resolveOpenAnnouncement(id)
         : await resolveAnnouncement(id);
     if (err) { setError(t('driver.announcements.errorResolve')); setResolving(false); return; }
     await load();
     setResolving(false);
+  }
+
+  // „Repostează pentru 30 de ore" (15 sept) pe un anunț expirat: confirmare (trimite
+  // push mecanicilor, ca un anunț nou), apoi RPC + reîncărcare — ecranul trece pe `open`.
+  function handleRepostPress() {
+    Alert.alert(
+      t('driver.announcements.repostConfirmTitle'),
+      t('driver.announcements.repostConfirmMessage'),
+      [
+        { text: t('driver.announcements.cancelConfirmCancel'), style: 'cancel' },
+        {
+          text: t('driver.announcements.repostConfirmOk'),
+          onPress: async () => {
+            setReposting(true);
+            setError('');
+            const err = await repostAnnouncement(id);
+            if (err) { setError(t('driver.announcements.errorRepost')); setReposting(false); return; }
+            await load();
+            setReposting(false);
+          },
+        },
+      ]
+    );
   }
 
   function handleDeletePress() {
@@ -344,6 +377,8 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
   // poate deschide și anunțurile altora (ex. distribuite în chat) — acolo ecranul
   // e read-only; RLS-ul de UPDATE/DELETE oricum ar fi refuzat tăcut acțiunile.
   const isOwner = announcement.driver_id === session?.user.id;
+  // Expirat (cancelled >30h) → și butonul „Repostează"; anulat de curând → doar „rezolvat".
+  const canRepost = isOwner && canRepostAnnouncement(announcement);
 
   return (
     <ThemedView style={styles.container}>
@@ -381,7 +416,9 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
             <MaterialIcons name="location-on" size={16} color={theme.brand} />
             <ThemedText type="smallBold">{t('driver.announcements.sectionLocation')}</ThemedText>
           </View>
-          <ThemedText>{announcement.location}</ThemedText>
+          {/* 15 sept: textele detaliului sunt selectabile — locația scrisă doar ca text
+              se copiază în Google Maps / Waze (cerere pentru mecanici). */}
+          <ThemedText selectable>{announcement.location}</ThemedText>
           {announcement.latitude != null && announcement.longitude != null ? (
             <>
               <MiniMap latitude={announcement.latitude} longitude={announcement.longitude} />
@@ -441,14 +478,14 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
               <MaterialIcons name="local-shipping" size={16} color={theme.brand} />
               <ThemedText type="smallBold">{t('truck.sectionTitle')}</ThemedText>
             </View>
-            {truckInfo ? <ThemedText>{truckInfo}</ThemedText> : null}
+            {truckInfo ? <ThemedText selectable>{truckInfo}</ThemedText> : null}
             {announcement.plate_number ? (
-              <ThemedText themeColor="textSecondary" type="small">
+              <ThemedText themeColor="textSecondary" type="small" selectable>
                 {t('truck.plateLabel')}: {announcement.plate_number}
               </ThemedText>
             ) : null}
             {announcement.chassis_number ? (
-              <ThemedText themeColor="textSecondary" type="small">
+              <ThemedText themeColor="textSecondary" type="small" selectable>
                 {t('truck.chassisLabel')}: {announcement.chassis_number}
               </ThemedText>
             ) : null}
@@ -460,7 +497,9 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
             <MaterialIcons name="build" size={16} color={theme.brand} />
             <ThemedText type="smallBold">{t('driver.announcements.sectionDescription')}</ThemedText>
           </View>
-          <ThemedText style={styles.descriptionText}>{announcement.description}</ThemedText>
+          <ThemedText style={styles.descriptionText} selectable>
+            {announcement.description}
+          </ThemedText>
         </ThemedView>
 
         {photos.length > 0 ? (
@@ -592,9 +631,39 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
         ) : null}
 
         {announcement.status === 'cancelled' ? (
-          <ThemedText themeColor="textSecondary" style={styles.hint}>
-            {t('driver.announcements.hintCancelled')}
-          </ThemedText>
+          isOwner ? (
+            <>
+              {/* 15 sept 2026: anunțul expirat (30h) sau anulat rămâne acționabil —
+                  ACELEAȘI butoane ca pe `open` (verde = rezolvat), plus „Repostează"
+                  doar pe cel expirat (>30h; garda e și în RPC). */}
+              <ThemedText themeColor="textSecondary" style={styles.hint}>
+                {t(
+                  canRepost
+                    ? 'driver.announcements.hintExpiredOwner'
+                    : 'driver.announcements.hintCancelledOwner'
+                )}
+              </ThemedText>
+              <Button
+                title={t('driver.announcements.resolveButton')}
+                onPress={handleResolve}
+                loading={resolving}
+                disabled={reposting}
+                variant="success"
+              />
+              {canRepost ? (
+                <Button
+                  title={t('driver.announcements.repostButton')}
+                  onPress={handleRepostPress}
+                  loading={reposting}
+                  disabled={resolving}
+                />
+              ) : null}
+            </>
+          ) : (
+            <ThemedText themeColor="textSecondary" style={styles.hint}>
+              {t('driver.announcements.hintCancelled')}
+            </ThemedText>
+          )
         ) : null}
       </ScrollView>
 

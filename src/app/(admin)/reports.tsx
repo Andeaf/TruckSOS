@@ -4,6 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
+import { AdminRefreshButton } from '@/components/admin/refresh-button';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -49,9 +50,7 @@ export default function AdminReports() {
   } | null>(null);
 
   const load = useCallback(
-    (f: ReportStatus | 'all') => {
-      fetchReports(f).then(({ data }) => setReports(data));
-    },
+    (f: ReportStatus | 'all') => fetchReports(f).then(({ data }) => setReports(data)),
     []
   );
 
@@ -60,6 +59,15 @@ export default function AdminReports() {
       load(filter);
     }, [filter, load])
   );
+
+  // Reîncărcare la cerere (15 sept): spinner-ul DOAR la gestul de tragere; butonul
+  // din antet reîncarcă silențios (vezi nota din Conținut).
+  const [pullRefreshing, setPullRefreshing] = useState(false);
+  const onPullRefresh = useCallback(async () => {
+    setPullRefreshing(true);
+    await load(filter);
+    setPullRefreshing(false);
+  }, [load, filter]);
 
   function setStatus(r: AdminReport, status: ReportStatus) {
     updateReportStatus(r.id, status).then((err) => {
@@ -103,9 +111,15 @@ export default function AdminReports() {
   return (
     <ThemedView style={{ flex: 1 }}>
       {wide ? (
-        <ThemedText style={w.pageTitle}>{t('admin.reports.title')}</ThemedText>
+        <View style={w.titleRow}>
+          <ThemedText style={w.pageTitle}>{t('admin.reports.title')}</ThemedText>
+          <AdminRefreshButton onPress={() => load(filter)} />
+        </View>
       ) : (
-        <ScreenHeader title={t('admin.reports.title')} />
+        <ScreenHeader
+          title={t('admin.reports.title')}
+          right={<AdminRefreshButton onPress={() => load(filter)} onHeader />}
+        />
       )}
 
       <View style={[styles.filters, wide && w.filters]}>
@@ -154,6 +168,8 @@ export default function AdminReports() {
       <FlatList
         data={reports}
         keyExtractor={(r) => r.id}
+        refreshing={pullRefreshing}
+        onRefresh={onPullRefresh}
         contentContainerStyle={[styles.list, wide && w.list]}
         ListEmptyComponent={
           wide ? (
@@ -444,16 +460,23 @@ const styles = StyleSheet.create({
 
 /** Stilurile variantei late (design 10e). */
 const w = StyleSheet.create({
-  pageTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    letterSpacing: -0.4,
-    lineHeight: 32,
+  // Titlul + butonul „Reîncarcă" pe același rând (15 sept); layout-ul de pagină
+  // (padding/lățime) s-a mutat de pe text pe rând.
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 28,
     paddingTop: 24,
     maxWidth: 1060,
     width: '100%',
     alignSelf: 'center',
+  },
+  pageTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    letterSpacing: -0.4,
+    lineHeight: 32,
   },
   filters: {
     paddingHorizontal: 28,

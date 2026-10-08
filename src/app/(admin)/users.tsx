@@ -15,6 +15,7 @@ import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
+import { AdminRefreshButton } from '@/components/admin/refresh-button';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScreenHeader } from '@/components/screen-header';
@@ -78,6 +79,21 @@ export default function AdminUsers() {
     };
   }, [query]);
 
+  // Reîncărcare la cerere (15 sept): re-rulează căutarea curentă (lista există doar de
+  // la 2 caractere). Spinner DOAR la gestul de tragere (vezi nota din Conținut).
+  const reload = useCallback(async () => {
+    const q = query.trim();
+    if (q.length < 2) return;
+    const { data } = await searchUsers(q);
+    setResults(data);
+  }, [query]);
+  const [pullRefreshing, setPullRefreshing] = useState(false);
+  const onPullRefresh = useCallback(async () => {
+    setPullRefreshing(true);
+    await reload();
+    setPullRefreshing(false);
+  }, [reload]);
+
   return (
     <ThemedView style={{ flex: 1 }}>
       {wide ? (
@@ -95,10 +111,14 @@ export default function AdminUsers() {
               style={[w.searchInput, { color: theme.text }]}
             />
           </View>
+          <AdminRefreshButton onPress={reload} />
         </View>
       ) : (
         <>
-          <ScreenHeader title={t('admin.users.title')} />
+          <ScreenHeader
+            title={t('admin.users.title')}
+            right={<AdminRefreshButton onPress={reload} onHeader />}
+          />
           <View style={styles.searchRow}>
             <Input
               label={t('admin.users.searchLabel')}
@@ -115,6 +135,8 @@ export default function AdminUsers() {
       <FlatList
         data={results}
         keyExtractor={(u) => u.id}
+        refreshing={pullRefreshing}
+        onRefresh={onPullRefresh}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.list, wide && w.list]}
         ListEmptyComponent={

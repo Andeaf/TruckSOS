@@ -5,6 +5,7 @@ import type { Session } from '@supabase/supabase-js';
 import { translateAuthError } from '@/lib/auth-errors';
 import { supabase } from '@/lib/supabase';
 import { registerPushToken, unregisterPushToken } from '@/lib/push';
+import { signOutSocial } from '@/lib/social-auth';
 import type { Profile } from '@/types/database';
 import i18n from '@/i18n';
 
@@ -21,7 +22,7 @@ interface AuthContextValue {
   signOut: () => Promise<void>;
   createProfile: (
     role: 'driver' | 'mechanic',
-    details: { phone: string; address?: string | null; vat_number?: string | null }
+    details: { phone: string; address?: string | null; vat_number?: string | null; full_name?: string | null }
   ) => Promise<string | null>;
   updateProfile: (updates: { full_name?: string; specialization?: string | null; activity_zone?: string | null; phone?: string | null; company_name?: string | null; contact_email?: string | null; address?: string | null; vat_number?: string | null; avatar_path?: string | null; push_enabled?: boolean; market_push_enabled?: boolean; notify_radius_km?: number | null; latitude?: number | null; longitude?: number | null; lang?: string }) => Promise<string | null>;
 }
@@ -163,6 +164,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       pushTokenRef.current = null;
     }
     pushOwnerRef.current = null;
+    // Contul Google ales rămâne memorat nativ; fără asta următorul tap pe „Continuă cu
+    // Google” ar intra direct, fără selector de cont (best-effort, doar pe telefon).
+    await signOutSocial();
     await supabase.auth.signOut();
   }
 
@@ -201,10 +205,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     role: 'driver' | 'mechanic',
     // Faza 18: telefonul e obligatoriu la AMBELE roluri încă de la crearea profilului;
     // adresa + TVA vin doar de la mecanici (prestatori). Validate în role-select.
-    details: { phone: string; address?: string | null; vat_number?: string | null }
+    details: { phone: string; address?: string | null; vat_number?: string | null; full_name?: string | null }
   ): Promise<string | null> {
     const userId = session?.user.id;
-    const fullName = (session?.user.user_metadata?.full_name as string) ?? i18n.t('common.defaultUser');
+    // Numele: cel tastat în role-select (când metadata nu-l are — ex. Apple cu numele
+    // ascuns), altfel `full_name` pus la înregistrare / de Google, altfel `name` (Google).
+    const meta = session?.user.user_metadata ?? {};
+    const fullName =
+      details.full_name?.trim() ||
+      (meta.full_name as string | undefined)?.trim() ||
+      (meta.name as string | undefined)?.trim() ||
+      i18n.t('common.defaultUser');
     if (!userId) return i18n.t('common.noSession');
 
     const { error } = await supabase.from('profiles').insert({

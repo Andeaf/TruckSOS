@@ -16,7 +16,8 @@
       "error": "Eroare",
       "cancel": "Anulează",
       "delete": "Șterge",
-      "close": "Închide"
+      "close": "Închide",
+      "refresh": "Reîncarcă"
     },
     "dashboard": {
       "title": "Panou de administrare",
@@ -138,7 +139,8 @@
       "deleteAnnouncementConfirm": "Anunțul și pozele lui vor fi șterse definitiv. Continui?",
       "deleteListingConfirm": "Anunțul de vânzare și pozele lui vor fi șterse definitiv. Continui?",
       "deleteReviewConfirm": "Recenzia va fi ștearsă și media recalculată. Continui?",
-      "deleteMessageConfirm": "Mesajul devine „șters de moderator”. Continui?"
+      "deleteMessageConfirm": "Mesajul devine „șters de moderator”. Continui?",
+      "views": "Vizualizări: {{n}}"
     }
   },
   "auth": {
@@ -167,6 +169,13 @@
       "registerLink": "Registrieren",
       "errorEmpty": "Bitte E-Mail und Passwort eingeben.",
       "forgotPassword": "Passwort vergessen?"
+    },
+    "social": {
+      "or": "oder",
+      "google": "Weiter mit Google",
+      "errorGeneric": "Anmeldung fehlgeschlagen. Bitte versuche es erneut.",
+      "errorPlayServices": "Google Play-Dienste sind auf diesem Telefon nicht verfügbar.",
+      "errorNoToken": "Wir haben keine Anmeldedaten vom Anbieter erhalten. Bitte versuche es erneut."
     },
     "hero": {
       "headline": "Hilfe unterwegs, in wenigen Minuten.",
@@ -247,7 +256,8 @@
     "same_password": "Das neue Passwort muss sich vom alten unterscheiden.",
     "weak_password": "Das Passwort ist zu schwach. Wähle ein längeres.",
     "email_address_invalid": "Die E-Mail-Adresse ist ungültig.",
-    "validation_failed": "Die eingegebenen Daten sind ungültig."
+    "validation_failed": "Die eingegebenen Daten sind ungültig.",
+    "provider_disabled": "Die Anmeldung mit diesem Anbieter ist derzeit nicht aktiviert."
   },
   "driver": {
     "tabs": {
@@ -301,6 +311,13 @@
       "hintResolved": "Problem gelöst. Den Gesprächsverlauf findest du im Tab Gespräche.",
       "hintResolvedNoMechanic": "Problem gelöst. Die Anzeige wurde ohne einen in der App gewählten Mechaniker geschlossen.",
       "hintCancelled": "Die Anzeige wurde storniert und ist für Mechaniker nicht mehr sichtbar.",
+      "hintCancelledOwner": "Die Anzeige wurde storniert und ist für Mechaniker nicht mehr sichtbar. Wenn das Problem inzwischen gelöst ist, kannst du sie als gelöst markieren.",
+      "hintExpiredOwner": "Die Anzeige ist nach 30 Stunden abgelaufen und für Mechaniker nicht mehr sichtbar. Wenn das Problem gelöst ist, markiere sie als gelöst; wenn nicht, kannst du sie für weitere 30 Stunden erneut veröffentlichen.",
+      "repostButton": "Für 30 Stunden erneut veröffentlichen",
+      "repostConfirmTitle": "Anzeige erneut veröffentlichen?",
+      "repostConfirmMessage": "Die Anzeige erscheint für weitere 30 Stunden im Feed der Mechaniker, und Mechaniker in der Nähe erhalten eine Benachrichtigung wie bei einer neuen Anzeige. Beim Ablauf gelöschte Fotos kommen nicht zurück.",
+      "repostConfirmOk": "Ja, erneut veröffentlichen",
+      "errorRepost": "Fehler beim erneuten Veröffentlichen der Anzeige.",
       "cancelButton": "Anzeige stornieren",
       "cancelConfirmTitle": "Anzeige stornieren?",
       "cancelConfirmMessage": "Die Anzeige wird aus dem Feed der Mechaniker entfernt. Diese Aktion kann nicht rückgängig gemacht werden.",
@@ -471,6 +488,7 @@
     "deletedByModerator": "Von einem Moderator entfernt",
     "unavailableMessage": "Nachricht nicht verfügbar",
     "newMessages": "Neue Nachrichten",
+    "scrollToBottom": "Zur neuesten Nachricht springen",
     "callPeer": "Anrufen",
     "deleteConfirmTitle": "Nachricht löschen?",
     "deleteConfirmBody": "Die Nachricht wird für alle gelöscht. Das kann nicht rückgängig gemacht werden.",
@@ -688,7 +706,8 @@
     "timeNow": "gerade eben",
     "timeMinsAgo": "vor {{count}} Min.",
     "timeHoursAgo": "vor {{count}} Std.",
-    "timeDaysAgo": "vor {{count}} Tagen",
+    "timeDaysAgo_one": "vor {{count}} Tag",
+    "timeDaysAgo_other": "vor {{count}} Tagen",
     "defaultUser": "Benutzer",
     "deletedUser": "Gelöschter Benutzer",
     "noSession": "Keine aktive Sitzung",
@@ -870,6 +889,7 @@
     "editProfile": "Profil bearbeiten",
     "changePassword": "Passwort ändern",
     "changeEmail": "Anmelde-E-Mail",
+    "signedInWith": "Angemeldet mit {{provider}}",
     "changePasswordScreen": {
       "title": "Passwort ändern",
       "currentLabel": "Aktuelles Passwort",
@@ -935,6 +955,10 @@
       "passwordPlaceholder": "Passwort",
       "passwordRequired": "Gib dein Passwort zur Bestätigung ein.",
       "passwordWrong": "Falsches Passwort.",
+      "socialHint": "Dein Konto ist über {{provider}} verknüpft, ohne Passwort. Bestätige die Löschung, indem du das Wort unten eingibst.",
+      "confirmWord": "LÖSCHEN",
+      "confirmWordLabel": "Gib {{word}} zur Bestätigung ein",
+      "confirmWordRequired": "Gib das Wort genau so ein, wie es angezeigt wird.",
       "submit": "Endgültig löschen",
       "finalTitle": "Bist du dir absolut sicher?",
       "finalBody": "Dein Konto und deine Daten werden sofort gelöscht und können nicht wiederhergestellt werden.",
@@ -942,6 +966,12 @@
       "cancel": "Abbrechen",
       "error": "Das Konto konnte nicht gelöscht werden. Bitte versuche es erneut."
     }
+  },
+  "updatePrompt": {
+    "title": "Neue Version verfügbar",
+    "body": "TruckSOS {{version}} ist bereit zur Installation. Aktualisiere die App für die neuesten Verbesserungen und Korrekturen.",
+    "later": "Später",
+    "update": "Aktualisieren"
   },
   "legal": {
     "terms": {

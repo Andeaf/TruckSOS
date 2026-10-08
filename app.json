@@ -2,7 +2,7 @@
   "expo": {
     "name": "TruckSOS",
     "slug": "trucksos",
-    "version": "1.0.5",
+    "version": "1.0.7",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "trucksos",
@@ -37,7 +37,10 @@
               "pathPrefix": "/p/"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -46,7 +49,9 @@
       "buildNumber": "1",
       "supportsTablet": false,
       "icon": "./assets/images/icon.png",
-      "associatedDomains": ["applinks:trucksos.net"],
+      "associatedDomains": [
+        "applinks:trucksos.net"
+      ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleAllowMixedLocalizations": true
@@ -110,13 +115,21 @@
           "isAccessMediaLocationEnabled": false
         }
       ],
-      "expo-video"
+      "expo-video",
+      "./plugins/with-no-apple-signin.js"
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
       "router": {},
+      "socialLogin": {
+        "enabled": false
+      },
+      "googleSignIn": {
+        "webClientId": "889090807475-701gc75s54jufec4od106v0s38mqj0pb.apps.googleusercontent.com",
+        "iosClientId": "889090807475-fisli4ip7u82iidmrbjpduavj3i2u0ed.apps.googleusercontent.com"
+      },
       "eas": {
         "projectId": "dc737a62-2ec0-458e-b216-8248cd4b745e"
       }

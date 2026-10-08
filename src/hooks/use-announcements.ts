@@ -120,8 +120,9 @@ export async function cancelAnnouncement(id: string): Promise<string | null> {
 
 /**
  * „Marchează ca rezolvat" pe un anunț ÎNCĂ `open` (caseta din „Anunțurile mele",
- * 4 sept): RPC-ul din migrarea 20260904 — rezolvă + respinge candidaturile `pending`
- * atomic (RLS nu permite `open → resolved` prin UPDATE direct, iar respingerile nu
+ * 4 sept) SAU deja `cancelled` (expirat la 30h / anulat — 15 sept, migrarea
+ * 20260915): RPC-ul rezolvă + respinge candidaturile `pending` atomic (RLS nu permite
+ * `open → resolved` sau `cancelled → resolved` prin UPDATE direct, iar respingerile nu
  * se pot face din client). Pentru `accepted` rămâne resolveAnnouncement().
  */
 export async function resolveOpenAnnouncement(id: string): Promise<string | null> {
@@ -129,6 +130,48 @@ export async function resolveOpenAnnouncement(id: string): Promise<string | null
     p_announcement_id: id,
   } as never);
   return error?.message ?? null;
+}
+
+/**
+ * Durata de viață a unui anunț `open` — EF cleanup-announcements îl trece în `cancelled`
+ * după 30h (regula din 4 sept; constanta HOURS din funcție). Aceeași valoare decide
+ * când apare „Repostează" și când serverul acceptă repostarea (repost_announcement).
+ */
+export const ANNOUNCEMENT_LIFETIME_MS = 30 * 60 * 60 * 1000;
+
+/** Anunț `cancelled` mai vechi de 30h = expirat (sau anulat demult) → se poate reposta. */
+export function canRepostAnnouncement(
+  a: Pick<Announcement, 'status' | 'created_at'>,
+  now: number = Date.now(),
+): boolean {
+  return (
+    a.status === 'cancelled' && now - new Date(a.created_at).getTime() >= ANNOUNCEMENT_LIFETIME_MS
+  );
+}
+
+/**
+ * „Repostează pentru 30 de ore" (15 sept): RPC-ul `repost_announcement` — anunțul
+ * revine `open` cu created_at = acum (urcă în capul feedului, primește din nou 30h) și
+ * mecanicii din rază primesc push ca la un anunț nou. Doar pe anunț propriu `cancelled`
+ * mai vechi de 30h (gardă server-side contra buclei anulează→repostează).
+ */
+export async function repostAnnouncement(id: string): Promise<string | null> {
+  const { error } = await supabase.rpc('repost_announcement', {
+    p_announcement_id: id,
+  } as never);
+  return error?.message ?? null;
+}
+
+/**
+ * Vizualizări pe anunțuri (24 sept) — cifra o văd DOAR adminii (Admin → Conținut).
+ * Apelat la deschiderea detaliului; serverul numără o dată per utilizator și sare
+ * peste autor și admini, deci se poate apela necondiționat. Fire-and-forget: o
+ * eroare aici nu trebuie să atingă ecranul.
+ */
+export function recordAnnouncementView(id: string): void {
+  supabase
+    .rpc('record_announcement_view', { p_announcement_id: id } as never)
+    .then(() => {}, () => {});
 }
 
 export async function deleteAnnouncement(id: string): Promise<string | null> {

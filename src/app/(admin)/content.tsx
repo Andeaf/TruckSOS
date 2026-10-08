@@ -4,6 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
+import { AdminRefreshButton } from '@/components/admin/refresh-button';
 import { Input } from '@/components/ui/input';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
@@ -51,6 +52,32 @@ export default function AdminContent() {
 
   useFocusEffect(refresh);
 
+  // Reîncărcare la cerere (15 sept): pull-to-refresh + butonul din antet. Așteaptă
+  // răspunsul segmentului curent (spinner-ul de tragere trebuie să știe când s-a
+  // terminat), spre deosebire de `refresh`, care doar re-declanșează efectele.
+  const reload = useCallback(async () => {
+    if (segment === 'announcements') {
+      const q = annQuery.trim();
+      const { data } = await (q.length >= 2 ? searchAnnouncements(q) : fetchRecentAnnouncements());
+      setAnnouncements(data);
+    } else if (segment === 'market') {
+      setListings((await fetchRecentListings()).data);
+    } else if (segment === 'reviews') {
+      setReviews((await fetchRecentReviews()).data);
+    } else {
+      setChannel((await fetchChannelMessages()).data);
+    }
+  }, [segment, annQuery]);
+  // Spinner-ul DOAR la gestul de tragere (pe iOS `refreshing` setat programatic
+  // inserează insetul indicatorului, care poate rămâne blocat — lecția din listele
+  // șoferului); butonul din antet reîncarcă silențios.
+  const [pullRefreshing, setPullRefreshing] = useState(false);
+  const onPullRefresh = useCallback(async () => {
+    setPullRefreshing(true);
+    await reload();
+    setPullRefreshing(false);
+  }, [reload]);
+
   // Anunțuri — un singur „owner" al listei: sugestii live (debounce 300ms de la 2
   // caractere) sau lista recentă. Flag-ul `active` aruncă răspunsurile out-of-order.
   useEffect(() => {
@@ -95,9 +122,15 @@ export default function AdminContent() {
   return (
     <ThemedView style={{ flex: 1 }}>
       {wide ? (
-        <ThemedText style={w.pageTitle}>{t('admin.content.title')}</ThemedText>
+        <View style={w.titleRow}>
+          <ThemedText style={w.pageTitle}>{t('admin.content.title')}</ThemedText>
+          <AdminRefreshButton onPress={reload} />
+        </View>
       ) : (
-        <ScreenHeader title={t('admin.content.title')} />
+        <ScreenHeader
+          title={t('admin.content.title')}
+          right={<AdminRefreshButton onPress={reload} onHeader />}
+        />
       )}
 
       <View style={[styles.segments, wide && [w.segments, { borderBottomColor: theme.separator }]]}>
@@ -152,6 +185,8 @@ export default function AdminContent() {
         <FlatList
           data={announcements}
           keyExtractor={(a) => a.id}
+          refreshing={pullRefreshing}
+          onRefresh={onPullRefresh}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={[styles.list, wide && w.list]}
           ListEmptyComponent={
@@ -163,9 +198,10 @@ export default function AdminContent() {
             <Card
               title={item.description}
               subtitle={
-                wide
+                (wide
                   ? `${item.driver_name ?? '—'} · ${new Date(item.created_at).toLocaleDateString(LOCALE_MAP[i18n.language] ?? 'ro-RO')}`
-                  : `${item.driver_name ?? '—'} · ${t(`status.${item.status}`)} · ${new Date(item.created_at).toLocaleDateString(LOCALE_MAP[i18n.language] ?? 'ro-RO')}`
+                  : `${item.driver_name ?? '—'} · ${t(`status.${item.status}`)} · ${new Date(item.created_at).toLocaleDateString(LOCALE_MAP[i18n.language] ?? 'ro-RO')}`) +
+                (item.view_count != null ? ` · ${t('admin.content.views', { n: item.view_count })}` : '')
               }
               status={wide ? item.status : undefined}
               onDelete={() =>
@@ -180,6 +216,8 @@ export default function AdminContent() {
         <FlatList
           data={listings}
           keyExtractor={(l) => l.id}
+          refreshing={pullRefreshing}
+          onRefresh={onPullRefresh}
           contentContainerStyle={[styles.list, wide && w.list]}
           ListEmptyComponent={<Empty />}
           renderItem={({ item }) => (
@@ -198,6 +236,8 @@ export default function AdminContent() {
         <FlatList
           data={reviews}
           keyExtractor={(r) => r.id}
+          refreshing={pullRefreshing}
+          onRefresh={onPullRefresh}
           contentContainerStyle={[styles.list, wide && w.list]}
           ListEmptyComponent={<Empty />}
           renderItem={({ item }) => (
@@ -214,6 +254,8 @@ export default function AdminContent() {
         <FlatList
           data={channel}
           keyExtractor={(m) => m.id}
+          refreshing={pullRefreshing}
+          onRefresh={onPullRefresh}
           contentContainerStyle={[styles.list, wide && w.list]}
           ListEmptyComponent={<Empty />}
           renderItem={({ item }) => (
@@ -332,16 +374,23 @@ const styles = StyleSheet.create({
 
 /** Stilurile variantei late (design 10c). */
 const w = StyleSheet.create({
-  pageTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    letterSpacing: -0.4,
-    lineHeight: 32,
+  // Titlul + butonul „Reîncarcă" pe același rând (15 sept); layout-ul de pagină
+  // (padding/lățime) s-a mutat de pe text pe rând.
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 28,
     paddingTop: 24,
     maxWidth: 1060,
     width: '100%',
     alignSelf: 'center',
+  },
+  pageTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    letterSpacing: -0.4,
+    lineHeight: 32,
   },
   segments: {
     paddingHorizontal: 28,

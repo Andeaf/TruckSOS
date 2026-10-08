@@ -15,14 +15,19 @@ export interface ListRowProps {
   onPress?: () => void;
   /** Roșu, fără chevron — pentru deconectare. */
   destructive?: boolean;
+  /** `false` = rând informativ, fără chevron și fără apăsare (ex. „Conectat cu Google”). */
+  chevron?: boolean;
 }
 
-export function ListRow({ icon, label, value, onPress, destructive }: ListRowProps) {
+export function ListRow({ icon, label, value, onPress, destructive, chevron = true }: ListRowProps) {
   const theme = useTheme();
   const color = destructive ? '#ef4444' : theme.text;
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView type="backgroundElement" style={styles.row}>
         <MaterialIcons name={icon} size={20} color={destructive ? '#ef4444' : theme.brand} />
         <ThemedText style={[styles.label, { color }]}>{label}</ThemedText>
@@ -31,7 +36,7 @@ export function ListRow({ icon, label, value, onPress, destructive }: ListRowPro
             {value}
           </ThemedText>
         ) : null}
-        {destructive ? null : (
+        {destructive || !chevron ? null : (
           <MaterialIcons name="chevron-right" size={20} color={theme.textSecondary} />
         )}
       </ThemedView>

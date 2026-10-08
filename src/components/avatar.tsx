@@ -39,7 +39,11 @@ export function Avatar({ url, name, size = 40, color }: AvatarProps) {
 
   return (
     <View style={[styles.fallback, dimensions, { backgroundColor: color ?? colorFor(name) }]}>
-      <Text style={[styles.initials, { fontSize: size * 0.4 }]}>{initials(name)}</Text>
+      {/* Inițialele NU urmează scara de font a sistemului (8 oct): cercul are mărime
+          fixă, iar la „Foarte mare" literele ieșeau din el și se descentrau. */}
+      <Text style={[styles.initials, { fontSize: size * 0.4 }]} maxFontSizeMultiplier={1}>
+        {initials(name)}
+      </Text>
     </View>
   );
 }

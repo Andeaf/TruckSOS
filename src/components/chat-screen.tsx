@@ -12,9 +12,10 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
-import type { LayoutChangeEvent } from 'react-native';
+import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { Image } from 'expo-image';
 import * as DocumentPicker from 'expo-document-picker';
 import { File, Paths } from 'expo-file-system';
@@ -350,6 +351,45 @@ function AttachmentCard({
   );
 }
 
+/**
+ * Pragul de „font mărit" (8 oct 2026, reclamație cu înregistrare de ecran): peste el,
+ * bula nu mai așază textul și ora într-un RÂND flex (text shrink + meta cu auto-margin),
+ * ci într-un SINGUR Text cu un distanțier invizibil la final și ora așezată absolut în
+ * colț (modelul WhatsApp). Motivul: pe Fabric (RN 0.81) rândul flex măsoară textul cu o
+ * fracțiune de pixel mai puțin decât îl desenează — la fontul de sistem mărit ultimul
+ * cuvânt cădea pe un al doilea rând pe care layout-ul nu-l prevăzuse și dispărea
+ * („Cu drag," → „Cu", „Drag" → „Dra"; aceeași familie ca #53286 și bug-ul italic de la
+ * mesajul șters). Sub prag NIMIC nu se schimbă: dispozitivele cu font normal păstrează
+ * exact layout-ul de dinainte, verificat pe device.
+ */
+const LARGE_FONT_SCALE = 1.05;
+/**
+ * Ora/„editat"/distanțierul din layout-ul cu font mărit cresc cel mult 1,4× (cerere user
+ * 8 oct: „ora puțin mai mică") — textul mesajului urmează scara completă, ora rămâne
+ * discretă. Distanțierul are ACELAȘI plafon, ca lățimea rezervată să coincidă cu ora.
+ */
+const META_MAX_FONT_SCALE = 1.4;
+
+/**
+ * Distanțierul de la capătul textului în layout-ul cu font mărit: DOAR spații
+ * non-breaking (nu ora cu culoare transparentă — pe Android textul „transparent"
+ * din interiorul unui Text se desena vizibil, ora apărea de două ori; test 8 oct).
+ * Lățimea e estimată din glifele orei/„editat" (digit ≈ 0.56 em, „:" ≈ 0.3, literă
+ * ≈ 0.52, nbsp ≈ 0.25; +10 % pentru weight 600) plus bifele (14 px ≈ 1.3 em la 11 px)
+ * și aerul dintre text și oră. Dacă nu încape la capătul ultimului rând, cade întreg
+ * pe rândul următor, iar ora absolută îl urmează (ca pe WhatsApp).
+ */
+function metaSpacerFor(meta: string, withTick: boolean): string {
+  let em = 0;
+  for (const ch of meta) {
+    em += /\d/.test(ch) ? 0.56 : ch === ':' ? 0.3 : ch === ' ' ? 0.25 : 0.52;
+  }
+  em *= 1.1;
+  if (withTick) em += 1.3 + 0.36;
+  em += 0.9;
+  return ' '.repeat(Math.ceil(em / 0.25) + 1);
+}
+
 function formatTime(dateStr: string) {
   return new Date(dateStr).toLocaleTimeString('ro-RO', {
     hour: '2-digit',
@@ -522,6 +562,10 @@ function MessageBubble<M extends ChatMessageBase>({
   const theme = useTheme();
   const scheme = useResolvedScheme();
   const { t } = useTranslation();
+  // Font de sistem mărit → layout-ul „un singur Text + oră absolută" (vezi LARGE_FONT_SCALE).
+  // `useWindowDimensions` urmărește și schimbarea scării din Setări, fără repornire.
+  const { fontScale } = useWindowDimensions();
+  const largeFont = fontScale > LARGE_FONT_SCALE;
   const isDeleted = !!message.deleted_at;
   const isImage = !isDeleted && !!message.image_path;
   const isFile = !isDeleted && !isImage && !!message.file_path;
@@ -587,6 +631,17 @@ function MessageBubble<M extends ChatMessageBase>({
       color={secondaryColor}
     />
   ) : null;
+  // Font mărit: distanțier INVIZIBIL randat în textul mesajului — rezervă lățimea orei
+  // (+ „editat", + bifele) la capătul ultimului rând, ca ora absolută să nu se suprapună.
+  // Spații non-breaking, ca distanțierul să nu se rupă de ultimul cuvânt.
+  const metaSpacer = largeFont
+    ? metaSpacerFor(
+        [message.edited_at ? t('chat.edited') : null, formatTime(message.created_at)]
+          .filter(Boolean)
+          .join(' '),
+        !!tick
+      )
+    : '';
   // Embed-ul `reply_to` vine ca obiect/null (embed pe coloana FK, m2o — vezi
   // replyEmbed). Normalizarea array→primul rămâne DEFENSIV: vechiul embed self-join
   // `<tabel>!reply_to_id` era rezolvat de PostgREST în direcția inversă (o2m) și
@@ -874,6 +929,29 @@ function MessageBubble<M extends ChatMessageBase>({
             // „interzis" în față ca pe WhatsApp; italic doar unde Android nu-l
             // măsoară greșit — vezi deletedText).
             // Faza 16: marcaj DISTINCT dacă ștergerea a fost făcută de un moderator.
+            largeFont ? (
+              // Font mărit (8 oct): un singur Text (iconiță inline + marcaj + distanțier),
+              // ora absolută în colț — fără rândul flex care tăia ultimul cuvânt.
+              <View style={styles.textBlock}>
+                <Text style={[styles.bubbleText, styles.deletedText, { color: secondaryColor }]}>
+                  <MaterialIcons name="block" size={13} color={secondaryColor} />
+                  {' '}
+                  {message.deleted_by_admin ? t('chat.deletedByModerator') : t('chat.deletedMessage')}
+                  <Text
+                    style={[styles.bubbleTime, styles.metaSpacer]}
+                    maxFontSizeMultiplier={META_MAX_FONT_SCALE}>
+                    {metaSpacer}
+                  </Text>
+                </Text>
+                <View style={[styles.metaInline, styles.metaAbsolute]}>
+                  <Text
+                    style={[styles.bubbleTime, { color: secondaryColor }]}
+                    maxFontSizeMultiplier={META_MAX_FONT_SCALE}>
+                    {formatTime(message.created_at)}
+                  </Text>
+                </View>
+              </View>
+            ) : (
             <View style={styles.textTimeRow}>
               <MaterialIcons
                 name="block"
@@ -896,6 +974,7 @@ function MessageBubble<M extends ChatMessageBase>({
                 </Text>
               </View>
             </View>
+            )
           ) : isImage ? (
             // Poza umple bula; ora stă peste ea, într-o pastilă întunecată.
             <Pressable
@@ -1104,7 +1183,42 @@ function MessageBubble<M extends ChatMessageBase>({
               {/* Ora stă în colțul dreapta-jos, la nivelul ULTIMULUI rând de text
                   (stil 7a): rând flex cu textul shrink + meta împinsă cu auto-margin.
                   La mesaje scurte bula se lățește cât textul + ora pe același rând. */}
-              {message.content !== '' ? (
+              {message.content !== '' && largeFont ? (
+                // Font mărit (8 oct, vezi LARGE_FONT_SCALE): textul singur își face
+                // rândurile, distanțierul invizibil ține loc orei, ora stă absolut în colț.
+                <View style={styles.textBlock}>
+                  <LinkifiedText
+                    text={message.content}
+                    style={[styles.bubbleText, { color: isMe ? '#ffffff' : theme.text }]}
+                    linkStyle={{ color: isMe ? '#ffffff' : theme.brand }}
+                    mentions={message.mentions}
+                    mentionStyle={{ color: isMe ? '#ffffff' : theme.brand }}
+                    onLongPress={onLongPress}
+                    trailing={
+                      <Text
+                        style={[styles.bubbleTime, styles.metaSpacer]}
+                        maxFontSizeMultiplier={META_MAX_FONT_SCALE}>
+                        {metaSpacer}
+                      </Text>
+                    }
+                  />
+                  <View style={[styles.metaInline, styles.metaAbsolute]}>
+                    {message.edited_at ? (
+                      <Text
+                        style={[styles.bubbleTime, styles.editedLabel, { color: secondaryColor }]}
+                        maxFontSizeMultiplier={META_MAX_FONT_SCALE}>
+                        {t('chat.edited')}
+                      </Text>
+                    ) : null}
+                    <Text
+                      style={[styles.bubbleTime, { color: secondaryColor }]}
+                      maxFontSizeMultiplier={META_MAX_FONT_SCALE}>
+                      {formatTime(message.created_at)}
+                    </Text>
+                    {tick}
+                  </View>
+                </View>
+              ) : message.content !== '' ? (
                 <View style={styles.textTimeRow}>
                   {/* Linkuri + telefoane apăsabile (7 sept): pe bula trimisă rămân
                       albe (subliniate), pe cea primită iau culoarea brand. */}
@@ -1176,6 +1290,9 @@ function MessageBubble<M extends ChatMessageBase>({
     </GestureDetector>
   );
 }
+
+/** Distanța (px) față de capătul cu mesaje noi de la care apare butonul „la ultimul mesaj". */
+const SCROLL_TO_BOTTOM_THRESHOLD = 120;
 
 interface ChatScreenProps<M extends ChatMessageBase> {
   currentUserId: string;
@@ -1348,6 +1465,20 @@ export function ChatScreen<M extends ChatMessageBase>({
   // Video în chat (23 aug): playerul full-screen deschis (sursa = sheet-ul de poze).
   const [videoUrlOpen, setVideoUrlOpen] = useState<string | null>(null);
   const listRef = useRef<FlatList<M>>(null);
+  // Butonul „la ultimul mesaj" (15 sept): apare când lista e derulată cu mai mult de
+  // SCROLL_TO_BOTTOM_THRESHOLD px de la capătul cu mesaje noi. Lista e INVERSATĂ, deci
+  // contentOffset.y = distanța față de cel mai nou mesaj (0 = jos de tot) — pe toate
+  // platformele, inclusiv web (react-native-web întoarce lista cu scaleY(-1)).
+  // Starea se scrie doar la schimbarea booleanului, nu la fiecare eveniment de scroll.
+  const [awayFromBottom, setAwayFromBottom] = useState(false);
+  const awayFromBottomRef = useRef(false);
+  const handleListScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const away = e.nativeEvent.contentOffset.y > SCROLL_TO_BOTTOM_THRESHOLD;
+    if (away !== awayFromBottomRef.current) {
+      awayFromBottomRef.current = away;
+      setAwayFromBottom(away);
+    }
+  }, []);
 
   // Creșterea compozitorului (8 aug; iOS refăcut 11 sept), per platformă:
   //  • Android — nimic manual: inputul multiline crește nativ între minHeight și
@@ -1382,6 +1513,11 @@ export function ChatScreen<M extends ChatMessageBase>({
   // că scurtcircuitul „valoare identică" nu se aplică atâta timp cât există deja
   // actualizări în așteptare de la setText. Pe web forma se scrie imperativ.
   const [composerTall, setComposerTall] = useState(false);
+  // Font de sistem mărit (8 oct, vezi LARGE_FONT_SCALE): caseta își centrează textul pe
+  // verticală, iar butoanele de lângă ea se centrează pe pastila cu 1–3 rânduri (la
+  // 4+ rânduri rămân jos, ca pe WhatsApp). Sub prag nimic nu se schimbă.
+  const { fontScale: systemFontScale } = useWindowDimensions();
+  const largeFont = systemFontScale > LARGE_FONT_SCALE;
   const composerRef = useRef<TextInput>(null);
   // Android: conținutul (contentSize) — înălțimea lui e nativă, min/max.
   const handleComposerSize = useCallback(
@@ -1684,6 +1820,13 @@ export function ChatScreen<M extends ChatMessageBase>({
     },
     []
   );
+
+  // Tap pe butonul „la ultimul mesaj": offset 0 = capătul cu mesaje noi al listei
+  // inversate. Anulăm orice salt în curs (citat/ancoră), ca retry-ul lui să nu tragă înapoi.
+  const scrollToBottom = useCallback(() => {
+    pendingScroll.current = null;
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, []);
 
   // Evidențierea țintei saltului (10 sept): {id, nonce} — nonce-ul nou reaprinde
   // animația și la un al doilea tap pe același citat; se stinge singur după ~2 s.
@@ -2183,6 +2326,9 @@ export function ChatScreen<M extends ChatMessageBase>({
             contentContainerStyle={styles.messageList}
             onEndReached={onLoadOlder}
             onEndReachedThreshold={0.3}
+            // Butonul „la ultimul mesaj" (15 sept): urmărim distanța față de capătul listei.
+            onScroll={handleListScroll}
+            scrollEventThrottle={64}
             // Ținta (citat/ancoră necitite) poate fi nerandată → salt aproximativ + retry.
             onScrollToIndexFailed={handleScrollToIndexFailed}
             ListFooterComponent={
@@ -2307,6 +2453,26 @@ export function ChatScreen<M extends ChatMessageBase>({
             }}
           />
         )}
+        {/* Butonul „la ultimul mesaj" (15 sept): plutește în colțul din dreapta-jos al
+            listei doar când utilizatorul s-a îndepărtat de mesajele noi; cedează locul
+            ferestrei de menționări (ocupă aceeași zonă). */}
+        {awayFromBottom &&
+        !loading &&
+        messages.length > 0 &&
+        !(mention && mentionUsers.length > 0) ? (
+          <Pressable
+            onPress={scrollToBottom}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={t('chat.scrollToBottom')}
+            style={({ pressed }) => [
+              styles.scrollToBottom,
+              { backgroundColor: theme.backgroundElement, borderColor: theme.separator },
+              pressed && styles.scrollToBottomPressed,
+            ]}>
+            <MaterialIcons name="keyboard-arrow-down" size={26} color={theme.brand} />
+          </Pressable>
+        ) : null}
         {/* Fereastra de menționări (10 sept): apare doar cu „@" activ ȘI cu rezultate. */}
         {mention && mentionUsers.length > 0 ? (
           <View style={styles.mentionAnchor} pointerEvents="box-none">
@@ -2462,6 +2628,7 @@ export function ChatScreen<M extends ChatMessageBase>({
         <View
           style={[
             styles.inputBar,
+            largeFont && !composerTall && styles.inputBarCentered,
             {
               // Fără insets.bottom: sub bara de input e TAB BAR-ul, care ocupă el zona
               // de siguranță — adăugarea insetului dubla compensarea și lăsa un gol
@@ -2500,6 +2667,7 @@ export function ChatScreen<M extends ChatMessageBase>({
               style={[
                 styles.input,
                 { color: theme.text },
+                largeFont && styles.inputLargeFont,
                 // Nativ (Android + iOS): creștere nativă între min și max, fără
                 // înălțime din state — vezi COMPOSER_* și nota de la composerHeight.
                 // Web: înălțimea e gestionată imperativ (efectul de mai sus).
@@ -2528,6 +2696,9 @@ export function ChatScreen<M extends ChatMessageBase>({
               }
               placeholder={t('chat.inputPlaceholder')}
               placeholderTextColor={theme.textTertiary}
+              // 8 oct: la font de sistem mărit, „Scrie un mesaj…" se rupea pe două rânduri
+              // în pastila îngustă. Plafon 1,3× (ca antetele, 1,2×) — sub el, nicio schimbare.
+              maxFontSizeMultiplier={1.3}
               multiline
               maxLength={1000}
               // id-ul DOM pe web (CSS-ul din public/index.html îi ascunde
@@ -2843,6 +3014,17 @@ const styles = StyleSheet.create({
   // ultimul rând (align-items: flex-end + auto-margin pe meta).
   textTimeRow: { flexDirection: 'row', alignItems: 'flex-end', columnGap: 12 },
   textShrink: { flexShrink: 1 },
+  // Layout-ul cu font mărit (LARGE_FONT_SCALE): textul singur, ora așezată absolut în
+  // colțul dreapta-jos, peste distanțierul invizibil (transparent) din capătul textului.
+  textBlock: { position: 'relative' },
+  // Ora intră puțin în padding-ul bulei (14/10), ca să stea în colțul dreapta-jos, la
+  // ~8 px de marginea laterală și ~6 px de cea de jos (cerere user 8 oct).
+  metaAbsolute: { position: 'absolute', right: -6, bottom: -4, marginLeft: 0 },
+  metaSpacer: { color: 'transparent' },
+  // Font mărit: textul casetei centrat pe verticală (cu `top` rămânea sus, cu gol sub el)
+  // și butoanele din bară centrate pe pastila scurtă (1–3 rânduri).
+  inputLargeFont: { textAlignVertical: 'center' },
+  inputBarCentered: { alignItems: 'center' },
   metaInline: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2873,6 +3055,21 @@ const styles = StyleSheet.create({
   },
   // Ancora ferestrei de menționări: jos, peste ultimele mesaje, lipită de compozitor.
   mentionAnchor: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  // Butonul „la ultimul mesaj": cerc de 40, la marginea listei (peste bulele proprii,
+  // ca pe WhatsApp), cu umbra mică a chip-urilor.
+  scrollToBottom: {
+    position: 'absolute',
+    right: Spacing.three,
+    bottom: Spacing.three,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.chip,
+  },
+  scrollToBottomPressed: { opacity: 0.75 },
   // Stil 6b (26 iul): „atașament etichetat" — card pe suprafață proprie, ÎN AFARA bulei.
   attachCard: {
     borderRadius: 16,

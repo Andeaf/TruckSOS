@@ -19,6 +19,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import {
   fetchOpenAnnouncementById,
   fetchMyApplicationForAnnouncement,
+  recordAnnouncementView,
   type AnnouncementWithDriver,
 } from '@/hooks/use-announcements';
 import { startDirectConversation } from '@/hooks/use-chat';
@@ -206,6 +207,11 @@ export default function MechanicAnnouncementDetailScreen() {
     if (session?.user.id && id) markAnnouncementViewed(session.user.id, id);
   }, [session?.user.id, id]);
 
+  // Vizualizarea pentru admin (24 sept) — doar după ce anunțul chiar s-a afișat.
+  useEffect(() => {
+    if (announcement?.id) recordAnnouncementView(announcement.id);
+  }, [announcement?.id]);
+
   if (loading) {
     return (
       <ThemedView style={styles.centered}>
@@ -276,7 +282,9 @@ export default function MechanicAnnouncementDetailScreen() {
             <MaterialIcons name="location-on" size={16} color="#22c55e" />
             <ThemedText type="smallBold">{t('mechanic.feed.sectionLocation')}</ThemedText>
           </View>
-          <ThemedText>{announcement.location}</ThemedText>
+          {/* 15 sept: textele detaliului sunt selectabile — locația scrisă doar ca text
+              se copiază în Google Maps / Waze. */}
+          <ThemedText selectable>{announcement.location}</ThemedText>
           {announcement.latitude != null && announcement.longitude != null ? (
             <>
               <MiniMap latitude={announcement.latitude} longitude={announcement.longitude} />
@@ -328,14 +336,14 @@ export default function MechanicAnnouncementDetailScreen() {
               <MaterialIcons name="local-shipping" size={16} color="#22c55e" />
               <ThemedText type="smallBold">{t('truck.sectionTitle')}</ThemedText>
             </View>
-            {truckInfo ? <ThemedText>{truckInfo}</ThemedText> : null}
+            {truckInfo ? <ThemedText selectable>{truckInfo}</ThemedText> : null}
             {announcement.plate_number ? (
-              <ThemedText themeColor="textSecondary" type="small">
+              <ThemedText themeColor="textSecondary" type="small" selectable>
                 {t('truck.plateLabel')}: {announcement.plate_number}
               </ThemedText>
             ) : null}
             {announcement.chassis_number ? (
-              <ThemedText themeColor="textSecondary" type="small">
+              <ThemedText themeColor="textSecondary" type="small" selectable>
                 {t('truck.chassisLabel')}: {announcement.chassis_number}
               </ThemedText>
             ) : null}
@@ -347,7 +355,9 @@ export default function MechanicAnnouncementDetailScreen() {
             <MaterialIcons name="build" size={16} color="#22c55e" />
             <ThemedText type="smallBold">{t('mechanic.feed.sectionDescription')}</ThemedText>
           </View>
-          <ThemedText style={styles.descriptionText}>{announcement.description}</ThemedText>
+          <ThemedText style={styles.descriptionText} selectable>
+            {announcement.description}
+          </ThemedText>
         </ThemedView>
 
         {photos.length > 0 ? (

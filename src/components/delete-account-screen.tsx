@@ -20,6 +20,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
 import { useTheme } from '@/hooks/use-theme';
 import { deleteAccount } from '@/lib/account';
+import { hasPasswordIdentity, socialProviderLabel } from '@/lib/social-auth';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -35,6 +36,11 @@ export function DeleteAccountScreen({ backPath }: { backPath: string }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
+  // 6 oct: conturile Google/Apple n-au parolă → confirmarea e un cuvânt-cheie tastat
+  // (nu emailul: relay-ul Apple îl poate ascunde, iar userul nu-l știe pe de rost).
+  const passwordAccount = hasPasswordIdentity(session?.user);
+  const provider = socialProviderLabel(session?.user) ?? '';
+  const confirmWord = t('settings.deleteAccountScreen.confirmWord');
 
   async function runDelete() {
     setLoading(true);
@@ -52,7 +58,29 @@ export function DeleteAccountScreen({ backPath }: { backPath: string }) {
     }
   }
 
+  function askFinalConfirmation() {
+    Alert.alert(
+      t('settings.deleteAccountScreen.finalTitle'),
+      t('settings.deleteAccountScreen.finalBody'),
+      [
+        { text: t('settings.deleteAccountScreen.cancel'), style: 'cancel' },
+        { text: t('settings.deleteAccountScreen.finalOk'), style: 'destructive', onPress: runDelete },
+      ],
+    );
+  }
+
   async function handleSubmit() {
+    if (!passwordAccount) {
+      // Fără parolă: cuvântul-cheie, comparat fără diacritice-capcană (ȘTERGE vs șterge).
+      if (password.trim().toLocaleUpperCase() !== confirmWord.toLocaleUpperCase()) {
+        setError(t('settings.deleteAccountScreen.confirmWordRequired'));
+        return;
+      }
+      setError(undefined);
+      askFinalConfirmation();
+      return;
+    }
+
     const pw = password.trim();
     if (!pw) {
       setError(t('settings.deleteAccountScreen.passwordRequired'));
@@ -71,14 +99,7 @@ export function DeleteAccountScreen({ backPath }: { backPath: string }) {
       return;
     }
 
-    Alert.alert(
-      t('settings.deleteAccountScreen.finalTitle'),
-      t('settings.deleteAccountScreen.finalBody'),
-      [
-        { text: t('settings.deleteAccountScreen.cancel'), style: 'cancel' },
-        { text: t('settings.deleteAccountScreen.finalOk'), style: 'destructive', onPress: runDelete },
-      ],
-    );
+    askFinalConfirmation();
   }
 
   return (
@@ -106,16 +127,29 @@ export function DeleteAccountScreen({ backPath }: { backPath: string }) {
           </ThemedText>
         </View>
 
+        {!passwordAccount ? (
+          <ThemedText themeColor="textSecondary" type="small">
+            {t('settings.deleteAccountScreen.socialHint', { provider })}
+          </ThemedText>
+        ) : null}
+
         <Input
-          label={t('settings.deleteAccountScreen.passwordLabel')}
-          placeholder={t('settings.deleteAccountScreen.passwordPlaceholder')}
+          label={
+            passwordAccount
+              ? t('settings.deleteAccountScreen.passwordLabel')
+              : t('settings.deleteAccountScreen.confirmWordLabel', { word: confirmWord })
+          }
+          placeholder={
+            passwordAccount ? t('settings.deleteAccountScreen.passwordPlaceholder') : confirmWord
+          }
           value={password}
           onChangeText={(v) => {
             setPassword(v);
             if (error) setError(undefined);
           }}
-          secureTextEntry
-          autoCapitalize="none"
+          secureTextEntry={passwordAccount}
+          autoCapitalize={passwordAccount ? 'none' : 'characters'}
+          autoCorrect={false}
           error={error}
           required
         />

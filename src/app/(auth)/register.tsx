@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { SocialSignIn } from '@/components/social-sign-in';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -226,6 +227,10 @@ export default function RegisterScreen() {
             <ThemedText themeColor="textSecondary" style={styles.requiredNote}>
               {t('common.requiredNote')}
             </ThemedText>
+
+            {/* 6 oct: cont nou direct cu Google/Apple — fără parolă și fără cod pe email
+                (emailul vine verificat de furnizor); rolul și telefonul se cer apoi. */}
+            <SocialSignIn />
           </View>
 
           <View style={styles.footer}>

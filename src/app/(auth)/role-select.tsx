@@ -44,10 +44,23 @@ export default function RoleSelectScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const name = (session?.user.user_metadata?.full_name as string)?.split(' ')[0] ?? t('common.defaultUser');
+  // Numele din metadata: pus la înregistrare sau de Google (`full_name`/`name`). Apple îl
+  // poate ascunde (6 oct) → când lipsește, îl cerem aici; câmpul apare DOAR în cazul ăsta.
+  const userMeta = session?.user.user_metadata ?? {};
+  const metaName = (
+    (userMeta.full_name as string | undefined) ??
+    (userMeta.name as string | undefined) ??
+    ''
+  ).trim();
+  const [fullName, setFullName] = useState(metaName);
+  const name = metaName ? metaName.split(' ')[0] : t('common.defaultUser');
 
   async function handleContinue() {
     if (!role) return;
+    if (!metaName && !fullName.trim()) {
+      setError(t('auth.register.errorEmpty'));
+      return;
+    }
     if (!phone.trim()) {
       setError(t('profile.errorPhoneRequired'));
       return;
@@ -72,6 +85,7 @@ export default function RoleSelectScreen() {
       phone: normalizePhone(phone),
       address: address.trim() || null,
       vat_number: vat || null,
+      full_name: metaName ? null : fullName.trim(),
     });
     if (err) {
       setError(err);
@@ -156,6 +170,18 @@ export default function RoleSelectScreen() {
               </ThemedText>
             </Pressable>
           </View>
+
+          {!metaName ? (
+            <Input
+              label={t('auth.register.nameLabel')}
+              value={fullName}
+              onChangeText={setFullName}
+              placeholder={t('auth.register.namePlaceholder')}
+              autoCapitalize="words"
+              autoComplete="name"
+              required
+            />
+          ) : null}
 
           <Input
             label={t('profile.phoneLabel')}

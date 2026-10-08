@@ -58,7 +58,10 @@ function InfoRow({ icon, text }: { icon: React.ComponentProps<typeof MaterialIco
   return (
     <View style={styles.infoRow}>
       <MaterialIcons name={icon} size={14} color={theme.textSecondary} />
-      <ThemedText themeColor="textSecondary" type="small" style={styles.infoText}>{text}</ThemedText>
+      {/* 15 sept: selectabil — locația/șasiul se copiază (ex. în Google Maps / Waze). */}
+      <ThemedText themeColor="textSecondary" type="small" style={styles.infoText} selectable>
+        {text}
+      </ThemedText>
     </View>
   );
 }
@@ -202,7 +205,7 @@ export default function ApplicationDetailScreen() {
               </View>
             </>
           ) : null}
-          <ThemedText themeColor="textSecondary" type="small" style={styles.description}>
+          <ThemedText themeColor="textSecondary" type="small" style={styles.description} selectable>
             {announcement.description}
           </ThemedText>
           {truckLine ? <InfoRow icon="local-shipping" text={truckLine} /> : null}

@@ -61,11 +61,16 @@ export function useTabBarNativeStyle() {
  * Se recalculează la rotire/redimensionare și cu orice limbă.
  */
 export function useTabLabelFontSize(labels: string[]): number {
-  const { width } = useWindowDimensions();
+  const { width, fontScale } = useWindowDimensions();
   const itemWidth = width / Math.max(labels.length, 1) - ITEM_H_INSET;
   const maxChars = labels.reduce((max, label) => Math.max(max, label.length), 1);
   const fitting = itemWidth / (maxChars * AVG_CHAR_WIDTH);
-  return Math.min(DESIGN_FONT_SIZE, Math.max(MIN_FONT_SIZE, fitting));
+  // 8 oct: scara de font a sistemului intră AICI, nu în Text (vezi tabLabel —
+  // maxFontSizeMultiplier 1). Altfel, la „Foarte mare" doar eticheta cea mai lungă
+  // era micșorată de adjustsFontSizeToFit și tab-urile aveau mărimi diferite.
+  // Mărimea comună crește cu scara cât încape cea mai lungă etichetă, nu mai mult.
+  // La scara 1 formula e identică cu cea de dinainte.
+  return Math.min(DESIGN_FONT_SIZE * fontScale, Math.max(MIN_FONT_SIZE, fitting));
 }
 
 /**
@@ -80,6 +85,8 @@ export function tabLabel(label: string, fontSize: number = DESIGN_FONT_SIZE) {
         numberOfLines={1}
         adjustsFontSizeToFit
         minimumFontScale={0.6}
+        // Scara sistemului e deja în `fontSize` (useTabLabelFontSize) — nu se aplică de două ori.
+        maxFontSizeMultiplier={1}
         style={{ fontSize, fontWeight: focused ? '700' : '600', color }}>
         {label}
       </Text>

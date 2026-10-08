@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
+import { AdminRefreshButton } from '@/components/admin/refresh-button';
 import { Button } from '@/components/ui/button';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
@@ -39,23 +40,45 @@ export default function AdminDashboard() {
     router.replace(mode === 'driver' ? '/(driver)/announcements' : '/(mechanic)/feed');
   }
 
+  const loadStats = useCallback(
+    () =>
+      fetchDashboardStats().then(({ data }) => {
+        if (data) setStats(data);
+      }),
+    []
+  );
+
   useFocusEffect(
     useCallback(() => {
-      let active = true;
-      fetchDashboardStats().then(({ data }) => {
-        if (active && data) setStats(data);
-      });
-      return () => {
-        active = false;
-      };
-    }, [])
+      loadStats();
+    }, [loadStats])
+  );
+
+  // Reîncărcare la cerere (15 sept): pull-to-refresh pe ambele variante + butonul din
+  // antet / de lângă titlu. Spinner DOAR la gestul de tragere (vezi nota din Conținut).
+  const [pullRefreshing, setPullRefreshing] = useState(false);
+  const onPullRefresh = useCallback(async () => {
+    setPullRefreshing(true);
+    await loadStats();
+    setPullRefreshing(false);
+  }, [loadStats]);
+  const refreshControl = (
+    <RefreshControl
+      refreshing={pullRefreshing}
+      onRefresh={onPullRefresh}
+      tintColor={theme.brand}
+      colors={[theme.brand]}
+    />
   );
 
   if (wide) {
     return (
       <ThemedView style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={w.scroll}>
-          <ThemedText style={w.pageTitle}>{t('admin.dashboard.title')}</ThemedText>
+        <ScrollView contentContainerStyle={w.scroll} refreshControl={refreshControl}>
+          <View style={w.titleRow}>
+            <ThemedText style={w.pageTitle}>{t('admin.dashboard.title')}</ThemedText>
+            <AdminRefreshButton onPress={loadStats} />
+          </View>
 
           <View style={w.section}>
             <ThemedText themeColor="textTertiary" style={w.sectionLabel}>
@@ -172,12 +195,15 @@ export default function AdminDashboard() {
       <ScreenHeader
         title={t('admin.dashboard.title')}
         right={
-          <Pressable onPress={signOut} hitSlop={12} accessibilityLabel={t('admin.logout')}>
-            <MaterialIcons name="logout" size={24} color={theme.onHeader} />
-          </Pressable>
+          <View style={styles.headerActions}>
+            <AdminRefreshButton onPress={loadStats} onHeader />
+            <Pressable onPress={signOut} hitSlop={12} accessibilityLabel={t('admin.logout')}>
+              <MaterialIcons name="logout" size={24} color={theme.onHeader} />
+            </Pressable>
+          </View>
         }
       />
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} refreshControl={refreshControl}>
         <Section title={t('admin.dashboard.sectionUsers')}>
           <Stat label={t('admin.dashboard.usersTotal')} value={stats?.users_total} onPress={() => setChart('users')} />
           <Stat label={t('admin.dashboard.drivers')} value={stats?.users_drivers} onPress={() => setChart('users')} />
@@ -341,6 +367,7 @@ function IconStat({
 
 const styles = StyleSheet.create({
   scroll: { padding: Spacing.three, gap: Spacing.four },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.four },
   userMode: { gap: Spacing.two },
   section: { gap: Spacing.two },
   sectionTitle: { textTransform: 'uppercase', letterSpacing: 0.5 },
@@ -361,6 +388,7 @@ const styles = StyleSheet.create({
 /** Stilurile variantei late (design 10b). */
 const w = StyleSheet.create({
   scroll: { padding: 28, paddingTop: 24, gap: 20, maxWidth: 1060, width: '100%', alignSelf: 'center' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   pageTitle: { fontSize: 26, fontWeight: '800', letterSpacing: -0.4, lineHeight: 32 },
   section: { gap: 10 },
   sectionLabel: { fontSize: 12, fontWeight: '800', letterSpacing: 1.4, textTransform: 'uppercase' },

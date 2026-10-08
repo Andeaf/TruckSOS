@@ -390,6 +390,12 @@ export interface Database {
         Insert: never;
         Update: never;
       };
+      // 17 sept 2026: versiunea live per platformă (mesajul „Versiune nouă disponibilă").
+      app_versions: {
+        Row: { platform: 'android' | 'ios'; latest_version: string; store_url: string; updated_at: string };
+        Insert: never;
+        Update: { latest_version?: string; store_url?: string; updated_at?: string };
+      };
     };
     Functions: {
       accept_announcement: {

@@ -1,8 +1,14 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Device from 'expo-device';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
+
+/** Ultimul token Expo revendicat de pe instalarea asta (14 sept): dacă Expo ne dă
+ *  altul, serverul îl șterge pe cel vechi — altfel telefonul ar primi fiecare
+ *  notificare o dată pentru fiecare token. */
+const LAST_TOKEN_KEY = 'push:lastRegisteredToken';
 
 /**
  * Notificări push (PLAN_FAZA12.md §3).
@@ -93,6 +99,34 @@ export async function registerPushToken(userId: string): Promise<string | null> 
 
     const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
 
+    // 14 sept 2026 — „aceeași notificare de mai multe ori": serverul primește acum
+    // și platforma (pe iOS trimite o notificare per mesaj, stivuite pe fir, în loc
+    // de înlocuirea cu collapseId care re-afișa același conținut), tokenul NATIV
+    // (APNs/FCM — un dispozitiv fizic = un singur rând în push_tokens, oricâte
+    // tokenuri Expo ar fi primit între timp) și tokenul Expo anterior al acestei
+    // instalări (dacă s-a schimbat, cel vechi e șters). Toate sunt opționale:
+    // orice eșec aici lasă revendicarea clasică să meargă mai departe.
+    let deviceToken: string | null = null;
+    try {
+      const native = await Notifications.getDevicePushTokenAsync();
+      deviceToken = typeof native.data === 'string' && native.data ? native.data : null;
+    } catch {
+      deviceToken = null;
+    }
+    let previousToken: string | null = null;
+    try {
+      previousToken = await AsyncStorage.getItem(LAST_TOKEN_KEY);
+    } catch {
+      previousToken = null;
+    }
+    const claimArgs = {
+      p_token: token,
+      p_platform: Platform.OS === 'ios' ? 'ios' : 'android',
+      p_device_token: deviceToken,
+      p_previous_token: previousToken && previousToken !== token ? previousToken : null,
+      p_app_build: Constants.expoConfig?.version ?? null,
+    };
+
     // RPC SECURITY DEFINER: revendică tokenul pentru contul curent. Un `upsert` direct
     // NU poate muta un token de pe alt cont (RLS UPDATE cere user_id = auth.uid() pe
     // rândul VECHI) → tokenul ar rămâne legat de contul precedent și notificările ar
@@ -105,8 +139,20 @@ export async function registerPushToken(userId: string): Promise<string | null> 
     // Trei încercări cu pauză crescătoare; apelantul reia oricum la foreground.
     let lastError: string | null = null;
     for (let attempt = 1; attempt <= 3; attempt++) {
-      const { error } = await supabase.rpc('claim_push_token', { p_token: token } as never);
-      if (!error) return token;
+      let { error } = await supabase.rpc('claim_push_token', claimArgs as never);
+      // PGRST202 = serverul are încă semnătura veche (migrarea 20260914 nerulată):
+      // cădem pe apelul clasic, cu un singur argument, ca să nu rămână fără push.
+      if (error?.code === 'PGRST202') {
+        ({ error } = await supabase.rpc('claim_push_token', { p_token: token } as never));
+      }
+      if (!error) {
+        try {
+          await AsyncStorage.setItem(LAST_TOKEN_KEY, token);
+        } catch {
+          // Doar optimizare; fără ea dedupe-ul rămâne pe tokenul nativ.
+        }
+        return token;
+      }
       lastError = error.message;
       console.warn(`[push] claim_push_token a eșuat (încercarea ${attempt}/3):`, error.message);
       if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 1500));
@@ -128,9 +174,24 @@ export async function registerPushToken(userId: string): Promise<string | null> 
  * Serverul grupează push-urile pe fir prin `tag`/`collapseId`; aici filtrăm după
  * `data` (type + id), ca să prindem și notificările vechi, dinainte de tag.
  */
-export async function dismissThreadNotifications(
+export function dismissThreadNotifications(
   type: 'conversation' | 'channel',
   id: string
+): Promise<void> {
+  return dismissPresented((data) => data?.type === type && data?.id === id);
+}
+
+/**
+ * Șterge din bară TOATE notificările de un anumit tip, indiferent de id (6 oct 2026):
+ * la deschiderea Marketului, push-urile „anunț nou pe Market" (`type: 'listing'`) nu
+ * mai au ce să anunțe — userul vede deja lista. Simetric cu celulele de chat de mai sus.
+ */
+export function dismissNotificationsOfType(type: NonNullable<PushData['type']>): Promise<void> {
+  return dismissPresented((data) => data?.type === type);
+}
+
+async function dismissPresented(
+  match: (data: PushData | undefined) => boolean
 ): Promise<void> {
   if (!pushAvailable()) return;
   try {
@@ -138,10 +199,7 @@ export async function dismissThreadNotifications(
     const presented = await Notifications.getPresentedNotificationsAsync();
     await Promise.all(
       presented
-        .filter((n) => {
-          const data = n.request.content.data as PushData | undefined;
-          return data?.type === type && data?.id === id;
-        })
+        .filter((n) => match(n.request.content.data as PushData | undefined))
         .map((n) => Notifications.dismissNotificationAsync(n.request.identifier))
     );
   } catch {

@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { SocialSignIn } from '@/components/social-sign-in';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -75,6 +76,9 @@ export default function LoginScreen() {
       {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
 
       <Button title={t('auth.login.button')} onPress={handleSignIn} loading={loading} />
+
+      {/* 6 oct: Google (+ Apple pe iOS) — se randează doar când furnizorii sunt disponibili. */}
+      <SocialSignIn />
     </View>
   );
 

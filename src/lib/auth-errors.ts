@@ -19,6 +19,8 @@ const KNOWN_CODES = [
   'weak_password',
   'email_address_invalid',
   'validation_failed',
+  // 6 oct 2026: signInWithIdToken cu Google/Apple când furnizorul nu e activat în Supabase.
+  'provider_disabled',
 ] as const;
 
 export function translateAuthError(error: AuthError | null): string | null {

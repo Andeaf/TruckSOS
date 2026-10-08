@@ -6,6 +6,7 @@ import { I18nextProvider } from 'react-i18next';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { UpdatePrompt } from '@/components/update-prompt';
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 // Efect secundar, doar web: Alert.alert e no-op în react-native-web — fără shim,
 // erorile și confirmările erau invizibile în browser (vezi lib/web-alert.ts).
@@ -86,6 +87,9 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={resolvedScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Slot />
+      {/* „Versiune nouă disponibilă" (17 sept): peste orice ecran, doar cu sesiune + profil
+          (nu peste auth / ban); pe web nu apare. O dată la 24h — vezi useUpdatePrompt. */}
+      <UpdatePrompt enabled={!!session && !!profile && !isBanned(profile)} />
     </ThemeProvider>
   );
 }

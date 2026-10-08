@@ -63,6 +63,9 @@ export interface AdminAnnouncement {
   driver_id: string;
   driver_name: string | null;
   photo_count: number;
+  /** 24 sept: utilizatori diferiți care au deschis detaliul (fără autor și admini).
+   *  Lipsește cât timp migrarea 20260924_announcement_views nu e rulată. */
+  view_count?: number;
 }
 
 /** Faza 19: anunț de market în moderare (admin_list_recent_listings). */

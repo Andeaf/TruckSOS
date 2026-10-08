@@ -19,6 +19,11 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     storage: AsyncStorage,
     autoRefreshToken: true,
     persistSession: true,
+    // Login-ul social e OPRIT în 1.0.7 (vezi social-auth.ts, `extra.socialLogin.enabled`).
+    // Când se pornește (1.0.8), conectarea cu Google pe WEB merge prin redirect OAuth și
+    // cere aici `detectSessionInUrl: Platform.OS === 'web'` + `flowType: 'pkce'` (clientul
+    // schimbă singur `?code=` pe sesiune la pornire). Pe telefon rămâne oprit oricum:
+    // conectarea e nativă (ID token), iar fluxurile OTP sunt pe cod, nu pe link.
     detectSessionInUrl: false,
   },
   global: { fetch: fetchWithTimeout },
