@@ -97,4 +97,5 @@ supabase/.temp/
 # folderul .claude/ sunt documente de lucru — trăiesc doar local.
 *.md
 !README.md
+!SECURITY.md
 .claude/

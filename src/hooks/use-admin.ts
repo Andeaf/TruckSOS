@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { AnnouncementStatus, ReportReason, ReportStatus } from '@/types/database';
+import type { Database } from '@/types/supabase';
 
 /**
  * Stratul de date admin (Faza 16). Toate trec prin RPC-uri SECURITY DEFINER care încep cu
@@ -141,13 +142,15 @@ export interface DashboardStats {
 
 type Result<T> = { data: T; error: string | null };
 
-async function rpcData<T>(fn: string, args: Record<string, unknown>, fallback: T): Promise<Result<T>> {
+type RpcName = keyof Database['public']['Functions'];
+
+async function rpcData<T>(fn: RpcName, args: Record<string, unknown>, fallback: T): Promise<Result<T>> {
   const { data, error } = await supabase.rpc(fn, args as never);
   if (error) return { data: fallback, error: error.message };
   return { data: (data as T) ?? fallback, error: null };
 }
 
-async function rpcVoid(fn: string, args: Record<string, unknown>): Promise<string | null> {
+async function rpcVoid(fn: RpcName, args: Record<string, unknown>): Promise<string | null> {
   const { error } = await supabase.rpc(fn, args as never);
   return error?.message ?? null;
 }

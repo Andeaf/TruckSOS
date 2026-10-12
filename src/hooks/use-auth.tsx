@@ -46,7 +46,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select('*')
         .eq('id', userId)
         .single();
-      setProfile(data ?? null);
+      // `role` e text în schema generată; CHECK-ul din DB îl limitează la valorile din Role.
+      setProfile((data as Profile | null) ?? null);
     } catch {
       setProfile(null);
     } finally {

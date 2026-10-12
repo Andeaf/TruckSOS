@@ -14,8 +14,15 @@ import { emitReadsChanged, onReadsChanged } from '@/lib/read-events';
 import { dismissThreadNotifications } from '@/lib/push';
 import { uploadFile, uploadPhoto, type PickedFile } from '@/lib/storage';
 import type { PickedImage } from '@/lib/media';
-import type { Announcement, Conversation, Message, PublicUser, Role } from '@/types/database';
-import type { AnnouncementStatus, MarketListingStatus } from '@/types/database';
+import type {
+  Announcement,
+  AnnouncementStatus,
+  Conversation,
+  MarketListingStatus,
+  Message,
+  PublicUser,
+  Role,
+} from '@/types/database';
 
 /** Participant la conversație — cu rolul REAL (Faza 19: rutarea către profilul public
  * se face pe rolul lui, nu pe rolul privitorului). */
@@ -743,8 +750,7 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
 
     const { data: allConvs } = await supabase
       .from('conversations')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .select('id').or(`driver_id.eq.${userId},mechanic_id.eq.${userId}` as any);
+      .select('id').or(`driver_id.eq.${userId},mechanic_id.eq.${userId}`);
     const all = (allConvs ?? []) as unknown as { id: string }[];
     // Filtrul Realtime acoperă TOATE conversațiile mele, inclusiv cele șterse: un
     // mesaj nou într-o conversație ștearsă o reînvie server-side (trigger 20260811),

@@ -27,6 +27,7 @@ export function deviceLanguage(): Language {
 // `i18n.changeLanguage()` după ce citește preferința din AsyncStorage.
 const supportedLocale = deviceLanguage();
 
+// eslint-disable-next-line import/no-named-as-default-member -- instanța implicită e cea importată peste tot ca `i18n`
 i18n.use(initReactI18next).init({
   resources,
   lng: supportedLocale,

@@ -11,7 +11,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { useMyApplications, withdrawApplication, dismissApplication, resubmitApplication, type ApplicationWithDetails } from '@/hooks/use-announcements';
+import { useMyApplications, withdrawApplication, dismissApplication, type ApplicationWithDetails } from '@/hooks/use-announcements';
 import { useTimeAgo } from '@/hooks/use-time-ago';
 import type { ApplicationStatus, PriceType } from '@/types/database';
 

@@ -240,6 +240,8 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
     }
   }
 
+  // Reîncărcăm doar la schimbarea id-ului; `load` se recreează la fiecare render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [id]);
 
   // Vizualizarea pentru admin (24 sept). Ecranul e al proprietarului, dar îl deschid

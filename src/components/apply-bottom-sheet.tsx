@@ -60,6 +60,9 @@ export function ApplyBottomSheet({
       setCurrency(initialData.currency);
       setMessage(initialData.message || '');
     }
+    // Intenționat doar `visible`: formularul se repopulează la deschidere, nu la fiecare
+    // schimbare a lui `initialData` (ar suprascrie ce tastează utilizatorul).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   function reset() {

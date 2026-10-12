@@ -1,7 +1,7 @@
 {
   "name": "trucksos",
   "main": "expo-router/entry",
-  "version": "1.0.0",
+  "version": "1.0.7",
   "dependencies": {
     "@expo/vector-icons": "*",
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -58,11 +58,12 @@
   },
   "scripts": {
     "start": "expo start --clear",
-    "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "typecheck": "tsc --noEmit",
+    "gen:types": "supabase gen types typescript --linked --schema public > src/types/supabase.ts"
   },
   "private": true
 }

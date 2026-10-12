@@ -3,7 +3,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
 
 /**
  * „4.3 ★ (12)" — media denormalizată de pe `profiles` (PLAN_FAZA9.md §5).

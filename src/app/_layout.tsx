@@ -32,19 +32,21 @@ function RootLayoutNav() {
   useEffect(() => {
     if (loading) return;
 
-    const inAuth = segments[0] === '(auth)';
-    const inAdmin = segments[0] === '(admin)';
-    const inDriver = segments[0] === '(driver)';
-    const inMechanic = segments[0] === '(mechanic)';
-    const onRoleSelect = inAuth && segments[1] === 'role-select';
-    const onBanned = inAuth && segments[1] === 'banned';
-    const noRoute = segments.length === 0;
+    // Cast: tipurile rutelor (.expo/types/router.d.ts) sunt generate abia la `expo start`
+    // / `expo export`, deci lipsesc pe CI și nu admit nici lista goală (la reload în Expo Go
+    // segments chiar e []). Garda compară doar string-uri, nu are nevoie de tipurile exacte.
+    const seg = segments as string[];
+    const inAuth = seg[0] === '(auth)';
+    const inAdmin = seg[0] === '(admin)';
+    const inDriver = seg[0] === '(driver)';
+    const inMechanic = seg[0] === '(mechanic)';
+    const onRoleSelect = inAuth && seg[1] === 'role-select';
+    const onBanned = inAuth && seg[1] === 'banned';
+    const noRoute = seg.length === 0;
     // Link de profil partajat, trucksos.net/p/<id> (7 sept): ecranul /p/[id] își
     // decide singur soarta — cu sesiune rezolvă rolul și navighează, fără sesiune ține
     // linkul minte (pe web arată pagina de instalare). Garda NU-l ricoșează.
-    // (cast: tipurile rutelor se regenerează abia la export/start — fără el tsc se
-    // plânge că segmentul nou nu există.)
-    const inSharedLink = (segments[0] as string) === 'p';
+    const inSharedLink = seg[0] === 'p';
 
     if (!session) {
       // La delogare, un admin care era în mod șofer/mecanic revine implicit la mod admin.
@@ -73,7 +75,7 @@ function RootLayoutNav() {
       const home = profile.role === 'driver' ? '/(driver)/announcements' : '/(mechanic)/feed';
       router.replace((takePendingLink() ?? home) as never);
     }
-  }, [session, profile, loading, segments, adminViewAs, setAdminViewAs]);
+  }, [session, profile, loading, segments, adminViewAs, setAdminViewAs, router]);
 
   // `ready` evită un flash pe tema greșită cât citim preferința din AsyncStorage.
   if (loading || !ready) {

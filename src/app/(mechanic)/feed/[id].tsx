@@ -200,6 +200,8 @@ export default function MechanicAnnouncementDetailScreen() {
     }
   }
 
+  // Reîncărcăm doar la schimbarea id-ului; `load` se recreează la fiecare render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [id]);
 
   // Deschiderea detaliului = anunțul nu mai e „Nou" în feed.
