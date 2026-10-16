@@ -2,7 +2,7 @@
   "expo": {
     "name": "TruckSOS",
     "slug": "trucksos",
-    "version": "1.0.7",
+    "version": "1.0.8",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "trucksos",
@@ -48,6 +48,7 @@
       "bundleIdentifier": "com.andeaf.trucksos",
       "buildNumber": "1",
       "supportsTablet": false,
+      "usesAppleSignIn": true,
       "icon": "./assets/images/icon.png",
       "associatedDomains": [
         "applinks:trucksos.net"
@@ -116,7 +117,13 @@
         }
       ],
       "expo-video",
-      "./plugins/with-no-apple-signin.js"
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.889090807475-fisli4ip7u82iidmrbjpduavj3i2u0ed"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -124,7 +131,7 @@
     "extra": {
       "router": {},
       "socialLogin": {
-        "enabled": false
+        "enabled": true
       },
       "googleSignIn": {
         "webClientId": "889090807475-701gc75s54jufec4od106v0s38mqj0pb.apps.googleusercontent.com",

@@ -12,18 +12,21 @@ import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
+import { NetworkTroubleshoot } from '@/components/network-troubleshoot';
 import { Input } from '@/components/ui/input';
 import { SocialSignIn } from '@/components/social-sign-in';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
+import { useNetworkDiagnosis } from '@/hooks/use-network-diagnosis';
 import { translateAuthError } from '@/lib/auth-errors';
 import { supabase } from '@/lib/supabase';
 
 export default function RegisterScreen() {
   const { signUp } = useAuth();
   const { t } = useTranslation();
+  const { diagnosis, inspect } = useNetworkDiagnosis();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -58,6 +61,7 @@ export default function RegisterScreen() {
     setError('');
     const result = await signUp(email.trim(), password, fullName.trim());
     setLoading(false);
+    inspect(result.error, 'register');
     if (result.error) {
       setError(result.error);
     } else if (result.needsConfirmation) {
@@ -83,12 +87,14 @@ export default function RegisterScreen() {
       type: 'signup',
     });
     setLoading(false);
+    inspect(err, 'verify_signup');
     if (err) setError(translateAuthError(err) ?? '');
   }
 
   async function handleResend() {
     setError('');
     const { error: err } = await supabase.auth.resend({ type: 'signup', email: email.trim() });
+    inspect(err, 'resend_signup');
     if (err) {
       setError(translateAuthError(err) ?? '');
       return;
@@ -136,6 +142,8 @@ export default function RegisterScreen() {
                 />
 
                 {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
+
+                <NetworkTroubleshoot diagnosis={diagnosis} />
                 {!error && resent ? (
                   <ThemedText style={styles.notice}>{t('auth.otp.resentNotice')}</ThemedText>
                 ) : null}
@@ -219,7 +227,10 @@ export default function RegisterScreen() {
             />
 
             {error ? (
-              <ThemedText style={styles.error}>{error}</ThemedText>
+              <>
+                <ThemedText style={styles.error}>{error}</ThemedText>
+                <NetworkTroubleshoot diagnosis={diagnosis} />
+              </>
             ) : null}
 
             <Button title={t('auth.register.button')} onPress={handleSignUp} loading={loading} />

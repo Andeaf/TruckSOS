@@ -11,6 +11,7 @@ import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
 import { searchMentionUsers } from '@/hooks/use-mechanic-search';
+import { useThreadNotifications } from '@/hooks/use-thread-notifications';
 import { displayName } from '@/lib/display-name';
 import type { MentionUser } from '@/lib/mention-search';
 import {
@@ -74,6 +75,7 @@ export default function MechanicChatScreen() {
   const other = conv && session ? otherParticipant(conv, session.user.id) : null;
   const readCursor = useReadCursor(id, other?.id);
   const isFocused = useIsFocused();
+  useThreadNotifications('conversation', id, isFocused);
 
   useEffect(() => {
     fetchConversationDetails(id).then(setConv);

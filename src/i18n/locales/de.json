@@ -218,7 +218,8 @@
       "detailsSubtitleMechanic": "Gib deine Anbieterdaten an — Transporteure sehen sie auf deinem öffentlichen Profil.",
       "mechanicFieldsHint": "Adresse und USt-IdNr. erscheinen auf deinem öffentlichen Profil und schaffen Vertrauen.",
       "changeRole": "Andere Rolle wählen",
-      "continueButton": "Weiter"
+      "continueButton": "Weiter",
+      "errorGeneric": "Dein Profil konnte nicht gespeichert werden. Prüfe deine Verbindung und versuche es erneut."
     },
     "otp": {
       "codeLabel": "Bestätigungscode",
@@ -243,6 +244,22 @@
       "successBody": "Dein Passwort wurde geändert und du bist angemeldet.",
       "updateErrorTitle": "Passwort konnte nicht geändert werden",
       "backToLogin": "Zurück zur Anmeldung"
+    },
+    "network": {
+      "checking": "Verbindung wird geprüft…",
+      "offlineTitle": "Die App hat keinen Internetzugang.",
+      "offlineStepIos": "Prüfen Sie, ob mobile Daten für TruckSOS erlaubt sind: Einstellungen → Mobilfunk → nach unten zu TruckSOS scrollen und den Schalter einschalten.",
+      "offlineStepAndroid": "Prüfen Sie, ob die App mobile Daten nutzen darf: Einstellungen → Apps → TruckSOS → Mobile Daten & WLAN.",
+      "offlineStepWifi": "Versuchen Sie es über WLAN oder schalten Sie den Flugmodus ein und wieder aus, dann erneut versuchen.",
+      "blockedTitle": "Ihr Internet funktioniert, aber der TruckSOS-Server ist aus diesem Netz nicht erreichbar.",
+      "blockedStepVpn": "Schalten Sie VPN, privates DNS oder Werbeblocker (AdGuard, NextDNS usw.) aus, falls Sie so etwas nutzen.",
+      "blockedStepOther": "Versuchen Sie ein anderes Netz: WLAN statt mobile Daten oder umgekehrt.",
+      "blockedStepWeb": "Inzwischen können Sie die Web-Version trucksos.net mit derselben E-Mail und demselben Passwort nutzen.",
+      "clockTitle": "Datum oder Uhrzeit Ihres Telefons scheinen falsch zu sein, daher scheitert die sichere Verbindung.",
+      "clockStep": "Aktivieren Sie „Automatisch einstellen“ (Einstellungen → Allgemein → Datum & Uhrzeit) und versuchen Sie es erneut.",
+      "okTitle": "Die Verbindung scheint jetzt in Ordnung zu sein. Bitte erneut versuchen.",
+      "openSettings": "Einstellungen öffnen",
+      "openWeb": "trucksos.net öffnen"
     }
   },
   "authErrors": {
@@ -257,7 +274,8 @@
     "weak_password": "Das Passwort ist zu schwach. Wähle ein längeres.",
     "email_address_invalid": "Die E-Mail-Adresse ist ungültig.",
     "validation_failed": "Die eingegebenen Daten sind ungültig.",
-    "provider_disabled": "Die Anmeldung mit diesem Anbieter ist derzeit nicht aktiviert."
+    "provider_disabled": "Die Anmeldung mit diesem Anbieter ist derzeit nicht aktiviert.",
+    "network": "Der TruckSOS-Server ist nicht erreichbar. Bitte Internetverbindung prüfen."
   },
   "driver": {
     "tabs": {
@@ -1018,7 +1036,7 @@
     },
     "privacy": {
       "title": "Datenschutzerklärung",
-      "updated": "Zuletzt aktualisiert: 7. August 2026",
+      "updated": "Zuletzt aktualisiert: 14. Oktober 2026",
       "sections": [
         {
           "heading": "1. Wer wir sind",
@@ -1026,7 +1044,7 @@
         },
         {
           "heading": "2. Welche Daten wir erfassen",
-          "body": "Kontodaten: E-Mail-Adresse und Passwort (das Passwort wird von unserem Authentifizierungsanbieter verschlüsselt verwaltet; wir sehen es nie). Profildaten: Name, Rolle, Telefonnummer, Firma, Kontakt-E-Mail, Adresse, USt-IdNr., Spezialisierung, Einsatzgebiet, Profilfoto und gewählte Sprache. Veröffentlichte Inhalte: Pannen-Anzeigen (Beschreibung, Ort, Lkw-Details, Kennzeichen, Fotos und — nur wenn du sie anhängst — die GPS-Position), Markt-Verkaufsanzeigen (Titel, Beschreibung, Preis, Kategorie, Fotos), private Nachrichten, Nachrichten im öffentlichen Kanal, die Fotos und Dateien, die du in Konversationen anhängst, Bewertungen und Meldungen. Technische Daten: das Push-Token deines Geräts, deinen Verlauf der Mechaniker-Suchen (in deinem Konto gespeichert, damit wir dir deine letzten Suchen anzeigen können) und bei Mechanikern die Referenzposition, falls für den Radiusfilter gesetzt."
+          "body": "Kontodaten: E-Mail-Adresse und Passwort (das Passwort wird von unserem Authentifizierungsanbieter verschlüsselt verwaltet; wir sehen es nie). Wenn du dich mit Google oder Apple anmeldest, erhalten wir von diesen nur die E-Mail-Adresse und den Namen deines Kontos (oder eine Relay-Adresse, wenn du bei Apple „E-Mail verbergen“ wählst); dein Google- oder Apple-Passwort erhalten wir nie. Profildaten: Name, Rolle, Telefonnummer, Firma, Kontakt-E-Mail, Adresse, USt-IdNr., Spezialisierung, Einsatzgebiet, Profilfoto und gewählte Sprache. Veröffentlichte Inhalte: Pannen-Anzeigen (Beschreibung, Ort, Lkw-Details, Kennzeichen, Fotos und — nur wenn du sie anhängst — die GPS-Position), Markt-Verkaufsanzeigen (Titel, Beschreibung, Preis, Kategorie, Fotos), private Nachrichten, Nachrichten im öffentlichen Kanal, die Fotos und Dateien, die du in Konversationen anhängst, Bewertungen und Meldungen. Technische Daten: das Push-Token deines Geräts, deinen Verlauf der Mechaniker-Suchen (in deinem Konto gespeichert, damit wir dir deine letzten Suchen anzeigen können) und bei Mechanikern die Referenzposition, falls für den Radiusfilter gesetzt. Wenn die App unseren Server nicht erreicht, speichert sie auf dem Gerät ein kurzes technisches Protokoll der Prüfung (Ergebnis, Netztyp, Gerätemodell und Systemversion, App-Version, keine persönlichen Inhalte) und sendet es bei der nächsten erfolgreichen Anmeldung, damit wir die Verbindung verbessern können; es wird nach 90 Tagen gelöscht."
         },
         {
           "heading": "3. Wer was sieht",
@@ -1034,7 +1052,7 @@
         },
         {
           "heading": "4. Wo die Daten gespeichert werden",
-          "body": "Die Daten werden auf der Infrastruktur von Supabase gespeichert, in der Europäischen Union (Irland, AWS-Region eu-west-1). Unterauftragsverarbeiter: Supabase (Datenbank, Authentifizierung, Dateispeicher), Expo (Zustellung von Push-Benachrichtigungen), Google (Kartendarstellung auf Android) und Brevo (Versand der Authentifizierungs-E-Mails — Bestätigungs- und Passwort-Reset-Codes; Unternehmen mit Sitz in der EU)."
+          "body": "Die Daten werden auf der Infrastruktur von Supabase gespeichert, in der Europäischen Union (Irland, AWS-Region eu-west-1). Unterauftragsverarbeiter: Supabase (Datenbank, Authentifizierung, Dateispeicher), Expo (Zustellung von Push-Benachrichtigungen), Google (Kartendarstellung auf Android und, wenn du es wählst, Anmeldung mit deinem Google-Konto), Apple (Anmeldung mit Apple, wenn du es wählst) und Brevo (Versand der Authentifizierungs-E-Mails — Bestätigungs- und Passwort-Reset-Codes; Unternehmen mit Sitz in der EU)."
         },
         {
           "heading": "5. Moderation und administrativer Zugriff",

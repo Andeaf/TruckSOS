@@ -1,10 +1,13 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
-import type { Session } from '@supabase/supabase-js';
+import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js';
 
 import { translateAuthError } from '@/lib/auth-errors';
-import { supabase } from '@/lib/supabase';
+import { readStoredSession, supabase } from '@/lib/supabase';
 import { registerPushToken, unregisterPushToken } from '@/lib/push';
+import { buildDiagnosticEntry, flushDiagnostics, queueDiagnostic } from '@/lib/diagnostic-log';
+import { diagnoseNetwork, isNetworkError } from '@/lib/network-diagnosis';
+import { clearProfileCache, readProfileCache, writeProfileCache } from '@/lib/profile-cache';
 import { signOutSocial } from '@/lib/social-auth';
 import type { Profile } from '@/types/database';
 import i18n from '@/i18n';
@@ -12,6 +15,8 @@ import i18n from '@/i18n';
 interface AuthContextValue {
   session: Session | null;
   profile: Profile | null;
+  /** `true` doar când serverul a confirmat că nu există rând în `profiles` (cont nou). */
+  profileMissing: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<string | null>;
   signUp: (
@@ -32,58 +37,229 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  // 14 oct 2026 — reclamația „m-a deconectat fără motiv" (sesiune VALIDĂ pe server):
+  // o citire a profilului picată pe rețea NU mai înseamnă „fără profil". Înainte, garda
+  // trimitea omul la alegerea rolului, de unde „Continuă" lovea cheia duplicată
+  // („profiles_pkey"). `profileMissing` e `true` doar cu confirmarea serverului.
+  const [profileMissing, setProfileMissing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const profileRef = useRef<Profile | null>(null);
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
+  // Reîncercarea citirii profilului când rețeaua pică: pauze crescătoare 3 s → 30 s.
+  const profileRetryRef = useRef<{
+    timer: ReturnType<typeof setTimeout> | null;
+    delayMs: number;
+    userId: string | null;
+    failures: number;
+  }>({ timer: null, delayMs: 3000, userId: null, failures: 0 });
+  // Un singur diagnostic de rețea per pornire (jurnalul `client_diagnostics`).
+  const offlineLoggedRef = useRef(false);
+  // Sesiunea curentă, citibilă sincron din funcțiile async (starea React ar fi în urmă).
+  const sessionRef = useRef<Session | null>(null);
   // Tokenul acestui dispozitiv, ținut ca să-l putem șterge exact pe el la logout.
   const pushTokenRef = useRef<string | null>(null);
   // Contul pentru care tokenul de mai sus e deja revendicat — ca reîncercările să
   // știe când chiar n-au ce face și când trebuie să re-lege tokenul (alt cont).
   const pushOwnerRef = useRef<string | null>(null);
 
-  async function fetchProfile(userId: string) {
+  function cancelProfileRetry() {
+    const r = profileRetryRef.current;
+    if (r.timer) clearTimeout(r.timer);
+    r.timer = null;
+    r.delayMs = 3000;
+    r.userId = null;
+    r.failures = 0;
+  }
+
+  function scheduleProfileRetry(userId: string) {
+    const r = profileRetryRef.current;
+    if (r.timer) clearTimeout(r.timer);
+    r.userId = userId;
+    r.timer = setTimeout(() => {
+      r.timer = null;
+      if (r.userId === userId && sessionRef.current?.user.id === userId) void fetchProfile(userId);
+    }, r.delayMs);
+    r.delayMs = Math.min(r.delayMs * 2, 30000);
+  }
+
+  // Jurnalul de diagnostice (13 oct): ce vede telefonul când serverul pare inaccesibil.
+  async function logOffline(kind: string, error: unknown) {
+    if (offlineLoggedRef.current) return;
+    offlineLoggedRef.current = true;
     try {
-      const { data } = await supabase
+      const report = await diagnoseNetwork();
+      await queueDiagnostic(buildDiagnosticEntry(kind, error, report));
+    } catch {
+      // doar jurnal
+    }
+  }
+
+  // Profilul nu se poate citi acum (rețea / server): păstrăm ce avem — din memorie sau
+  // din cache-ul de pe telefon — ca omul să rămână în aplicație, și reîncercăm cu pauze
+  // crescătoare și la revenirea în prim-plan. Fără nimic în cache rămâne ecranul de
+  // încărcare: tot mai bine decât un login sau un „alege rolul" fals.
+  async function fallbackToOfflineProfile(userId: string, reason: unknown): Promise<Profile | null> {
+    // Între timp s-a delogat sau a intrat alt cont: citirea asta nu mai are obiect (altfel ar
+    // reprograma la nesfârșit reîncercări pentru un user care nu mai e în aplicație).
+    if (sessionRef.current?.user.id !== userId) return null;
+    const cached =
+      profileRef.current?.id === userId ? profileRef.current : await readProfileCache(userId);
+    if (sessionRef.current?.user.id !== userId) return null;
+    if (cached) {
+      setProfile(cached);
+      setProfileMissing(false);
+      setLoading(false);
+    }
+    if (reason !== 'no_live_session') void logOffline('profile_fetch', reason);
+    const r = profileRetryRef.current;
+    r.failures += 1;
+    if (!cached && r.failures >= 3) {
+      // Fără profil în cache nu ținem omul la nesfârșit pe ecranul de încărcare: ca înainte,
+      // ajunge la login (sesiunea rămâne salvată pe telefon; următoarea pornire cu rețea intră
+      // direct). Dacă getSession() de la pornire e încă în lucru, settle() îl readuce.
+      cancelProfileRetry();
+      sessionRef.current = null;
+      setSession(null);
+      setLoading(false);
+      return null;
+    }
+    scheduleProfileRetry(userId);
+    return cached;
+  }
+
+  /** Citește profilul de pe server; întoarce profilul folosit acum (server sau cache). */
+  async function fetchProfile(userId: string): Promise<Profile | null> {
+    try {
+      // Fără token valid în clipa asta (reîmprospătarea a picat pe rețea), cererea ar
+      // pleca anonim și ar primi „niciun rând" — ceea ce NU înseamnă că profilul lipsește.
+      const {
+        data: { session: live },
+      } = await supabase.auth.getSession();
+      if (!live || live.user.id !== userId) {
+        return fallbackToOfflineProfile(userId, 'no_live_session');
+      }
+
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
+      if (error) return fallbackToOfflineProfile(userId, error);
+
+      cancelProfileRetry();
       // `role` e text în schema generată; CHECK-ul din DB îl limitează la valorile din Role.
-      setProfile((data as Profile | null) ?? null);
-    } catch {
-      setProfile(null);
-    } finally {
+      const next = (data as Profile | null) ?? null;
+      setProfile(next);
+      // Doar aici, cu răspuns de la server, știm sigur că nu există rând (cont nou).
+      setProfileMissing(!next);
+      await writeProfileCache(next);
       setLoading(false);
+      return next;
+    } catch (e) {
+      return fallbackToOfflineProfile(userId, e);
     }
   }
 
   useEffect(() => {
-    const safetyTimer = setTimeout(() => setLoading(false), 8000);
+    let settled = false;
+    const settle = (next: Session | null) => {
+      settled = true;
+      sessionRef.current = next;
+      setSession(next);
+      if (next) {
+        void fetchProfile(next.user.id);
+        // 13 oct 2026: cu sesiune, urcăm diagnosticele de rețea strânse cât serverul era inaccesibil.
+        void flushDiagnostics();
+      } else {
+        setLoading(false);
+      }
+    };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      clearTimeout(safetyTimer);
-      setSession(session);
-      if (session) fetchProfile(session.user.id);
-      else setLoading(false);
-    }).catch(() => {
-      clearTimeout(safetyTimer);
-      setLoading(false);
-    });
+    // 14 oct 2026: rețea lentă — după 8 s nu mai așteptăm reîmprospătarea tokenului, dar
+    // nici nu-l trimitem la login: cu o sesiune salvată intrăm cu ea (profilul, din cache).
+    const safetyTimer = setTimeout(() => {
+      void (async () => {
+        const stored = await readStoredSession();
+        const cached = stored ? await readProfileCache(stored.user.id) : null;
+        if (settled) return;
+        if (stored && cached) {
+          // Intrăm direct cu ce știm (sesiunea + profilul de pe telefon), fără să așteptăm
+          // reîmprospătarea tokenului; getSession() de mai jos aduce apoi datele proaspete.
+          settled = true;
+          sessionRef.current = stored;
+          setSession(stored);
+          setProfile(cached);
+          setProfileMissing(false);
+          setLoading(false);
+        } else {
+          // Fără profil în cache nu avem ce arăta: login, ca înainte; dacă getSession()
+          // reușește totuși mai târziu, settle() îl aduce înapoi în aplicație.
+          settle(null);
+        }
+      })();
+    }, 8000);
+
+    supabase.auth
+      .getSession()
+      .then(async ({ data: { session }, error }) => {
+        clearTimeout(safetyTimer);
+        let next = session;
+        if (!next && error && isAuthRetryableFetchError(error)) {
+          // Tokenul e expirat și reîmprospătarea a picat pe REȚEA (nu pe server): sesiunea
+          // din storage e în continuare bună — vezi readStoredSession. Dacă tokenul chiar
+          // e invalid, auth-js emite SIGNED_OUT la prima reîmprospătare reușită → login.
+          next = await readStoredSession();
+          if (next) void logOffline('startup_session', error);
+        }
+        settle(next);
+      })
+      .catch(() => {
+        clearTimeout(safetyTimer);
+        if (!settled) settle(null);
+      });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'INITIAL_SESSION') return;
+      sessionRef.current = session;
       setSession(session);
-      if (session) fetchProfile(session.user.id);
-      else {
+      if (session) {
+        // După login (parolă/Google/Apple) profilul încă nu e în memorie: arătăm încărcarea,
+        // altfel formularul ar sta mut cât citim profilul (și omul ar apăsa iar „Intră").
+        if (event === 'SIGNED_IN' && !profileRef.current) setLoading(true);
+        void fetchProfile(session.user.id);
+        // 13 oct 2026: cu sesiune, urcăm diagnosticele de rețea strânse cât serverul era inaccesibil.
+        void flushDiagnostics();
+      } else {
+        cancelProfileRetry();
         setProfile(null);
+        setProfileMissing(false);
+        void clearProfileCache();
         setLoading(false);
       }
     });
 
+    // Revenire în prim-plan cu o citire de profil restantă → reîncercăm imediat.
+    const appState = AppState.addEventListener('change', (state) => {
+      const r = profileRetryRef.current;
+      if (state !== 'active' || !r.userId) return;
+      if (r.timer) clearTimeout(r.timer);
+      r.timer = null;
+      void fetchProfile(r.userId);
+    });
+
     return () => {
       clearTimeout(safetyTimer);
+      cancelProfileRetry();
+      appState.remove();
       subscription.unsubscribe();
     };
+    // Rulează o singură dată, la montare: fetchProfile/settle citesc starea prin ref-uri,
+    // iar abonamentele de aici nu trebuie refăcute la fiecare schimbare de sesiune.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function signIn(email: string, password: string): Promise<string | null> {
@@ -165,6 +341,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       pushTokenRef.current = null;
     }
     pushOwnerRef.current = null;
+    cancelProfileRetry();
+    await clearProfileCache();
     // Contul Google ales rămâne memorat nativ; fără asta următorul tap pe „Continuă cu
     // Google” ar intra direct, fără selector de cont (best-effort, doar pe telefon).
     await signOutSocial();
@@ -228,12 +406,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       vat_number: details.vat_number ?? null,
     });
 
-    if (!error) await fetchProfile(userId);
-    return error?.message ?? null;
+    if (!error) {
+      await fetchProfile(userId);
+      return null;
+    }
+    // 14 oct 2026: 23505 = profilul EXISTA deja - omul a ajuns aici dintr-o citire picata
+    // pe retea, nu pentru ca n-ar avea cont. Il citim si mergem mai departe, fara eroare.
+    if (error.code === '23505') {
+      const existing = await fetchProfile(userId);
+      return existing ? null : i18n.t('authErrors.network');
+    }
+    if (__DEV__) console.warn('[profile] insert esuat:', error.code, error.message);
+    // Fara mesaje brute de Postgres pe ecran ("duplicate key value violates...").
+    return isNetworkError(error)
+      ? i18n.t('authErrors.network')
+      : i18n.t('auth.roleSelect.errorGeneric');
   }
 
   return (
-    <AuthContext.Provider value={{ session, profile, loading, signIn, signUp, signOut, createProfile, updateProfile }}>
+    <AuthContext.Provider value={{ session, profile, profileMissing, loading, signIn, signUp, signOut, createProfile, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

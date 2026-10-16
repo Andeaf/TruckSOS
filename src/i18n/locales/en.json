@@ -218,7 +218,8 @@
       "detailsSubtitleMechanic": "Add your provider details — transporters see them on your public profile.",
       "mechanicFieldsHint": "Your address and VAT number appear on your public profile and build trust.",
       "changeRole": "Choose another role",
-      "continueButton": "Continue"
+      "continueButton": "Continue",
+      "errorGeneric": "Your profile could not be saved. Check your connection and try again."
     },
     "otp": {
       "codeLabel": "Verification code",
@@ -243,6 +244,22 @@
       "successBody": "Your password has been changed and you are signed in.",
       "updateErrorTitle": "Password could not be changed",
       "backToLogin": "Back to sign in"
+    },
+    "network": {
+      "checking": "Checking your connection…",
+      "offlineTitle": "The app has no internet access.",
+      "offlineStepIos": "Make sure mobile data is allowed for TruckSOS: Settings → Mobile Data → scroll to TruckSOS and turn the switch on.",
+      "offlineStepAndroid": "Make sure the app is allowed to use mobile data: Settings → Apps → TruckSOS → Mobile data & Wi‑Fi.",
+      "offlineStepWifi": "Try Wi‑Fi, or turn Airplane Mode on and off, then try again.",
+      "blockedTitle": "Your internet works, but the TruckSOS server cannot be reached from this network.",
+      "blockedStepVpn": "Turn off any VPN, private DNS or ad blocker (AdGuard, NextDNS, etc.) if you use one.",
+      "blockedStepOther": "Try another network: Wi‑Fi instead of mobile data, or the other way round.",
+      "blockedStepWeb": "Meanwhile you can use the web version, trucksos.net, with the same email and password.",
+      "clockTitle": "Your phone’s date or time looks wrong, so the secure connection fails.",
+      "clockStep": "Turn on automatic date & time (Settings → General → Date & Time), then try again.",
+      "okTitle": "The connection looks fine now. Please try again.",
+      "openSettings": "Open Settings",
+      "openWeb": "Open trucksos.net"
     }
   },
   "authErrors": {
@@ -257,7 +274,8 @@
     "weak_password": "The password is too weak. Choose a longer one.",
     "email_address_invalid": "The email address is not valid.",
     "validation_failed": "The entered data is not valid.",
-    "provider_disabled": "Signing in with this provider is not enabled right now."
+    "provider_disabled": "Signing in with this provider is not enabled right now.",
+    "network": "Could not reach the TruckSOS server. Check your internet connection."
   },
   "driver": {
     "tabs": {
@@ -1018,7 +1036,7 @@
     },
     "privacy": {
       "title": "Privacy policy",
-      "updated": "Last updated: 7 August 2026",
+      "updated": "Last updated: 14 October 2026",
       "sections": [
         {
           "heading": "1. Who we are",
@@ -1026,7 +1044,7 @@
         },
         {
           "heading": "2. What data we collect",
-          "body": "Account data: your email address and password (the password is handled encrypted by our authentication provider; we never see it). Profile data: name, role, phone number, company, contact email, address, VAT number, specialisation, activity zone, profile photo and chosen language. Published content: breakdown announcements (description, location, truck details, plate number, photos and — only if you choose to attach it — the GPS position), Market sale listings (title, description, price, category, photos), private messages, public-channel messages, the photos and files you attach in conversations, reviews and reports. Technical data: your device's push notification token, your mechanic-search history (kept in your account so we can show you your recent searches) and, for mechanics, the reference position if set for the radius filter."
+          "body": "Account data: your email address and password (the password is handled encrypted by our authentication provider; we never see it). If you choose to sign in with Google or Apple, we receive from them only your account's email address and name (or a relay address, if you choose \"Hide My Email\" with Apple); we never receive your Google or Apple password. Profile data: name, role, phone number, company, contact email, address, VAT number, specialisation, activity zone, profile photo and chosen language. Published content: breakdown announcements (description, location, truck details, plate number, photos and — only if you choose to attach it — the GPS position), Market sale listings (title, description, price, category, photos), private messages, public-channel messages, the photos and files you attach in conversations, reviews and reports. Technical data: your device's push notification token, your mechanic-search history (kept in your account so we can show you your recent searches) and, for mechanics, the reference position if set for the radius filter. If the app cannot reach our server, it keeps a short technical log of the check on your device (the result, network type, device model and OS version, app version, no personal content) and sends it at the next successful sign-in so we can improve connectivity; it is deleted after 90 days."
         },
         {
           "heading": "3. Who sees what",
@@ -1034,7 +1052,7 @@
         },
         {
           "heading": "4. Where the data is stored",
-          "body": "Data is stored on Supabase infrastructure, in the European Union (Ireland, AWS region eu-west-1). Sub-processors: Supabase (database, authentication, file storage), Expo (push notification delivery), Google (map display on Android) and Brevo (sending authentication emails — confirmation and password-reset codes; EU-based company)."
+          "body": "Data is stored on Supabase infrastructure, in the European Union (Ireland, AWS region eu-west-1). Sub-processors: Supabase (database, authentication, file storage), Expo (push notification delivery), Google (map display on Android and, if you choose it, sign-in with your Google account), Apple (Sign in with Apple, if you choose it) and Brevo (sending authentication emails — confirmation and password-reset codes; EU-based company)."
         },
         {
           "heading": "5. Moderation and administrative access",

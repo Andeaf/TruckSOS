@@ -150,7 +150,6 @@ supabase/
   functions/           Edge Functions (Deno): delete-account, cleanup-announcements
 web/                   legal pages (privacy, terms, account deletion) served at trucksos.net
 public/                web static assets, App Links / Universal Links files, CSP headers
-plugins/               Expo config plugins
 scripts/               web deploy script (Cloudflare Pages)
 ```
 

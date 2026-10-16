@@ -30,6 +30,7 @@ import {
   type MessageMechanicContext,
 } from '@/hooks/use-chat';
 import { searchMentionUsers } from '@/hooks/use-mechanic-search';
+import { useThreadNotifications } from '@/hooks/use-thread-notifications';
 import { displayName } from '@/lib/display-name';
 import type { MentionUser } from '@/lib/mention-search';
 import type { Channel } from '@/types/database';
@@ -44,6 +45,7 @@ export default function MechanicChannelChatScreen() {
   const { messages, loading, loadingMore, loadOlder, addMessage, patchMessage } =
     useChannelMessages(id);
   const isFocused = useIsFocused();
+  useThreadNotifications('channel', id, isFocused);
   // Menționări „@" (10 sept): expeditorii încărcați, cei mai recenți primii, fără mine
   // și fără conturi șterse; numele care lipsesc vin din căutarea pe server.
   const myId = session?.user.id;

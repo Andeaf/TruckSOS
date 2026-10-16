@@ -15,17 +15,20 @@ import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
+import { NetworkTroubleshoot } from '@/components/network-troubleshoot';
 import { Input } from '@/components/ui/input';
 import { SocialSignIn } from '@/components/social-sign-in';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
+import { useNetworkDiagnosis } from '@/hooks/use-network-diagnosis';
 import { useWideLayout } from '@/components/web-sidebar';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
   const { t } = useTranslation();
+  const { diagnosis, inspect } = useNetworkDiagnosis();
   // Design 10a: pe web lat, ecranul devine split — panou de brand la stânga,
   // formular constrâns la dreapta. Pe telefon rămâne exact varianta veche.
   const wide = useWideLayout();
@@ -42,6 +45,7 @@ export default function LoginScreen() {
     setLoading(true);
     setError('');
     const err = await signIn(email.trim(), password);
+    inspect(err, 'login');
     if (err) setError(err);
     setLoading(false);
   }
@@ -74,6 +78,8 @@ export default function LoginScreen() {
       </Link>
 
       {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
+
+      <NetworkTroubleshoot diagnosis={diagnosis} />
 
       <Button title={t('auth.login.button')} onPress={handleSignIn} loading={loading} />
 

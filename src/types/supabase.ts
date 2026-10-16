@@ -516,6 +516,60 @@ export type Database = {
         }
         Relationships: []
       }
+      client_diagnostics: {
+        Row: {
+          app_version: string | null
+          clock_drift_ms: number | null
+          device_model: string | null
+          diagnosis: string
+          error_message: string | null
+          id: string
+          kind: string
+          locale: string | null
+          network: Json | null
+          occurred_at: string
+          os_version: string | null
+          platform: string | null
+          probes: Json
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          app_version?: string | null
+          clock_drift_ms?: number | null
+          device_model?: string | null
+          diagnosis: string
+          error_message?: string | null
+          id?: string
+          kind: string
+          locale?: string | null
+          network?: Json | null
+          occurred_at: string
+          os_version?: string | null
+          platform?: string | null
+          probes?: Json
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          app_version?: string | null
+          clock_drift_ms?: number | null
+          device_model?: string | null
+          diagnosis?: string
+          error_message?: string | null
+          id?: string
+          kind?: string
+          locale?: string | null
+          network?: Json | null
+          occurred_at?: string
+          os_version?: string | null
+          platform?: string | null
+          probes?: Json
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       conversation_deletions: {
         Row: {
           conversation_id: string

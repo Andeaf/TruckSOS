@@ -12,6 +12,8 @@ import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
+import { NetworkTroubleshoot } from '@/components/network-troubleshoot';
+import { useNetworkDiagnosis } from '@/hooks/use-network-diagnosis';
 import { Input } from '@/components/ui/input';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -28,6 +30,7 @@ import { supabase } from '@/lib/supabase';
  */
 export default function ForgotPasswordScreen() {
   const { t } = useTranslation();
+  const { diagnosis, inspect } = useNetworkDiagnosis();
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -54,6 +57,7 @@ export default function ForgotPasswordScreen() {
     setError('');
     const { error: err } = await supabase.auth.resetPasswordForEmail(mail);
     setLoading(false);
+    inspect(err, 'reset_request');
     if (err) {
       setError(translateAuthError(err) ?? '');
       return;
@@ -86,6 +90,7 @@ export default function ForgotPasswordScreen() {
       token: code.trim(),
       type: 'recovery',
     });
+    inspect(verifyErr, 'verify_recovery');
     if (verifyErr) {
       setLoading(false);
       setError(translateAuthError(verifyErr) ?? '');
@@ -132,6 +137,8 @@ export default function ForgotPasswordScreen() {
 
               {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
 
+              <NetworkTroubleshoot diagnosis={diagnosis} />
+
               <Button title={t('auth.forgot.sendButton')} onPress={sendCode} loading={loading} />
             </View>
           ) : (
@@ -165,6 +172,8 @@ export default function ForgotPasswordScreen() {
               />
 
               {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
+
+              <NetworkTroubleshoot diagnosis={diagnosis} />
               {!error && resent ? (
                 <ThemedText style={styles.notice}>{t('auth.otp.resentNotice')}</ThemedText>
               ) : null}

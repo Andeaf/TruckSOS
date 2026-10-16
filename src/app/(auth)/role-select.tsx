@@ -150,7 +150,10 @@ export default function RoleSelectScreen() {
           contentContainerStyle={styles.formContent}
           keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
-            <ThemedText type="title">{t('auth.roleSelect.detailsTitle')}</ThemedText>
+            {/* La font de sistem marit titlul se rupea si se taia (captura 14 oct): un rand, micsorat. */}
+            <ThemedText type="title" numberOfLines={1} adjustsFontSizeToFit>
+              {t('auth.roleSelect.detailsTitle')}
+            </ThemedText>
             <ThemedText themeColor="textSecondary" style={styles.subtitle}>
               {role === 'mechanic'
                 ? t('auth.roleSelect.detailsSubtitleMechanic')

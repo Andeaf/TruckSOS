@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Device from 'expo-device';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 
@@ -28,6 +28,76 @@ export interface PushData {
   id?: string;
 }
 
+type ExpoNotification = import('expo-notifications').Notification;
+
+/** Firul (conversație/canal) pe care userul îl are în față — vezi useThreadNotifications. */
+let activeThread: { type: 'conversation' | 'channel'; id: string } | null = null;
+
+export function setActiveThread(
+  type: 'conversation' | 'channel' | null,
+  id: string | null
+): void {
+  activeThread = type && id ? { type, id } : null;
+}
+
+/**
+ * Scoate firul activ DOAR dacă e tot cel dat. La trecerea dintr-o conversație în alta,
+ * curățarea ecranului vechi poate rula DUPĂ ce ecranul nou s-a înregistrat — nu are voie
+ * să-l dea jos (altfel push-ul firului deschis ar apărea iar ca banner).
+ */
+export function clearActiveThread(type: 'conversation' | 'channel', id: string): void {
+  if (activeThread && activeThread.type === type && activeThread.id === id) activeThread = null;
+}
+
+function isActiveThread(data: PushData | undefined): boolean {
+  return (
+    !!activeThread && !!data && data.type === activeThread.type && String(data.id) === activeThread.id
+  );
+}
+
+/**
+ * Datele push-ului, oricum ar fi ajuns (13 oct 2026). `content.data` e forma normală
+ * (expo-notifications o reconstruiește și pentru celulele afișate cât aplicația era
+ * închisă), dar acoperim și variantele întâlnite în practică: JSON ca string, obiectul
+ * împachetat sub `body` (forma brută Expo/FCM/APNs) sau doar payload-ul declanșatorului.
+ */
+export function readPushData(notification: ExpoNotification | undefined): PushData | undefined {
+  if (!notification) return undefined;
+  const content = notification.request?.content as { data?: unknown } | undefined;
+  const trigger = notification.request?.trigger as unknown as
+    | { remoteMessage?: { data?: { body?: unknown } }; payload?: { body?: unknown } }
+    | null
+    | undefined;
+  const candidates: unknown[] = [
+    content?.data,
+    trigger?.remoteMessage?.data?.body,
+    trigger?.payload?.body,
+  ];
+  for (const raw of candidates) {
+    const parsed = unwrapPushData(raw);
+    if (parsed) return parsed;
+  }
+  return undefined;
+}
+
+function unwrapPushData(raw: unknown): PushData | undefined {
+  let value = raw;
+  if (typeof value === 'string') {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      return undefined;
+    }
+  }
+  if (!value || typeof value !== 'object') return undefined;
+  const obj = value as Record<string, unknown>;
+  if (typeof obj.type === 'string') {
+    return { type: obj.type as PushData['type'], id: obj.id == null ? undefined : String(obj.id) };
+  }
+  if ('body' in obj) return unwrapPushData(obj.body);
+  return undefined;
+}
+
 export function pushAvailable(): boolean {
   // Web (7 aug): push-ul Expo nu are transport în browser — totul rămâne oprit elegant
   // (fără token, fără listeners); badge-urile in-app merg oricum prin Realtime.
@@ -47,12 +117,20 @@ function getNotifications(): NotificationsModule {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     notifications = require('expo-notifications') as NotificationsModule;
     notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowBanner: true,
-        shouldShowList: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-      }),
+      handleNotification: async (notification) => {
+        // 13 oct 2026: push-ul firului pe care userul îl citește CHIAR ACUM nu se mai
+        // afișează — sosea după markRead (Realtime e mai rapid decât APNs/FCM) și
+        // rămânea în bară deși mesajul era deja pe ecran. Doar cu aplicația activă;
+        // în fundal handler-ul oricum nu rulează, sistemul afișează direct.
+        const silent =
+          AppState.currentState === 'active' && isActiveThread(readPushData(notification));
+        return {
+          shouldShowBanner: !silent,
+          shouldShowList: !silent,
+          shouldPlaySound: !silent,
+          shouldSetBadge: false,
+        };
+      },
     });
   }
   return notifications;
@@ -178,7 +256,12 @@ export function dismissThreadNotifications(
   type: 'conversation' | 'channel',
   id: string
 ): Promise<void> {
-  return dismissPresented((data) => data?.type === type && data?.id === id);
+  // Pe Android serverul pune și tag-ul `channel-<id>` / `conversation-<id>` drept
+  // identificator al celulei — a doua cheie, pentru cazul în care `data` lipsește.
+  const tag = `${type}-${id}`;
+  return dismissPresented(
+    (data, identifier) => (data?.type === type && String(data.id) === id) || identifier === tag
+  );
 }
 
 /**
@@ -191,17 +274,24 @@ export function dismissNotificationsOfType(type: NonNullable<PushData['type']>):
 }
 
 async function dismissPresented(
-  match: (data: PushData | undefined) => boolean
+  match: (data: PushData | undefined, identifier: string) => boolean
 ): Promise<void> {
   if (!pushAvailable()) return;
   try {
     const Notifications = getNotifications();
-    const presented = await Notifications.getPresentedNotificationsAsync();
-    await Promise.all(
-      presented
-        .filter((n) => match(n.request.content.data as PushData | undefined))
-        .map((n) => Notifications.dismissNotificationAsync(n.request.identifier))
-    );
+    // Două treceri (13 oct 2026): a doua prinde celulele livrate/re-afișate de sistem
+    // în timpul primei (iOS stivuiește per mesaj, Android regrupează după cancel) și
+    // reîncearcă ce n-a dispărut.
+    for (let pass = 0; pass < 2; pass++) {
+      const presented = await Notifications.getPresentedNotificationsAsync();
+      const targets = presented.filter((n) => match(readPushData(n), n.request.identifier));
+      if (targets.length === 0) return;
+      if (__DEV__ && pass === 1) console.warn('[push] celule rămase după dismiss:', targets.length);
+      await Promise.all(
+        targets.map((n) => Notifications.dismissNotificationAsync(n.request.identifier))
+      );
+      await new Promise((r) => setTimeout(r, 400));
+    }
   } catch {
     // Curățenie best-effort — nu blocăm mark-read-ul pentru asta.
   }

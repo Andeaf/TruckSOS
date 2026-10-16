@@ -218,7 +218,8 @@
       "detailsSubtitleMechanic": "Completează datele tale de prestator — transportatorii le văd în profilul tău public.",
       "mechanicFieldsHint": "Adresa și numărul TVA apar în profilul tău public și construiesc încredere.",
       "changeRole": "Alege alt rol",
-      "continueButton": "Continuă"
+      "continueButton": "Continuă",
+      "errorGeneric": "Profilul nu a putut fi salvat. Verifică conexiunea și încearcă din nou."
     },
     "otp": {
       "codeLabel": "Cod de verificare",
@@ -243,6 +244,22 @@
       "successBody": "Parola a fost schimbată și ești autentificat.",
       "updateErrorTitle": "Parola nu a putut fi schimbată",
       "backToLogin": "Înapoi la autentificare"
+    },
+    "network": {
+      "checking": "Verificăm conexiunea…",
+      "offlineTitle": "Aplicația nu are acces la internet.",
+      "offlineStepIos": "Verificați că datele mobile sunt pornite pentru TruckSOS: Setări → Date mobile → derulați până la TruckSOS și activați comutatorul.",
+      "offlineStepAndroid": "Verificați că aplicația are voie să folosească datele mobile: Setări → Aplicații → TruckSOS → Date mobile și Wi‑Fi.",
+      "offlineStepWifi": "Încercați pe Wi‑Fi sau porniți și opriți modul avion, apoi reîncercați.",
+      "blockedTitle": "Internetul funcționează, dar serverul TruckSOS nu poate fi contactat din această rețea.",
+      "blockedStepVpn": "Opriți VPN-ul, DNS-ul privat sau blocantul de reclame (AdGuard, NextDNS etc.), dacă folosiți așa ceva.",
+      "blockedStepOther": "Încercați altă rețea: Wi‑Fi în loc de date mobile sau invers.",
+      "blockedStepWeb": "Între timp puteți folosi versiunea web, trucksos.net, cu același email și aceeași parolă.",
+      "clockTitle": "Data sau ora telefonului par greșite, iar conexiunea securizată eșuează.",
+      "clockStep": "Activați setarea automată a datei și orei (Setări → General → Data și ora), apoi reîncercați.",
+      "okTitle": "Conexiunea pare în regulă acum. Încercați din nou.",
+      "openSettings": "Deschide Setările",
+      "openWeb": "Deschide trucksos.net"
     }
   },
   "authErrors": {
@@ -257,7 +274,8 @@
     "weak_password": "Parola e prea slabă. Alege una mai lungă.",
     "email_address_invalid": "Adresa de email nu e validă.",
     "validation_failed": "Datele introduse nu sunt valide.",
-    "provider_disabled": "Conectarea cu acest furnizor nu este activată momentan."
+    "provider_disabled": "Conectarea cu acest furnizor nu este activată momentan.",
+    "network": "Nu s-a putut contacta serverul TruckSOS. Verificați conexiunea la internet."
   },
   "driver": {
     "tabs": {
@@ -1021,7 +1039,7 @@
     },
     "privacy": {
       "title": "Politica de confidențialitate",
-      "updated": "Ultima actualizare: 7 august 2026",
+      "updated": "Ultima actualizare: 14 octombrie 2026",
       "sections": [
         {
           "heading": "1. Cine suntem",
@@ -1029,7 +1047,7 @@
         },
         {
           "heading": "2. Ce date colectăm",
-          "body": "Date de cont: adresa de e-mail și parola (parola este gestionată criptat de furnizorul de autentificare; nu o vedem niciodată). Date de profil: nume, rol, număr de telefon, firmă, e-mail de contact, adresă, număr TVA/CUI, specializare, zonă de activitate, poză de profil și limba aleasă. Conținut publicat: anunțuri de depanare (descriere, locație, detalii camion, număr de înmatriculare, poze și — doar dacă alegi să o atașezi — poziția GPS), anunțuri de vânzare în Market (titlu, descriere, preț, categorie, poze), mesaje private, mesaje în canalul public, pozele și fișierele pe care le atașezi în conversații, evaluări și rapoarte. Date tehnice: token-ul de notificări push al dispozitivului, istoricul căutărilor tale de mecanici (păstrat în contul tău, ca să îți putem afișa căutările recente) și, la mecanici, poziția de referință dacă e setată pentru filtrul de rază."
+          "body": "Date de cont: adresa de e-mail și parola (parola este gestionată criptat de furnizorul de autentificare; nu o vedem niciodată). Dacă alegi să te conectezi cu Google sau cu Apple, primim de la aceștia doar adresa de e-mail și numele contului (sau adresa de releu, dacă la Apple alegi „Ascunde-mi e-mailul”); nu primim niciodată parola contului tău Google sau Apple. Date de profil: nume, rol, număr de telefon, firmă, e-mail de contact, adresă, număr TVA/CUI, specializare, zonă de activitate, poză de profil și limba aleasă. Conținut publicat: anunțuri de depanare (descriere, locație, detalii camion, număr de înmatriculare, poze și — doar dacă alegi să o atașezi — poziția GPS), anunțuri de vânzare în Market (titlu, descriere, preț, categorie, poze), mesaje private, mesaje în canalul public, pozele și fișierele pe care le atașezi în conversații, evaluări și rapoarte. Date tehnice: token-ul de notificări push al dispozitivului, istoricul căutărilor tale de mecanici (păstrat în contul tău, ca să îți putem afișa căutările recente) și, la mecanici, poziția de referință dacă e setată pentru filtrul de rază. Dacă aplicația nu reușește să contacteze serverul, păstrează pe telefon un scurt jurnal tehnic al verificării (rezultatul, tipul rețelei, modelul și versiunea sistemului, versiunea aplicației, fără conținut personal) și îl trimite la următoarea conectare reușită, ca să putem îmbunătăți conexiunea; se șterge după 90 de zile."
         },
         {
           "heading": "3. Cine vede ce",
@@ -1037,7 +1055,7 @@
         },
         {
           "heading": "4. Unde sunt stocate datele",
-          "body": "Datele sunt stocate pe infrastructura Supabase, în Uniunea Europeană (Irlanda, regiunea AWS eu-west-1). Subprocesatori: Supabase (bază de date, autentificare, stocare fișiere), Expo (livrarea notificărilor push), Google (afișarea hărților pe Android) și Brevo (trimiterea emailurilor de autentificare — coduri de confirmare și de resetare a parolei; companie din UE)."
+          "body": "Datele sunt stocate pe infrastructura Supabase, în Uniunea Europeană (Irlanda, regiunea AWS eu-west-1). Subprocesatori: Supabase (bază de date, autentificare, stocare fișiere), Expo (livrarea notificărilor push), Google (afișarea hărților pe Android și, dacă o alegi, conectarea cu contul Google), Apple (conectarea cu Apple ID, dacă o alegi) și Brevo (trimiterea emailurilor de autentificare — coduri de confirmare și de resetare a parolei; companie din UE)."
         },
         {
           "heading": "5. Moderare și acces administrativ",

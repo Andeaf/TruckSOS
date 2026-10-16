@@ -20,7 +20,7 @@ import { takePendingLink } from '@/lib/pending-link';
 import i18n from '@/i18n';
 
 function RootLayoutNav() {
-  const { session, profile, loading } = useAuth();
+  const { session, profile, profileMissing, loading } = useAuth();
   const { resolvedScheme, ready, adminViewAs, setAdminViewAs } = useSettings();
   const segments = useSegments();
   const router = useRouter();
@@ -53,7 +53,9 @@ function RootLayoutNav() {
       if (adminViewAs !== 'admin') setAdminViewAs('admin');
       if (!inAuth && !inSharedLink) router.replace('/(auth)/login');
     } else if (!profile) {
-      if (!onRoleSelect) router.replace('/(auth)/role-select');
+      // Doar cu confirmarea serverului ca nu exista profil (cont nou). O citire picata pe
+      // retea nu mai trimite nicaieri: ramane ecranul curent / cel de incarcare (14 oct 2026).
+      if (profileMissing && !onRoleSelect) router.replace('/(auth)/role-select');
     } else if (profile.role === 'admin') {
       // Adminul poate „intra ca" șofer/mecanic (Faza 16), altfel stă în (admin).
       // Ramura e ÎNAINTEA check-ului de ban — adminii nu ajung pe ecranul de ban.
@@ -75,7 +77,7 @@ function RootLayoutNav() {
       const home = profile.role === 'driver' ? '/(driver)/announcements' : '/(mechanic)/feed';
       router.replace((takePendingLink() ?? home) as never);
     }
-  }, [session, profile, loading, segments, adminViewAs, setAdminViewAs, router]);
+  }, [session, profile, profileMissing, loading, segments, adminViewAs, setAdminViewAs, router]);
 
   // `ready` evită un flash pe tema greșită cât citim preferința din AsyncStorage.
   if (loading || !ready) {

@@ -1,6 +1,7 @@
 import type { AuthError } from '@supabase/supabase-js';
 
 import i18n from '@/i18n';
+import { isNetworkError } from '@/lib/network-diagnosis';
 
 /**
  * Supabase întoarce erorile de auth în engleză („Invalid login credentials").
@@ -29,5 +30,9 @@ export function translateAuthError(error: AuthError | null): string | null {
   if (code && (KNOWN_CODES as readonly string[]).includes(code)) {
     return i18n.t(`authErrors.${code}`);
   }
+  // 13 oct 2026: cererea n-a ajuns deloc la server („Network request failed" brut
+  // în captura unui utilizator). Mesaj tradus; ecranele de auth pornesc pe el
+  // diagnosticul de rețea (useNetworkDiagnosis recunoaște același text).
+  if (isNetworkError(error)) return i18n.t('authErrors.network');
   return error.message;
 }
