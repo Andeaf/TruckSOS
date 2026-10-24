@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -16,8 +16,14 @@ import { TruckPickerSheet } from '@/components/truck-picker-sheet';
 import { PhotoPickerRow } from '@/components/photo-picker-row';
 import { Radius, Spacing } from '@/constants/theme';
 import type { PickedImage } from '@/lib/media';
+import { useAccountGate } from '@/hooks/use-account-gate';
 import { useAuth } from '@/hooks/use-auth';
 import { createAnnouncement } from '@/hooks/use-announcements';
+import {
+  clearAnnouncementDraft,
+  loadAnnouncementDraft,
+  saveAnnouncementDraft,
+} from '@/lib/announcement-draft';
 import { uploadAnnouncementPhotos } from '@/hooks/use-announcement-photos';
 import { useSavedTrucks } from '@/hooks/use-trucks';
 import { getCurrentCoords } from '@/lib/location';
@@ -28,12 +34,31 @@ const CURRENT_YEAR = new Date().getFullYear();
  * Formularul de anunț nou — partajat între roluri (tiparul MarketFormScreen):
  * mecanicii postează identic cu transportatorii (5 aug); diferă doar ruta de back.
  */
-export function AnnouncementFormScreen({ role }: { role: 'driver' | 'mechanic' }) {
+/**
+ * `guest` (1.1, B3): oaspetele completează formularul; „Publică” salvează draftul local
+ * (B2 copiază pozele în documentDirectory) și deschide pop-upul de cont. La deschidere,
+ * un draft existent precompletează formularul — și pentru oaspete, și pentru contul nou
+ * creat după el; după publicarea reușită draftul se șterge.
+ */
+export function AnnouncementFormScreen({
+  role,
+  guest = false,
+}: {
+  role: 'driver' | 'mechanic';
+  guest?: boolean;
+}) {
   const { session } = useAuth();
+  const { requireAccount } = useAccountGate();
   const { t } = useTranslation();
   const theme = useTheme();
-  const goBack = useBack(role === 'driver' ? '/(driver)/announcements' : '/(mechanic)/feed');
-  const { trucks, refresh: refreshTrucks } = useSavedTrucks();
+  const goBack = useBack(
+    guest
+      ? '/(guest)/announcements'
+      : role === 'driver'
+        ? '/(driver)/announcements'
+        : '/(mechanic)/feed',
+  );
+  const { trucks, refresh: refreshTrucks } = useSavedTrucks(!guest);
 
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
@@ -50,6 +75,30 @@ export function AnnouncementFormScreen({ role }: { role: 'driver' | 'mechanic' }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPicker, setShowPicker] = useState(false);
+
+  // Draftul salvat ca oaspete (B2) precompletează formularul, o singură dată la deschidere.
+  useEffect(() => {
+    let active = true;
+    loadAnnouncementDraft().then((draft) => {
+      if (!active || !draft) return;
+      setDescription(draft.description);
+      setLocation(draft.location);
+      setTruckMake(draft.truckMake);
+      setTruckModel(draft.truckModel);
+      setTruckYearStr(draft.truckYearStr);
+      setPlateNumber(draft.plateNumber);
+      setChassisNumber(draft.chassisNumber);
+      setLatitudeStr(draft.latitudeStr);
+      setLongitudeStr(draft.longitudeStr);
+      setPhotos(draft.photos);
+      if (draft.truckMake || draft.truckModel || draft.truckYearStr || draft.plateNumber || draft.chassisNumber) {
+        setTruckSectionOpen(true);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Guard „modificări nesalvate": intercepteză back-ul din header, back-ul
   // hardware și swipe-ul. `savedRef` lasă trecerea liberă după un submit reușit.
@@ -129,7 +178,7 @@ export function AnnouncementFormScreen({ role }: { role: 'driver' | 'mechanic' }
   async function handleSubmit() {
     if (!description.trim()) { setError(t('driver.announcements.errorDescription')); return; }
     if (!location.trim()) { setError(t('driver.announcements.errorLocation')); return; }
-    if (!session) return;
+    if (!session && !guest) return;
 
     let truckYear: number | null = null;
     if (truckYearStr.trim()) {
@@ -159,6 +208,27 @@ export function AnnouncementFormScreen({ role }: { role: 'driver' | 'mechanic' }
       }
       latitude = latNum;
       longitude = longNum;
+    }
+
+    if (guest || !session) {
+      // Oaspete: draftul rămâne pe telefon și se publică după crearea contului.
+      await saveAnnouncementDraft({
+        description,
+        location,
+        truckMake,
+        truckModel,
+        truckYearStr,
+        plateNumber,
+        chassisNumber,
+        latitudeStr,
+        longitudeStr,
+        photos,
+      });
+      // Draftul e salvat → ieșirea spre înregistrare nu mai cere confirmarea „renunți?”.
+      savedRef.current = true;
+      setError('');
+      requireAccount('publish');
+      return;
     }
 
     setLoading(true);
@@ -196,6 +266,8 @@ export function AnnouncementFormScreen({ role }: { role: 'driver' | 'mechanic' }
       }
     }
 
+    // Anunțul început ca oaspete e publicat → draftul (și pozele copiate) dispar.
+    await clearAnnouncementDraft();
     setLoading(false);
     savedRef.current = true;
     goBack();

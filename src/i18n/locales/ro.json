@@ -169,7 +169,8 @@
       "registerLink": "Înregistrează-te",
       "errorEmpty": "Completează email-ul și parola.",
       "noAccountForSignIn": "Nu există niciun cont pentru datele cu care ai intrat. Apasă „Înregistrează-te” ca să îți creezi unul.",
-      "forgotPassword": "Ai uitat parola?"
+      "forgotPassword": "Ai uitat parola?",
+      "continueAsGuest": "Continuă fără cont"
     },
     "social": {
       "or": "sau",
@@ -1022,6 +1023,58 @@
     "body": "TruckSOS {{version}} e gata de instalare. Actualizează ca să ai ultimele îmbunătățiri și corecturi.",
     "later": "Mai târziu",
     "update": "Actualizează"
+  },
+  "accountGate": {
+    "title": "Ai nevoie de un cont",
+    "create": "Creează cont",
+    "haveAccount": "Am deja cont",
+    "later": "Mai târziu",
+    "reason": {
+      "message": "Fă-ți cont ca să trimiți mesaje.",
+      "publish": "Fă-ți cont ca să publici anunțul. Ce ai completat rămâne salvat.",
+      "apply": "Fă-ți cont ca să trimiți o ofertă.",
+      "rate": "Fă-ți cont ca să lași o evaluare.",
+      "report": "Fă-ți cont ca să raportezi.",
+      "block": "Fă-ți cont ca să blochezi un utilizator.",
+      "contact": "Fă-ți cont ca să contactezi direct.",
+      "call": "Fă-ți cont ca să vezi numărul de telefon.",
+      "translate": "Fă-ți cont ca să traduci anunțul.",
+      "marketPublish": "Fă-ți cont ca să publici în Market.",
+      "marketContact": "Fă-ți cont ca să contactezi vânzătorul.",
+      "generic": "Fă-ți cont ca să folosești tot ce oferă TruckSOS."
+    }
+  },
+  "guest": {
+    "draftBanner": "Ai un anunț nepublicat. Apasă ca să-l termini.",
+    "signIn": "Intră în cont",
+    "signUpCta": "Creează cont",
+    "tabs": {
+      "map": "Hartă",
+      "announcements": "Anunțuri",
+      "mechanics": "Mecanici",
+      "market": "Market",
+      "community": "Comunitate"
+    },
+    "announcements": {
+      "title": "Anunțuri",
+      "subtitle": "Camioane care au nevoie de ajutor acum",
+      "emptyTitle": "Niciun anunț deschis",
+      "emptyDescription": "Când un șofer cere ajutor, anunțul apare aici.",
+      "newButton": "Anunț nou"
+    },
+    "mechanics": {
+      "title": "Mecanici",
+      "emptyTitle": "Niciun mecanic încă",
+      "emptyDescription": "Mecanicii înscriși în TruckSOS apar aici."
+    },
+    "loadErrorTitle": "Nu am putut încărca datele",
+    "loadErrorDescription": "Verifică conexiunea la internet și trage în jos ca să reîncerci.",
+    "approxLocation": "Poziție aproximativă (~1 km). Locul exact îl vezi după ce îți faci cont.",
+    "actionsHint": "Fă-ți cont gratuit ca să trimiți o ofertă sau să-i scrii șoferului.",
+    "channelReadOnly": "Citești ca vizitator. Fă-ți cont ca să scrii.",
+    "photoPlaceholder": "Poză — fă-ți cont ca s-o vezi",
+    "draftDiscard": "Șterge draftul",
+    "draftDiscardConfirm": "Ștergi anunțul nepublicat? Textul și pozele salvate local vor dispărea."
   },
   "legal": {
     "terms": {

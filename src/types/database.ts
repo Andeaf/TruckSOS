@@ -296,3 +296,90 @@ export interface AdminAuditEntry {
   details: Record<string, unknown>;
   created_at: string;
 }
+
+// ── 1.1 (B): ce primește un oaspete (rolul `anon`) — proiecțiile pure din migrarea B1 ──
+// Doar coloanele acordate lui `anon`: fără telefon, adresă, TVA, e-mail de contact,
+// coordonate exacte, plăcuță, VIN, căi de fișiere. Toate se citesc fără sesiune.
+
+/** 1.1 (B): view guest_* — TODO: regenerat cu gen:types după migrarea 20261026. */
+export interface GuestProfile {
+  id: string;
+  full_name: string;
+  role: Role;
+  avatar_path: string | null;
+  specialization: string | null;
+  activity_zone: string | null;
+  company_name: string | null;
+  rating_avg: number;
+  rating_count: number;
+  created_at: string;
+}
+
+/** 1.1 (B): view guest_* — TODO: regenerat cu gen:types după migrarea 20261026. */
+export interface GuestAnnouncement {
+  id: string;
+  driver_id: string;
+  description: string;
+  location: string;
+  status: AnnouncementStatus;
+  created_at: string;
+  truck_make: string | null;
+  truck_model: string | null;
+  truck_year: number | null;
+  /** Coordonate rotunjite la 2 zecimale (~1 km), coloane generate pe `announcements`. */
+  lat_approx: number | null;
+  lng_approx: number | null;
+}
+
+/** 1.1 (B): view guest_* — TODO: regenerat cu gen:types după migrarea 20261026. */
+export interface GuestAnnouncementPhoto {
+  id: string;
+  announcement_id: string;
+  storage_path: string;
+  created_at: string;
+}
+
+/** 1.1 (B): view guest_* — TODO: regenerat cu gen:types după migrarea 20261026. */
+export interface GuestMarketListing {
+  id: string;
+  seller_id: string;
+  title: string;
+  description: string;
+  price: number;
+  currency: string;
+  category: MarketCategory;
+  status: MarketListingStatus;
+  created_at: string;
+}
+
+/** 1.1 (B): view guest_* — TODO: regenerat cu gen:types după migrarea 20261026. */
+export interface GuestMarketListingPhoto {
+  id: string;
+  listing_id: string;
+  storage_path: string;
+  position: number;
+}
+
+/** 1.1 (B): view guest_* — TODO: regenerat cu gen:types după migrarea 20261026. */
+export interface GuestChannel {
+  id: string;
+  name: string;
+  type: ChannelType;
+  created_at: string;
+}
+
+/** 1.1 (B): view guest_* — TODO: regenerat cu gen:types după migrarea 20261026.
+ * Max 50 de mesaje per canal, ultimele 7 zile; poza nu se vede, doar `has_image`. */
+export interface GuestChannelMessage {
+  id: string;
+  channel_id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+  reply_to_id: string | null;
+  mentions: MessageMention[] | null;
+  has_image: boolean;
+  announcement_id: string | null;
+  listing_id: string | null;
+  recommended_mechanic_id: string | null;
+}

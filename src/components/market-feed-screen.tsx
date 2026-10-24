@@ -30,7 +30,9 @@ import {
 } from '@/constants/theme';
 import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
+import { useAccountGate } from '@/hooks/use-account-gate';
 import { useAuth } from '@/hooks/use-auth';
+import { useGuestMarketListings } from '@/hooks/use-guest-data';
 import {
   MARKET_CATEGORIES,
   useMarketListings,
@@ -47,7 +49,13 @@ import type { MarketCategory, Role } from '@/types/database';
  */
 
 interface MarketFeedScreenProps {
-  role: Extract<Role, 'driver' | 'mechanic'>;
+  /** Grupul de rute al utilizatorului logat; lipsește la oaspete. */
+  role?: Extract<Role, 'driver' | 'mechanic'>;
+  /**
+   * 1.1 (B3): oaspete — anunțurile active din `guest_market_listings` (RPC-ul de căutare
+   * de oaspete), fără „Ale mele”; „+” deschide pop-upul de cont. Prop FIX per rută.
+   */
+  guest?: boolean;
 }
 
 type CategoryFilter = MarketCategory | 'all';
@@ -56,14 +64,19 @@ type CategoryFilter = MarketCategory | 'all';
 const VIEW_MODE_KEY = 'market_view_mode';
 type MarketViewMode = 'grid' | 'list';
 
-export function MarketFeedScreen({ role }: MarketFeedScreenProps) {
+export function MarketFeedScreen({ role, guest = false }: MarketFeedScreenProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const scheme = useResolvedScheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { session } = useAuth();
-  const base = role === 'driver' ? '/(driver)/market' : '/(mechanic)/market';
+  const { requireAccount } = useAccountGate();
+  const base = guest
+    ? '/(guest)/market'
+    : role === 'driver'
+      ? '/(driver)/market'
+      : '/(mechanic)/market';
 
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<CategoryFilter>('all');
@@ -85,12 +98,15 @@ export function MarketFeedScreen({ role }: MarketFeedScreenProps) {
     });
   }
 
+  // `guest` e fix pe durata montării (rute diferite = instanțe diferite), deci alegerea
+  // hook-ului nu schimbă niciodată ordinea hook-urilor; ambele au aceeași semnătură.
+  const useListings = guest ? useGuestMarketListings : useMarketListings;
   const { listings, covers, loading, loadingMore, hasMore, refresh, loadMore } =
-    useMarketListings(session?.user.id, {
+    useListings(session?.user.id, {
       query,
       category: category === 'all' ? null : category,
       sort,
-      mine,
+      mine: guest ? false : mine,
     });
 
   // Datele pot fi editate pe ecranele push-uite (detaliu/editare) → refresh la focus.
@@ -99,8 +115,8 @@ export function MarketFeedScreen({ role }: MarketFeedScreenProps) {
   useFocusEffect(
     useCallback(() => {
       refresh();
-      void dismissNotificationsOfType('listing');
-    }, [refresh]),
+      if (!guest) void dismissNotificationsOfType('listing');
+    }, [refresh, guest]),
   );
 
   const [pullRefreshing, setPullRefreshing] = useState(false);
@@ -211,6 +227,8 @@ export function MarketFeedScreen({ role }: MarketFeedScreenProps) {
       {/* Rândul de control (design 26 iul): segmented „Toate / Ale mele" + butoane
           rotunde de sortare și de comutare grilă/listă. Categoriile au rândul lor. */}
       <View style={styles.controlRow}>
+        {/* Oaspetele n-are „Ale mele” — segmentul lipsește, butoanele rămân în dreapta. */}
+        {guest ? <View /> : (
         <View style={[styles.segmented, { backgroundColor: theme.backgroundElement }, Shadows.chip]}>
           {([false, true] as const).map((m) => (
             <Pressable
@@ -231,6 +249,7 @@ export function MarketFeedScreen({ role }: MarketFeedScreenProps) {
             </Pressable>
           ))}
         </View>
+        )}
 
         <View style={styles.controlButtons}>
           <Pressable
@@ -333,7 +352,13 @@ export function MarketFeedScreen({ role }: MarketFeedScreenProps) {
           { bottom: insets.bottom + Spacing.three },
           pressed && styles.fabPressed,
         ]}
-        onPress={() => router.push(`${base}/new` as never)}>
+        onPress={() => {
+          if (guest) {
+            requireAccount('marketPublish');
+            return;
+          }
+          router.push(`${base}/new` as never);
+        }}>
         <LinearGradient
           colors={HeaderGradient[scheme]}
           start={HeaderGradientDirection.start}

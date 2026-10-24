@@ -12,13 +12,16 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
+import { useAccountGate } from '@/hooks/use-account-gate';
 import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
 import { useBlocked } from '@/hooks/use-blocked';
 import { startDirectConversation } from '@/hooks/use-chat';
+import { fetchGuestProfile } from '@/hooks/use-guest-data';
 import { useTheme } from '@/hooks/use-theme';
 import { useSignedUrl } from '@/hooks/use-signed-urls';
 import { displayName, isDeletedUser } from '@/lib/display-name';
+import { getGuestFavorites, toggleGuestFavorite } from '@/lib/guest-favorites';
 import { shareContact } from '@/lib/share-contact';
 import type { Profile, Role } from '@/types/database';
 
@@ -47,15 +50,44 @@ async function fetchPublicProfile(userId: string): Promise<PublicProfile | null>
   return (data as unknown as PublicProfile) ?? null;
 }
 
-export function PublicProfileScreen({ role }: { role: Role }) {
+/** 1.1 (B3): profilul din `guest_profiles` pe forma ecranului — adresa, TVA-ul și e-mailul
+ * de contact nu există pentru oaspeți (D3), deci rămân goale și secțiunile lor se ascund. */
+async function fetchGuestPublicProfile(userId: string): Promise<PublicProfile | null> {
+  const { data } = await fetchGuestProfile(userId);
+  if (!data) return null;
+  return {
+    full_name: data.full_name,
+    role: data.role,
+    avatar_path: data.avatar_path,
+    specialization: data.specialization,
+    activity_zone: data.activity_zone,
+    company_name: data.company_name,
+    contact_email: null,
+    address: null,
+    vat_number: null,
+    rating_avg: data.rating_avg,
+    rating_count: data.rating_count,
+    deleted_at: null,
+  };
+}
+
+/**
+ * `guest` (1.1, B3): ecranul oaspetelui (`/(guest)/mechanics/[id]`, și pentru linkul
+ * `/p/<id>`) — datele din `guest_profiles`, fără adresă/TVA/e-mail; raportarea, blocarea
+ * și conversația deschid pop-upul de cont; steaua de favorit e locală (D5). `role`
+ * contează doar pentru rutarea conversației, deci lipsește la oaspete.
+ */
+export function PublicProfileScreen({ role, guest = false }: { role?: Role; guest?: boolean }) {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
   // Ecran mereu deschis prin push (din chat) → back-ul urcă în stivă; fallback-ul „/"
   // (index → redirect pe grupul corect) acoperă doar cazul rar fără istoric.
-  const goBack = useBack('/');
+  const goBack = useBack(guest ? '/(guest)/mechanics' : '/');
   const theme = useTheme();
   const router = useRouter();
   const { session } = useAuth();
+  const { requireAccount } = useAccountGate();
+  const [guestFavorite, setGuestFavorite] = useState(false);
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [reportVisible, setReportVisible] = useState(false);
@@ -137,13 +169,29 @@ export function PublicProfileScreen({ role }: { role: Role }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    setProfile(await fetchPublicProfile(id));
+    setProfile(await (guest ? fetchGuestPublicProfile(id) : fetchPublicProfile(id)));
     setLoading(false);
-  }, [id]);
+  }, [id, guest]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!guest) return;
+    let active = true;
+    getGuestFavorites().then((ids) => {
+      if (active) setGuestFavorite(ids.includes(id));
+    });
+    return () => {
+      active = false;
+    };
+  }, [guest, id]);
+
+  const handleToggleGuestFavorite = useCallback(async () => {
+    const ids = await toggleGuestFavorite(id);
+    setGuestFavorite(ids.includes(id));
+  }, [id]);
 
   if (loading) {
     return (
@@ -180,7 +228,34 @@ export function PublicProfileScreen({ role }: { role: Role }) {
                 accessibilityLabel={t('shareContact.action')}>
                 <MaterialIcons name="share" size={24} color={theme.onHeader} />
               </Pressable>
-              {canReport ? (
+              {guest && isMechanic ? (
+                <Pressable
+                  onPress={handleToggleGuestFavorite}
+                  hitSlop={12}
+                  accessibilityLabel={t('favorites.toggle')}>
+                  <MaterialIcons
+                    name={guestFavorite ? 'star' : 'star-outline'}
+                    size={24}
+                    color={theme.onHeader}
+                  />
+                </Pressable>
+              ) : null}
+              {guest ? (
+                <>
+                  <Pressable
+                    onPress={() => requireAccount('report')}
+                    hitSlop={12}
+                    accessibilityLabel={t('report.title')}>
+                    <MaterialIcons name="flag" size={24} color={theme.onHeader} />
+                  </Pressable>
+                  <Pressable
+                    onPress={() => requireAccount('block')}
+                    hitSlop={12}
+                    accessibilityLabel={t('block.action')}>
+                    <MaterialIcons name="block" size={24} color={theme.onHeader} />
+                  </Pressable>
+                </>
+              ) : canReport ? (
                 <>
                   <Pressable
                     onPress={() => setReportVisible(true)}
@@ -244,7 +319,10 @@ export function PublicProfileScreen({ role }: { role: Role }) {
               </ThemedText>
             </ThemedView>
 
-            {/* Faza 18: adresă + TVA — publice DOAR la mecanici (informații de prestator). */}
+            {/* Faza 18: adresă + TVA — publice DOAR la mecanici (informații de prestator).
+                Oaspeții nu le primesc (D3) → secțiunile lipsesc, nu apar ca „necompletat”. */}
+            {!guest ? (
+            <>
             <ThemedView type="backgroundElement" style={styles.section}>
               <View style={styles.sectionHeader}>
                 <MaterialIcons name="home-work" size={16} color={theme.brand} />
@@ -264,6 +342,8 @@ export function PublicProfileScreen({ role }: { role: Role }) {
                 {profile.vat_number || t('profile.emptyField')}
               </ThemedText>
             </ThemedView>
+            </>
+            ) : null}
           </>
         ) : null}
 
@@ -278,6 +358,7 @@ export function PublicProfileScreen({ role }: { role: Role }) {
           </ThemedText>
         </ThemedView>
 
+        {!guest ? (
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialIcons name="email" size={16} color={theme.brand} />
@@ -287,11 +368,13 @@ export function PublicProfileScreen({ role }: { role: Role }) {
             {profile.contact_email || t('profile.emptyField')}
           </ThemedText>
         </ThemedView>
+        ) : null}
 
-        {/* Aceleași condiții ca raportarea: nu pe tine însuți, nu pe un cont șters. */}
-        {canReport ? (
+        {/* Aceleași condiții ca raportarea: nu pe tine însuți, nu pe un cont șters.
+            Oaspetele vede butonul, dar el deschide pop-upul de cont. */}
+        {canReport || guest ? (
           <Pressable
-            onPress={handleStartConversation}
+            onPress={guest ? () => requireAccount('contact') : handleStartConversation}
             disabled={contacting}
             style={({ pressed }) => [
               styles.contactButton,

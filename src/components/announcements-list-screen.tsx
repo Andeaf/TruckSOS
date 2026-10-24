@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { AnnouncementCard } from '@/components/announcement-card';
+import { AnnouncementDraftBanner } from '@/components/announcement-draft-banner';
 import { EmptyState } from '@/components/empty-state';
 import { HeaderText, ScreenHeader } from '@/components/screen-header';
 import { FilterChips } from '@/components/ui/filter-chips';
@@ -52,7 +53,8 @@ function isResolvePromptDue(a: Announcement, now: number): boolean {
  * își vede propriile anunțuri direct în feed — decizia „fără pagină separată").
  */
 export function AnnouncementsListScreen() {
-  const { profile } = useAuth();
+  // 1.1 (B3): `pendingDraft` = anunț început ca oaspete, încă nepublicat (B2).
+  const { profile, pendingDraft } = useAuth();
   const { t } = useTranslation();
   const theme = useTheme();
   const scheme = useResolvedScheme();
@@ -235,6 +237,10 @@ export function AnnouncementsListScreen() {
           value={filter}
           onChange={setFilter}
         />
+      ) : null}
+
+      {!selectionMode && pendingDraft ? (
+        <AnnouncementDraftBanner onPress={() => router.push(`${base}/new` as never)} discardable />
       ) : null}
 
       <FlatList

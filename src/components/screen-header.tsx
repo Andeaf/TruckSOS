@@ -7,6 +7,7 @@ import { useRouter, useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
+import { GuestSignInPill } from '@/components/guest-sign-in-pill';
 import { HeaderGradient, HeaderGradientDirection, Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useResolvedScheme } from '@/hooks/use-settings';
@@ -50,6 +51,8 @@ export function HeaderProfileButton({ size = 34 }: { size?: number }) {
   const avatarUrl = useSignedUrl(profile?.avatar_path);
 
   const group = segments[0] as string | undefined;
+  // 1.1 (B3): oaspetele n-are profil — în locul avatarului, pastila „Intră în cont”.
+  if (group === '(guest)') return <GuestSignInPill />;
   if (group !== '(driver)' && group !== '(mechanic)') return null;
 
   return (

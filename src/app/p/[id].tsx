@@ -8,6 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
+import { fetchGuestProfile } from '@/hooks/use-guest-data';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { isBanned } from '@/lib/ban';
@@ -67,7 +68,7 @@ export default function SharedProfileScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const theme = useTheme();
-  const { session, profile, loading } = useAuth();
+  const { session, profile, loading, isGuest } = useAuth();
   const { adminViewAs, setAdminViewAs } = useSettings();
   const [state, setState] = useState<'resolving' | 'landing' | 'notFound'>('resolving');
   const device = useMemo(detectDevice, []);
@@ -83,10 +84,32 @@ export default function SharedProfileScreen() {
       return;
     }
     if (!hasSession) {
-      setPendingLink(`/p/${id}`);
-      if (Platform.OS === 'web') setState('landing');
-      else router.replace('/(auth)/login' as never);
-      return;
+      const fallback = () => {
+        setPendingLink(`/p/${id}`);
+        if (Platform.OS === 'web') setState('landing');
+        else router.replace('/(auth)/login' as never);
+      };
+      // 1.1 (B3, Q3): oaspetele (și vizitatorul de pe web) vede profilul direct, din
+      // `guest_profiles`, pe ecranul de profil al oaspetelui — indiferent de rol.
+      if (!isGuest && Platform.OS !== 'web') {
+        fallback();
+        return;
+      }
+      let cancelledGuest = false;
+      fetchGuestProfile(id).then(({ data, error }) => {
+        if (cancelledGuest) return;
+        if (data) {
+          router.replace({ pathname: '/(guest)/mechanics/[id]', params: { id } } as never);
+        } else if (!error) {
+          setState('notFound');
+        } else {
+          // Server fără migrarea de oaspeți sau rețea picată: comportamentul de dinainte.
+          fallback();
+        }
+      });
+      return () => {
+        cancelledGuest = true;
+      };
     }
     if (!role) {
       // Cont nou fără profil: garda îl duce la alegerea rolului; linkul se reia după.
@@ -120,7 +143,7 @@ export default function SharedProfileScreen() {
     return () => {
       cancelled = true;
     };
-  }, [loading, hasSession, role, banned, validId, id, adminViewAs, setAdminViewAs, router]);
+  }, [loading, hasSession, isGuest, role, banned, validId, id, adminViewAs, setAdminViewAs, router]);
 
   // Web pe telefon: încercăm aplicația, apoi magazinul. Dacă aplicația s-a deschis,
   // pagina intră în fundal (visibilityState = hidden) și NU mai redirecționăm.

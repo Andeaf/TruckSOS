@@ -169,7 +169,8 @@
       "registerLink": "Registrieren",
       "errorEmpty": "Bitte E-Mail und Passwort eingeben.",
       "noAccountForSignIn": "Für diese Anmeldung gibt es kein Konto. Tippe auf „Registrieren“, um eines zu erstellen.",
-      "forgotPassword": "Passwort vergessen?"
+      "forgotPassword": "Passwort vergessen?",
+      "continueAsGuest": "Ohne Konto fortfahren"
     },
     "social": {
       "or": "oder",
@@ -1019,6 +1020,58 @@
     "body": "TruckSOS {{version}} ist bereit zur Installation. Aktualisiere die App für die neuesten Verbesserungen und Korrekturen.",
     "later": "Später",
     "update": "Aktualisieren"
+  },
+  "accountGate": {
+    "title": "Du brauchst ein Konto",
+    "create": "Konto erstellen",
+    "haveAccount": "Ich habe bereits ein Konto",
+    "later": "Später",
+    "reason": {
+      "message": "Erstelle ein Konto, um Nachrichten zu senden.",
+      "publish": "Erstelle ein Konto, um die Anzeige zu veröffentlichen. Deine Eingaben bleiben gespeichert.",
+      "apply": "Erstelle ein Konto, um ein Angebot zu senden.",
+      "rate": "Erstelle ein Konto, um eine Bewertung abzugeben.",
+      "report": "Erstelle ein Konto, um zu melden.",
+      "block": "Erstelle ein Konto, um einen Nutzer zu blockieren.",
+      "contact": "Erstelle ein Konto, um direkt Kontakt aufzunehmen.",
+      "call": "Erstelle ein Konto, um die Telefonnummer zu sehen.",
+      "translate": "Erstelle ein Konto, um die Anzeige zu übersetzen.",
+      "marketPublish": "Erstelle ein Konto, um im Markt zu inserieren.",
+      "marketContact": "Erstelle ein Konto, um den Verkäufer zu kontaktieren.",
+      "generic": "Erstelle ein Konto, um alles in TruckSOS zu nutzen."
+    }
+  },
+  "guest": {
+    "draftBanner": "Du hast eine unveröffentlichte Anzeige. Tippe, um sie fertigzustellen.",
+    "signIn": "Anmelden",
+    "signUpCta": "Konto erstellen",
+    "tabs": {
+      "map": "Karte",
+      "announcements": "Anfragen",
+      "mechanics": "Mechaniker",
+      "market": "Market",
+      "community": "Community"
+    },
+    "announcements": {
+      "title": "Anfragen",
+      "subtitle": "Lkw, die gerade Hilfe brauchen",
+      "emptyTitle": "Keine offenen Anfragen",
+      "emptyDescription": "Wenn ein Fahrer Hilfe braucht, erscheint die Anfrage hier.",
+      "newButton": "Neue Anfrage"
+    },
+    "mechanics": {
+      "title": "Mechaniker",
+      "emptyTitle": "Noch keine Mechaniker",
+      "emptyDescription": "Bei TruckSOS registrierte Mechaniker erscheinen hier."
+    },
+    "loadErrorTitle": "Daten konnten nicht geladen werden",
+    "loadErrorDescription": "Prüfe deine Internetverbindung und zieh nach unten, um es erneut zu versuchen.",
+    "approxLocation": "Ungefähre Position (~1 km). Den genauen Ort siehst du mit einem Konto.",
+    "actionsHint": "Erstelle ein kostenloses Konto, um ein Angebot zu senden oder dem Fahrer zu schreiben.",
+    "channelReadOnly": "Du liest als Besucher. Erstelle ein Konto, um zu schreiben.",
+    "photoPlaceholder": "Foto – erstelle ein Konto, um es zu sehen",
+    "draftDiscard": "Entwurf verwerfen",
+    "draftDiscardConfirm": "Unveröffentlichte Anzeige verwerfen? Der lokal gespeicherte Text und die Fotos werden entfernt."
   },
   "legal": {
     "terms": {

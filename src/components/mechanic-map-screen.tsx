@@ -13,6 +13,7 @@ import { DARK_MAP_STYLE, ROMANIA_REGION, USER_REGION_DELTA } from '@/constants/m
 import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useOpenAnnouncements, type AnnouncementWithDriver } from '@/hooks/use-announcements';
+import { useGuestOpenAnnouncements } from '@/hooks/use-guest-data';
 import { applyRadiusFilter, useRadiusFilter } from '@/hooks/use-radius-filter';
 import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
@@ -33,7 +34,12 @@ function hasCoords(a: AnnouncementWithDriver): a is Located {
   return a.latitude != null && a.longitude != null;
 }
 
-export default function MechanicMapScreen() {
+/**
+ * `guest` (1.1, B3): harta oaspetelui — anunțurile din `guest_announcements`, cu pin-urile pe
+ * coordonatele APROXIMATIVE (~1 km); tap pe card → detaliul de oaspete. Filtrul de rază
+ * rămâne (folosește poziția curentă a telefonului, nu profilul).
+ */
+export default function MechanicMapScreen({ guest = false }: { guest?: boolean }) {
   const { t } = useTranslation();
   const theme = useTheme();
   const scheme = useResolvedScheme();
@@ -41,7 +47,11 @@ export default function MechanicMapScreen() {
   const timeAgo = useTimeAgo();
   const { session } = useAuth();
   // Propriile anunțuri nu apar pe hartă (le gestionezi sub „Ale mele" din feed).
-  const { announcements, refresh } = useOpenAnnouncements(session?.user.id);
+  // Oaspetele (1.1, B3): sursa e view-ul de oaspete. Ambele hook-uri citesc DOAR la
+  // `refresh()` (nimic la montare), deci cel nefolosit nu face nicio cerere.
+  const memberFeed = useOpenAnnouncements(session?.user.id);
+  const guestFeed = useGuestOpenAnnouncements();
+  const { announcements, refresh } = guest ? guestFeed : memberFeed;
   const { viewed, refresh: refreshViewed } = useViewedAnnouncements(session?.user.id);
   const { radiusKm, coords, locationError, refreshCoords } = useRadiusFilter();
 
@@ -116,6 +126,11 @@ export default function MechanicMapScreen() {
   // Tap pe bula „N anunțuri fără locație" (10 sept): feedul, cu filtrul „Fără
   // locație" gata activat — acolo pot fi citite. `nonce` unic per tap (vezi feed).
   function openMissing() {
+    if (guest) {
+      // Lista oaspetelui n-are filtrul „Fără locație” — anunțurile apar toate acolo.
+      router.navigate('/(guest)/announcements' as never);
+      return;
+    }
     router.navigate({
       pathname: '/(mechanic)/feed',
       params: { location: 'without', nonce: String(Date.now()) },
@@ -257,7 +272,7 @@ export default function MechanicMapScreen() {
             <Pressable
               onPress={() =>
                 router.push({
-                  pathname: '/(mechanic)/feed/[id]' as never,
+                  pathname: (guest ? '/(guest)/announcements/[id]' : '/(mechanic)/feed/[id]') as never,
                   params: { id: selected.id },
                 })
               }

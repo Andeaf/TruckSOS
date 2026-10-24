@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Truck } from '@/types/database';
 
-export function useSavedTrucks() {
+export function useSavedTrucks(enabled = true) {
   const [trucks, setTrucks] = useState<Truck[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -18,7 +18,8 @@ export function useSavedTrucks() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  // `enabled=false` (1.1, oaspeți): fără cerere — anon nu are drepturi pe `trucks`.
+  useEffect(() => { if (enabled) load(); }, [enabled]);
 
   return { trucks, loading, refresh: load };
 }

@@ -27,7 +27,9 @@ import { formatListingPrice } from '@/components/market-card';
 import { Radius, Spacing } from '@/constants/theme';
 import { useBack } from '@/hooks/use-back';
 import { useTheme } from '@/hooks/use-theme';
+import { useAccountGate } from '@/hooks/use-account-gate';
 import { useAuth } from '@/hooks/use-auth';
+import { fetchGuestListing } from '@/hooks/use-guest-data';
 import { useSignedUrl } from '@/hooks/use-signed-urls';
 import {
   deleteMarketListing,
@@ -50,17 +52,28 @@ import type { Role } from '@/types/database';
  */
 
 interface MarketDetailScreenProps {
-  role: Extract<Role, 'driver' | 'mechanic'>;
+  /** Grupul de rute al utilizatorului logat; lipsește la oaspete. */
+  role?: Extract<Role, 'driver' | 'mechanic'>;
+  /**
+   * 1.1 (B3): oaspete — anunțul din `guest_market_listings`; „Contactează”, share și
+   * raportarea deschid pop-upul de cont; vânzătorul e apăsabil doar dacă e mecanic.
+   */
+  guest?: boolean;
 }
 
-export function MarketDetailScreen({ role }: MarketDetailScreenProps) {
+export function MarketDetailScreen({ role, guest = false }: MarketDetailScreenProps) {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, i18n } = useTranslation();
   const theme = useTheme();
   const router = useRouter();
   const { session } = useAuth();
+  const { requireAccount } = useAccountGate();
   const { width } = useWindowDimensions();
-  const base = role === 'driver' ? '/(driver)/market' : '/(mechanic)/market';
+  const base = guest
+    ? '/(guest)/market'
+    : role === 'driver'
+      ? '/(driver)/market'
+      : '/(mechanic)/market';
   const goBack = useBack(base);
 
   const [listing, setListing] = useState<MarketListingWithSeller | null>(null);
@@ -79,6 +92,17 @@ export function MarketDetailScreen({ role }: MarketDetailScreenProps) {
     useCallback(() => {
       let active = true;
       (async () => {
+        if (guest) {
+          // Oaspete: un singur apel (anunț + vânzător + poze). Rețea picată la o
+          // reîncărcare → păstrăm ce era pe ecran; server fără migrare → „negăsit”.
+          const { data, error } = await fetchGuestListing(id ?? '');
+          if (!active) return;
+          const keep = error === 'failed';
+          setListing((prev) => (keep ? prev : (data?.listing ?? null)));
+          setPhotos((prev) => (keep ? prev : (data?.photos ?? [])));
+          setLoading(false);
+          return;
+        }
         const [l, p] = await Promise.all([
           fetchMarketListing(id ?? ''),
           fetchMarketListingPhotos(id ?? ''),
@@ -91,7 +115,7 @@ export function MarketDetailScreen({ role }: MarketDetailScreenProps) {
       return () => {
         active = false;
       };
-    }, [id]),
+    }, [id, guest]),
   );
 
   const isOwner = !!listing && listing.seller_id === session?.user.id;
@@ -144,6 +168,16 @@ export function MarketDetailScreen({ role }: MarketDetailScreenProps) {
 
   function handleOpenSeller() {
     if (!listing?.seller || listing.seller.deleted_at) return;
+    if (guest) {
+      // Oaspetele are doar profilul de mecanic (tab-ul Mecanici).
+      if (listing.seller.role === 'mechanic') {
+        router.push({
+          pathname: '/(guest)/mechanics/[id]',
+          params: { id: listing.seller_id },
+        } as never);
+      }
+      return;
+    }
     // Rolul REAL al vânzătorului decide ecranul de profil (nu rolul privitorului).
     if (listing.seller.role === 'mechanic') {
       router.push({
@@ -245,13 +279,15 @@ export function MarketDetailScreen({ role }: MarketDetailScreenProps) {
           <View style={styles.headerActions}>
             {/* Faza 19.6: share — trimite anunțul unui mecanic sau șofer. */}
             <Pressable
-              onPress={() => setShareOpen(true)}
+              onPress={() => (guest ? requireAccount('message') : setShareOpen(true))}
               hitSlop={8}
               accessibilityLabel={t('attach.shareTitle')}>
               <MaterialIcons name="share" size={22} color={theme.onHeader} />
             </Pressable>
             {!isOwner ? (
-              <Pressable onPress={() => setReportOpen(true)} hitSlop={8}>
+              <Pressable
+                onPress={() => (guest ? requireAccount('report') : setReportOpen(true))}
+                hitSlop={8}>
                 <MaterialIcons name="flag" size={22} color={theme.onHeader} />
               </Pressable>
             ) : null}
@@ -336,6 +372,7 @@ export function MarketDetailScreen({ role }: MarketDetailScreenProps) {
         {/* Vânzătorul */}
         <Pressable
           onPress={handleOpenSeller}
+          disabled={guest && listing.seller?.role !== 'mechanic'}
           style={({ pressed }) => [
             styles.sellerRow,
             { backgroundColor: theme.backgroundElement },
@@ -357,7 +394,9 @@ export function MarketDetailScreen({ role }: MarketDetailScreenProps) {
               </ThemedText>
             )}
           </View>
-          <MaterialIcons name="chevron-right" size={22} color={theme.textSecondary} />
+          {!guest || listing.seller?.role === 'mechanic' ? (
+            <MaterialIcons name="chevron-right" size={22} color={theme.textSecondary} />
+          ) : null}
         </Pressable>
 
         {/* Acțiuni */}
@@ -384,7 +423,7 @@ export function MarketDetailScreen({ role }: MarketDetailScreenProps) {
           <View style={styles.contactWrap}>
             <Button
               title={t('market.contactButton')}
-              onPress={handleContact}
+              onPress={guest ? () => requireAccount('marketContact') : handleContact}
               loading={contacting}
             />
           </View>

@@ -46,7 +46,7 @@ import { PhotoViewer } from '@/components/photo-viewer';
 import { RemoteImage } from '@/components/remote-image';
 import { ReportSheet } from '@/components/report-sheet';
 import { Toast } from '@/components/toast';
-import { HeaderText, ScreenHeader } from '@/components/screen-header';
+import { HeaderProfileButton, HeaderText, ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { VideoPlayerModal } from '@/components/video-player-modal';
@@ -168,6 +168,8 @@ export interface ChatMessageBase {
   } | null;
   /** 10 sept: menționările „@Nume" din text — evidențiate + apăsabile în bulă. */
   mentions?: MessageMention[] | null;
+  /** 1.1 (B3): oaspete — mesajul are o poză pe care oaspetele n-o poate vedea (placeholder). */
+  has_image?: boolean | null;
 }
 
 /** Cover-ul unui anunț de market din embed-ul de poze (poziția minimă = cover). */
@@ -510,6 +512,8 @@ interface MessageBubbleProps<M extends ChatMessageBase> {
   /** Evidențiere scurtă a rândului (saltul din citat, 10 sept): fiecare valoare
    * nenulă nouă pornește animația; 0/absent = nimic. */
   flashNonce?: number;
+  /** 1.1 (B3): poză invizibilă pentru oaspete → bulă-placeholder apăsabilă (pop-up de cont). */
+  photoPlaceholder?: { label: string; onPress: () => void };
 }
 
 function MessageBubble<M extends ChatMessageBase>({
@@ -540,6 +544,7 @@ function MessageBubble<M extends ChatMessageBase>({
   quoteIsMine,
   onPressAnnouncement,
   flashNonce,
+  photoPlaceholder,
 }: MessageBubbleProps<M>) {
   const theme = useTheme();
   const scheme = useResolvedScheme();
@@ -960,6 +965,16 @@ function MessageBubble<M extends ChatMessageBase>({
               </View>
             </View>
             )
+          ) : photoPlaceholder ? (
+            <Pressable
+              onPress={photoPlaceholder.onPress}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.textTimeRow, pressed && styles.pressed]}>
+              <MaterialIcons name="image" size={16} color={secondaryColor} />
+              <Text style={[styles.bubbleText, styles.textShrink, { color: isMe ? '#FFFFFF' : theme.text }]}>
+                {photoPlaceholder.label}
+              </Text>
+            </Pressable>
           ) : isImage ? (
             // Poza umple bula; ora stă peste ea, într-o pastilă întunecată.
             <Pressable
@@ -1364,7 +1379,15 @@ interface ChatScreenProps<M extends ChatMessageBase> {
   onPressMechanic?: (mechanicId: string, role: string) => void;
   /** Faza 19.6: tap pe cardul de anunț de depanare → detaliul lui (rutare per rol). */
   onPressAnnouncement?: (announcementId: string) => void;
-  onBack: () => void;
+  /** Lipsă = fără săgeata de back (ex. Comunitatea oaspetelui, care e tab rădăcină). */
+  onBack?: () => void;
+  /**
+   * 1.1 (B3): doar citire (oaspete) — compozitorul e înlocuit de o bară cu `label` și un
+   * buton care apelează `onPress`; fără swipe-to-reply și fără meniul de mesaj; pozele
+   * (`has_image`) apar ca placeholder apăsabil (`onPressPhoto`, implicit `onPress`).
+   * Ecranul care îl folosește nu marchează nimic citit și nu pornește Realtime.
+   */
+  readOnly?: { label: string; onPress: () => void; onPressPhoto?: () => void };
   /**
    * Acțiuni din meniul contextual (tap lung pe bulă), toate opționale — o acțiune
    * apare doar dacă ecranul o furnizează (Faza 14). „Copiază" e intern (client-side).
@@ -1442,6 +1465,7 @@ export function ChatScreen<M extends ChatMessageBase>({
   mentionCandidates,
   searchMentionUsers,
   scrollToMessageId,
+  readOnly,
 }: ChatScreenProps<M>) {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
@@ -2253,9 +2277,11 @@ export function ChatScreen<M extends ChatMessageBase>({
   return (
     <ThemedView style={styles.container}>
       <ScreenHeader>
-        <Pressable onPress={onBack} hitSlop={12}>
-          <Feather name="chevron-left" size={26} color={theme.onHeader} />
-        </Pressable>
+        {onBack ? (
+          <Pressable onPress={onBack} hitSlop={12}>
+            <Feather name="chevron-left" size={26} color={theme.onHeader} />
+          </Pressable>
+        ) : null}
         {headerAvatarPath !== undefined ? (
           <Pressable
             onPress={onPressUser && headerUserId ? () => onPressUser(headerUserId) : undefined}
@@ -2301,6 +2327,8 @@ export function ChatScreen<M extends ChatMessageBase>({
             <MaterialIcons name="settings" size={22} color={theme.onHeader} />
           </Pressable>
         ) : null}
+        {/* Oaspete: pastila „Intră în cont” (HeaderProfileButton o randează în (guest)). */}
+        {readOnly ? <HeaderProfileButton /> : null}
       </ScreenHeader>
 
       {bannerText ? (
@@ -2428,8 +2456,18 @@ export function ChatScreen<M extends ChatMessageBase>({
                   const index = viewerPhotos.findIndex((p) => p.id === item.id);
                   if (index >= 0) setViewerAt(index);
                 }}
-                onLongPress={() => setMenuMessage(item)}
-                onSwipeReply={!item.deleted_at ? () => enterReplyMode(item) : undefined}
+                onLongPress={readOnly ? undefined : () => setMenuMessage(item)}
+                onSwipeReply={
+                  !readOnly && !item.deleted_at ? () => enterReplyMode(item) : undefined
+                }
+                photoPlaceholder={
+                  readOnly && item.has_image && !item.deleted_at
+                    ? {
+                        label: t('guest.photoPlaceholder'),
+                        onPress: readOnly.onPressPhoto ?? readOnly.onPress,
+                      }
+                    : undefined
+                }
                 onPressQuote={
                   item.reply_to_id ? () => scrollToQuoted(item.reply_to_id!) : undefined
                 }
@@ -2641,7 +2679,24 @@ export function ChatScreen<M extends ChatMessageBase>({
           </View>
         ) : null}
 
-        {peerBlocked ? (
+        {readOnly ? (
+          // 1.1 (B3): oaspete — fără compozitor; bara îndeamnă la cont.
+          <View
+            style={[
+              styles.blockedBar,
+              { backgroundColor: theme.barBackground, borderTopColor: theme.separator },
+            ]}>
+            <MaterialIcons name="lock-outline" size={16} color={theme.textSecondary} />
+            <Text style={[styles.blockedBarText, { color: theme.textSecondary }]}>
+              {readOnly.label}
+            </Text>
+            <Pressable onPress={readOnly.onPress} hitSlop={8} accessibilityRole="button">
+              <Text style={[styles.blockedBarAction, { color: theme.brand }]}>
+                {t('guest.signUpCta')}
+              </Text>
+            </Pressable>
+          </View>
+        ) : peerBlocked ? (
           // Compozitor înghețat (doar la blocker): fără input, cu ieșire directă din blocare.
           <View
             style={[

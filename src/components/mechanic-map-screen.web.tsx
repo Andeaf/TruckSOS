@@ -12,6 +12,7 @@ import { DARK_MAP_STYLE, ROMANIA_REGION } from '@/constants/map-style';
 import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useOpenAnnouncements, type AnnouncementWithDriver } from '@/hooks/use-announcements';
+import { useGuestOpenAnnouncements } from '@/hooks/use-guest-data';
 import { applyRadiusFilter, useRadiusFilter } from '@/hooks/use-radius-filter';
 import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
@@ -47,14 +48,18 @@ function hasCoords(a: AnnouncementWithDriver): a is Located {
 const COUNTRY_ZOOM = 6;
 const USER_ZOOM = 12;
 
-export default function MechanicMapScreenWeb() {
+/** `guest` (1.1, B3): ca pe nativ — sursa e `guest_announcements`, coordonate aproximative. */
+export default function MechanicMapScreenWeb({ guest = false }: { guest?: boolean }) {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
   const scheme = useResolvedScheme();
   const router = useRouter();
   const timeAgo = useTimeAgo();
   const { session } = useAuth();
-  const { announcements, refresh } = useOpenAnnouncements(session?.user.id);
+  // Oaspetele (1.1, B3): sursa e view-ul de oaspete; hook-urile citesc doar la `refresh()`.
+  const memberFeed = useOpenAnnouncements(session?.user.id);
+  const guestFeed = useGuestOpenAnnouncements();
+  const { announcements, refresh } = guest ? guestFeed : memberFeed;
   const { viewed, refresh: refreshViewed } = useViewedAnnouncements(session?.user.id);
   const { radiusKm, coords, locationError, refreshCoords } = useRadiusFilter();
 
@@ -88,6 +93,11 @@ export default function MechanicMapScreenWeb() {
   // Tap pe bula „N anunțuri fără locație" (10 sept): feedul, cu filtrul „Fără
   // locație" gata activat — ca pe nativ. `nonce` unic per tap (vezi feed).
   function openMissing() {
+    if (guest) {
+      // Lista oaspetelui n-are filtrul „Fără locație” — anunțurile apar toate acolo.
+      router.navigate('/(guest)/announcements' as never);
+      return;
+    }
     router.navigate({
       pathname: '/(mechanic)/feed',
       params: { location: 'without', nonce: String(Date.now()) },
@@ -282,7 +292,9 @@ export default function MechanicMapScreenWeb() {
             {t('mechanic.map.webBody')}
           </ThemedText>
           <Pressable
-            onPress={() => router.replace('/(mechanic)/feed')}
+            onPress={() =>
+              router.replace((guest ? '/(guest)/announcements' : '/(mechanic)/feed') as never)
+            }
             style={[styles.cta, { backgroundColor: theme.brand }]}>
             <Text style={styles.ctaText}>{t('mechanic.map.webCta')}</Text>
           </Pressable>
@@ -359,7 +371,7 @@ export default function MechanicMapScreenWeb() {
           <Pressable
             onPress={() =>
               router.push({
-                pathname: '/(mechanic)/feed/[id]' as never,
+                pathname: (guest ? '/(guest)/announcements/[id]' : '/(mechanic)/feed/[id]') as never,
                 params: { id: selected.id },
               })
             }

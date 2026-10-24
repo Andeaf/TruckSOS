@@ -169,7 +169,8 @@
       "registerLink": "Sign up",
       "errorEmpty": "Please enter your email and password.",
       "noAccountForSignIn": "There's no account for the sign-in you used. Tap “Sign up” to create one.",
-      "forgotPassword": "Forgot your password?"
+      "forgotPassword": "Forgot your password?",
+      "continueAsGuest": "Continue without an account"
     },
     "social": {
       "or": "or",
@@ -1019,6 +1020,58 @@
     "body": "TruckSOS {{version}} is ready to install. Update to get the latest improvements and fixes.",
     "later": "Later",
     "update": "Update"
+  },
+  "accountGate": {
+    "title": "You need an account",
+    "create": "Create account",
+    "haveAccount": "I already have an account",
+    "later": "Later",
+    "reason": {
+      "message": "Create an account to send messages.",
+      "publish": "Create an account to post your announcement. What you filled in stays saved.",
+      "apply": "Create an account to send an offer.",
+      "rate": "Create an account to leave a review.",
+      "report": "Create an account to report.",
+      "block": "Create an account to block a user.",
+      "contact": "Create an account to get in touch directly.",
+      "call": "Create an account to see the phone number.",
+      "translate": "Create an account to translate the announcement.",
+      "marketPublish": "Create an account to post on the Market.",
+      "marketContact": "Create an account to contact the seller.",
+      "generic": "Create an account to use everything TruckSOS offers."
+    }
+  },
+  "guest": {
+    "draftBanner": "You have an unpublished announcement. Tap to finish it.",
+    "signIn": "Sign in",
+    "signUpCta": "Create account",
+    "tabs": {
+      "map": "Map",
+      "announcements": "Requests",
+      "mechanics": "Mechanics",
+      "market": "Market",
+      "community": "Community"
+    },
+    "announcements": {
+      "title": "Requests",
+      "subtitle": "Trucks that need help right now",
+      "emptyTitle": "No open requests",
+      "emptyDescription": "When a driver asks for help, the request shows up here.",
+      "newButton": "New request"
+    },
+    "mechanics": {
+      "title": "Mechanics",
+      "emptyTitle": "No mechanics yet",
+      "emptyDescription": "Mechanics registered on TruckSOS show up here."
+    },
+    "loadErrorTitle": "Couldn't load the data",
+    "loadErrorDescription": "Check your internet connection and pull down to try again.",
+    "approxLocation": "Approximate position (~1 km). You'll see the exact spot once you have an account.",
+    "actionsHint": "Create a free account to send an offer or message the driver.",
+    "channelReadOnly": "You're reading as a visitor. Create an account to write.",
+    "photoPlaceholder": "Photo — create an account to see it",
+    "draftDiscard": "Discard draft",
+    "draftDiscardConfirm": "Discard the unpublished announcement? The locally saved text and photos will be removed."
   },
   "legal": {
     "terms": {

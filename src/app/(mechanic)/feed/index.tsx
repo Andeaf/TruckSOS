@@ -11,6 +11,7 @@ import { AnnouncementCard } from '@/components/announcement-card';
 import { EmptyState } from '@/components/empty-state';
 import { RadiusFilterMenu } from '@/components/radius-filter-menu';
 import { ScreenHeader } from '@/components/screen-header';
+import { AnnouncementDraftBanner } from '@/components/announcement-draft-banner';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { FilterChips } from '@/components/ui/filter-chips';
@@ -53,7 +54,7 @@ function hasLocation(a: { latitude: number | null; longitude: number | null }): 
 export default function MechanicFeedScreen() {
   // Tab-ul de start al mecanicului: back-ul de aici întreabă dacă închide aplicația.
   useExitConfirm();
-  const { profile, session } = useAuth();
+  const { profile, session, pendingDraft } = useAuth();
   const { t } = useTranslation();
   const theme = useTheme();
   const scheme = useResolvedScheme();
@@ -263,6 +264,14 @@ export default function MechanicFeedScreen() {
             <MaterialIcons name="close" size={22} color={theme.textSecondary} />
           </Pressable>
         </View>
+      ) : null}
+
+      {/* 1.1 (Faza B): draftul salvat ca oaspete, pentru un cont de mecanic. */}
+      {pendingDraft ? (
+        <AnnouncementDraftBanner
+          onPress={() => router.push('/(mechanic)/feed/mine/new' as never)}
+          discardable
+        />
       ) : null}
 
       <FlatList
