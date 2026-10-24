@@ -66,7 +66,8 @@ export function useMechanicReviews(mechanicId: string | undefined) {
       .from('ratings')
       .select('id, stars, comment, created_at')
       .eq('mechanic_id', mechanicId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(100);
     setReviews((data as unknown as PublicReview[]) ?? []);
     setLoading(false);
   }, [mechanicId]);

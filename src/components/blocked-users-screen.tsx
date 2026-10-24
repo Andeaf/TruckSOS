@@ -58,7 +58,8 @@ export function BlockedUsersScreen({ backPath }: { backPath: string }) {
       const { data } = await supabase
         .from('profiles')
         .select('id, full_name, avatar_path, deleted_at')
-        .in('id', ids);
+        .in('id', ids)
+        .limit(500);
       if (!active) return;
       const map: Record<string, BlockedProfile> = {};
       (((data as unknown as BlockedProfile[]) ?? [])).forEach((p) => {

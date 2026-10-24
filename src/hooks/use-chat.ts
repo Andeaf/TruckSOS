@@ -254,14 +254,16 @@ export function useConversations(userId: string | undefined) {
     const { data: deletions } = await supabase
       .from('conversation_deletions')
       .select('conversation_id')
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .limit(500);
     const deletedIds = (deletions ?? []).map((d) => d.conversation_id);
 
     let query = supabase
       .from('conversations')
       .select(CONVERSATION_SELECT)
       .or(`driver_id.eq.${userId},mechanic_id.eq.${userId}` as never)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(200);
 
     if (deletedIds.length > 0) {
       query = query.not('id', 'in', `(${deletedIds.join(',')})`) as never;
@@ -304,7 +306,8 @@ export function useMessages(conversationId: string) {
       .from('messages')
       .select('*' + (v14 ? replyEmbed() : '') + MESSAGE_ATTACH_EMBEDS)
       .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .limit(500);
     if (cutoff) query = query.gte('created_at', cutoff);
     const { data, error } = await query;
     if (error || !data || !loadedRef.current) return false;
@@ -342,9 +345,11 @@ export function useMessages(conversationId: string) {
         .from('messages')
         .select('*' + (v14 ? replyEmbed() : '') + MESSAGE_ATTACH_EMBEDS)
         .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false })
+        .limit(500);
       if (active) {
-        setMessages((data as unknown as Message[]) ?? []);
+        // Ultimele 500, aduse descrescător: ecranul le vrea cronologic.
+        setMessages(((data as unknown as Message[]) ?? []).slice().reverse());
         setLoading(false);
         loadedRef.current = true;
       }
@@ -743,14 +748,17 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
     const { data: deletions } = await supabase
       .from('conversation_deletions')
       .select('conversation_id')
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .limit(500);
     const deletedIds = new Set(
       ((deletions ?? []) as unknown as { conversation_id: string }[]).map((d) => d.conversation_id),
     );
 
     const { data: allConvs } = await supabase
       .from('conversations')
-      .select('id').or(`driver_id.eq.${userId},mechanic_id.eq.${userId}`);
+      .select('id').or(`driver_id.eq.${userId},mechanic_id.eq.${userId}`)
+      .order('created_at', { ascending: false })
+      .limit(200);
     const all = (allConvs ?? []) as unknown as { id: string }[];
     // Filtrul Realtime acoperă TOATE conversațiile mele, inclusiv cele șterse: un
     // mesaj nou într-o conversație ștearsă o reînvie server-side (trigger 20260811),
@@ -764,7 +772,8 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
     const { data: reads } = await supabase
       .from('message_reads')
       .select('conversation_id,last_read_at')
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .limit(500);
     const readMap: Record<string, string> = {};
     (reads ?? []).forEach((r) => { readMap[r.conversation_id] = r.last_read_at; });
 

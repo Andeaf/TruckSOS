@@ -29,7 +29,8 @@ export function useFavorites() {
       .select(
         'mechanic_id, mechanic:profiles!mechanic_id(id, full_name, specialization, activity_zone, rating_avg, rating_count, avatar_path)'
       )
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(200);
     const rows = (data as unknown as FavoriteRow[]) ?? [];
     setFavoriteIds(new Set(rows.map((r) => r.mechanic_id)));
     setFavorites(rows.map((r) => r.mechanic).filter((m): m is MechanicSearchResult => m != null));

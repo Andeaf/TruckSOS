@@ -46,7 +46,8 @@ export function BlockedProvider({ children }: { children: React.ReactNode }) {
     const { data } = await supabase
       .from('blocked_users')
       .select('blocked_id, created_at')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(500);
     setRows((data as unknown as BlockedRow[]) ?? []);
     setLoading(false);
   }, [userId]);

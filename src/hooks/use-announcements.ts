@@ -33,7 +33,8 @@ export function useMyAnnouncements() {
       // „ca șofer"), politica aditivă is_admin() întoarce TOATE anunțurile —
       // fără filtru, anunțurile altora apăreau drept ale adminului.
       .eq('driver_id', session.user.id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(200);
     setAnnouncements((data as Announcement[]) ?? []);
     setLoading(false);
   }, [session]);
@@ -55,7 +56,8 @@ export function useOpenAnnouncements(excludeUserId?: string) {
       .from('announcements')
       .select('*, driver:profiles!driver_id(full_name,avatar_path)')
       .eq('status', 'open')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(200);
     if (excludeUserId) query = query.neq('driver_id', excludeUserId);
     const { data } = await query;
     setAnnouncements((data as unknown as AnnouncementWithDriver[]) ?? []);
@@ -241,7 +243,8 @@ export async function fetchRejectedAnnouncementIds(mechanicId: string): Promise<
     .from('applications')
     .select('announcement_id')
     .eq('mechanic_id', mechanicId)
-    .eq('status', 'rejected');
+    .eq('status', 'rejected')
+    .limit(200);
   return new Set((data ?? []).map((r) => r.announcement_id));
 }
 
@@ -254,7 +257,8 @@ export async function fetchPendingApplicationAnnouncementIds(
     .from('applications')
     .select('announcement_id')
     .eq('mechanic_id', mechanicId)
-    .eq('status', 'pending');
+    .eq('status', 'pending')
+    .limit(200);
   const rows = ((data ?? []) as unknown) as { announcement_id: string }[];
   return new Set(rows.map((r) => r.announcement_id));
 }
@@ -344,7 +348,8 @@ export async function fetchPendingApplicationCounts(
     .from('applications')
     .select('announcement_id')
     .eq('status', 'pending')
-    .in('announcement_id', announcementIds);
+    .in('announcement_id', announcementIds)
+    .limit(200);
 
   const counts: Record<string, number> = {};
   ((data ?? []) as unknown as { announcement_id: string }[]).forEach((row) => {
@@ -363,7 +368,8 @@ export async function fetchApplicationsForAnnouncement(
     )
     .eq('announcement_id', announcementId)
     .eq('status', 'pending')
-    .order('created_at', { ascending: true });
+    .order('created_at', { ascending: true })
+    .limit(200);
   return (data as unknown as ApplicationWithMechanic[]) ?? [];
 }
 
@@ -400,7 +406,8 @@ export function useMyApplications() {
         )`
       )
       .eq('mechanic_id', session.user.id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(200);
     const all = (data as unknown as ApplicationWithDetails[]) ?? [];
     setApplications(all.filter((a) => a.announcement != null));
     setLoading(false);

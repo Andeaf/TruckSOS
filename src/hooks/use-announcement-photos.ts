@@ -64,7 +64,8 @@ export async function fetchAnnouncementPhotos(
     .from('announcement_photos')
     .select('id, storage_path')
     .eq('announcement_id', announcementId)
-    .order('created_at', { ascending: true });
+    .order('created_at', { ascending: true })
+    .limit(20);
 
   if (error || !data) return [];
 

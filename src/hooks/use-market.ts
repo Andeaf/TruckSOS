@@ -132,7 +132,8 @@ export async function fetchListingCovers(
     .from('market_listing_photos')
     .select('listing_id, storage_path, position')
     .in('listing_id', listingIds)
-    .order('position', { ascending: true });
+    .order('position', { ascending: true })
+    .limit(200);
   const rows = (data as unknown as Pick<MarketListingPhoto, 'listing_id' | 'storage_path' | 'position'>[]) ?? [];
 
   const coverPaths: Record<string, string> = {};
@@ -176,7 +177,8 @@ export async function fetchMarketListingPhotos(
     .from('market_listing_photos')
     .select('id, storage_path, position')
     .eq('listing_id', listingId)
-    .order('position', { ascending: true });
+    .order('position', { ascending: true })
+    .limit(20);
   if (error || !data) return [];
 
   const rows = data as Pick<MarketListingPhoto, 'id' | 'storage_path' | 'position'>[];

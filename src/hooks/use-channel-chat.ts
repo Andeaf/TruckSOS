@@ -69,7 +69,8 @@ export function useChannels() {
     const { data } = await supabase
       .from('channels')
       .select('*')
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .limit(20);
     setChannels((data as Channel[]) ?? []);
     setLoading(false);
   }, []);

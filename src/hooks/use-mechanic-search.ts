@@ -71,7 +71,8 @@ export function useAllMechanics() {
         .select('id,full_name,specialization,activity_zone,rating_avg,rating_count,avatar_path')
         .eq('role', 'mechanic')
         .is('deleted_at', null)
-        .order('full_name', { ascending: true });
+        .order('full_name', { ascending: true })
+        .limit(300);
       if (!active) return;
       const list = ((data as unknown as MechanicSearchResult[]) ?? []).slice();
       list.sort((a, b) => a.full_name.localeCompare(b.full_name, 'ro', { sensitivity: 'base' }));
@@ -183,7 +184,8 @@ export async function fetchRecentRecommendedMechanics(
     .from('profiles')
     .select('id,full_name,specialization,activity_zone,rating_avg,rating_count,avatar_path,deleted_at,role')
     .in('id', ids)
-    .eq('role', targetRole);
+    .eq('role', targetRole)
+    .limit(300);
   const byId = new Map(
     (((profiles ?? []) as unknown) as (MechanicSearchResult & { deleted_at: string | null })[]).map(
       (p) => [p.id, p]

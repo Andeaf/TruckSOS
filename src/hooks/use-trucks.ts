@@ -12,7 +12,8 @@ export function useSavedTrucks() {
     const { data } = await supabase
       .from('trucks')
       .select('*')
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .limit(50);
     setTrucks(data ?? []);
     setLoading(false);
   }

@@ -41,7 +41,9 @@ export function useFeedBadge(userId: string | undefined) {
       .select('id, created_at, latitude, longitude')
       .eq('status', 'open')
       // Propriul anunț nu aprinde bulina (mecanicii pot posta și ei, 5 aug).
-      .neq('driver_id', userId);
+      .neq('driver_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(500);
     const list = (data ?? []) as unknown as {
       id: string;
       created_at: string;
@@ -97,7 +99,9 @@ export function useApplicationsBadge(userId: string | undefined) {
     const { data } = await supabase
       .from('applications')
       .select('status, updated_at, announcement:announcements!announcement_id(status, updated_at)')
-      .eq('mechanic_id', userId);
+      .eq('mechanic_id', userId)
+      .order('updated_at', { ascending: false })
+      .limit(500);
     const rows = (data ?? []) as unknown as AppBadgeRow[];
     const cutoff = new Date(lastSeen).getTime();
     setHasNew(
