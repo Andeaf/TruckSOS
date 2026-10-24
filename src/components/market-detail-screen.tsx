@@ -9,7 +9,6 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +17,7 @@ import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/ui/button';
 import { PhotoViewer } from '@/components/photo-viewer';
 import { RatingBadge } from '@/components/rating-badge';
+import { RemoteImage } from '@/components/remote-image';
 import { ReportSheet } from '@/components/report-sheet';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
@@ -274,8 +274,8 @@ export function MarketDetailScreen({ role }: MarketDetailScreenProps) {
               }
               renderItem={({ item, index }) => (
                 <Pressable onPress={() => setViewerAt(index)}>
-                  <Image
-                    source={{ uri: item.url }}
+                  <RemoteImage
+                    uri={item.url}
                     style={{ width, aspectRatio: 4 / 3 }}
                     contentFit="cover"
                     transition={150}

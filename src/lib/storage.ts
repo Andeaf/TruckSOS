@@ -189,6 +189,47 @@ export async function signedUrl(path: string): Promise<string | null> {
   return map[path] ?? null;
 }
 
+/** Prefixul URL-urilor semnate din bucket: după el vine path-ul obiectului, apoi `?token=`. */
+const SIGNED_URL_MARKER = `/storage/v1/object/sign/${BUCKET}/`;
+
+/**
+ * Path-ul obiectului dintr-un URL semnat al bucket-ului nostru (null pentru orice
+ * alt URL). E partea STABILĂ a URL-ului — tokenul se schimbă la fiecare semnare —
+ * deci servește drept cheie de cache pentru `expo-image` (RemoteImage, 15 oct) și
+ * ca argument de re-semnare când tokenul a expirat.
+ */
+export function signedUrlPath(url: string): string | null {
+  const start = url.indexOf(SIGNED_URL_MARKER);
+  if (start < 0) return null;
+  const rest = url.slice(start + SIGNED_URL_MARKER.length);
+  const query = rest.indexOf('?');
+  const raw = query >= 0 ? rest.slice(0, query) : rest;
+  if (!raw) return null;
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
+
+/**
+ * Expirarea (ms epoch) din tokenul JWT al unui URL semnat; null dacă nu se poate
+ * citi. Payload-ul e base64url cu `exp` în secunde — decodat local, fără apel.
+ */
+export function signedUrlExpiry(url: string): number | null {
+  const token = /[?&]token=([^&#]+)/.exec(url)?.[1];
+  const payload = token?.split('.')[1];
+  if (!payload) return null;
+  try {
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+    const exp = (JSON.parse(atob(padded)) as { exp?: unknown }).exp;
+    return typeof exp === 'number' ? exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Șterge obiecte din Storage (curățare client-side la ștergere anunț/poză — R2). */
 export async function deletePhotos(paths: string[]): Promise<string | null> {
   if (paths.length === 0) return null;

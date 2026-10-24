@@ -1,8 +1,8 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
+import { RemoteImage } from '@/components/remote-image';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Shadows, Spacing } from '@/constants/theme';
@@ -43,7 +43,12 @@ export function MarketCard({ listing, coverUrl, onPress, horizontal = false }: M
           style={[styles.card, styles.rowCard, scheme === 'light' && Shadows.card]}>
           <View style={styles.rowCoverWrap}>
             {coverUrl ? (
-              <Image source={{ uri: coverUrl }} style={styles.rowCover} contentFit="cover" transition={150} />
+              <RemoteImage
+                uri={coverUrl}
+                style={[styles.rowCover, { backgroundColor: theme.backgroundSelected }]}
+                contentFit="cover"
+                transition={150}
+              />
             ) : (
               <View style={[styles.rowCover, styles.coverFallback, { backgroundColor: theme.backgroundSelected }]}>
                 <Feather name="image" size={22} color={theme.textTertiary} />
@@ -80,8 +85,15 @@ export function MarketCard({ listing, coverUrl, onPress, horizontal = false }: M
         type="backgroundElement"
         style={[styles.card, scheme === 'light' && Shadows.card]}>
         <View style={styles.coverWrap}>
+          {/* Fundalul fallback-ului și cât se încarcă poza (15 oct): un cover care încă
+              se descarcă (sau a picat și reîncearcă) nu mai lasă cardul alb, ca „fără poză". */}
           {coverUrl ? (
-            <Image source={{ uri: coverUrl }} style={styles.cover} contentFit="cover" transition={150} />
+            <RemoteImage
+              uri={coverUrl}
+              style={[styles.cover, { backgroundColor: theme.backgroundSelected }]}
+              contentFit="cover"
+              transition={150}
+            />
           ) : (
             <View style={[styles.cover, styles.coverFallback, { backgroundColor: theme.backgroundSelected }]}>
               <Feather name="image" size={24} color={theme.textTertiary} />

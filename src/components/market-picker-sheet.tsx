@@ -8,11 +8,11 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { RemoteImage } from '@/components/remote-image';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useMarketListings } from '@/hooks/use-market';
@@ -119,7 +119,7 @@ export function MarketPickerSheet({ visible, userId, onClose, onPick }: MarketPi
                     pressed && { backgroundColor: theme.backgroundSelected },
                   ]}>
                   {covers[item.id] ? (
-                    <Image source={{ uri: covers[item.id] }} style={styles.cover} contentFit="cover" />
+                    <RemoteImage uri={covers[item.id]} style={styles.cover} contentFit="cover" />
                   ) : (
                     <View
                       style={[styles.cover, styles.coverPlaceholder, { backgroundColor: theme.background }]}>

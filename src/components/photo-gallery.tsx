@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
-import { Image } from 'expo-image';
 
 import { PhotoViewer, type ViewerPhoto } from '@/components/photo-viewer';
+import { RemoteImage } from '@/components/remote-image';
 import { Radius, Spacing } from '@/constants/theme';
 
 /**
@@ -33,8 +33,8 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
             key={photo.id}
             onPress={() => setOpenAt(index)}
             style={({ pressed }) => pressed && styles.pressed}>
-            <Image
-              source={{ uri: photo.url }}
+            <RemoteImage
+              uri={photo.url}
               style={styles.thumb}
               contentFit="cover"
               transition={150}

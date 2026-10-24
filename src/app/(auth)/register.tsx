@@ -20,6 +20,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useNetworkDiagnosis } from '@/hooks/use-network-diagnosis';
+import { setAuthEntry } from '@/lib/auth-entry';
 import { translateAuthError } from '@/lib/auth-errors';
 import { supabase } from '@/lib/supabase';
 
@@ -81,6 +82,8 @@ export default function RegisterScreen() {
     setLoading(true);
     setError('');
     setResent(false);
+    // Reafirmăm intenția de înregistrare: app-ul putea fi repornit între înscriere și cod.
+    await setAuthEntry('signup');
     const { error: err } = await supabase.auth.verifyOtp({
       email: email.trim(),
       token: code.trim(),
@@ -241,7 +244,7 @@ export default function RegisterScreen() {
 
             {/* 6 oct: cont nou direct cu Google/Apple — fără parolă și fără cod pe email
                 (emailul vine verificat de furnizor); rolul și telefonul se cer apoi. */}
-            <SocialSignIn />
+            <SocialSignIn origin="register" />
           </View>
 
           <View style={styles.footer}>

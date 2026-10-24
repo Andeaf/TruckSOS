@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
+import { setAuthEntry } from '@/lib/auth-entry';
 import {
   appleSignInAvailable,
   googleSignInAvailable,
@@ -26,7 +27,13 @@ import {
  * desenat de noi); textul lui îl localizează iOS-ul. Butonul Google urmează ghidul
  * de branding: fundal alb, bordură gri, sigla „G” multicoloră, text închis.
  */
-export function SocialSignIn() {
+interface SocialSignInProps {
+  /** Ecranul-gazdă (15 oct): de pe `register` o identitate nouă duce la alegerea rolului;
+   *  de pe `login` o identitate fără cont e refuzată cu mesaj (use-auth.fetchProfile). */
+  origin: 'login' | 'register';
+}
+
+export function SocialSignIn({ origin }: SocialSignInProps) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState<'google' | 'apple' | null>(null);
   const [error, setError] = useState('');
@@ -49,6 +56,8 @@ export function SocialSignIn() {
     if (busy) return;
     setBusy(provider);
     setError('');
+    // ÎNAINTE de furnizor: pe web Google pleacă prin redirect, deci trebuie să fie deja salvat.
+    await setAuthEntry(origin === 'register' ? 'signup' : 'login-social');
     const result = provider === 'google' ? await signInWithGoogle() : await signInWithApple();
     if (result.error) setError(result.error);
     // Pe web, Google pleacă prin redirect: lăsăm spinner-ul până pleacă pagina.

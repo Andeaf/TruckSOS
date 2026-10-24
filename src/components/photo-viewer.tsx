@@ -11,7 +11,6 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
@@ -23,6 +22,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
+import { RemoteImage } from '@/components/remote-image';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { downloadToGallery } from '@/lib/media';
@@ -191,7 +191,7 @@ function ZoomablePhoto({ url, width, height, isActive, onZoomChange }: ZoomableP
   if (Platform.OS === 'web') {
     return (
       <View style={{ width, height }}>
-        <Image source={{ uri: url }} style={styles.zoomImage} contentFit="contain" transition={150} />
+        <RemoteImage uri={url} style={styles.zoomImage} contentFit="contain" transition={150} />
       </View>
     );
   }
@@ -199,7 +199,7 @@ function ZoomablePhoto({ url, width, height, isActive, onZoomChange }: ZoomableP
   return (
     <GestureDetector gesture={gesture}>
       <Animated.View style={[{ width, height }, animatedStyle]}>
-        <Image source={{ uri: url }} style={styles.zoomImage} contentFit="contain" transition={150} />
+        <RemoteImage uri={url} style={styles.zoomImage} contentFit="contain" transition={150} />
       </Animated.View>
     </GestureDetector>
   );

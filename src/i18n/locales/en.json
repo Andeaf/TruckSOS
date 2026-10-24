@@ -168,6 +168,7 @@
       "noAccount": "Don't have an account?",
       "registerLink": "Sign up",
       "errorEmpty": "Please enter your email and password.",
+      "noAccountForSignIn": "There's no account for the sign-in you used. Tap “Sign up” to create one.",
       "forgotPassword": "Forgot your password?"
     },
     "social": {
@@ -218,6 +219,7 @@
       "detailsSubtitleMechanic": "Add your provider details — transporters see them on your public profile.",
       "mechanicFieldsHint": "Your address and VAT number appear on your public profile and build trust.",
       "changeRole": "Choose another role",
+      "haveAccount": "I already have an account",
       "continueButton": "Continue",
       "errorGeneric": "Your profile could not be saved. Check your connection and try again."
     },

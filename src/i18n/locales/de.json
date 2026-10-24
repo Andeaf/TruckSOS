@@ -168,6 +168,7 @@
       "noAccount": "Noch kein Konto?",
       "registerLink": "Registrieren",
       "errorEmpty": "Bitte E-Mail und Passwort eingeben.",
+      "noAccountForSignIn": "Für diese Anmeldung gibt es kein Konto. Tippe auf „Registrieren“, um eines zu erstellen.",
       "forgotPassword": "Passwort vergessen?"
     },
     "social": {
@@ -218,6 +219,7 @@
       "detailsSubtitleMechanic": "Gib deine Anbieterdaten an — Transporteure sehen sie auf deinem öffentlichen Profil.",
       "mechanicFieldsHint": "Adresse und USt-IdNr. erscheinen auf deinem öffentlichen Profil und schaffen Vertrauen.",
       "changeRole": "Andere Rolle wählen",
+      "haveAccount": "Ich habe bereits ein Konto",
       "continueButton": "Weiter",
       "errorGeneric": "Dein Profil konnte nicht gespeichert werden. Prüfe deine Verbindung und versuche es erneut."
     },

@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AppState } from 'react-native';
 
+import { subscribeRetryTriggers } from '@/lib/retry-triggers';
 import { signedUrls } from '@/lib/storage';
 
 /**
  * URL-urile semnate trăiesc 60 min (SIGNED_URL_TTL): după atâta timp în fundal,
  * ecranul încă montat le ține pe cele moarte → pozele nu se mai încarcă până la
  * o remontare (bug raportat 10 sept: „pozele nu se încarcă dacă nu dau refresh").
- * La revenirea în prim-plan, dacă PRIMA semnare e mai veche de atât, re-semnăm tot.
+ * La revenirea în prim-plan (sau la rețea revenită — 15 oct), dacă PRIMA semnare
+ * e mai veche de atât, re-semnăm tot.
  */
 const RESIGN_AFTER_MS = 45 * 60 * 1000;
 
@@ -23,9 +24,9 @@ export function useSignedUrls(paths: string[]): Record<string, string> {
   const [urls, setUrls] = useState<Record<string, string>>({});
   // Path-uri deja cerute (reușite SAU eșuate) — evită re-cererea la fiecare render.
   const requested = useRef(new Set<string>());
-  // Path-uri cerute fără rezultat (RLS, rețea, token expirat): se reîncearcă o dată
-  // la revenirea în prim-plan — o semnare picată în tranziția din fundal nu mai
-  // lasă poza moartă pe veci (înainte, „cerut" însemna „gata, nu mai întreb").
+  // Path-uri cerute fără rezultat (RLS, rețea, token expirat): se reîncearcă la
+  // revenirea în prim-plan sau la rețea revenită — o semnare picată fără rețea nu
+  // mai lasă poza moartă pe veci (înainte, „cerut" însemna „gata, nu mai întreb").
   const failed = useRef(new Set<string>());
   // Momentul PRIMEI semnări valide (cea mai veche = prima care expiră).
   const firstSignedAt = useRef(0);
@@ -40,25 +41,25 @@ export function useSignedUrls(paths: string[]): Record<string, string> {
     };
   }, []);
 
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (state) => {
-      if (state !== 'active') return;
-      const stale =
-        firstSignedAt.current > 0 && Date.now() - firstSignedAt.current > RESIGN_AFTER_MS;
-      if (stale) {
-        // Tot ce știm e pe cale să expire → semnăm din nou, de la zero.
-        requested.current.clear();
-        failed.current.clear();
-        firstSignedAt.current = 0;
-        setEpoch((e) => e + 1);
-      } else if (failed.current.size > 0) {
-        failed.current.forEach((p) => requested.current.delete(p));
-        failed.current.clear();
-        setEpoch((e) => e + 1);
-      }
-    });
-    return () => sub.remove();
-  }, []);
+  useEffect(
+    () =>
+      subscribeRetryTriggers(() => {
+        const stale =
+          firstSignedAt.current > 0 && Date.now() - firstSignedAt.current > RESIGN_AFTER_MS;
+        if (stale) {
+          // Tot ce știm e pe cale să expire → semnăm din nou, de la zero.
+          requested.current.clear();
+          failed.current.clear();
+          firstSignedAt.current = 0;
+          setEpoch((e) => e + 1);
+        } else if (failed.current.size > 0) {
+          failed.current.forEach((p) => requested.current.delete(p));
+          failed.current.clear();
+          setEpoch((e) => e + 1);
+        }
+      }),
+    [],
+  );
 
   useEffect(() => {
     const missing = paths.filter((p) => p && !requested.current.has(p));

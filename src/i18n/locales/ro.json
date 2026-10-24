@@ -168,6 +168,7 @@
       "noAccount": "Nu ai cont?",
       "registerLink": "Înregistrează-te",
       "errorEmpty": "Completează email-ul și parola.",
+      "noAccountForSignIn": "Nu există niciun cont pentru datele cu care ai intrat. Apasă „Înregistrează-te” ca să îți creezi unul.",
       "forgotPassword": "Ai uitat parola?"
     },
     "social": {
@@ -218,6 +219,7 @@
       "detailsSubtitleMechanic": "Completează datele tale de prestator — transportatorii le văd în profilul tău public.",
       "mechanicFieldsHint": "Adresa și numărul TVA apar în profilul tău public și construiesc încredere.",
       "changeRole": "Alege alt rol",
+      "haveAccount": "Am deja cont",
       "continueButton": "Continuă",
       "errorGeneric": "Profilul nu a putut fi salvat. Verifică conexiunea și încearcă din nou."
     },

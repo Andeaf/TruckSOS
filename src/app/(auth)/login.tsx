@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -26,7 +26,7 @@ import { useNetworkDiagnosis } from '@/hooks/use-network-diagnosis';
 import { useWideLayout } from '@/components/web-sidebar';
 
 export default function LoginScreen() {
-  const { signIn } = useAuth();
+  const { signIn, noAccountNotice, dismissNoAccountNotice } = useAuth();
   const { t } = useTranslation();
   const { diagnosis, inspect } = useNetworkDiagnosis();
   // Design 10a: pe web lat, ecranul devine split — panou de brand la stânga,
@@ -36,6 +36,14 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // 15 oct: Google/Apple cu o identitate fără cont → use-auth a deconectat deja; aici explicăm
+  // de ce a rămas pe login și unde se face contul (alegerea rolului e DOAR prin înregistrare).
+  useEffect(() => {
+    if (!noAccountNotice) return;
+    setError(t('auth.login.noAccountForSignIn'));
+    dismissNoAccountNotice();
+  }, [noAccountNotice, dismissNoAccountNotice, t]);
 
   async function handleSignIn() {
     if (!email.trim() || !password) {
@@ -84,7 +92,7 @@ export default function LoginScreen() {
       <Button title={t('auth.login.button')} onPress={handleSignIn} loading={loading} />
 
       {/* 6 oct: Google (+ Apple pe iOS) — se randează doar când furnizorii sunt disponibili. */}
-      <SocialSignIn />
+      <SocialSignIn origin="login" />
     </View>
   );
 

@@ -8,7 +8,6 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -18,6 +17,7 @@ import { ActionSheet } from '@/components/action-sheet';
 import { Button } from '@/components/ui/button';
 import { Input, RequiredMark } from '@/components/ui/input';
 import { FilterChips } from '@/components/ui/filter-chips';
+import { RemoteImage } from '@/components/remote-image';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -362,8 +362,10 @@ export function MarketFormScreen({ role, listingId: listingIdProp }: MarketFormS
                   onLongPress={() => handleMakeCover(index)}
                   delayLongPress={300}
                   style={styles.thumbWrap}>
-                  <Image
-                    source={{ uri: photo.kind === 'remote' ? photo.url : photo.img.uri }}
+                  {/* Pozele deja urcate (editare) sunt URL-uri semnate → RemoteImage le
+                      reîncearcă; cele abia alese sunt locale și trec neschimbate. */}
+                  <RemoteImage
+                    uri={photo.kind === 'remote' ? photo.url : photo.img.uri}
                     style={styles.thumb}
                     contentFit="cover"
                     transition={100}

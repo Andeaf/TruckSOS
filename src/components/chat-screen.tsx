@@ -43,6 +43,7 @@ import { LinkifiedText } from '@/components/linkified-text';
 import { MentionPanel } from '@/components/mention-panel';
 import { MessageActionSheet } from '@/components/message-action-sheet';
 import { PhotoViewer } from '@/components/photo-viewer';
+import { RemoteImage } from '@/components/remote-image';
 import { ReportSheet } from '@/components/report-sheet';
 import { Toast } from '@/components/toast';
 import { HeaderText, ScreenHeader } from '@/components/screen-header';
@@ -830,8 +831,8 @@ function MessageBubble<M extends ChatMessageBase>({
             onPress={onPressListing ? () => onPressListing(message.listing!.id) : undefined}
             onLongPress={onLongPress}>
             {listingCoverUrl ? (
-              <Image
-                source={{ uri: listingCoverUrl }}
+              <RemoteImage
+                uri={listingCoverUrl}
                 style={styles.attachThumb}
                 contentFit="cover"
                 transition={100}
@@ -983,8 +984,10 @@ function MessageBubble<M extends ChatMessageBase>({
               delayLongPress={300}
               style={({ pressed }) => [styles.imageWrap, pressed && styles.pressed]}>
               {imageUrl ? (
-                <Image
-                  source={{ uri: imageUrl }}
+                // RemoteImage (15 oct): poza picată pe rețea slabă reîncearcă singură —
+                // înainte rămânea goală până la repornirea app-ului.
+                <RemoteImage
+                  uri={imageUrl}
                   style={styles.imageThumb}
                   contentFit="cover"
                   transition={150}
@@ -1098,8 +1101,10 @@ function MessageBubble<M extends ChatMessageBase>({
                   ]}>
                   <View style={styles.quoteThumbWrap}>
                     {quoteMediaThumb ? (
-                      <Image
-                        source={{ uri: quoteMediaThumb }}
+                      // Poza citată e URL semnat; thumbnail-ul video e fișier local —
+                      // RemoteImage le afișează pe ambele (reîncearcă doar ce e remote).
+                      <RemoteImage
+                        uri={quoteMediaThumb}
                         style={styles.quoteThumb}
                         contentFit="cover"
                       />
@@ -3181,7 +3186,9 @@ const styles = StyleSheet.create({
   // Bula-imagine: padding 6, poza rotunjită 12 înăuntru (design 22 iul).
   bubbleImage: { paddingHorizontal: 6, paddingVertical: 6, overflow: 'hidden' },
   imageWrap: { width: 220, height: 150 },
-  imageThumb: { width: '100%', height: '100%', borderRadius: 12 },
+  // Fundalul (15 oct): cât se descarcă poza (sau reîncearcă după un eșec), bula
+  // arată același voal ca placeholder-ul de semnare, nu un dreptunghi gol.
+  imageThumb: { width: '100%', height: '100%', borderRadius: 12, backgroundColor: '#00000015' },
   imagePlaceholder: {
     justifyContent: 'center',
     alignItems: 'center',

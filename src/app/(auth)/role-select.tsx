@@ -32,12 +32,17 @@ const ROLE_META: Record<PickedRole, { color: string; icon: 'local-shipping' | 'b
  * telefon la ambele roluri; adresă + TVA doar la mecanici (prestatori).
  * Fără ecran nou: cardurile aleg rolul, apoi apare formularul (varianta preferată
  * din PLAN_FAZA18 §4.2/§9.4).
+ *
+ * 15 oct 2026: ecranul apare DOAR pe fluxul de înregistrare (lib/auth-entry.ts) și are
+ * o ieșire, „Am deja cont" → delogare → login. Până acum nu exista niciuna: userul,
+ * ajuns aici dintr-o deconectare falsă, a reinstalat aplicația ca să revină la login.
  */
 export default function RoleSelectScreen() {
-  const { createProfile, session } = useAuth();
+  const { createProfile, session, signOut } = useAuth();
   const { t } = useTranslation();
   const theme = useTheme();
   const [role, setRole] = useState<PickedRole | null>(null);
+  const [leaving, setLeaving] = useState(false);
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [vatNumber, setVatNumber] = useState('');
@@ -94,6 +99,13 @@ export default function RoleSelectScreen() {
     // Pe succes, _layout.tsx redirecționează automat la home-ul rolului
   }
 
+  // Delogarea șterge sesiunea (și intenția de înregistrare) → garda duce la login,
+  // iar ecranul se demontează; nu e nevoie să resetăm `leaving`.
+  async function handleHaveAccount() {
+    setLeaving(true);
+    await signOut();
+  }
+
   function renderRoleCard(cardRole: PickedRole) {
     const meta = ROLE_META[cardRole];
     return (
@@ -107,7 +119,7 @@ export default function RoleSelectScreen() {
           setRole(cardRole);
           setError('');
         }}
-        disabled={loading}>
+        disabled={loading || leaving}>
         <MaterialIcons name={meta.icon} size={48} color={meta.color} />
         <ThemedText type="subtitle" style={styles.cardTitle}>
           {t(`auth.roleSelect.${cardRole}Title`)}
@@ -135,6 +147,13 @@ export default function RoleSelectScreen() {
           {renderRoleCard('driver')}
           {renderRoleCard('mechanic')}
         </View>
+
+        <Button
+          title={t('auth.roleSelect.haveAccount')}
+          variant="secondary"
+          onPress={handleHaveAccount}
+          loading={leaving}
+        />
       </ThemedView>
     );
   }

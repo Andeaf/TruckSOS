@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js';
 
+import { clearAuthEntry, readAuthEntry, setAuthEntry } from '@/lib/auth-entry';
 import { translateAuthError } from '@/lib/auth-errors';
 import { readStoredSession, supabase } from '@/lib/supabase';
 import { registerPushToken, unregisterPushToken } from '@/lib/push';
@@ -17,6 +18,9 @@ interface AuthContextValue {
   profile: Profile | null;
   /** `true` doar când serverul a confirmat că nu există rând în `profiles` (cont nou). */
   profileMissing: boolean;
+  /** 15 oct: Google/Apple de pe LOGIN cu o identitate fără cont → deconectat; login-ul explică. */
+  noAccountNotice: boolean;
+  dismissNoAccountNotice: () => void;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<string | null>;
   signUp: (
@@ -42,6 +46,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // trimitea omul la alegerea rolului, de unde „Continuă" lovea cheia duplicată
   // („profiles_pkey"). `profileMissing` e `true` doar cu confirmarea serverului.
   const [profileMissing, setProfileMissing] = useState(false);
+  // 15 oct 2026: „nu există cont pentru datele cu care ai intrat" — ridicat de fetchProfile
+  // când Google/Apple de pe ecranul de LOGIN aduce o identitate fără profil (vezi
+  // lib/auth-entry.ts); ecranul de login îl afișează și îl stinge.
+  const [noAccountNotice, setNoAccountNotice] = useState(false);
+  const dismissNoAccountNotice = useCallback(() => setNoAccountNotice(false), []);
   const [loading, setLoading] = useState(true);
   const profileRef = useRef<Profile | null>(null);
   useEffect(() => {
@@ -151,6 +160,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cancelProfileRetry();
       // `role` e text în schema generată; CHECK-ul din DB îl limitează la valorile din Role.
       const next = (data as Profile | null) ?? null;
+      if (!next && (await readAuthEntry()) === 'login-social') {
+        // 15 oct 2026: Google/Apple de pe ecranul de LOGIN cu o identitate care n-are profil —
+        // omul n-a cerut cont nou (poate a ales alt cont Google decât cel cu care s-a înscris).
+        // Alegerea rolului apare DOAR prin „Înregistrează-te": aici deconectăm și spunem pe
+        // login că nu există cont pentru datele alese.
+        if (sessionRef.current?.user.id !== userId) return null;
+        setNoAccountNotice(true);
+        await signOut();
+        return null;
+      }
+      if (next) void clearAuthEntry();
       setProfile(next);
       // Doar aici, cu răspuns de la server, știm sigur că nu există rând (cont nou).
       setProfileMissing(!next);
@@ -263,6 +283,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function signIn(email: string, password: string): Promise<string | null> {
+    await setAuthEntry('login-password');
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return translateAuthError(error);
   }
@@ -272,6 +293,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string,
     fullName: string
   ): Promise<{ error: string | null; needsConfirmation: boolean }> {
+    await setAuthEntry('signup');
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -343,6 +365,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     pushOwnerRef.current = null;
     cancelProfileRetry();
     await clearProfileCache();
+    await clearAuthEntry();
     // Contul Google ales rămâne memorat nativ; fără asta următorul tap pe „Continuă cu
     // Google” ar intra direct, fără selector de cont (best-effort, doar pe telefon).
     await signOutSocial();
@@ -407,6 +430,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (!error) {
+      await clearAuthEntry();
       await fetchProfile(userId);
       return null;
     }
@@ -424,7 +448,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ session, profile, profileMissing, loading, signIn, signUp, signOut, createProfile, updateProfile }}>
+    <AuthContext.Provider
+      value={{
+        session,
+        profile,
+        profileMissing,
+        noAccountNotice,
+        dismissNoAccountNotice,
+        loading,
+        signIn,
+        signUp,
+        signOut,
+        createProfile,
+        updateProfile,
+      }}>
       {children}
     </AuthContext.Provider>
   );

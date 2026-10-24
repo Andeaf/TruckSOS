@@ -55,6 +55,8 @@ function RootLayoutNav() {
     } else if (!profile) {
       // Doar cu confirmarea serverului ca nu exista profil (cont nou). O citire picata pe
       // retea nu mai trimite nicaieri: ramane ecranul curent / cel de incarcare (14 oct 2026).
+      // 15 oct: o identitate Google/Apple fara cont venita de pe LOGIN nu ajunge aici —
+      // use-auth o deconecteaza (profileMissing ramane false) si login-ul explica de ce.
       if (profileMissing && !onRoleSelect) router.replace('/(auth)/role-select');
     } else if (profile.role === 'admin') {
       // Adminul poate „intra ca" șofer/mecanic (Faza 16), altfel stă în (admin).

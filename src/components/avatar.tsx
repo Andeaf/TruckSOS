@@ -1,6 +1,6 @@
-import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { RemoteImage } from '@/components/remote-image';
 import { Radius } from '@/constants/theme';
 
 /**
@@ -27,8 +27,8 @@ export function Avatar({ url, name, size = 40, color }: AvatarProps) {
 
   if (url) {
     return (
-      <Image
-        source={{ uri: url }}
+      <RemoteImage
+        uri={url}
         style={dimensions}
         contentFit="cover"
         transition={150}
