@@ -719,7 +719,8 @@
     "noSession": "No active session",
     "signOut": "Sign out",
     "error": "Error",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "openProfile": "Open profile"
   },
   "attach": {
     "title": "Attach",

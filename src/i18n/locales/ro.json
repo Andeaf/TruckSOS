@@ -636,7 +636,8 @@
     "noSession": "Sesiune inexistentă",
     "signOut": "Deconectare",
     "error": "Eroare",
-    "cancel": "Anulează"
+    "cancel": "Anulează",
+    "openProfile": "Deschide profilul"
   },
   "attach": {
     "title": "Atașează",

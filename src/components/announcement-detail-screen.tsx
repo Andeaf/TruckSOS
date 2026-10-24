@@ -101,10 +101,22 @@ function ApplicantCard({
   return (
     <ThemedView type="background" style={[styles.applicantCard, { borderColor: `${theme.brand}22` }]}>
       <View style={styles.applicantHeader}>
-        <Avatar url={avatarUrl} name={app.mechanic.full_name} size={36} />
-        <ThemedText type="smallBold" style={styles.applicantName}>
-          {app.mechanic.full_name}
-        </ThemedText>
+        <Pressable
+          disabled={!!app.mechanic.deleted_at}
+          onPress={() =>
+            router.push({
+              pathname: profilePath as never,
+              params: { id: app.mechanic.id },
+            })
+          }
+          accessibilityRole="button"
+          accessibilityHint={t('common.openProfile')}
+          style={({ pressed }) => [styles.applicantWho, pressed && styles.pressed]}>
+          <Avatar url={avatarUrl} name={app.mechanic.full_name} size={36} userId={app.mechanic_id} />
+          <ThemedText type="smallBold" style={styles.applicantName}>
+            {app.mechanic.full_name}
+          </ThemedText>
+        </Pressable>
         <RatingBadge avg={app.mechanic.rating_avg} count={app.mechanic.rating_count} />
       </View>
       {app.mechanic.specialization ? (
@@ -524,7 +536,17 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
               <MaterialIcons name="person" size={16} color="#f59e0b" />
               <ThemedText type="smallBold">{t('driver.announcements.sectionMechanic')}</ThemedText>
             </View>
-            <View style={styles.personRow}>
+            <Pressable
+              disabled={!!announcement.mechanic.deleted_at}
+              onPress={() =>
+                router.push({
+                  pathname: applicantProfilePath as never,
+                  params: { id: announcement.mechanic_id },
+                })
+              }
+              accessibilityRole="button"
+              accessibilityHint={t('common.openProfile')}
+              style={({ pressed }) => [styles.personRow, pressed && styles.pressed]}>
               <Avatar
                 url={
                   announcement.mechanic.avatar_path
@@ -533,9 +555,10 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
                 }
                 name={displayName(announcement.mechanic, t)}
                 size={36}
+                userId={announcement.mechanic_id ?? undefined}
               />
               <ThemedText>{displayName(announcement.mechanic, t)}</ThemedText>
-            </View>
+            </Pressable>
           </ThemedView>
         ) : null}
 
@@ -773,6 +796,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.one,
   },
+  applicantWho: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   applicantName: { flex: 1 },
   applicantPrice: { color: '#22c55e' },
   applicantMessage: { fontStyle: 'italic' },

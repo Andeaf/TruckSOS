@@ -213,7 +213,7 @@ export async function fetchOpenAnnouncementById(
 ): Promise<AnnouncementWithDriver | null> {
   const { data } = await supabase
     .from('announcements')
-    .select('*, driver:profiles!driver_id(full_name,avatar_path)')
+    .select('*, driver:profiles!driver_id(full_name,avatar_path,deleted_at)')
     .eq('id', id)
     .single();
   return (data as unknown as AnnouncementWithDriver) ?? null;
@@ -280,6 +280,7 @@ export type ApplicationWithMechanic = Application & {
     | 'rating_avg'
     | 'rating_count'
     | 'avatar_path'
+    | 'deleted_at'
   >;
 };
 
@@ -358,7 +359,7 @@ export async function fetchApplicationsForAnnouncement(
   const { data } = await supabase
     .from('applications')
     .select(
-      '*, mechanic:profiles!mechanic_id(id, full_name, specialization, activity_zone, rating_avg, rating_count, avatar_path)'
+      '*, mechanic:profiles!mechanic_id(id, full_name, specialization, activity_zone, rating_avg, rating_count, avatar_path, deleted_at)'
     )
     .eq('announcement_id', announcementId)
     .eq('status', 'pending')
@@ -369,7 +370,7 @@ export async function fetchApplicationsForAnnouncement(
 export type ApplicationWithDetails = Application & {
   announcement: Pick<
     Announcement,
-    'id' | 'location' | 'description' | 'status' | 'truck_make' | 'truck_model' | 'truck_year' | 'plate_number' | 'chassis_number' | 'latitude' | 'longitude'
+    'id' | 'driver_id' | 'location' | 'description' | 'status' | 'truck_make' | 'truck_model' | 'truck_year' | 'plate_number' | 'chassis_number' | 'latitude' | 'longitude'
   > & {
     driver: PublicUser | null;
     conversations: { id: string }[];
@@ -393,7 +394,7 @@ export function useMyApplications() {
       .from('applications')
       .select(
         `*, announcement:announcements!announcement_id(
-          id, location, description, status, truck_make, truck_model, truck_year, plate_number, chassis_number, latitude, longitude,
+          id, driver_id, location, description, status, truck_make, truck_model, truck_year, plate_number, chassis_number, latitude, longitude,
           driver:profiles!driver_id(full_name,avatar_path),
           conversations(id)
         )`
@@ -418,7 +419,7 @@ export function useApplication(id: string) {
       .from('applications')
       .select(
         `*, announcement:announcements!announcement_id(
-          id, location, description, status, truck_make, truck_model, truck_year, plate_number, chassis_number, latitude, longitude,
+          id, driver_id, location, description, status, truck_make, truck_model, truck_year, plate_number, chassis_number, latitude, longitude,
           driver:profiles!driver_id(full_name,avatar_path),
           conversations(id)
         )`

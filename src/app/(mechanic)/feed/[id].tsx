@@ -272,10 +272,26 @@ export default function MechanicAnnouncementDetailScreen() {
               <MaterialIcons name="person" size={16} color="#22c55e" />
               <ThemedText type="smallBold">{t('mechanic.feed.sectionDriver')}</ThemedText>
             </View>
-            <View style={styles.personRow}>
-              <Avatar url={driverAvatarUrl} name={announcement.driver.full_name} size={36} />
-              <ThemedText>{announcement.driver.full_name}</ThemedText>
-            </View>
+            {announcement.driver.deleted_at ? (
+              <View style={styles.personRow}>
+                <Avatar url={driverAvatarUrl} name={announcement.driver.full_name} size={36} userId={announcement.driver_id} />
+                <ThemedText>{announcement.driver.full_name}</ThemedText>
+              </View>
+            ) : (
+              <Pressable
+                onPress={() =>
+                  router.push({
+                    pathname: '/(mechanic)/public-profile/[id]',
+                    params: { id: announcement.driver_id },
+                  } as never)
+                }
+                accessibilityRole="button"
+                accessibilityHint={t('common.openProfile')}
+                style={({ pressed }) => [styles.personRow, pressed && { opacity: 0.7 }]}>
+                <Avatar url={driverAvatarUrl} name={announcement.driver.full_name} size={36} userId={announcement.driver_id} />
+                <ThemedText>{announcement.driver.full_name}</ThemedText>
+              </Pressable>
+            )}
           </ThemedView>
         ) : null}
 

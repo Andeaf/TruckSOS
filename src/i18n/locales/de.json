@@ -733,7 +733,8 @@
     "noSession": "Keine aktive Sitzung",
     "signOut": "Abmelden",
     "error": "Fehler",
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "openProfile": "Profil öffnen"
   },
   "attach": {
     "title": "Anhängen",
