@@ -26,6 +26,10 @@ const LAST_TOKEN_KEY = 'push:lastRegisteredToken';
 export interface PushData {
   type?: 'conversation' | 'announcement' | 'application' | 'feed' | 'channel' | 'listing';
   id?: string;
+  /** 1.1 (G): mesajul la care derulează tap-ul (push de mențiune/reply în canal). */
+  message_id?: string;
+  /** 1.1 (G): de ce a venit push-ul direct, fără digest. Clienții 1.0.x îl ignoră. */
+  kind?: 'mention' | 'reply';
 }
 
 type ExpoNotification = import('expo-notifications').Notification;
@@ -92,7 +96,13 @@ function unwrapPushData(raw: unknown): PushData | undefined {
   if (!value || typeof value !== 'object') return undefined;
   const obj = value as Record<string, unknown>;
   if (typeof obj.type === 'string') {
-    return { type: obj.type as PushData['type'], id: obj.id == null ? undefined : String(obj.id) };
+    const data: PushData = {
+      type: obj.type as PushData['type'],
+      id: obj.id == null ? undefined : String(obj.id),
+    };
+    if (obj.message_id != null) data.message_id = String(obj.message_id);
+    if (obj.kind === 'mention' || obj.kind === 'reply') data.kind = obj.kind;
+    return data;
   }
   if ('body' in obj) return unwrapPushData(obj.body);
   return undefined;

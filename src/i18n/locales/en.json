@@ -579,7 +579,7 @@
   "channelSettings": {
     "title": "Channel settings",
     "notifyLabel": "Notifications for new messages",
-    "notifyHint": "Get a push notification for every new message in {{name}}. Off by default so we don't overwhelm you.",
+    "notifyHint": "Notifications from {{name}} are on by default: at most one every 2 minutes, with a summary of new messages. Mentions and replies arrive right away.",
     "appSettings": "All app settings"
   },
   "search": {
@@ -955,6 +955,9 @@
     "notifications": "Notifications",
     "pushEnabled": "Push notifications",
     "marketPushEnabled": "New listings on Market",
+    "mentionPushLabel": "Mentions and replies",
+    "mentionPushHint": "Get notified right away when someone replies to you or mentions you in the channel, even while channel notifications are paused.",
+    "saveError": "The setting couldn't be saved. Check your connection and try again.",
     "radius": "New announcement radius",
     "radiusOff": "No limit",
     "radiusKm": "{{km}} km",

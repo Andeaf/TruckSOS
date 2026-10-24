@@ -31,6 +31,8 @@ export interface Profile {
   push_enabled: boolean;
   /** 8 sept 2026: notificări la anunț nou pe Market. Pornit implicit; push_enabled îl domină. */
   market_push_enabled: boolean;
+  /** 1.1 (G): notificări la mențiuni/reply, pornit implicit; push_enabled îl domină. TODO: regenerat cu gen:types după migrarea 20261027. */
+  mention_push_enabled: boolean;
   /** Mecanic: raza (km) peste care nu mai vrea anunțuri noi. NULL = primește tot. */
   notify_radius_km: number | null;
   /** Mecanic: poziția de referință (atelier/domiciliu), pentru filtrul de rază. */

@@ -52,6 +52,20 @@ export function SettingsScreen({
   const [locating, setLocating] = useState(false);
 
   const isMechanic = profile?.role === 'mechanic';
+  // 1.1 (G): `fetchProfile` citește `select('*')`, deci cheia lipsește din profil cât timp
+  // migrarea 20261027 nu e rulată pe server — proba de schemă, fără nicio cerere în plus.
+  // Fără coloană, comutatorul nu trimite nimic (UPDATE-ul ar da PGRST204/42703).
+  const hasMentionPushColumn = profile != null && 'mention_push_enabled' in profile;
+
+  async function handleMentionPushChange(next: boolean) {
+    if (!hasMentionPushColumn) {
+      Alert.alert(t('common.error'), t('settings.saveError'));
+      return;
+    }
+    // Pe eroare, refetch-ul din updateProfile readuce valoarea reală a comutatorului.
+    const error = await updateProfile({ mention_push_enabled: next });
+    if (error) Alert.alert(t('common.error'), t('settings.saveError'));
+  }
   const hasPosition = profile?.latitude != null && profile?.longitude != null;
 
   function radiusLabel(km: number | null): string {
@@ -175,6 +189,17 @@ export function SettingsScreen({
             />
           ) : null}
 
+          {/* 1.1 (G): mențiunile și reply-urile din canal vin imediat, peste pauza de
+              2 minute a canalului — opt-out separat, dominat de comutatorul global. */}
+          {(profile?.push_enabled ?? true) ? (
+            <SwitchRow
+              icon="alternate-email"
+              label={t('settings.mentionPushLabel')}
+              value={profile?.mention_push_enabled ?? true}
+              onValueChange={(next) => void handleMentionPushChange(next)}
+            />
+          ) : null}
+
           {/* Raza și poziția au sens doar pentru mecanic: el primește anunțurile noi. */}
           {isMechanic ? (
             <>
@@ -199,6 +224,12 @@ export function SettingsScreen({
             </>
           ) : null}
         </RowGroup>
+
+        {(profile?.push_enabled ?? true) ? (
+          <ThemedText themeColor="textSecondary" type="small">
+            {t('settings.mentionPushHint')}
+          </ThemedText>
+        ) : null}
 
         {isMechanic && profile?.notify_radius_km != null && !hasPosition ? (
           <ThemedText themeColor="textSecondary" type="small">

@@ -579,7 +579,7 @@
   "channelSettings": {
     "title": "Kanal-Einstellungen",
     "notifyLabel": "Benachrichtigungen für neue Nachrichten",
-    "notifyHint": "Erhalte eine Push-Benachrichtigung für jede neue Nachricht in {{name}}. Standardmäßig aus, um dich nicht zu überfluten.",
+    "notifyHint": "Benachrichtigungen aus {{name}} sind standardmäßig an: höchstens eine alle 2 Minuten, mit einer Zusammenfassung der neuen Nachrichten. Erwähnungen und Antworten kommen sofort.",
     "appSettings": "Alle App-Einstellungen"
   },
   "search": {
@@ -955,6 +955,9 @@
     "notifications": "Benachrichtigungen",
     "pushEnabled": "Push-Benachrichtigungen",
     "marketPushEnabled": "Neue Anzeigen im Markt",
+    "mentionPushLabel": "Erwähnungen und Antworten",
+    "mentionPushHint": "Du wirst sofort benachrichtigt, wenn dir jemand im Kanal antwortet oder dich erwähnt – auch wenn die Kanal-Benachrichtigungen pausieren.",
+    "saveError": "Die Einstellung konnte nicht gespeichert werden. Prüfe deine Verbindung und versuche es erneut.",
     "radius": "Radius für neue Anzeigen",
     "radiusOff": "Ohne Limit",
     "radiusKm": "{{km}} km",

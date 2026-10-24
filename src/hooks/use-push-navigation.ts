@@ -90,14 +90,16 @@ export function usePushNavigation() {
             params,
           });
           break;
-        // Notificările opt-in ale canalului global (5 aug).
+        // Notificările opt-in ale canalului global (5 aug). 1.1 (G): push-ul de
+        // mențiune/reply aduce și `message_id` → canalul derulează la mesaj. Fără el
+        // (digest, server vechi) parametrii rămân exact ca înainte.
         case 'channel':
           router.navigate({
             pathname:
               side === 'driver'
                 ? '/(driver)/conversations/channel/[id]'
                 : ('/(mechanic)/conversations/channel/[id]' as never),
-            params,
+            params: data.message_id ? { ...params, highlight: data.message_id } : params,
           });
           break;
       }

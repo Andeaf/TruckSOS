@@ -36,7 +36,8 @@ import type { MentionUser } from '@/lib/mention-search';
 import type { Channel } from '@/types/database';
 
 export default function MechanicChannelChatScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // `highlight` (1.1, G): mesajul din push-ul de mențiune/reply — lista derulează la el.
+  const { id, highlight } = useLocalSearchParams<{ id: string; highlight?: string }>();
   const { session } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
@@ -206,6 +207,7 @@ export default function MechanicChannelChatScreen() {
       unreadCursor={initialCursor}
       onBack={goBack}
       onOpenSettings={() => setSettingsOpen(true)}
+      scrollToMessageId={highlight}
     />
     {marketPickerOpen ? (
       <MarketPickerSheet

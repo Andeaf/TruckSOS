@@ -1391,6 +1391,11 @@ interface ChatScreenProps<M extends ChatMessageBase> {
   phoneNumber?: string | null;
   /** Rotița de setări din antet (canalul global, 5 aug) — apare doar dacă e furnizat. */
   onOpenSettings?: () => void;
+  /** 1.1 (G): mesajul la care derulează lista la deschidere (tap pe push-ul de mențiune/
+   * reply), cu aceeași evidențiere ca tap-ul pe citat. Doar dacă mesajul e în pagina
+   * încărcată; altfel nu se întâmplă nimic. Așteaptă `unreadCursor` (ancora „Mesaje noi"
+   * derulează prima), deci ecranul care îl dă trebuie să dea și cursorul. */
+  scrollToMessageId?: string;
 }
 
 export function ChatScreen<M extends ChatMessageBase>({
@@ -1436,6 +1441,7 @@ export function ChatScreen<M extends ChatMessageBase>({
   onOpenSettings,
   mentionCandidates,
   searchMentionUsers,
+  scrollToMessageId,
 }: ChatScreenProps<M>) {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
@@ -1881,6 +1887,33 @@ export function ChatScreen<M extends ChatMessageBase>({
     // Intenționat DOAR la fixarea ancorei — mesajele noi nu re-derulează lista.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unreadAnchorId]);
+
+  // 1.1 (G): tap pe push-ul de mențiune/reply → derulează la mesaj și îl evidențiază
+  // (aceeași cale ca tap-ul pe citat). O singură dată per id (garda e marcată abia când
+  // derularea pornește, ca un re-render în cele 300 ms să n-o piardă). Pornim DUPĂ
+  // încărcare și după ancora „Mesaje noi" (80 ms), ca saltul nostru să fie ultimul.
+  // Mesajul poate sosi puțin după deschidere (re-abonarea Realtime la revenirea din
+  // fundal): îl așteptăm câteva secunde; dacă nu apare (mai vechi decât pagina), renunțăm
+  // în tăcere — și nu mai sărim nici dacă apare mai târziu, la paginarea manuală.
+  const highlightDone = useRef<string | null>(null);
+  const highlightWait = useRef<{ id: string; until: number } | null>(null);
+  useEffect(() => {
+    const target = scrollToMessageId;
+    if (!target || highlightDone.current === target) return;
+    if (loading || unreadCursor === undefined) return;
+    if (highlightWait.current?.id !== target) {
+      highlightWait.current = { id: target, until: Date.now() + 5000 };
+    }
+    if (!reversedMessages.some((m) => m.id === target)) {
+      if (Date.now() > highlightWait.current.until) highlightDone.current = target;
+      return;
+    }
+    const timer = setTimeout(() => {
+      highlightDone.current = target;
+      scrollToQuoted(target);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [scrollToMessageId, loading, unreadCursor, reversedMessages, scrollToQuoted]);
 
   // URL-uri semnate pt. poze, avatare ȘI avatarele mecanicilor recomandați (19.5),
   // într-un singur batch care crește pe măsură ce sosesc mesaje noi

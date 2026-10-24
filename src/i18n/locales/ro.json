@@ -581,7 +581,7 @@
   "channelSettings": {
     "title": "Setări canal",
     "notifyLabel": "Notificări pentru mesaje noi",
-    "notifyHint": "Primești o notificare push pentru fiecare mesaj nou din {{name}}. Implicit sunt oprite, ca să nu te aglomerăm.",
+    "notifyHint": "Notificările din {{name}} sunt pornite implicit: cel mult una la 2 minute, cu rezumatul mesajelor noi. Mențiunile și răspunsurile vin imediat.",
     "appSettings": "Toate setările aplicației"
   },
   "search": {
@@ -958,6 +958,9 @@
     "notifications": "Notificări",
     "pushEnabled": "Notificări push",
     "marketPushEnabled": "Anunțuri noi pe Market",
+    "mentionPushLabel": "Mențiuni și răspunsuri",
+    "mentionPushHint": "Primești notificare imediat când cineva îți răspunde sau te menționează în canal, chiar dacă notificările canalului sunt în pauză.",
+    "saveError": "Setarea nu a putut fi salvată. Verifică conexiunea și încearcă din nou.",
     "radius": "Rază anunțuri noi",
     "radiusOff": "Fără limită",
     "radiusKm": "{{km}} km",
