@@ -64,7 +64,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "gen:types": "supabase gen types typescript --linked --schema public > src/types/supabase.ts"
+    "gen:types": "supabase gen types typescript --linked --schema public > src/types/supabase.ts",
+    "check:migrations": "node scripts/check-migrations.mjs"
   },
   "license": "SEE LICENSE IN LICENSE",
   "private": true

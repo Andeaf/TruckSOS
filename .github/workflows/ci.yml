@@ -25,3 +25,6 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Migrations follow the grants convention
+        run: npm run check:migrations
