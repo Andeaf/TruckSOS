@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
@@ -26,8 +26,9 @@ import { useNetworkDiagnosis } from '@/hooks/use-network-diagnosis';
 import { useWideLayout } from '@/components/web-sidebar';
 
 export default function LoginScreen() {
-  const { signIn, noAccountNotice, dismissNoAccountNotice } = useAuth();
+  const { signIn, noAccountNotice, dismissNoAccountNotice, enterGuest } = useAuth();
   const { t } = useTranslation();
+  const router = useRouter();
   const { diagnosis, inspect } = useNetworkDiagnosis();
   // Design 10a: pe web lat, ecranul devine split — panou de brand la stânga,
   // formular constrâns la dreapta. Pe telefon rămâne exact varianta veche.
@@ -36,6 +37,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
 
   // 15 oct: Google/Apple cu o identitate fără cont → use-auth a deconectat deja; aici explicăm
   // de ce a rămas pe login și unde se face contul (alegerea rolului e DOAR prin înregistrare).
@@ -56,6 +58,15 @@ export default function LoginScreen() {
     inspect(err, 'login');
     if (err) setError(err);
     setLoading(false);
+  }
+
+  // 1.1 (Faza B): „Continuă fără cont" — modul oaspete (doar citire, fără sesiune). Un link
+  // amânat venit din foaia „Fă-ți cont" rămâne pus; garda îl consumă după un login ulterior.
+  async function handleContinueAsGuest() {
+    setGuestLoading(true);
+    await enterGuest();
+    router.replace('/(guest)/announcements' as never);
+    setGuestLoading(false);
   }
 
   const form = (
@@ -107,6 +118,17 @@ export default function LoginScreen() {
     </View>
   );
 
+  const guestButton = (
+    <View style={wide ? styles.guestWide : undefined}>
+      <Button
+        title={t('auth.login.continueAsGuest')}
+        variant="secondary"
+        onPress={() => void handleContinueAsGuest()}
+        loading={guestLoading}
+      />
+    </View>
+  );
+
   if (wide) {
     return (
       <ThemedView style={styles.wideContainer}>
@@ -147,6 +169,7 @@ export default function LoginScreen() {
             </ThemedText>
             <View style={styles.wideFormFields}>{form}</View>
             {footer}
+            {guestButton}
           </View>
         </ScrollView>
       </ThemedView>
@@ -170,6 +193,8 @@ export default function LoginScreen() {
           {form}
 
           {footer}
+
+          {guestButton}
         </ScrollView>
       </KeyboardAvoidingView>
     </ThemedView>
@@ -240,4 +265,5 @@ const styles = StyleSheet.create({
   wideTitle: { fontSize: 26, fontWeight: '800', letterSpacing: -0.4, lineHeight: 32 },
   wideSubtitle: { fontSize: 14, fontWeight: '600', marginTop: 4 },
   wideFormFields: { marginTop: 28, marginBottom: 18 },
+  guestWide: { marginTop: 18 },
 });

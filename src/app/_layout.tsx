@@ -6,7 +6,9 @@ import { I18nextProvider } from 'react-i18next';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AccountGateSheet } from '@/components/account-gate-sheet';
 import { UpdatePrompt } from '@/components/update-prompt';
+import { AccountGateProvider } from '@/hooks/use-account-gate';
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 // Efect secundar, doar web: Alert.alert e no-op în react-native-web — fără shim,
 // erorile și confirmările erau invizibile în browser (vezi lib/web-alert.ts).
@@ -16,11 +18,11 @@ import { useLangSync } from '@/hooks/use-lang-sync';
 import { usePushNavigation } from '@/hooks/use-push-navigation';
 import { SettingsProvider, useSettings } from '@/hooks/use-settings';
 import { isBanned } from '@/lib/ban';
-import { takePendingLink } from '@/lib/pending-link';
+import { resolvePendingLink, takePendingLink } from '@/lib/pending-link';
 import i18n from '@/i18n';
 
 function RootLayoutNav() {
-  const { session, profile, profileMissing, loading } = useAuth();
+  const { session, profile, profileMissing, loading, isGuest } = useAuth();
   const { resolvedScheme, ready, adminViewAs, setAdminViewAs } = useSettings();
   const segments = useSegments();
   const router = useRouter();
@@ -53,11 +55,22 @@ function RootLayoutNav() {
     // sesiune, nici cu sesiunea nou creată fără profil (altfel „Cont activat" ar sări direct
     // la alegerea rolului înainte ca omul să-l vadă).
     const inAuthLink = seg[0] === 'auth';
+    // 1.1 (Faza B): grupul oaspeților. Cu sesiune nu are ce căuta acolo (vezi ramurile de jos).
+    const inGuest = seg[0] === '(guest)';
 
     if (!session) {
       // La delogare, un admin care era în mod șofer/mecanic revine implicit la mod admin.
       if (adminViewAs !== 'admin') setAdminViewAs('admin');
-      if (!inAuth && !inSharedLink && !inAuthLink) router.replace('/(auth)/login');
+      if (isGuest) {
+        // Oaspetele („Continuă fără cont"): (guest), linkurile partajate / de activare și
+        // ecranele de autentificare (foaia „Fă-ți cont" duce acolo). Orice altceva — pornirea
+        // fără rută sau un grup de cont, de ex. (driver) — ajunge pe anunțurile oaspeților.
+        if (!inGuest && !inAuth && !inSharedLink && !inAuthLink) {
+          router.replace('/(guest)/announcements' as never);
+        }
+      } else if (!inAuth && !inSharedLink && !inAuthLink) {
+        router.replace('/(auth)/login');
+      }
     } else if (!profile) {
       // Doar cu confirmarea serverului ca nu exista profil (cont nou). O citire picata pe
       // retea nu mai trimite nicaieri: ramane ecranul curent / cel de incarcare (14 oct 2026).
@@ -72,20 +85,29 @@ function RootLayoutNav() {
       } else if (adminViewAs === 'mechanic') {
         if (!inMechanic && !inSharedLink && !inAuthLink) router.replace('/(mechanic)/feed');
       } else if (!inAdmin && !inSharedLink && !inAuthLink) {
-        router.replace((takePendingLink() ?? '/(admin)/dashboard') as never);
+        // Un link amânat de pe un ecran de oaspete nu are echivalent în grupul (admin).
+        const pending = takePendingLink();
+        const target = pending && !pending.startsWith('/(guest)') ? pending : null;
+        router.replace((target ?? '/(admin)/dashboard') as never);
       }
     } else if (isBanned(profile)) {
       // Cont banat (aplicativ): capturat pe ecranul de ban. Sesiunea rămâne validă
       // (mesaj clar + drept GDPR de ștergere self-service).
       if (!onBanned) router.replace('/(auth)/banned');
-    } else if (inAuth || noRoute || inAdmin) {
+    } else if (inAuth || noRoute || inAdmin || inGuest) {
       // `|| inAdmin`: un non-admin nu are ce căuta în grupul admin → înapoi acasă.
-      // Linkul amânat (profil partajat deschis fără sesiune) are prioritate față de
-      // ecranul de start — utilizatorul s-a logat tocmai ca să vadă acel profil.
-      const home = profile.role === 'driver' ? '/(driver)/announcements' : '/(mechanic)/feed';
-      router.replace((takePendingLink() ?? home) as never);
+      // `|| inGuest` (1.1): fost oaspete, acum cu cont → ecranele lui de cont.
+      // Linkul amânat (profil partajat deschis fără sesiune, sau ecranul de oaspete de pe
+      // care a cerut contul — persistat, deci supraviețuiește OTP-ului / redirectului
+      // Google) are prioritate față de ecranul de start; cel de oaspete e tradus pe
+      // ecranul echivalent al rolului (resolvePendingLink).
+      const side = profile.role === 'driver' ? 'driver' : 'mechanic';
+      const home = side === 'driver' ? '/(driver)/announcements' : '/(mechanic)/feed';
+      const pending = takePendingLink();
+      const target = pending ? resolvePendingLink(pending, side) : null;
+      router.replace((target ?? home) as never);
     }
-  }, [session, profile, profileMissing, loading, segments, adminViewAs, setAdminViewAs, router]);
+  }, [session, profile, profileMissing, loading, isGuest, segments, adminViewAs, setAdminViewAs, router]);
 
   // `ready` evită un flash pe tema greșită cât citim preferința din AsyncStorage.
   if (loading || !ready) {
@@ -100,8 +122,13 @@ function RootLayoutNav() {
     <ThemeProvider value={resolvedScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Slot />
       {/* „Versiune nouă disponibilă" (17 sept): peste orice ecran, doar cu sesiune + profil
-          (nu peste auth / ban); pe web nu apare. O dată la 24h — vezi useUpdatePrompt. */}
-      <UpdatePrompt enabled={!!session && !!profile && !isBanned(profile)} />
+          (nu peste auth / ban) sau pentru oaspeți (1.1: app_versions e citibil de anon);
+          pe web nu apare. O dată la 24h — vezi useUpdatePrompt. */}
+      <UpdatePrompt
+        enabled={(!!session && !!profile && !isBanned(profile)) || (isGuest && !session)}
+      />
+      {/* 1.1 (Faza B2): „Ai nevoie de un cont" — o deschide useAccountGate().requireAccount. */}
+      <AccountGateSheet />
     </ThemeProvider>
   );
 }
@@ -118,9 +145,11 @@ export default function RootLayout() {
         <SettingsProvider>
           <I18nextProvider i18n={i18n}>
             <AuthProvider>
-              <BlockedProvider>
-                <RootLayoutNav />
-              </BlockedProvider>
+              <AccountGateProvider>
+                <BlockedProvider>
+                  <RootLayoutNav />
+                </BlockedProvider>
+              </AccountGateProvider>
             </AuthProvider>
           </I18nextProvider>
         </SettingsProvider>

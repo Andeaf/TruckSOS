@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js';
 
 import { clearAuthEntry, readAuthEntry, setAuthEntry } from '@/lib/auth-entry';
@@ -10,6 +10,15 @@ import { buildDiagnosticEntry, flushDiagnostics, queueDiagnostic } from '@/lib/d
 import { diagnoseNetwork, isNetworkError } from '@/lib/network-diagnosis';
 import { clearProfileCache, readProfileCache, writeProfileCache } from '@/lib/profile-cache';
 import { signOutSocial } from '@/lib/social-auth';
+import { readGuestMode, writeGuestMode } from '@/lib/guest';
+import { clearGuestFavorites, migrateGuestFavorites } from '@/lib/guest-favorites';
+import { loadPendingLink } from '@/lib/pending-link';
+import {
+  clearAnnouncementDraft,
+  loadAnnouncementDraft,
+  purgeStaleDrafts,
+  subscribeAnnouncementDraft,
+} from '@/lib/announcement-draft';
 import type { Profile } from '@/types/database';
 import i18n from '@/i18n';
 
@@ -34,6 +43,20 @@ interface AuthContextValue {
     details: { phone: string; address?: string | null; vat_number?: string | null; full_name?: string | null }
   ) => Promise<string | null>;
   updateProfile: (updates: { full_name?: string; specialization?: string | null; activity_zone?: string | null; phone?: string | null; company_name?: string | null; contact_email?: string | null; address?: string | null; vat_number?: string | null; avatar_path?: string | null; push_enabled?: boolean; market_push_enabled?: boolean; mention_push_enabled?: boolean; notify_radius_km?: number | null; latitude?: number | null; longitude?: number | null; lang?: string }) => Promise<string | null>;
+  /** 1.1 (Faza B): navighează fără cont („Continuă fără cont"). Mereu `false` când există sesiune. */
+  isGuest: boolean;
+  /** Intră în modul oaspete (persistat). Apelantul navighează apoi la `/(guest)/announcements`. */
+  enterGuest: () => Promise<void>;
+  /** Iese din modul oaspete (se face și automat, la prima sesiune). */
+  leaveGuest: () => Promise<void>;
+  /**
+   * Există un anunț nepublicat (draftul din `lib/announcement-draft`) și contul e gata
+   * (sesiune + profil) → lista de anunțuri arată bannerul „Ai un anunț nepublicat".
+   * Se stinge singur după `clearAnnouncementDraft()`.
+   */
+  pendingDraft: boolean;
+  /** Există un draft local (indiferent de sesiune) — bannerul de pe ecranul oaspetelui. */
+  hasDraft: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -52,6 +75,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [noAccountNotice, setNoAccountNotice] = useState(false);
   const dismissNoAccountNotice = useCallback(() => setNoAccountNotice(false), []);
   const [loading, setLoading] = useState(true);
+  // 1.1 (Faza B2): modul oaspete + linkul amânat se citesc din storage ÎNAINTE ca garda
+  // să decidă ceva (`loading` expus rămâne `true` până atunci).
+  const [guestMode, setGuestMode] = useState(false);
+  const [bootReady, setBootReady] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
   const profileRef = useRef<Profile | null>(null);
   useEffect(() => {
     profileRef.current = profile;
@@ -150,11 +178,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return fallbackToOfflineProfile(userId, 'no_live_session');
       }
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+      // 1.1 (§6 pasul 1): propriul profil vine prin RPC-ul `get_own_profile()` (SECURITY
+      // DEFINER, rândul lui auth.uid() cu toate coloanele), nu prin `select('*')` — ca în 1.2
+      // revocarea coloanelor sensibile din `profiles` pentru authenticated să nu atingă 1.1.
+      // Până la rularea migrării 20261029 RPC-ul lipsește (PGRST202) → vechiul select.
+      let { data, error } = await supabase.rpc('get_own_profile' as never).maybeSingle();
+      if (error && (error.code === 'PGRST202' || error.code === '42883')) {
+        ({ data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle());
+      }
       if (error) return fallbackToOfflineProfile(userId, error);
 
       cancelProfileRetry();
@@ -181,6 +212,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return fallbackToOfflineProfile(userId, e);
     }
   }
+
+  useEffect(() => {
+    let cancelled = false;
+    void Promise.all([readGuestMode(), loadPendingLink()]).then(([guest]) => {
+      if (cancelled) return;
+      setGuestMode(guest);
+      setBootReady(true);
+    });
+    // Draftul de anunț: întâi curățarea celor mai vechi de 7 zile, apoi starea pentru banner.
+    void purgeStaleDrafts()
+      .then(() => loadAnnouncementDraft())
+      .then((draft) => {
+        if (!cancelled) setHasDraft(!!draft);
+      });
+    const unsubscribeDraft = subscribeAnnouncementDraft((exists) => setHasDraft(exists));
+    return () => {
+      cancelled = true;
+      unsubscribeDraft();
+    };
+  }, []);
 
   useEffect(() => {
     let settled = false;
@@ -355,6 +406,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [session?.user.id, profileId]);
 
+  // 1.1 (Faza B2): prima sesiune (login, cont nou, sesiune găsită la pornire) închide
+  // modul oaspete.
+  const sessionUserId = session?.user.id;
+  useEffect(() => {
+    if (sessionUserId && guestMode) {
+      setGuestMode(false);
+      void writeGuestMode(false);
+    }
+  }, [sessionUserId, guestMode]);
+
+  // Favoritele de oaspete (D5) intră în cont abia când există profilul (FK
+  // `favorite_mechanics.driver_id → profiles`): la login imediat, la cont nou după
+  // alegerea rolului. Sunt pe telefon doar dacă omul a fost oaspete, deci verificarea e
+  // ieftină (o citire din AsyncStorage) și supraviețuiește unei aplicații închise între
+  // cod și alegerea rolului. Mecanicii n-au listă de favoriți → doar le ștergem.
+  const profileRole = profile?.role;
+  useEffect(() => {
+    if (!sessionUserId || profileId !== sessionUserId || !profileRole) return;
+    if (profileRole === 'mechanic') void clearGuestFavorites();
+    else void migrateGuestFavorites(sessionUserId);
+  }, [sessionUserId, profileId, profileRole]);
+
+  async function enterGuest() {
+    // Starea întâi: garda trebuie să știe că e oaspete înainte de navigarea spre (guest).
+    setGuestMode(true);
+    await writeGuestMode(true);
+  }
+
+  async function leaveGuest() {
+    setGuestMode(false);
+    await writeGuestMode(false);
+  }
+
   async function signOut() {
     // Întâi scoatem tokenul: altfel telefonul ar primi notificările contului vechi.
     const token = pushTokenRef.current;
@@ -366,6 +450,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     cancelProfileRetry();
     await clearProfileCache();
     await clearAuthEntry();
+    // 1.1 (Faza B): datele locale de oaspete nu trec la următorul cont de pe telefon.
+    await clearAnnouncementDraft();
+    await clearGuestFavorites();
     // Contul Google ales rămâne memorat nativ; fără asta următorul tap pe „Continuă cu
     // Google” ar intra direct, fără selector de cont (best-effort, doar pe telefon).
     await signOutSocial();
@@ -456,12 +543,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profileMissing,
         noAccountNotice,
         dismissNoAccountNotice,
-        loading,
+        loading: loading || !bootReady,
         signIn,
         signUp,
         signOut,
         createProfile,
         updateProfile,
+        // 1.1 (Faza B4): pe web vizitatorul fără sesiune E oaspetele (site public); pe nativ
+        // doar după „Continuă fără cont". Cu sesiune, niciodată.
+        isGuest: (guestMode || Platform.OS === 'web') && !session,
+        enterGuest,
+        leaveGuest,
+        pendingDraft: hasDraft && !!session && !!profile,
+        hasDraft,
       }}>
       {children}
     </AuthContext.Provider>
