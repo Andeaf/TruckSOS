@@ -101,7 +101,8 @@ export function ReportSheet({
       transparent
       animationType="slide"
       onRequestClose={onClose}
-      statusBarTranslucent>
+      statusBarTranslucent
+      navigationBarTranslucent>
       <KeyboardAvoidingView
         style={styles.wrapper}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -110,8 +111,9 @@ export function ReportSheet({
           style={[
             styles.sheet,
             { backgroundColor: theme.backgroundElement },
-            // iOS: home indicator — pattern-ul ActionSheet (PLAN_FAZA17.md L2); Android neatins.
-            Platform.OS === 'ios' && { paddingBottom: insets.bottom + Spacing.three },
+            // Nativ: home indicator (iOS) / bara de navigare (Android edge-to-edge, SDK 54) — PLAN_1.1 Faza E.
+            // Pe web insets.bottom e 0 și foaia păstrează padding-ul static de dinainte.
+            Platform.OS !== 'web' && { paddingBottom: insets.bottom + Spacing.three },
           ]}>
           <View style={[styles.handle, { backgroundColor: theme.backgroundSelected }]} />
 

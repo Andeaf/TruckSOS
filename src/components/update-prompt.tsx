@@ -37,7 +37,8 @@ export function UpdatePrompt({ enabled }: { enabled: boolean }) {
       transparent
       animationType="slide"
       onRequestClose={dismiss}
-      statusBarTranslucent>
+      statusBarTranslucent
+      navigationBarTranslucent>
       <View style={styles.wrapper}>
         <Pressable
           style={styles.backdrop}
@@ -49,8 +50,9 @@ export function UpdatePrompt({ enabled }: { enabled: boolean }) {
           style={[
             styles.sheet,
             { backgroundColor: theme.backgroundElement },
-            // iOS: home indicator — același pattern ca RatingSheet / ActionSheet.
-            Platform.OS === 'ios' && { paddingBottom: insets.bottom + Spacing.three },
+            // Nativ: home indicator (iOS) / bara de navigare (Android edge-to-edge, SDK 54) — PLAN_1.1 Faza E.
+            // Pe web insets.bottom e 0 și foaia păstrează padding-ul static de dinainte.
+            Platform.OS !== 'web' && { paddingBottom: insets.bottom + Spacing.three },
           ]}>
           <View style={[styles.handle, { backgroundColor: theme.backgroundSelected }]} />
 
