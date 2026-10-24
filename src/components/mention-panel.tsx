@@ -63,6 +63,7 @@ export function MentionPanel({
               url={item.avatar_path ? urls[item.avatar_path] : undefined}
               name={item.full_name}
               size={34}
+              userId={item.id}
             />
             <View style={styles.info}>
               <ThemedText type="smallBold" numberOfLines={1}>

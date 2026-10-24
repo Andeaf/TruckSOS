@@ -125,6 +125,7 @@ function WebSidebar({ state, descriptors, navigation, admin }: BottomTabBarProps
           <Avatar
             url={avatarPath ? urls[avatarPath] : undefined}
             name={profile ? displayName(profile, t) : undefined}
+            userId={profile?.id}
             size={34}
           />
           <View style={styles.profileInfo}>
@@ -148,6 +149,7 @@ function WebSidebar({ state, descriptors, navigation, admin }: BottomTabBarProps
           <Avatar
             url={avatarPath ? urls[avatarPath] : undefined}
             name={profile ? displayName(profile, t) : undefined}
+            userId={profile?.id}
             size={34}
           />
           <View style={styles.profileInfo}>

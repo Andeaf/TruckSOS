@@ -341,7 +341,7 @@ export function MarketDetailScreen({ role }: MarketDetailScreenProps) {
             { backgroundColor: theme.backgroundElement },
             pressed && styles.pressed,
           ]}>
-          <Avatar url={sellerAvatarUrl} name={listing.seller?.full_name} size={44} />
+          <Avatar url={sellerAvatarUrl} name={listing.seller?.full_name} size={44} userId={listing.seller_id} />
           <View style={styles.sellerInfo}>
             <ThemedText style={styles.sellerName} numberOfLines={1}>
               {displayName(listing.seller, t)}

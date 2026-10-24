@@ -120,7 +120,7 @@ function ConversationCard({
               color={selected ? '#22c55e' : theme.textSecondary}
             />
           ) : null}
-          <Avatar url={avatarUrl} name={displayName(other, t)} size={44} />
+          <Avatar url={avatarUrl} name={displayName(other, t)} size={44} userId={other === item.driver ? item.driver_id : item.mechanic_id} />
           <View style={styles.cardContent}>
             <View style={styles.cardTop}>
               <ThemedText type="smallBold" numberOfLines={1} style={styles.name}>

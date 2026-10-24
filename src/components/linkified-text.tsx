@@ -14,6 +14,8 @@ interface LinkifiedTextProps extends Omit<ComponentProps<typeof Text>, 'children
   mentions?: MentionRef[] | null;
   /** Stilul menționărilor (bold + culoare, fără subliniere — ca pe WhatsApp). */
   mentionStyle?: StyleProp<TextStyle>;
+  /** Culoarea unei menționări după id-ul utilizatorului (suprascrie culoarea din `mentionStyle`). */
+  mentionColor?: (userId: string) => string;
   /** Apăsarea lungă pe un link/telefon → același meniu ca pe restul bulei. */
   onLongPress?: () => void;
   /**
@@ -40,6 +42,7 @@ export function LinkifiedText({
   linkStyle,
   mentions,
   mentionStyle,
+  mentionColor,
   onLongPress,
   trailing,
   ...rest
@@ -70,7 +73,11 @@ export function LinkifiedText({
         ) : tok.type === 'mention' ? (
           <Text
             key={i}
-            style={[styles.mention, mentionStyle]}
+            style={[
+              styles.mention,
+              mentionStyle,
+              mentionColor ? { color: mentionColor(tok.userId) } : null,
+            ]}
             suppressHighlighting
             accessibilityRole="link"
             onPress={() => openProfile(tok.userId)}

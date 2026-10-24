@@ -41,7 +41,7 @@ export function MechanicCard({
   return (
     <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView type="backgroundElement" style={styles.card}>
-        <Avatar url={avatarUrl} name={mechanic.full_name} size={44} />
+        <Avatar url={avatarUrl} name={mechanic.full_name} size={44} userId={mechanic.id} />
         <View style={styles.cardContent}>
           <ThemedText type="smallBold" numberOfLines={1}>
             {mechanic.full_name}

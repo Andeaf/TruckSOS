@@ -66,6 +66,7 @@ import type { MessageMention } from '@/lib/chat-schema';
 import { displayName } from '@/lib/display-name';
 import { mentionQueryAt, rankMentionCandidates, type MentionUser } from '@/lib/mention-search';
 import { shareContact } from '@/lib/share-contact';
+import { userColor } from '@/lib/user-color';
 import {
   MAX_PHOTOS,
   pickFromCamera,
@@ -405,26 +406,6 @@ function dayKey(dateStr: string) {
 }
 
 /**
- * Culoarea stabilă a unui membru (stil 7a): hash pe user id → paleta de 4.
- * `base` = fundal avatar (ambele teme) + numele în light; `dark` = numele în dark
- * (base-ul navy/verde ar fi ilizibil pe bula #1A2333).
- */
-const USER_COLORS = [
-  { base: '#D6437F', dark: '#E06C9F' }, // roz
-  { base: '#164F9E', dark: '#7BA7E0' }, // albastru
-  { base: '#1C7C3C', dark: '#4ECB7D' }, // verde
-  { base: '#C4690B', dark: '#E8A44B' }, // portocaliu
-] as const;
-
-function userColor(userId: string) {
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    hash = (hash * 31 + userId.charCodeAt(i)) % 1000003;
-  }
-  return USER_COLORS[hash % USER_COLORS.length];
-}
-
-/**
  * Compozitorul crește cu textul până la 2,5× înălțimea de bază (cerere 8 aug);
  * abia DUPĂ plafon textul derulează în interior. lineHeight explicit — altfel
  * „2,5×" ar depinde de fontul fiecărei platforme.
@@ -606,8 +587,12 @@ function MessageBubble<M extends ChatMessageBase>({
   // Design 22 iul: timp/bife pe bula trimisă = alb 70%; pe cea primită = text terțiar.
   const secondaryColor = isMe ? 'rgba(255,255,255,0.7)' : theme.textTertiary;
   // Stil 7a: culoarea stabilă a expeditorului (avatar + nume), hash pe user id.
-  const uc = userColor(message.sender_id);
-  const nameColor = scheme === 'dark' ? uc.dark : uc.base;
+  const textSurface = scheme === 'dark' ? 'dark' : 'light';
+  const nameColor = userColor(message.sender_id, textSurface);
+  // Pe bula PROPRIE (gradient navy + voalul alb al citatului) nicio culoare din paletă nu
+  // ține contrastul ≥ 4,5 (măsurat la review, 24 oct: 2,9–4,4) → acolo rămâne albul de
+  // dinainte; culoarea per utilizator se aplică pe bulele primite și pe fundalul ecranului.
+  const mentionColor = (id: string) => (isMe ? '#FFFFFF' : userColor(id, textSurface));
   // Numele + rolul apar O dată per grup, ÎN prima bulă (nu deasupra ei, ca înainte).
   // Tap pe nume = tap pe avatar (profilul expeditorului) — cerere user, 10 aug.
   const senderHeader =
@@ -662,12 +647,11 @@ function MessageBubble<M extends ChatMessageBase>({
   // direct; videoclipul = cadrul generat pe device. Lipsă → placeholder neutru.
   const quoteMediaThumb = quoteIsVideo ? quoteVideoThumb : quoteIsImage ? quoteImageUrl : undefined;
   const qtk = QUOTE_TOKENS[scheme];
-  const quoteUserColor = quote ? userColor(quote.sender_id) : null;
-  const quoteNameColor = quoteUserColor
-    ? scheme === 'dark'
-      ? quoteUserColor.dark
-      : quoteUserColor.base
-    : theme.brand;
+  const quoteNameColor = isMe
+    ? '#FFFFFF'
+    : quote?.sender_id
+      ? userColor(quote.sender_id, textSurface)
+      : theme.brand;
   // reply_to_id există dar embed-ul vine gol: originalul e invizibil prin RLS (chat
   // global — mesaj dinaintea creării contului) sau șters definitiv → „Mesaj indisponibil".
   const quoteUnavailable = !isDeleted && !!message.reply_to_id && !quote;
@@ -743,7 +727,7 @@ function MessageBubble<M extends ChatMessageBase>({
               url={senderAvatarUrl}
               name={senderName}
               size={GROUP_AVATAR_SIZE}
-              color={uc.base}
+              color={userColor(message.sender_id, 'light')}
             />
           </Pressable>
         ) : (
@@ -794,7 +778,7 @@ function MessageBubble<M extends ChatMessageBase>({
                 : undefined
             }
             onLongPress={onLongPress}>
-            <Avatar url={mechanicAvatarUrl} name={message.mechanic.full_name} size={44} />
+            <Avatar url={mechanicAvatarUrl} name={message.mechanic.full_name} size={44} userId={message.mechanic.id} />
             <View style={styles.attachInfo}>
               <Text
                 numberOfLines={1}
@@ -1126,7 +1110,7 @@ function MessageBubble<M extends ChatMessageBase>({
                       numberOfLines={1}
                       style={[
                         styles.quoteMediaName,
-                        { color: isMe ? '#ffffff' : quoteNameColor },
+                        { color: quoteNameColor },
                       ]}>
                       {quoteIsMine ? t('chat.you') : (quote.sender?.full_name ?? '')}
                     </Text>
@@ -1158,7 +1142,7 @@ function MessageBubble<M extends ChatMessageBase>({
                   <View style={styles.quoteTextCol}>
                     <Text
                       numberOfLines={1}
-                      style={[styles.quoteName, { color: isMe ? '#ffffff' : theme.brand }]}>
+                      style={[styles.quoteName, { color: quoteNameColor }]}>
                       {quote.sender?.full_name ?? ''}
                     </Text>
                     <Text
@@ -1198,6 +1182,7 @@ function MessageBubble<M extends ChatMessageBase>({
                     linkStyle={{ color: isMe ? '#ffffff' : theme.brand }}
                     mentions={message.mentions}
                     mentionStyle={{ color: isMe ? '#ffffff' : theme.brand }}
+                    mentionColor={mentionColor}
                     onLongPress={onLongPress}
                     trailing={
                       <Text
@@ -1237,6 +1222,7 @@ function MessageBubble<M extends ChatMessageBase>({
                     linkStyle={{ color: isMe ? '#ffffff' : theme.brand }}
                     mentions={message.mentions}
                     mentionStyle={{ color: isMe ? '#ffffff' : theme.brand }}
+                    mentionColor={mentionColor}
                     onLongPress={onLongPress}
                   />
                   <View style={styles.metaInline}>
@@ -2246,6 +2232,7 @@ export function ChatScreen<M extends ChatMessageBase>({
               url={headerAvatarPath ? urls[headerAvatarPath] : undefined}
               name={title}
               size={38}
+              userId={headerUserId}
             />
           </Pressable>
         ) : null}
@@ -2577,7 +2564,16 @@ export function ChatScreen<M extends ChatMessageBase>({
           <View style={[styles.editBanner, { backgroundColor: theme.backgroundElement }]}>
             <MaterialIcons name="reply" size={16} color={theme.brand} />
             <View style={styles.editBannerInfo}>
-              <Text style={[styles.editBannerTitle, { color: theme.brand }]} numberOfLines={1}>
+              <Text
+                style={[
+                  styles.editBannerTitle,
+                  {
+                    color: replyTarget.sender_id
+                      ? userColor(replyTarget.sender_id, scheme === 'dark' ? 'dark' : 'light')
+                      : theme.brand,
+                  },
+                ]}
+                numberOfLines={1}>
                 {renderSenderName?.(replyTarget) ??
                   (replyTarget.sender_id === currentUserId ? t('chat.you') : title)}
               </Text>

@@ -121,6 +121,7 @@ export function BlockedUsersScreen({ backPath }: { backPath: string }) {
                   url={profile?.avatar_path ? urls[profile.avatar_path] : undefined}
                   name={name}
                   size={44}
+                  userId={item.blocked_id}
                 />
                 <View style={styles.rowInfo}>
                   <ThemedText type="smallBold" numberOfLines={1}>

@@ -158,6 +158,7 @@ export default function ApplicationDetailScreen() {
               url={driverAvatarUrl}
               name={announcement.driver?.full_name}
               size={36}
+              userId={announcement.driver_id}
             />
             <ThemedText>{announcement.driver?.full_name ?? t('common.defaultUser')}</ThemedText>
           </View>

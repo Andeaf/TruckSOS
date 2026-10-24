@@ -156,6 +156,7 @@ export function MechanicPickerSheet({
                     url={item.avatar_path ? urls[item.avatar_path] : undefined}
                     name={item.full_name}
                     size={40}
+                    userId={item.id}
                   />
                   <View style={styles.info}>
                     <ThemedText numberOfLines={1} type="smallBold">

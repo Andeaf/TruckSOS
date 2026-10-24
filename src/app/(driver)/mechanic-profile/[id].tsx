@@ -223,7 +223,7 @@ export default function MechanicProfileScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.identity}>
-          <Avatar url={avatarUrl} name={displayName(profile, t)} size={72} />
+          <Avatar url={avatarUrl} name={displayName(profile, t)} size={72} userId={id} />
           <ThemedText type="smallBold">{displayName(profile, t)}</ThemedText>
         </View>
 

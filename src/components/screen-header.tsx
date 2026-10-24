@@ -58,7 +58,7 @@ export function HeaderProfileButton({ size = 34 }: { size?: number }) {
       hitSlop={8}
       accessibilityRole="button"
       style={({ pressed }) => [styles.profileRing, pressed && styles.profilePressed]}>
-      <Avatar url={avatarUrl} name={profile?.full_name} size={size} />
+      <Avatar url={avatarUrl} name={profile?.full_name} size={size} userId={profile?.id} />
     </Pressable>
   );
 }

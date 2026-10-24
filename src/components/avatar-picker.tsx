@@ -85,7 +85,7 @@ export function AvatarPicker({ size = 96 }: { size?: number }) {
   return (
     <>
       <Pressable onPress={() => setSheetVisible(true)} disabled={busy}>
-        <Avatar url={url} name={profile?.full_name} size={size} />
+        <Avatar url={url} name={profile?.full_name} size={size} userId={profile?.id} />
 
         {busy ? (
           <View style={[styles.overlay, { borderRadius: Radius.circle }]}>

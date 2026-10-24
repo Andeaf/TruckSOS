@@ -2,15 +2,13 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { RemoteImage } from '@/components/remote-image';
 import { Radius } from '@/constants/theme';
+import { USER_PALETTE, stableHash, userColor } from '@/lib/user-color';
 
 /**
  * Avatar rotund (PLAN_FAZA10.md §2). Componentă PURĂ: primește URL-ul deja semnat,
  * ca listele să ceară toate URL-urile într-un singur batch (`useSignedUrls`).
  * Fără poză → inițialele numelui pe un fundal derivat determinist din nume.
  */
-
-/** Fundaluri pentru inițiale — contrast suficient cu text alb, în ambele teme. */
-const FALLBACK_COLORS = ['#164F9E', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6'];
 
 export interface AvatarProps {
   /** URL semnat; `undefined` cât timp se semnează sau dacă userul n-are poză. */
@@ -20,9 +18,11 @@ export interface AvatarProps {
   /** Fundal explicit pentru inițiale (chatul de grup: culoarea stabilă a userului,
    * derivată din id — aceeași cu numele din bulă). Fără el: derivat din nume. */
   color?: string;
+  /** Id-ul utilizatorului: fundalul inițialelor = culoarea lui stabilă (aceeași cu numele din chat). */
+  userId?: string;
 }
 
-export function Avatar({ url, name, size = 40, color }: AvatarProps) {
+export function Avatar({ url, name, size = 40, color, userId }: AvatarProps) {
   const dimensions = { width: size, height: size, borderRadius: Radius.circle };
 
   if (url) {
@@ -38,7 +38,7 @@ export function Avatar({ url, name, size = 40, color }: AvatarProps) {
   }
 
   return (
-    <View style={[styles.fallback, dimensions, { backgroundColor: color ?? colorFor(name) }]}>
+    <View style={[styles.fallback, dimensions, { backgroundColor: color ?? (userId ? userColor(userId, 'light') : colorFor(name)) }]}>
       {/* Inițialele NU urmează scara de font a sistemului (8 oct): cercul are mărime
           fixă, iar la „Foarte mare" literele ieșeau din el și se descentrau. */}
       <Text style={[styles.initials, { fontSize: size * 0.4 }]} maxFontSizeMultiplier={1}>
@@ -56,12 +56,7 @@ function initials(name?: string | null): string {
 }
 
 function colorFor(name?: string | null): string {
-  const source = name ?? '';
-  let hash = 0;
-  for (let i = 0; i < source.length; i++) {
-    hash = (hash * 31 + source.charCodeAt(i)) % 1000003;
-  }
-  return FALLBACK_COLORS[hash % FALLBACK_COLORS.length];
+  return USER_PALETTE[stableHash(name ?? '') % USER_PALETTE.length].light;
 }
 
 const styles = StyleSheet.create({
