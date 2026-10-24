@@ -21,6 +21,7 @@ import { UserPickerSheet } from '@/components/user-picker-sheet';
 import { Radius, Spacing } from '@/constants/theme';
 import { displayName } from '@/lib/display-name';
 import { useAnnouncementPhotos } from '@/hooks/use-announcement-photos';
+import { useAnnouncementTranslation } from '@/hooks/use-announcement-translation';
 import { useAuth } from '@/hooks/use-auth';
 import { startDirectConversation } from '@/hooks/use-chat';
 import { useMyRatingFor } from '@/hooks/use-ratings';
@@ -223,6 +224,15 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
   const [applications, setApplications] = useState<ApplicationWithMechanic[]>([]);
   const { photos } = useAnnouncementPhotos(id);
   const { session } = useAuth();
+  // 1.1 (H3): „Tradu” doar pe anunțul ALTCUIVA — ecranul e al proprietarului, dar îl deschid și
+  // alții (șoferul care primește anunțul prin share, adminul); autorului nu i se oferă butonul.
+  const translation = useAnnouncementTranslation(
+    announcement && announcement.driver_id !== session?.user.id ? announcement : null,
+  );
+  const handleTranslate = () => {
+    // 1.1 (B): oaspeții primesc pop-upul de cont aici
+    translation.translate();
+  };
   const [ratingVisible, setRatingVisible] = useState(false);
   const { rating: myRating, refresh: refreshMyRating } = useMyRatingFor(
     announcement?.mechanic_id ?? undefined,
@@ -512,8 +522,51 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
             <ThemedText type="smallBold">{t('driver.announcements.sectionDescription')}</ThemedText>
           </View>
           <ThemedText style={styles.descriptionText} selectable>
-            {announcement.description}
+            {translation.translated && !translation.translated.sameLanguage && translation.showingTranslation
+              ? translation.translated.text
+              : announcement.description}
           </ThemedText>
+          {translation.translated && !translation.translated.sameLanguage ? (
+            <View style={styles.translateRow}>
+              {translation.showingTranslation ? (
+                <ThemedText themeColor="textSecondary" type="small">
+                  {t('common.translate.autoLabel')} ·
+                </ThemedText>
+              ) : null}
+              <Pressable onPress={translation.toggle} hitSlop={8} accessibilityRole="button">
+                <ThemedText type="small" style={[styles.translateLink, { color: theme.brand }]}>
+                  {t(
+                    translation.showingTranslation
+                      ? 'common.translate.showOriginal'
+                      : 'common.translate.showTranslation',
+                  )}
+                </ThemedText>
+              </Pressable>
+            </View>
+          ) : translation.canTranslate ? (
+            <>
+              <Pressable
+                onPress={handleTranslate}
+                disabled={translation.loading}
+                hitSlop={8}
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.translateButton, pressed && styles.pressed]}>
+                {translation.loading ? (
+                  <ActivityIndicator size="small" color={theme.brand} />
+                ) : (
+                  <MaterialIcons name="translate" size={16} color={theme.brand} />
+                )}
+                <ThemedText type="small" style={[styles.translateLink, { color: theme.brand }]}>
+                  {t('common.translate.button')}
+                </ThemedText>
+              </Pressable>
+              {translation.error ? (
+                <ThemedText type="small" style={styles.translateError}>
+                  {t(translation.error)}
+                </ThemedText>
+              ) : null}
+            </>
+          ) : null}
         </ThemedView>
 
         {photos.length > 0 ? (
@@ -744,6 +797,15 @@ const styles = StyleSheet.create({
   descriptionText: {
     lineHeight: 24,
   },
+  translateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    alignSelf: 'flex-start',
+  },
+  translateRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: Spacing.one },
+  translateLink: { fontWeight: '600' },
+  translateError: { color: '#ef4444' },
   mapsButton: {
     flexDirection: 'row',
     alignItems: 'center',

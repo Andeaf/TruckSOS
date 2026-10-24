@@ -21,6 +21,7 @@ import {
   dismissApplication,
 } from '@/hooks/use-announcements';
 import { useAnnouncementPhotos } from '@/hooks/use-announcement-photos';
+import { useAnnouncementTranslation } from '@/hooks/use-announcement-translation';
 import type { ApplicationStatus, PriceType } from '@/types/database';
 import { openInGoogleMaps, openInMaps } from '@/lib/location';
 
@@ -77,6 +78,13 @@ export default function ApplicationDetailScreen() {
   // `id` din rută e al APLICAȚIEI; anunțul (deci pozele) se știe abia după load.
   const { photos } = useAnnouncementPhotos(item?.announcement?.id ?? '');
   const driverAvatarUrl = useSignedUrl(item?.announcement?.driver?.avatar_path);
+  // 1.1 (H3): „Tradu” pe descriere. Selectul candidaturii nu cere `source_lang*` (ar pica pe
+  // un server fără migrarea 20261028) → butonul e vizibil până la prima detecție.
+  const translation = useAnnouncementTranslation(item?.announcement ?? null);
+  const handleTranslate = () => {
+    // 1.1 (B): oaspeții primesc pop-upul de cont aici
+    translation.translate();
+  };
 
   if (loading) {
     return (
@@ -207,8 +215,51 @@ export default function ApplicationDetailScreen() {
             </>
           ) : null}
           <ThemedText themeColor="textSecondary" type="small" style={styles.description} selectable>
-            {announcement.description}
+            {translation.translated && !translation.translated.sameLanguage && translation.showingTranslation
+              ? translation.translated.text
+              : announcement.description}
           </ThemedText>
+          {translation.translated && !translation.translated.sameLanguage ? (
+            <View style={styles.translateRow}>
+              {translation.showingTranslation ? (
+                <ThemedText themeColor="textSecondary" type="small">
+                  {t('common.translate.autoLabel')} ·
+                </ThemedText>
+              ) : null}
+              <Pressable onPress={translation.toggle} hitSlop={8} accessibilityRole="button">
+                <ThemedText type="small" style={[styles.translateLink, { color: theme.brand }]}>
+                  {t(
+                    translation.showingTranslation
+                      ? 'common.translate.showOriginal'
+                      : 'common.translate.showTranslation',
+                  )}
+                </ThemedText>
+              </Pressable>
+            </View>
+          ) : translation.canTranslate ? (
+            <>
+              <Pressable
+                onPress={handleTranslate}
+                disabled={translation.loading}
+                hitSlop={8}
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.translateButton, pressed && styles.pressed]}>
+                {translation.loading ? (
+                  <ActivityIndicator size="small" color={theme.brand} />
+                ) : (
+                  <MaterialIcons name="translate" size={16} color={theme.brand} />
+                )}
+                <ThemedText type="small" style={[styles.translateLink, { color: theme.brand }]}>
+                  {t('common.translate.button')}
+                </ThemedText>
+              </Pressable>
+              {translation.error ? (
+                <ThemedText type="small" style={styles.translateError}>
+                  {t(translation.error)}
+                </ThemedText>
+              ) : null}
+            </>
+          ) : null}
           {truckLine ? <InfoRow icon="local-shipping" text={truckLine} /> : null}
           {announcement.chassis_number ? (
             <InfoRow icon="tag" text={`${t('truck.chassisLabel')}: ${announcement.chassis_number}`} />
@@ -329,6 +380,15 @@ const styles = StyleSheet.create({
   mapsButtonsRow: { flexDirection: 'row', gap: Spacing.two },
   mapsButtonHalf: { flex: 1, alignSelf: 'auto', justifyContent: 'center' },
   description: { lineHeight: 20 },
+  translateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    alignSelf: 'flex-start',
+  },
+  translateRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: Spacing.one },
+  translateLink: { fontWeight: '600' },
+  translateError: { color: '#ef4444' },
   price: { color: '#22c55e', fontSize: 15 },
   offerMessage: { fontStyle: 'italic' },
   actions: { gap: Spacing.two, marginTop: Spacing.two },

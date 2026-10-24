@@ -749,7 +749,15 @@
     "signOut": "Abmelden",
     "error": "Fehler",
     "cancel": "Abbrechen",
-    "openProfile": "Profil öffnen"
+    "openProfile": "Profil öffnen",
+    "translate": {
+      "button": "Übersetzen",
+      "autoLabel": "Automatisch übersetzt",
+      "showOriginal": "Original anzeigen",
+      "showTranslation": "Übersetzung anzeigen",
+      "rateLimited": "Du hast in kurzer Zeit zu viele Anzeigen übersetzt. Versuch es später noch einmal.",
+      "error": "Die Übersetzung ist fehlgeschlagen. Versuch es noch einmal."
+    }
   },
   "attach": {
     "title": "Anhängen",

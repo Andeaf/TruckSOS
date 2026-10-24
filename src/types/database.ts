@@ -104,6 +104,10 @@ export interface Announcement {
   longitude: number | null;
   /** Soft-delete DOAR pentru ecranul de Istoric; anunțul rămâne în DB (Faza 9.3). */
   hidden_from_history: boolean;
+  /** 1.1 (H): limba sursă (presupusă la publicare, confirmată de detecție) — TODO: regenerat cu gen:types după migrarea 20261028. */
+  source_lang: string | null;
+  /** 1.1 (H): true = `source_lang` confirmat de detecție (doar atunci se ascunde „Tradu”). Lipsește la runtime fără migrarea 20261028. */
+  source_lang_detected: boolean;
   created_at: string;
   updated_at: string;
 }

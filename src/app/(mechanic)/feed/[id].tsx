@@ -25,6 +25,7 @@ import {
 import { startDirectConversation } from '@/hooks/use-chat';
 import { useTheme } from '@/hooks/use-theme';
 import { useAnnouncementPhotos } from '@/hooks/use-announcement-photos';
+import { useAnnouncementTranslation } from '@/hooks/use-announcement-translation';
 import { markAnnouncementViewed } from '@/hooks/use-viewed-announcements';
 import { useAuth } from '@/hooks/use-auth';
 import { useSignedUrl } from '@/hooks/use-signed-urls';
@@ -148,6 +149,12 @@ export default function MechanicAnnouncementDetailScreen() {
   const [resubmitMode, setResubmitMode] = useState(false);
   const { photos } = useAnnouncementPhotos(id);
   const driverAvatarUrl = useSignedUrl(announcement?.driver?.avatar_path);
+  // 1.1 (H3): „Tradu” pe descriere.
+  const translation = useAnnouncementTranslation(announcement);
+  const handleTranslate = () => {
+    // 1.1 (B): oaspeții primesc pop-upul de cont aici
+    translation.translate();
+  };
 
   // Contact direct cu autorul anunțului (2 sept). Refolosește exact conducta de la
   // share: conversație directă + `announcementId` pe rută, care face ca PRIMUL mesaj
@@ -374,8 +381,51 @@ export default function MechanicAnnouncementDetailScreen() {
             <ThemedText type="smallBold">{t('mechanic.feed.sectionDescription')}</ThemedText>
           </View>
           <ThemedText style={styles.descriptionText} selectable>
-            {announcement.description}
+            {translation.translated && !translation.translated.sameLanguage && translation.showingTranslation
+              ? translation.translated.text
+              : announcement.description}
           </ThemedText>
+          {translation.translated && !translation.translated.sameLanguage ? (
+            <View style={styles.translateRow}>
+              {translation.showingTranslation ? (
+                <ThemedText themeColor="textSecondary" type="small">
+                  {t('common.translate.autoLabel')} ·
+                </ThemedText>
+              ) : null}
+              <Pressable onPress={translation.toggle} hitSlop={8} accessibilityRole="button">
+                <ThemedText type="small" style={[styles.translateLink, { color: theme.brand }]}>
+                  {t(
+                    translation.showingTranslation
+                      ? 'common.translate.showOriginal'
+                      : 'common.translate.showTranslation',
+                  )}
+                </ThemedText>
+              </Pressable>
+            </View>
+          ) : translation.canTranslate ? (
+            <>
+              <Pressable
+                onPress={handleTranslate}
+                disabled={translation.loading}
+                hitSlop={8}
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.translateButton, pressed && styles.pressed]}>
+                {translation.loading ? (
+                  <ActivityIndicator size="small" color={theme.brand} />
+                ) : (
+                  <MaterialIcons name="translate" size={16} color={theme.brand} />
+                )}
+                <ThemedText type="small" style={[styles.translateLink, { color: theme.brand }]}>
+                  {t('common.translate.button')}
+                </ThemedText>
+              </Pressable>
+              {translation.error ? (
+                <ThemedText type="small" style={styles.translateError}>
+                  {t(translation.error)}
+                </ThemedText>
+              ) : null}
+            </>
+          ) : null}
         </ThemedView>
 
         {photos.length > 0 ? (
@@ -475,6 +525,15 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
   },
   descriptionText: { lineHeight: 24 },
+  translateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    alignSelf: 'flex-start',
+  },
+  translateRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: Spacing.one },
+  translateLink: { fontWeight: '600' },
+  translateError: { color: '#ef4444' },
   hint: { textAlign: 'center', fontSize: 14, lineHeight: 20 },
   mapsButton: {
     flexDirection: 'row',

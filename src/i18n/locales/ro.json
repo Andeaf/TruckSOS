@@ -652,7 +652,15 @@
     "signOut": "Deconectare",
     "error": "Eroare",
     "cancel": "Anulează",
-    "openProfile": "Deschide profilul"
+    "openProfile": "Deschide profilul",
+    "translate": {
+      "button": "Tradu",
+      "autoLabel": "Tradus automat",
+      "showOriginal": "Arată originalul",
+      "showTranslation": "Arată traducerea",
+      "rateLimited": "Ai tradus prea multe anunțuri într-un timp scurt. Încearcă din nou mai târziu.",
+      "error": "Traducerea nu a reușit. Încearcă din nou."
+    }
   },
   "attach": {
     "title": "Atașează",

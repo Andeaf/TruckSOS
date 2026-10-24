@@ -735,7 +735,15 @@
     "signOut": "Sign out",
     "error": "Error",
     "cancel": "Cancel",
-    "openProfile": "Open profile"
+    "openProfile": "Open profile",
+    "translate": {
+      "button": "Translate",
+      "autoLabel": "Translated automatically",
+      "showOriginal": "Show original",
+      "showTranslation": "Show translation",
+      "rateLimited": "You've translated too many announcements in a short time. Try again later.",
+      "error": "Translation failed. Try again."
+    }
   },
   "attach": {
     "title": "Attach",
