@@ -47,25 +47,31 @@ function RootLayoutNav() {
     // decide singur soarta — cu sesiune rezolvă rolul și navighează, fără sesiune ține
     // linkul minte (pe web arată pagina de instalare). Garda NU-l ricoșează.
     const inSharedLink = seg[0] === 'p';
+    // Linkul de activare din e-mailul de confirmare, trucksos.net/auth/confirm (1.1, Faza C):
+    // pe web pagina rămâne afișată (buton „Activează contul", apoi „Cont activat"), pe nativ
+    // ecranul verifică și face el `router.replace('/')`. Garda NU-l ricoșează — nici fără
+    // sesiune, nici cu sesiunea nou creată fără profil (altfel „Cont activat" ar sări direct
+    // la alegerea rolului înainte ca omul să-l vadă).
+    const inAuthLink = seg[0] === 'auth';
 
     if (!session) {
       // La delogare, un admin care era în mod șofer/mecanic revine implicit la mod admin.
       if (adminViewAs !== 'admin') setAdminViewAs('admin');
-      if (!inAuth && !inSharedLink) router.replace('/(auth)/login');
+      if (!inAuth && !inSharedLink && !inAuthLink) router.replace('/(auth)/login');
     } else if (!profile) {
       // Doar cu confirmarea serverului ca nu exista profil (cont nou). O citire picata pe
       // retea nu mai trimite nicaieri: ramane ecranul curent / cel de incarcare (14 oct 2026).
       // 15 oct: o identitate Google/Apple fara cont venita de pe LOGIN nu ajunge aici —
       // use-auth o deconecteaza (profileMissing ramane false) si login-ul explica de ce.
-      if (profileMissing && !onRoleSelect) router.replace('/(auth)/role-select');
+      if (profileMissing && !onRoleSelect && !inAuthLink) router.replace('/(auth)/role-select');
     } else if (profile.role === 'admin') {
       // Adminul poate „intra ca" șofer/mecanic (Faza 16), altfel stă în (admin).
       // Ramura e ÎNAINTEA check-ului de ban — adminii nu ajung pe ecranul de ban.
       if (adminViewAs === 'driver') {
-        if (!inDriver && !inSharedLink) router.replace('/(driver)/announcements');
+        if (!inDriver && !inSharedLink && !inAuthLink) router.replace('/(driver)/announcements');
       } else if (adminViewAs === 'mechanic') {
-        if (!inMechanic && !inSharedLink) router.replace('/(mechanic)/feed');
-      } else if (!inAdmin && !inSharedLink) {
+        if (!inMechanic && !inSharedLink && !inAuthLink) router.replace('/(mechanic)/feed');
+      } else if (!inAdmin && !inSharedLink && !inAuthLink) {
         router.replace((takePendingLink() ?? '/(admin)/dashboard') as never);
       }
     } else if (isBanned(profile)) {

@@ -232,7 +232,22 @@
       "spamHint": "E-Mail nicht gefunden? Sieh auch im Spam-Ordner nach.",
       "validityHint": "Der Code ist 60 Minuten gültig. Die E-Mail kann einige Minuten brauchen.",
       "resentNotice": "Wir haben einen neuen Code gesendet. Der Code aus der vorherigen E-Mail ist nicht mehr gültig.",
-      "changeEmail": "Falsche E-Mail-Adresse? Korrigieren"
+      "changeEmail": "Falsche E-Mail-Adresse? Korrigieren",
+      "linkHint": "Du kannst auch auf den Link in der E-Mail tippen.",
+      "confirmedByLink": "Ich habe über den Link bestätigt"
+    },
+    "confirmLink": {
+      "title": "TruckSOS-Konto aktivieren",
+      "intro": "Tippe auf die Schaltfläche, um das mit dieser E-Mail erstellte Konto zu aktivieren.",
+      "activate": "Konto aktivieren",
+      "doneTitle": "Konto aktiviert",
+      "doneBody": "Geh zurück zur TruckSOS-App und melde dich mit E-Mail und Passwort an.",
+      "openApp": "App öffnen",
+      "getAndroid": "Für Android laden",
+      "getIos": "Für iPhone laden",
+      "continueWeb": "Im Web fortfahren",
+      "errorBody": "Dieser Link ist abgelaufen oder wurde bereits verwendet. Melde dich mit E-Mail und Passwort an oder fordere in der App einen neuen Code an.",
+      "goToLogin": "Zur Anmeldung"
     },
     "forgot": {
       "subtitle": "Gib die E-Mail deines Kontos ein — wir senden dir einen Code zum Zurücksetzen des Passworts.",

@@ -35,6 +35,11 @@
               "scheme": "https",
               "host": "trucksos.net",
               "pathPrefix": "/p/"
+            },
+            {
+              "scheme": "https",
+              "host": "trucksos.net",
+              "pathPrefix": "/auth/"
             }
           ],
           "category": [

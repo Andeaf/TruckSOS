@@ -232,7 +232,22 @@
       "spamHint": "Can't find the email? Check your Spam folder too.",
       "validityHint": "The code is valid for 60 minutes. The email may take a few minutes to arrive.",
       "resentNotice": "We sent a new code. The code from the previous email no longer works.",
-      "changeEmail": "Wrong email address? Fix it"
+      "changeEmail": "Wrong email address? Fix it",
+      "linkHint": "You can also tap the link in the email.",
+      "confirmedByLink": "I confirmed via the link"
+    },
+    "confirmLink": {
+      "title": "Activate your TruckSOS account",
+      "intro": "Tap the button to activate the account created with this email.",
+      "activate": "Activate account",
+      "doneTitle": "Account activated",
+      "doneBody": "Go back to the TruckSOS app and sign in with your email and password.",
+      "openApp": "Open the app",
+      "getAndroid": "Get it for Android",
+      "getIos": "Get it for iPhone",
+      "continueWeb": "Continue on the web",
+      "errorBody": "This link has expired or was already used. Sign in with your email and password, or request a new code in the app.",
+      "goToLogin": "Go to sign in"
     },
     "forgot": {
       "subtitle": "Enter your account email — we'll send you a password reset code.",

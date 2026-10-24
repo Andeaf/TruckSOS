@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  AppState,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -10,6 +11,7 @@ import {
 import { Link } from 'expo-router';
 import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
+import type { AuthError } from '@supabase/supabase-js';
 
 import { Button } from '@/components/ui/button';
 import { NetworkTroubleshoot } from '@/components/network-troubleshoot';
@@ -24,8 +26,18 @@ import { setAuthEntry } from '@/lib/auth-entry';
 import { translateAuthError } from '@/lib/auth-errors';
 import { supabase } from '@/lib/supabase';
 
+/**
+ * Codul respins ca „expirat sau invalid" (1.1, Faza C): codul și linkul din e-mail sunt
+ * același token, deci după un tap pe link codul tastat dă exact eroarea asta. Serverele
+ * noi trimit `otp_expired` („Token has expired or is invalid"); fără cod, după mesaj.
+ */
+function isOtpExpiredOrInvalid(err: AuthError): boolean {
+  if (err.code) return err.code === 'otp_expired';
+  return /expired|invalid/i.test(err.message);
+}
+
 export default function RegisterScreen() {
-  const { signUp } = useAuth();
+  const { signUp, signIn } = useAuth();
   const { t } = useTranslation();
   const { diagnosis, inspect } = useNetworkDiagnosis();
   const [fullName, setFullName] = useState('');
@@ -38,6 +50,37 @@ export default function RegisterScreen() {
   const [code, setCode] = useState('');
   const [cooldown, setCooldown] = useState(0);
   const [resent, setResent] = useState(false);
+  const [linkLoading, setLinkLoading] = useState(false);
+
+  // 1.1, Faza C: contul poate fi activat și din linkul din e-mail (în browser sau, pe
+  // Android, direct în aplicație). Datele formularului rămân în state pe pasul de cod,
+  // deci ne putem conecta cu parola fără ca omul s-o mai tasteze.
+  const silentAttempt = useRef(false);
+  const latest = useRef({ emailSent, email, password, signIn });
+  useEffect(() => {
+    latest.current = { emailSent, email, password, signIn };
+  });
+
+  // (c) Revenire în prim-plan pe pasul de cod (de obicei din aplicația de mail / browser,
+  // după tap pe link): o încercare tăcută de conectare per revenire. Dacă linkul n-a fost
+  // apăsat, eșuează cu „email neconfirmat" și nu afișăm nimic — codul se poate tasta în
+  // continuare. Pe web, AppState urmează vizibilitatea filei.
+  useEffect(() => {
+    let previous = AppState.currentState;
+    const sub = AppState.addEventListener('change', (next) => {
+      const cameBack = previous !== 'active' && next === 'active';
+      previous = next;
+      if (!cameBack) return;
+      const { emailSent: onCodeStep, email: mail, password: pass, signIn: doSignIn } =
+        latest.current;
+      if (!onCodeStep || !mail.trim() || !pass || silentAttempt.current) return;
+      silentAttempt.current = true;
+      void doSignIn(mail.trim(), pass).finally(() => {
+        silentAttempt.current = false;
+      });
+    });
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     if (cooldown === 0) return;
@@ -89,9 +132,31 @@ export default function RegisterScreen() {
       token: code.trim(),
       type: 'signup',
     });
+    // (d) Codul „expirat/invalid" poate însemna că linkul din e-mail a consumat deja
+    // tokenul: contul e activ, deci parola din formular ne conectează. Abia dacă și asta
+    // pică arătăm eroarea codului.
+    if (err && isOtpExpiredOrInvalid(err) && password) {
+      const fallbackErr = await signIn(email.trim(), password);
+      if (!fallbackErr) {
+        setLoading(false);
+        return; // sesiune deschisă → garda duce la alegerea rolului
+      }
+    }
     setLoading(false);
     inspect(err, 'verify_signup');
     if (err) setError(translateAuthError(err) ?? '');
+  }
+
+  // (b) „Am confirmat prin link": conectare cu parola din formular; eroarea (de ex.
+  // „email neconfirmat" dacă linkul n-a fost apăsat) e cea tradusă de signIn.
+  async function handleConfirmedByLink() {
+    setLinkLoading(true);
+    setError('');
+    setResent(false);
+    const err = await signIn(email.trim(), password);
+    setLinkLoading(false);
+    inspect(err, 'login');
+    if (err) setError(err);
   }
 
   async function handleResend() {
@@ -144,6 +209,10 @@ export default function RegisterScreen() {
                   required
                 />
 
+                <ThemedText themeColor="textSecondary" style={styles.linkHint}>
+                  {t('auth.otp.linkHint')}
+                </ThemedText>
+
                 {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
 
                 <NetworkTroubleshoot diagnosis={diagnosis} />
@@ -155,6 +224,14 @@ export default function RegisterScreen() {
                   title={t('auth.register.verifyButton')}
                   onPress={handleVerify}
                   loading={loading}
+                  disabled={linkLoading}
+                />
+                <Button
+                  variant="secondary"
+                  title={t('auth.otp.confirmedByLink')}
+                  onPress={handleConfirmedByLink}
+                  loading={linkLoading}
+                  disabled={loading}
                 />
               </View>
 
@@ -294,5 +371,6 @@ const styles = StyleSheet.create({
   codeForm: { alignSelf: 'stretch', gap: Spacing.three },
   dimmed: { opacity: 0.5 },
   spamHint: { fontSize: 13, textAlign: 'center' },
+  linkHint: { fontSize: 13, textAlign: 'center' },
   requiredNote: { fontSize: 13, textAlign: 'center' },
 });

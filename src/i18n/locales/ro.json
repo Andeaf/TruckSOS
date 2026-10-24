@@ -232,7 +232,22 @@
       "spamHint": "Nu găsești emailul? Verifică și folderul Spam.",
       "validityHint": "Codul e valabil 60 de minute. Emailul poate întârzia câteva minute.",
       "resentNotice": "Am trimis un cod nou. Codul din emailul anterior nu mai e valabil.",
-      "changeEmail": "Adresă de email greșită? Corecteaz-o"
+      "changeEmail": "Adresă de email greșită? Corecteaz-o",
+      "linkHint": "Poți apăsa și linkul din e-mail.",
+      "confirmedByLink": "Am confirmat prin link"
+    },
+    "confirmLink": {
+      "title": "Activează contul TruckSOS",
+      "intro": "Apasă butonul ca să activezi contul creat cu acest e-mail.",
+      "activate": "Activează contul",
+      "doneTitle": "Cont activat",
+      "doneBody": "Întoarce-te în aplicația TruckSOS și conectează-te cu e-mailul și parola.",
+      "openApp": "Deschide aplicația",
+      "getAndroid": "Descarcă pentru Android",
+      "getIos": "Descarcă pentru iPhone",
+      "continueWeb": "Continuă pe web",
+      "errorBody": "Linkul a expirat sau a fost deja folosit. Conectează-te cu e-mailul și parola sau cere un cod nou din aplicație.",
+      "goToLogin": "Mergi la conectare"
     },
     "forgot": {
       "subtitle": "Introdu email-ul contului — îți trimitem un cod de resetare a parolei.",
