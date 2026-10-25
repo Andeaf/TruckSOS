@@ -181,11 +181,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // 1.1 (§6 pasul 1): propriul profil vine prin RPC-ul `get_own_profile()` (SECURITY
       // DEFINER, rândul lui auth.uid() cu toate coloanele), nu prin `select('*')` — ca în 1.2
       // revocarea coloanelor sensibile din `profiles` pentru authenticated să nu atingă 1.1.
-      // Până la rularea migrării 20261029 RPC-ul lipsește (PGRST202) → vechiul select.
-      let { data, error } = await supabase.rpc('get_own_profile' as never).maybeSingle();
-      if (error && (error.code === 'PGRST202' || error.code === '42883')) {
-        ({ data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle());
-      }
+      // Migrarea 20261029 (RPC-ul) e în producție din 25 oct 2026.
+      const { data, error } = await supabase.rpc('get_own_profile').maybeSingle();
       if (error) return fallbackToOfflineProfile(userId, error);
 
       cancelProfileRetry();

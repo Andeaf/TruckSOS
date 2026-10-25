@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FunctionsHttpError, type SupabaseClient } from '@supabase/supabase-js';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { useTranslation } from 'react-i18next';
 
 import { SUPPORTED_LANGUAGES, type Language } from '@/i18n';
@@ -43,9 +43,6 @@ const ERROR_GENERIC = 'common.translate.error';
  */
 const sessionCache = new Map<string, AnnouncementTranslation>();
 
-// TODO: după `npm run gen:types` (migrarea 20261028) tabelul apare în `Database` și cast-ul dispare.
-const untypedClient = supabase as unknown as SupabaseClient;
-
 function resolveAppLang(language: string | undefined): Language {
   const code = (language ?? '').slice(0, 2).toLowerCase();
   return (SUPPORTED_LANGUAGES as readonly string[]).includes(code) ? (code as Language) : 'en';
@@ -77,7 +74,7 @@ async function fetchTranslation(
   // (a) Cache-ul de pe server, citit direct (fără cotă, fără funcție). Orice eroare — inclusiv
   // tabelul inexistent pe un server fără migrare — se ignoră: funcția e sursa de adevăr.
   try {
-    const { data, error } = await untypedClient
+    const { data, error } = await supabase
       .from('announcement_translations')
       .select('text, source_lang')
       .eq('announcement_id', id)

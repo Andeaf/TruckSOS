@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { AnnouncementWithDriver } from '@/hooks/use-announcements';
 import {
@@ -36,9 +35,6 @@ import type {
  * RPC inexistent = `PGRST202`) sau fără rețea întoarce `[]`/`null` + `error`, iar ecranul
  * arată starea goală — niciodată crash. Toate citirile au `.limit()` explicit.
  */
-
-// TODO: după `npm run gen:types` (migrarea 20261026) view-urile apar în `Database` și cast-ul dispare.
-const untypedClient = supabase as unknown as SupabaseClient;
 
 /** `unavailable` = serverul n-are încă view-urile/RPC-urile; `failed` = rețea sau altă eroare. */
 export type GuestDataError = 'unavailable' | 'failed';
@@ -82,7 +78,7 @@ async function fetchGuestProfilesByIds(ids: string[]): Promise<Record<string, Gu
   const unique = [...new Set(ids.filter(Boolean))];
   if (unique.length === 0) return {};
   try {
-    const { data, error } = await untypedClient
+    const { data, error } = await supabase
       .from('guest_profiles')
       .select(PROFILE_COLUMNS)
       .in('id', unique)
@@ -133,7 +129,7 @@ export function guestAnnouncementToAnnouncement(g: GuestAnnouncement): Announcem
 /** Anunțurile deschise (cele mai noi 100), cu numele/avatarul autorului. */
 export async function fetchGuestOpenAnnouncements(): Promise<GuestResult<AnnouncementWithDriver[]>> {
   try {
-    const { data, error } = await untypedClient
+    const { data, error } = await supabase
       .from('guest_announcements')
       .select(ANNOUNCEMENT_COLUMNS)
       .eq('status', 'open')
@@ -166,7 +162,7 @@ export async function fetchGuestAnnouncement(
 ): Promise<GuestResult<GuestAnnouncementDetail | null>> {
   if (!id) return { data: null, error: null };
   try {
-    const { data, error } = await untypedClient
+    const { data, error } = await supabase
       .from('guest_announcements')
       .select(ANNOUNCEMENT_COLUMNS)
       .eq('id', id)
@@ -188,7 +184,7 @@ export async function fetchGuestAnnouncementPhotos(
 ): Promise<GuestResult<{ id: string; url: string }[]>> {
   if (!id) return { data: [], error: null };
   try {
-    const { data, error } = await untypedClient
+    const { data, error } = await supabase
       .from('guest_announcement_photos')
       .select('id, announcement_id, storage_path, created_at')
       .eq('announcement_id', id)
@@ -234,7 +230,7 @@ export async function fetchGuestMechanics(query: string): Promise<GuestResult<Gu
   const trimmed = query.trim();
   try {
     if (!trimmed) {
-      const { data, error } = await untypedClient
+      const { data, error } = await supabase
         .from('guest_profiles')
         .select(PROFILE_COLUMNS)
         .eq('role', 'mechanic')
@@ -246,7 +242,7 @@ export async function fetchGuestMechanics(query: string): Promise<GuestResult<Gu
       rows.sort((a, b) => a.full_name.localeCompare(b.full_name));
       return { data: rows, error: null };
     }
-    const { data, error } = await untypedClient.rpc('guest_search_mechanics', { p_query: trimmed });
+    const { data, error } = await supabase.rpc('guest_search_mechanics', { p_query: trimmed });
     if (error || !data) return { data: [], error: toGuestError(error) ?? 'failed' };
     return { data: data as GuestProfile[], error: null };
   } catch {
@@ -258,7 +254,7 @@ export async function fetchGuestMechanics(query: string): Promise<GuestResult<Gu
 export async function fetchGuestProfile(id: string): Promise<GuestResult<GuestProfile | null>> {
   if (!id) return { data: null, error: null };
   try {
-    const { data, error } = await untypedClient
+    const { data, error } = await supabase
       .from('guest_profiles')
       .select(PROFILE_COLUMNS)
       .eq('id', id)
@@ -290,9 +286,9 @@ export async function fetchGuestListings({
   const trimmed = query.trim();
   try {
     if (trimmed.length >= 2) {
-      const { data, error } = await untypedClient.rpc('guest_search_market', {
+      const { data, error } = await supabase.rpc('guest_search_market', {
         p_query: trimmed,
-        p_category: category,
+        p_category: category ?? undefined,
         p_sort: sort,
         p_limit: MARKET_PAGE_SIZE,
         p_offset: offset,
@@ -300,7 +296,7 @@ export async function fetchGuestListings({
       if (error || !data) return { data: [], error: toGuestError(error) ?? 'failed' };
       return { data: (data as GuestMarketListing[]).map(guestListingToListing), error: null };
     }
-    let q = untypedClient.from('guest_market_listings').select(LISTING_COLUMNS).eq('status', 'active');
+    let q = supabase.from('guest_market_listings').select(LISTING_COLUMNS).eq('status', 'active');
     if (category) q = q.eq('category', category);
     if (sort === 'price_asc') q = q.order('price', { ascending: true });
     else if (sort === 'price_desc') q = q.order('price', { ascending: false });
@@ -323,7 +319,7 @@ export async function fetchGuestListingCovers(
 ): Promise<Record<string, string>> {
   if (listingIds.length === 0) return {};
   try {
-    const { data, error } = await untypedClient
+    const { data, error } = await supabase
       .from('guest_market_listing_photos')
       .select('id, listing_id, storage_path, position')
       .in('listing_id', listingIds)
@@ -354,7 +350,7 @@ export interface GuestListingDetail {
 export async function fetchGuestListing(id: string): Promise<GuestResult<GuestListingDetail | null>> {
   if (!id) return { data: null, error: null };
   try {
-    const { data, error } = await untypedClient
+    const { data, error } = await supabase
       .from('guest_market_listings')
       .select(LISTING_COLUMNS)
       .eq('id', id)
@@ -366,7 +362,7 @@ export async function fetchGuestListing(id: string): Promise<GuestResult<GuestLi
 
     const [sellers, photosResult] = await Promise.all([
       fetchGuestProfilesByIds([listing.seller_id]),
-      untypedClient
+      supabase
         .from('guest_market_listing_photos')
         .select('id, listing_id, storage_path, position')
         .eq('listing_id', id)
@@ -516,7 +512,7 @@ export interface GuestChannelData {
 /** Canalul `global`: ultimele mesaje (max 50, ultimele 7 zile), crescător, cu expeditorii. */
 export async function fetchGuestChannel(): Promise<GuestResult<GuestChannelData | null>> {
   try {
-    const { data: channelRow, error: channelError } = await untypedClient
+    const { data: channelRow, error: channelError } = await supabase
       .from('guest_channels')
       .select('id, name, type, created_at')
       .eq('type', 'global')
@@ -526,7 +522,7 @@ export async function fetchGuestChannel(): Promise<GuestResult<GuestChannelData 
     if (!channelRow) return { data: null, error: null };
     const channel = channelRow as GuestChannel;
 
-    const { data, error } = await untypedClient
+    const { data, error } = await supabase
       .from('guest_channel_messages')
       .select(CHANNEL_MESSAGE_COLUMNS)
       .eq('channel_id', channel.id)

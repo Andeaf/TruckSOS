@@ -47,6 +47,13 @@ export type Database = {
             foreignKeyName: "admin_audit_log_admin_id_fkey"
             columns: ["admin_id"]
             isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_audit_log_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -79,6 +86,55 @@ export type Database = {
             referencedRelation: "announcements"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "announcement_photos_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "guest_announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      announcement_translations: {
+        Row: {
+          announcement_id: string
+          created_at: string
+          lang: string
+          provider: string
+          source_lang: string
+          text: string
+        }
+        Insert: {
+          announcement_id: string
+          created_at?: string
+          lang: string
+          provider?: string
+          source_lang: string
+          text: string
+        }
+        Update: {
+          announcement_id?: string
+          created_at?: string
+          lang?: string
+          provider?: string
+          source_lang?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_translations_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "announcement_translations_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "guest_announcements"
+            referencedColumns: ["id"]
+          },
         ]
       }
       announcement_views: {
@@ -105,6 +161,13 @@ export type Database = {
             referencedRelation: "announcements"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "announcement_views_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "guest_announcements"
+            referencedColumns: ["id"]
+          },
         ]
       }
       announcements: {
@@ -115,11 +178,15 @@ export type Database = {
           driver_id: string
           hidden_from_history: boolean
           id: string
+          lat_approx: number | null
           latitude: number | null
+          lng_approx: number | null
           location: string
           longitude: number | null
           mechanic_id: string | null
           plate_number: string | null
+          source_lang: string | null
+          source_lang_detected: boolean
           status: string
           truck_make: string | null
           truck_model: string | null
@@ -133,11 +200,15 @@ export type Database = {
           driver_id: string
           hidden_from_history?: boolean
           id?: string
+          lat_approx?: number | null
           latitude?: number | null
+          lng_approx?: number | null
           location: string
           longitude?: number | null
           mechanic_id?: string | null
           plate_number?: string | null
+          source_lang?: string | null
+          source_lang_detected?: boolean
           status?: string
           truck_make?: string | null
           truck_model?: string | null
@@ -151,11 +222,15 @@ export type Database = {
           driver_id?: string
           hidden_from_history?: boolean
           id?: string
+          lat_approx?: number | null
           latitude?: number | null
+          lng_approx?: number | null
           location?: string
           longitude?: number | null
           mechanic_id?: string | null
           plate_number?: string | null
+          source_lang?: string | null
+          source_lang_detected?: boolean
           status?: string
           truck_make?: string | null
           truck_model?: string | null
@@ -167,7 +242,21 @@ export type Database = {
             foreignKeyName: "announcements_driver_id_fkey"
             columns: ["driver_id"]
             isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "announcements_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "announcements_mechanic_id_fkey"
+            columns: ["mechanic_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -246,6 +335,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "applications_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "guest_announcements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "applications_mechanic_id_fkey"
+            columns: ["mechanic_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "applications_mechanic_id_fkey"
             columns: ["mechanic_id"]
             isOneToOne: false
@@ -275,7 +378,21 @@ export type Database = {
             foreignKeyName: "blocked_users_blocked_id_fkey"
             columns: ["blocked_id"]
             isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocked_users_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocked_users_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -300,6 +417,7 @@ export type Database = {
           file_name: string | null
           file_path: string | null
           file_size: number | null
+          has_image: boolean | null
           id: string
           image_path: string | null
           listing_id: string | null
@@ -320,6 +438,7 @@ export type Database = {
           file_name?: string | null
           file_path?: string | null
           file_size?: number | null
+          has_image?: boolean | null
           id?: string
           image_path?: string | null
           listing_id?: string | null
@@ -340,6 +459,7 @@ export type Database = {
           file_name?: string | null
           file_path?: string | null
           file_size?: number | null
+          has_image?: boolean | null
           id?: string
           image_path?: string | null
           listing_id?: string | null
@@ -357,6 +477,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "channel_messages_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "guest_announcements"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "channel_messages_channel_id_fkey"
             columns: ["channel_id"]
             isOneToOne: false
@@ -364,10 +491,31 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "channel_messages_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "guest_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_messages_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "guest_market_listings"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "channel_messages_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: false
             referencedRelation: "market_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_messages_recommended_mechanic_id_fkey"
+            columns: ["recommended_mechanic_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -382,6 +530,20 @@ export type Database = {
             columns: ["reply_to_id"]
             isOneToOne: false
             referencedRelation: "channel_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "guest_channel_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -421,6 +583,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "channel_push_prefs_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "guest_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_push_prefs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "channel_push_prefs_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -454,6 +630,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "channel_push_state_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "guest_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_push_state_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "channel_push_state_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -484,6 +674,20 @@ export type Database = {
             columns: ["channel_id"]
             isOneToOne: false
             referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_reads_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "guest_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_reads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -598,6 +802,13 @@ export type Database = {
             foreignKeyName: "conversation_deletions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_deletions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -640,10 +851,31 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "conversations_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: true
+            referencedRelation: "guest_announcements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "conversations_driver_id_fkey"
             columns: ["driver_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "guest_market_listings"
             referencedColumns: ["id"]
           },
           {
@@ -656,6 +888,66 @@ export type Database = {
           {
             foreignKeyName: "conversations_mechanic_id_fkey"
             columns: ["mechanic_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_mechanic_id_fkey"
+            columns: ["mechanic_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      direct_push_state: {
+        Row: {
+          count_in_window: number
+          last_pushed_at: string
+          sender_id: string
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          count_in_window?: number
+          last_pushed_at?: string
+          sender_id: string
+          user_id: string
+          window_start?: string
+        }
+        Update: {
+          count_in_window?: number
+          last_pushed_at?: string
+          sender_id?: string
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "direct_push_state_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_push_state_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_push_state_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "direct_push_state_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -683,7 +975,21 @@ export type Database = {
             foreignKeyName: "favorite_mechanics_driver_id_fkey"
             columns: ["driver_id"]
             isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorite_mechanics_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorite_mechanics_mechanic_id_fkey"
+            columns: ["mechanic_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -718,6 +1024,13 @@ export type Database = {
           storage_path?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "market_listing_photos_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "guest_market_listings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "market_listing_photos_listing_id_fkey"
             columns: ["listing_id"]
@@ -769,6 +1082,13 @@ export type Database = {
             foreignKeyName: "market_listings_seller_id_fkey"
             columns: ["seller_id"]
             isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_listings_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -796,6 +1116,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -877,6 +1204,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "messages_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "guest_announcements"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "messages_conversation_id_fkey"
             columns: ["conversation_id"]
             isOneToOne: false
@@ -887,7 +1221,21 @@ export type Database = {
             foreignKeyName: "messages_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: false
+            referencedRelation: "guest_market_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
             referencedRelation: "market_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_recommended_mechanic_id_fkey"
+            columns: ["recommended_mechanic_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -902,6 +1250,13 @@ export type Database = {
             columns: ["reply_to_id"]
             isOneToOne: false
             referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -931,6 +1286,7 @@ export type Database = {
           latitude: number | null
           longitude: number | null
           market_push_enabled: boolean
+          mention_push_enabled: boolean
           notify_radius_km: number | null
           phone: string | null
           push_enabled: boolean
@@ -957,6 +1313,7 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           market_push_enabled?: boolean
+          mention_push_enabled?: boolean
           notify_radius_km?: number | null
           phone?: string | null
           push_enabled?: boolean
@@ -983,6 +1340,7 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           market_push_enabled?: boolean
+          mention_push_enabled?: boolean
           notify_radius_km?: number | null
           phone?: string | null
           push_enabled?: boolean
@@ -1054,7 +1412,21 @@ export type Database = {
             foreignKeyName: "ratings_driver_id_fkey"
             columns: ["driver_id"]
             isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_mechanic_id_fkey"
+            columns: ["mechanic_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1114,6 +1486,13 @@ export type Database = {
             foreignKeyName: "reports_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: false
+            referencedRelation: "guest_market_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
             referencedRelation: "market_listings"
             referencedColumns: ["id"]
           },
@@ -1121,7 +1500,21 @@ export type Database = {
             foreignKeyName: "reports_reported_user_id_fkey"
             columns: ["reported_user_id"]
             isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reported_user_id_fkey"
+            columns: ["reported_user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1154,12 +1547,59 @@ export type Database = {
             foreignKeyName: "search_history_driver_id_fkey"
             columns: ["driver_id"]
             isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "search_history_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "search_history_mechanic_id_fkey"
             columns: ["mechanic_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "search_history_mechanic_id_fkey"
+            columns: ["mechanic_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      translation_requests: {
+        Row: {
+          id: number
+          requested_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: never
+          requested_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: never
+          requested_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "translation_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "translation_requests_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1205,6 +1645,13 @@ export type Database = {
             foreignKeyName: "trucks_driver_id_fkey"
             columns: ["driver_id"]
             isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trucks_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1212,7 +1659,347 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      guest_announcement_photos: {
+        Row: {
+          announcement_id: string | null
+          created_at: string | null
+          id: string | null
+          storage_path: string | null
+        }
+        Insert: {
+          announcement_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          storage_path?: string | null
+        }
+        Update: {
+          announcement_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_photos_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "announcement_photos_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "guest_announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guest_announcements: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          driver_id: string | null
+          id: string | null
+          lat_approx: number | null
+          lng_approx: number | null
+          location: string | null
+          status: string | null
+          truck_make: string | null
+          truck_model: string | null
+          truck_year: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          driver_id?: string | null
+          id?: string | null
+          lat_approx?: number | null
+          lng_approx?: number | null
+          location?: string | null
+          status?: string | null
+          truck_make?: string | null
+          truck_model?: string | null
+          truck_year?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          driver_id?: string | null
+          id?: string | null
+          lat_approx?: number | null
+          lng_approx?: number | null
+          location?: string | null
+          status?: string | null
+          truck_make?: string | null
+          truck_model?: string | null
+          truck_year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "announcements_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guest_channel_messages: {
+        Row: {
+          announcement_id: string | null
+          channel_id: string | null
+          content: string | null
+          created_at: string | null
+          has_image: boolean | null
+          id: string | null
+          listing_id: string | null
+          mentions: Json | null
+          recommended_mechanic_id: string | null
+          reply_to_id: string | null
+          sender_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_messages_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_messages_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "guest_announcements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_messages_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_messages_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "guest_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_messages_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "guest_market_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_messages_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "market_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_messages_recommended_mechanic_id_fkey"
+            columns: ["recommended_mechanic_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_messages_recommended_mechanic_id_fkey"
+            columns: ["recommended_mechanic_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "channel_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "guest_channel_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guest_channels: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          name: string | null
+          type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          type?: string | null
+        }
+        Relationships: []
+      }
+      guest_market_listing_photos: {
+        Row: {
+          id: string | null
+          listing_id: string | null
+          position: number | null
+          storage_path: string | null
+        }
+        Insert: {
+          id?: string | null
+          listing_id?: string | null
+          position?: number | null
+          storage_path?: string | null
+        }
+        Update: {
+          id?: string | null
+          listing_id?: string | null
+          position?: number | null
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_listing_photos_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "guest_market_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_listing_photos_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "market_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guest_market_listings: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          id: string | null
+          price: number | null
+          seller_id: string | null
+          status: string | null
+          title: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          id?: string | null
+          price?: number | null
+          seller_id?: string | null
+          status?: string | null
+          title?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          id?: string | null
+          price?: number | null
+          seller_id?: string | null
+          status?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_listings_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_listings_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guest_profiles: {
+        Row: {
+          activity_zone: string | null
+          avatar_path: string | null
+          company_name: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string | null
+          rating_avg: number | null
+          rating_count: number | null
+          role: string | null
+          specialization: string | null
+        }
+        Insert: {
+          activity_zone?: string | null
+          avatar_path?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string | null
+          rating_avg?: number | null
+          rating_count?: number | null
+          role?: string | null
+          specialization?: string | null
+        }
+        Update: {
+          activity_zone?: string | null
+          avatar_path?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string | null
+          rating_avg?: number | null
+          rating_count?: number | null
+          role?: string | null
+          specialization?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _purge_user_data: { Args: { p_uid: string }; Returns: string[] }
@@ -1298,6 +2085,10 @@ export type Database = {
         Args: { p_id: string; p_table: string }
         Returns: undefined
       }
+      direct_push_allowed: {
+        Args: { p_sender: string; p_user: string }
+        Returns: boolean
+      }
       dismiss_application: {
         Args: { p_application_id: string }
         Returns: undefined
@@ -1312,6 +2103,89 @@ export type Database = {
       }
       get_driver_phone: { Args: { p_driver_id: string }; Returns: string }
       get_mechanic_phone: { Args: { p_mechanic_id: string }; Returns: string }
+      get_own_profile: {
+        Args: never
+        Returns: {
+          activity_zone: string | null
+          address: string | null
+          avatar_path: string | null
+          ban_reason: string | null
+          banned_at: string | null
+          banned_until: string | null
+          company_name: string | null
+          contact_email: string | null
+          created_at: string | null
+          deleted_at: string | null
+          full_name: string
+          id: string
+          lang: string
+          latitude: number | null
+          longitude: number | null
+          market_push_enabled: boolean
+          mention_push_enabled: boolean
+          notify_radius_km: number | null
+          phone: string | null
+          push_enabled: boolean
+          rating_avg: number
+          rating_count: number
+          role: string
+          specialization: string | null
+          vat_number: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      guest_search_market: {
+        Args: {
+          p_category?: string
+          p_limit?: number
+          p_offset?: number
+          p_query: string
+          p_sort?: string
+        }
+        Returns: {
+          category: string | null
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          id: string | null
+          price: number | null
+          seller_id: string | null
+          status: string | null
+          title: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "guest_market_listings"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      guest_search_mechanics: {
+        Args: { p_query: string }
+        Returns: {
+          activity_zone: string | null
+          avatar_path: string | null
+          company_name: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string | null
+          rating_avg: number | null
+          rating_count: number | null
+          role: string | null
+          specialization: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "guest_profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       is_admin: { Args: { p_uid?: string }; Returns: boolean }
       is_banned: { Args: { p_uid?: string }; Returns: boolean }
       is_block_between: { Args: { p_a: string; p_b: string }; Returns: boolean }
