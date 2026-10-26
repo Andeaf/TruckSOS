@@ -1,5 +1,6 @@
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Crypto from 'expo-crypto';
 import { Platform } from 'react-native';
 import type { AuthError, User } from '@supabase/supabase-js';
 
@@ -195,17 +196,26 @@ export async function signInWithGoogle(): Promise<SocialResult> {
 
 export async function signInWithApple(): Promise<SocialResult> {
   try {
+    // Nonce (26 oct 2026, AUDIT #41 / PLAN_1.1_FIX 1.4): Apple primește SHA-256(nonce) și îl pune în
+    // identity token; Supabase primește nonce-ul brut, îl hash-uiește și compară → un token
+    // interceptat nu poate fi rejucat la noi. Google rămâne pe modulul clasic al bibliotecii
+    // (16.1.5 nu expune `nonce` pe `GoogleSignin.signIn()`; modulul Universal nu e inclus), deci
+    // în Supabase „Skip nonce check" rămâne ON doar pentru Google.
+    const rawNonce = Crypto.randomUUID();
+    const hashedNonce = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, rawNonce);
     const credential = await AppleAuthentication.signInAsync({
       requestedScopes: [
         AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
         AppleAuthentication.AppleAuthenticationScope.EMAIL,
       ],
+      nonce: hashedNonce,
     });
     if (!credential.identityToken) return { error: i18n.t('auth.social.errorNoToken') };
 
     const { data, error } = await supabase.auth.signInWithIdToken({
       provider: 'apple',
       token: credential.identityToken,
+      nonce: rawNonce,
     });
     if (error) return { error: translateSocialError(error) };
 
