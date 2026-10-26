@@ -145,6 +145,8 @@
   },
   "auth": {
     "appName": "TruckSOS",
+    "captchaTitle": "Sicherheitsprüfung",
+    "captchaCancel": "Abbrechen",
     "banned": {
       "title": "Konto gesperrt",
       "bodyPermanent": "Dein Konto wurde von einem Administrator gesperrt. Du kannst die App nicht mehr nutzen.",

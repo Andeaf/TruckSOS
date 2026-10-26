@@ -12,12 +12,21 @@ import { Platform } from 'react-native';
  *   - comutatorul din Supabase se pornește abia când 1.0.x < 2 % (decommission 11.9 (d)).
  *
  * Web: widget-ul Turnstile (script de la challenges.cloudflare.com, permis în CSP) în mod
- * „interaction-only" — invizibil cât timp Cloudflare nu cere o interacțiune. Nativ: Turnstile cere un
- * context de browser (WebView); până la OK-ul pentru dependența `react-native-webview` întoarce
- * `null`, deci pe telefon captcha-ul nu poate fi încă cerut de server fără a bloca 1.1.
+ * „interaction-only" — invizibil cât timp Cloudflare nu cere o interacțiune. Nativ: același widget
+ * într-un WebView ascuns (`CaptchaHost`, react-native-webview, OK David 26 oct), care devine vizibil
+ * doar dacă Cloudflare cere o interacțiune.
  */
 
 const SITE_KEY = process.env.EXPO_PUBLIC_CAPTCHA_SITE_KEY ?? '';
+/** Cheia publică a widget-ului (goală = captcha neconfigurat în acest build). */
+export const CAPTCHA_SITE_KEY = SITE_KEY;
+
+/** Pe telefon tokenul vine din WebView-ul montat de `CaptchaHost` (components/captcha-host.tsx). */
+type NativeCaptchaHandler = () => Promise<string | null>;
+let nativeHandler: NativeCaptchaHandler | null = null;
+export function registerNativeCaptcha(handler: NativeCaptchaHandler | null): void {
+  nativeHandler = handler;
+}
 const SCRIPT_ID = 'trucksos-turnstile';
 const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
 const TOKEN_TIMEOUT_MS = 30_000;
@@ -130,8 +139,8 @@ export function captchaConfigured(): boolean {
  */
 export async function getCaptchaToken(): Promise<string | null> {
   if (!captchaConfigured()) return null;
-  if (Platform.OS !== 'web') return null; // nativ: după OK-ul pentru react-native-webview (D10)
   try {
+    if (Platform.OS !== 'web') return nativeHandler ? await nativeHandler() : null;
     return await webToken();
   } catch (e) {
     console.warn('[captcha] Turnstile indisponibil:', e instanceof Error ? e.message : e);

@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AccountGateSheet } from '@/components/account-gate-sheet';
+import { CaptchaHost } from '@/components/captcha-host';
 import { UpdatePrompt } from '@/components/update-prompt';
 import { AccountGateProvider } from '@/hooks/use-account-gate';
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
@@ -129,6 +130,8 @@ function RootLayoutNav() {
       />
       {/* 1.1 (Faza B2): „Ai nevoie de un cont" — o deschide useAccountGate().requireAccount. */}
       <AccountGateSheet />
+      {/* 1.1 (PLAN_1.1_FIX 1.8): Turnstile pe telefon — se montează doar cu cheie configurată. */}
+      <CaptchaHost />
     </ThemeProvider>
   );
 }

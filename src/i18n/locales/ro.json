@@ -145,6 +145,8 @@
   },
   "auth": {
     "appName": "TruckSOS",
+    "captchaTitle": "Verificare de securitate",
+    "captchaCancel": "Anulează",
     "banned": {
       "title": "Cont suspendat",
       "bodyPermanent": "Contul tău a fost suspendat de un administrator. Nu mai poți folosi aplicația.",
