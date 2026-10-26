@@ -263,7 +263,8 @@
       "resetButton": "Reset password",
       "errorEmail": "Please enter your email address.",
       "successTitle": "Password changed",
-      "successBody": "Your password has been changed and you are signed in.",
+      "successBody": "Your password has been changed and you are signed in. Other devices signed in to this account have been signed out.",
+      "successBodyOthersFailed": "Your password has been changed and you are signed in, but other devices could not be signed out right now (probably no network). You can retry later by changing the password again.",
       "updateErrorTitle": "Password could not be changed",
       "backToLogin": "Back to sign in"
     },
@@ -949,7 +950,8 @@
       "errorMismatch": "The new passwords don't match.",
       "errorWrongCurrent": "The current password is incorrect.",
       "successTitle": "Password changed",
-      "successBody": "Your password has been updated."
+      "successBody": "Your password has been updated. Other devices signed in to this account have been signed out.",
+      "successBodyOthersFailed": "Your password has been updated, but other devices could not be signed out right now (probably no network). You can retry later by changing the password again."
     },
     "changeEmailScreen": {
       "title": "Change email",

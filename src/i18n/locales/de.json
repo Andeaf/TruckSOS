@@ -263,7 +263,8 @@
       "resetButton": "Passwort zurücksetzen",
       "errorEmail": "Bitte gib deine E-Mail-Adresse ein.",
       "successTitle": "Passwort geändert",
-      "successBody": "Dein Passwort wurde geändert und du bist angemeldet.",
+      "successBody": "Dein Passwort wurde geändert und du bist angemeldet. Andere Geräte, die mit diesem Konto angemeldet waren, wurden abgemeldet.",
+      "successBodyOthersFailed": "Dein Passwort wurde geändert und du bist angemeldet, aber andere Geräte konnten jetzt nicht abgemeldet werden (wahrscheinlich keine Verbindung). Du kannst es später erneut versuchen, indem du das Passwort noch einmal änderst.",
       "updateErrorTitle": "Passwort konnte nicht geändert werden",
       "backToLogin": "Zurück zur Anmeldung"
     },
@@ -949,7 +950,8 @@
       "errorMismatch": "Die neuen Passwörter stimmen nicht überein.",
       "errorWrongCurrent": "Das aktuelle Passwort ist falsch.",
       "successTitle": "Passwort geändert",
-      "successBody": "Dein Passwort wurde aktualisiert."
+      "successBody": "Dein Passwort wurde aktualisiert. Andere Geräte, die mit diesem Konto angemeldet waren, wurden abgemeldet.",
+      "successBodyOthersFailed": "Dein Passwort wurde aktualisiert, aber andere Geräte konnten jetzt nicht abgemeldet werden (wahrscheinlich keine Verbindung). Du kannst es später erneut versuchen, indem du das Passwort noch einmal änderst."
     },
     "changeEmailScreen": {
       "title": "E-Mail ändern",

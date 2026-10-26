@@ -63,9 +63,23 @@ export function ChangePasswordScreen({ backPath }: { backPath: string }) {
       return;
     }
     const { error: updateErr } = await supabase.auth.updateUser({ password: next });
-    setLoading(false);
     if (updateErr) {
+      setLoading(false);
       setError(translateAuthError(updateErr) ?? undefined);
+      return;
+    }
+    // 26 oct 2026 (AUDIT #14): o parolă schimbată trebuie să scoată un eventual dispozitiv
+    // străin — Supabase nu invalidează singur celelalte sesiuni. `others` = toate în afară de
+    // asta (refresh token-urile lor sunt revocate; access token-urile expiră în ≤ JWT expiry).
+    // Un eșec aici nu anulează schimbarea parolei (deja făcută): doar nu promitem deconectarea.
+    const { error: othersErr } = await supabase.auth.signOut({ scope: 'others' });
+    setLoading(false);
+    if (othersErr) {
+      Alert.alert(
+        t('settings.changePasswordScreen.successTitle'),
+        t('settings.changePasswordScreen.successBodyOthersFailed'),
+        [{ text: 'OK', onPress: goBack }],
+      );
       return;
     }
     Alert.alert(

@@ -99,12 +99,20 @@ export default function ForgotPasswordScreen() {
     // verifyOtp a deschis sesiunea → guard-ul poate demonta ecranul oricând de aici
     // încolo, deci raportăm prin Alert (global), nu prin state local.
     const { error: updateErr } = await supabase.auth.updateUser({ password });
-    setLoading(false);
     if (updateErr) {
+      setLoading(false);
       Alert.alert(t('auth.forgot.updateErrorTitle'), translateAuthError(updateErr) ?? '');
       return;
     }
-    Alert.alert(t('auth.forgot.successTitle'), t('auth.forgot.successBody'));
+    // 26 oct 2026 (AUDIT #14): resetarea parolei e exact momentul în care un dispozitiv străin
+    // trebuie scos — Supabase nu invalidează singur celelalte sesiuni. `others` păstrează
+    // sesiunea deschisă chiar acum de verifyOtp. Eșecul nu anulează parola deja schimbată.
+    const { error: othersErr } = await supabase.auth.signOut({ scope: 'others' });
+    setLoading(false);
+    Alert.alert(
+      t('auth.forgot.successTitle'),
+      othersErr ? t('auth.forgot.successBodyOthersFailed') : t('auth.forgot.successBody'),
+    );
   }
 
   return (

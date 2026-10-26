@@ -263,7 +263,8 @@
       "resetButton": "Resetează parola",
       "errorEmail": "Introdu adresa de email.",
       "successTitle": "Parolă schimbată",
-      "successBody": "Parola a fost schimbată și ești autentificat.",
+      "successBody": "Parola a fost schimbată și ești autentificat. Celelalte dispozitive conectate cu acest cont au fost deconectate.",
+      "successBodyOthersFailed": "Parola a fost schimbată și ești autentificat, dar celelalte dispozitive nu au putut fi deconectate acum (probabil fără rețea). Poți reîncerca mai târziu schimbând din nou parola.",
       "updateErrorTitle": "Parola nu a putut fi schimbată",
       "backToLogin": "Înapoi la autentificare"
     },
@@ -952,7 +953,8 @@
       "errorMismatch": "Parolele noi nu coincid.",
       "errorWrongCurrent": "Parola curentă e incorectă.",
       "successTitle": "Parolă schimbată",
-      "successBody": "Parola a fost actualizată."
+      "successBody": "Parola a fost actualizată. Celelalte dispozitive conectate cu acest cont au fost deconectate.",
+      "successBodyOthersFailed": "Parola a fost actualizată, dar celelalte dispozitive nu au putut fi deconectate acum (probabil fără rețea). Poți reîncerca mai târziu schimbând din nou parola."
     },
     "changeEmailScreen": {
       "title": "Schimbă email-ul",
