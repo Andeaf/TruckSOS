@@ -24,6 +24,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from '@/constants/currencies';
 import { useBack } from '@/hooks/use-back';
+import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import {
@@ -65,6 +66,8 @@ export function MarketFormScreen({ role, listingId: listingIdProp }: MarketFormS
   const editing = !!listingId;
 
   const { t } = useTranslation();
+
+  const guard = useSubmitGuard();
   const theme = useTheme();
   const { session } = useAuth();
   const base = role === 'driver' ? '/(driver)/market' : '/(mechanic)/market';
@@ -403,7 +406,7 @@ export function MarketFormScreen({ role, listingId: listingIdProp }: MarketFormS
 
           <Button
             title={t(editing ? 'market.saveButton' : 'market.publishButton')}
-            onPress={handleSubmit}
+            onPress={() => void guard(handleSubmit)}
             loading={loading}
           />
 

@@ -21,6 +21,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
+import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { useNetworkDiagnosis } from '@/hooks/use-network-diagnosis';
 import { setAuthEntry } from '@/lib/auth-entry';
 import { translateAuthError } from '@/lib/auth-errors';
@@ -40,6 +41,7 @@ function isOtpExpiredOrInvalid(err: AuthError): boolean {
 export default function RegisterScreen() {
   const { signUp, signIn } = useAuth();
   const { t } = useTranslation();
+  const guard = useSubmitGuard();
   const { diagnosis, inspect } = useNetworkDiagnosis();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -223,14 +225,14 @@ export default function RegisterScreen() {
 
                 <Button
                   title={t('auth.register.verifyButton')}
-                  onPress={handleVerify}
+                  onPress={() => void guard(handleVerify)}
                   loading={loading}
                   disabled={linkLoading}
                 />
                 <Button
                   variant="secondary"
                   title={t('auth.otp.confirmedByLink')}
-                  onPress={handleConfirmedByLink}
+                  onPress={() => void guard(handleConfirmedByLink)}
                   loading={linkLoading}
                   disabled={loading}
                 />
@@ -314,7 +316,7 @@ export default function RegisterScreen() {
               </>
             ) : null}
 
-            <Button title={t('auth.register.button')} onPress={handleSignUp} loading={loading} />
+            <Button title={t('auth.register.button')} onPress={() => void guard(handleSignUp)} loading={loading} />
 
             <ThemedText themeColor="textSecondary" style={styles.requiredNote}>
               {t('common.requiredNote')}

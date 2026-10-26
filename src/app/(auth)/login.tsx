@@ -22,12 +22,14 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
+import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { useNetworkDiagnosis } from '@/hooks/use-network-diagnosis';
 import { useWideLayout } from '@/components/web-sidebar';
 
 export default function LoginScreen() {
   const { signIn, noAccountNotice, dismissNoAccountNotice, enterGuest } = useAuth();
   const { t } = useTranslation();
+  const guard = useSubmitGuard();
   const router = useRouter();
   const { diagnosis, inspect } = useNetworkDiagnosis();
   // Design 10a: pe web lat, ecranul devine split — panou de brand la stânga,
@@ -100,7 +102,7 @@ export default function LoginScreen() {
 
       <NetworkTroubleshoot diagnosis={diagnosis} />
 
-      <Button title={t('auth.login.button')} onPress={handleSignIn} loading={loading} />
+      <Button title={t('auth.login.button')} onPress={() => void guard(handleSignIn)} loading={loading} />
 
       {/* 6 oct: Google (+ Apple pe iOS) — se randează doar când furnizorii sunt disponibili. */}
       <SocialSignIn origin="login" />

@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { upsertRating } from '@/hooks/use-ratings';
 
 /**
@@ -48,6 +49,7 @@ export function RatingSheet({
   onSaved,
 }: RatingSheetProps) {
   const { t } = useTranslation();
+  const guard = useSubmitGuard();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [stars, setStars] = useState(0);
@@ -140,7 +142,7 @@ export function RatingSheet({
 
             {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
 
-            <Button title={t('rating.saveButton')} onPress={handleSave} loading={loading} />
+            <Button title={t('rating.saveButton')} onPress={() => void guard(handleSave)} loading={loading} />
           </ScrollView>
         </View>
       </KeyboardAvoidingView>

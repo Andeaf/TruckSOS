@@ -18,6 +18,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { SUPPORTED_CURRENCIES, DEFAULT_CURRENCY } from '@/constants/currencies';
 import { useTheme } from '@/hooks/use-theme';
+import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { applyToAnnouncement, resubmitApplication } from '@/hooks/use-announcements';
 import type { PriceType } from '@/types/database';
 
@@ -44,6 +45,7 @@ export function ApplyBottomSheet({
   initialData,
 }: ApplyBottomSheetProps) {
   const { t } = useTranslation();
+  const guard = useSubmitGuard();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [priceType, setPriceType] = useState<PriceType>('fixed');
@@ -237,7 +239,7 @@ export function ApplyBottomSheet({
 
             <Button
               title={applicationId ? t('mechanic.apply.resubmitButton') : t('mechanic.apply.submitButton')}
-              onPress={handleSubmit}
+              onPress={() => void guard(handleSubmit)}
               loading={loading}
             />
 

@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { REPORT_REASONS, submitReport, type ReportReason } from '@/hooks/use-reports';
 
 /**
@@ -51,6 +52,7 @@ export function ReportSheet({
   onSubmitted,
 }: ReportSheetProps) {
   const { t } = useTranslation();
+  const guard = useSubmitGuard();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [reason, setReason] = useState<ReportReason | null>(null);
@@ -158,7 +160,7 @@ export function ReportSheet({
 
             {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
 
-            <Button title={t('report.submitButton')} onPress={handleSubmit} loading={loading} />
+            <Button title={t('report.submitButton')} onPress={() => void guard(handleSubmit)} loading={loading} />
           </ScrollView>
         </View>
       </KeyboardAvoidingView>

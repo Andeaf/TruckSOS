@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import { useBack } from '@/hooks/use-back';
+import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { useTheme } from '@/hooks/use-theme';
 
 import { Button } from '@/components/ui/button';
@@ -50,6 +51,7 @@ export function AnnouncementFormScreen({
   const { session } = useAuth();
   const { requireAccount } = useAccountGate();
   const { t } = useTranslation();
+  const guard = useSubmitGuard();
   const theme = useTheme();
   const goBack = useBack(
     guest
@@ -443,7 +445,7 @@ export function AnnouncementFormScreen({
 
           {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
 
-          <Button title={t('driver.announcements.submitButton')} onPress={handleSubmit} loading={loading} />
+          <Button title={t('driver.announcements.submitButton')} onPress={() => void guard(handleSubmit)} loading={loading} />
 
           <ThemedText themeColor="textSecondary" type="small" style={styles.requiredNote}>
             {t('common.requiredNote')}
