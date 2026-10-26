@@ -26,6 +26,7 @@ import { useNetworkDiagnosis } from '@/hooks/use-network-diagnosis';
 import { setAuthEntry } from '@/lib/auth-entry';
 import { translateAuthError } from '@/lib/auth-errors';
 import { MIN_PASSWORD_LENGTH } from '@/lib/auth-rules';
+import { getCaptchaToken } from '@/lib/captcha';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -164,7 +165,12 @@ export default function RegisterScreen() {
 
   async function handleResend() {
     setError('');
-    const { error: err } = await supabase.auth.resend({ type: 'signup', email: email.trim() });
+    const captchaToken = await getCaptchaToken();
+    const { error: err } = await supabase.auth.resend({
+      type: 'signup',
+      email: email.trim(),
+      ...(captchaToken ? { options: { captchaToken } } : {}),
+    });
     inspect(err, 'resend_signup');
     if (err) {
       setError(translateAuthError(err) ?? '');

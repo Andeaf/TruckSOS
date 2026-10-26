@@ -4,6 +4,7 @@ import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js';
 
 import { clearAuthEntry, readAuthEntry, setAuthEntry } from '@/lib/auth-entry';
 import { translateAuthError } from '@/lib/auth-errors';
+import { getCaptchaToken } from '@/lib/captcha';
 import { readStoredSession, supabase } from '@/lib/supabase';
 import { registerPushToken, unregisterPushToken } from '@/lib/push';
 import { buildDiagnosticEntry, flushDiagnostics, queueDiagnostic } from '@/lib/diagnostic-log';
@@ -332,7 +333,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signIn(email: string, password: string): Promise<string | null> {
     await setAuthEntry('login-password');
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    // Captcha (1.8): tokenul pleacă doar când e configurat; serverul îl cere doar cu Turnstile pornit.
+    const captchaToken = await getCaptchaToken();
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+      ...(captchaToken ? { options: { captchaToken } } : {}),
+    });
     return translateAuthError(error);
   }
 
@@ -342,10 +349,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fullName: string
   ): Promise<{ error: string | null; needsConfirmation: boolean }> {
     await setAuthEntry('signup');
+    const captchaToken = await getCaptchaToken();
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName } },
+      options: { data: { full_name: fullName }, ...(captchaToken ? { captchaToken } : {}) },
     });
     if (error) return { error: translateAuthError(error), needsConfirmation: false };
     // Anti-enumerare (26 oct 2026, AUDIT #41, decizia D2): pentru un email deja înregistrat Supabase

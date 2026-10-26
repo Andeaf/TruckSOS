@@ -20,6 +20,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { translateAuthError } from '@/lib/auth-errors';
 import { MIN_PASSWORD_LENGTH } from '@/lib/auth-rules';
+import { getCaptchaToken } from '@/lib/captcha';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -56,7 +57,12 @@ export default function ForgotPasswordScreen() {
     }
     setLoading(true);
     setError('');
-    const { error: err } = await supabase.auth.resetPasswordForEmail(mail);
+    // Captcha (1.8): tokenul pleacă doar când e configurat; serverul îl cere doar cu Turnstile pornit.
+    const captchaToken = await getCaptchaToken();
+    const { error: err } = await supabase.auth.resetPasswordForEmail(
+      mail,
+      captchaToken ? { captchaToken } : undefined,
+    );
     setLoading(false);
     inspect(err, 'reset_request');
     if (err) {
