@@ -1,3 +1,5 @@
+import i18n from '@/i18n';
+import { translateDbError } from '@/lib/db-errors';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -36,7 +38,7 @@ export async function submitReport(
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  if (!session?.user) return { error: 'no_session', duplicate: false };
+  if (!session?.user) return { error: i18n.t('common.noSession'), duplicate: false };
 
   const { error } = await supabase.from('reports').insert({
     reporter_id: session.user.id,
@@ -52,7 +54,7 @@ export async function submitReport(
 
   if (error) {
     const duplicate = (error as { code?: string }).code === '23505';
-    return { error: error.message, duplicate };
+    return { error: translateDbError(error), duplicate };
   }
   return { error: null, duplicate: false };
 }

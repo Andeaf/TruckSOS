@@ -141,6 +141,26 @@
       "deleteReviewConfirm": "Recenzia va fi ștearsă și media recalculată. Continui?",
       "deleteMessageConfirm": "Mesajul devine „șters de moderator”. Continui?",
       "views": "Vizualizări: {{n}}"
+    },
+    "purge": {
+      "title": "Curățare conturi",
+      "back": "Înapoi",
+      "section": "Întreținere",
+      "intro": "Șterge conturile create în interval care n-au nicio urmă de folosire: niciun anunț, mesaj, candidatură, anunț în Market, evaluare, raport, conversație, camion, favorit, token de notificări sau fișier, și fără telefon, firmă sau poză în profil. Adminii nu sunt atinși. Intervalul se oprește cu cel puțin 24 h în urmă, ca să nu prindă conturi aflate încă în înregistrare.",
+      "datesHint": "Date în formatul AAAA-LL-ZZ, ziua în UTC. „Până la” e exclusiv: conturile create în ziua aceea nu intră. Cel mult 31 de zile.",
+      "from": "De la",
+      "to": "Până la (exclusiv)",
+      "datePlaceholder": "AAAA-LL-ZZ",
+      "count": "Numără",
+      "countResult": "Conturi fără activitate în interval: {{count}}",
+      "deleteButton": "Șterge conturile ({{count}})",
+      "confirmTitle": "Ștergi conturile?",
+      "confirmBody": "Conturi de șters: {{count}}. Ștergerea e definitivă și nu poate fi anulată. Continui?",
+      "deleted": "Conturi șterse: {{count}}",
+      "invalidDate": "Dată invalidă. Folosește formatul AAAA-LL-ZZ (ex. 2026-10-01).",
+      "invalidRange": "„De la” trebuie să fie înainte de „Până la”.",
+      "tooRecent": "„Până la” poate fi cel târziu {{maxTo}} (intervalul se oprește cu 24 h în urmă).",
+      "tooLong": "Intervalul poate avea cel mult 31 de zile."
     }
   },
   "auth": {
@@ -286,6 +306,29 @@
       "openSettings": "Open Settings",
       "openWeb": "Open trucksos.net"
     }
+  },
+  "dbErrors": {
+    "rate_limited": "Too many actions in a short time. Please wait a bit and try again.",
+    "rate_limited_open": "You already have 3 open announcements. Resolve or cancel one before posting another.",
+    "account_banned": "Your account is suspended.",
+    "photo_limit_reached": "You've reached the maximum number of photos (10).",
+    "listing_limit_reached": "You've reached the maximum number of active Market listings (20).",
+    "too_long": "The text is too long.",
+    "empty": "The text cannot be empty.",
+    "not_allowed": "You're not allowed to do this.",
+    "not_found": "Item not found. It may have been deleted in the meantime.",
+    "announcement_not_open": "This announcement is no longer open.",
+    "listing_not_active": "This Market listing is no longer active.",
+    "cannot_contact_self": "You can't start a conversation with yourself.",
+    "duplicate": "This already exists.",
+    "invalid": "The submitted data is not valid.",
+    "gone": "The item you're referring to no longer exists.",
+    "timeout": "The server took too long to respond. Please try again.",
+    "busy": "The server is busy right now. Try again in a few seconds.",
+    "storage_type": "This file type is not allowed.",
+    "storage_size": "The file is too large.",
+    "storage_refused": "Upload refused: you've sent too many files today or you don't have access here.",
+    "generic": "An unexpected error occurred. Please try again."
   },
   "authErrors": {
     "invalid_credentials": "Incorrect email or password.",

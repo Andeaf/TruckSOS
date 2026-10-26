@@ -75,12 +75,14 @@ export function useUpdatePrompt(enabled: boolean) {
       if (error || !row) return;
       if (compareVersions(current, row.latest_version) >= 0) return;
 
+      // 26 oct 2026 (AUDIT #42): store_url se deschide cu Linking.openURL → doar https (altfel linkul
+      // implicit al magazinului); serverul are același CHECK din migrarea 20261031000100.
       // Marcăm la AFIȘARE (nu la închidere): dacă aplicația e omorâtă cu mesajul
       // deschis, tot contează ca „azi l-a văzut".
       await markShown();
       setUpdate({
         version: row.latest_version,
-        storeUrl: row.store_url || DEFAULT_STORE_URL[platform],
+        storeUrl: row.store_url?.startsWith('https://') ? row.store_url : DEFAULT_STORE_URL[platform],
       });
     } catch {
       // Offline / timeout: fără mesaj.

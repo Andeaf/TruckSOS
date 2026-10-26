@@ -207,18 +207,16 @@ export function MarketFormScreen({ role, listingId: listingIdProp }: MarketFormS
       const err = await updateMarketListing(id, fields);
       if (err) {
         setLoading(false);
-        setError(err.includes('account_banned') ? t('common.error') : t('common.error'));
+        // 26 oct 2026: hook-urile întorc deja textul tradus (translateDbError) — îl afișăm ca atare.
+        setError(err);
         return;
       }
     } else {
       const { id: newId, error: createErr } = await createMarketListing(session.user.id, fields);
       if (createErr || !newId) {
         setLoading(false);
-        setError(
-          createErr?.includes('listing_limit_reached')
-            ? t('market.limitReachedMessage')
-            : t('common.error'),
-        );
+        // Plafonul de 20 active, limita de ritm, lungimea — toate vin traduse din hook.
+        setError(createErr ?? t('common.error'));
         return;
       }
       id = newId;

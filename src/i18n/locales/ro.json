@@ -141,6 +141,26 @@
       "deleteReviewConfirm": "Recenzia va fi ștearsă și media recalculată. Continui?",
       "deleteMessageConfirm": "Mesajul devine „șters de moderator”. Continui?",
       "views": "Vizualizări: {{n}}"
+    },
+    "purge": {
+      "title": "Curățare conturi",
+      "back": "Înapoi",
+      "section": "Întreținere",
+      "intro": "Șterge conturile create în interval care n-au nicio urmă de folosire: niciun anunț, mesaj, candidatură, anunț în Market, evaluare, raport, conversație, camion, favorit, token de notificări sau fișier, și fără telefon, firmă sau poză în profil. Adminii nu sunt atinși. Intervalul se oprește cu cel puțin 24 h în urmă, ca să nu prindă conturi aflate încă în înregistrare.",
+      "datesHint": "Date în formatul AAAA-LL-ZZ, ziua în UTC. „Până la” e exclusiv: conturile create în ziua aceea nu intră. Cel mult 31 de zile.",
+      "from": "De la",
+      "to": "Până la (exclusiv)",
+      "datePlaceholder": "AAAA-LL-ZZ",
+      "count": "Numără",
+      "countResult": "Conturi fără activitate în interval: {{count}}",
+      "deleteButton": "Șterge conturile ({{count}})",
+      "confirmTitle": "Ștergi conturile?",
+      "confirmBody": "Conturi de șters: {{count}}. Ștergerea e definitivă și nu poate fi anulată. Continui?",
+      "deleted": "Conturi șterse: {{count}}",
+      "invalidDate": "Dată invalidă. Folosește formatul AAAA-LL-ZZ (ex. 2026-10-01).",
+      "invalidRange": "„De la” trebuie să fie înainte de „Până la”.",
+      "tooRecent": "„Până la” poate fi cel târziu {{maxTo}} (intervalul se oprește cu 24 h în urmă).",
+      "tooLong": "Intervalul poate avea cel mult 31 de zile."
     }
   },
   "auth": {
@@ -286,6 +306,29 @@
       "openSettings": "Deschide Setările",
       "openWeb": "Deschide trucksos.net"
     }
+  },
+  "dbErrors": {
+    "rate_limited": "Prea multe acțiuni într-un timp scurt. Așteaptă puțin și încearcă din nou.",
+    "rate_limited_open": "Ai deja 3 anunțuri deschise. Rezolvă sau anulează unul înainte să publici altul.",
+    "account_banned": "Contul tău este suspendat.",
+    "photo_limit_reached": "Ai atins numărul maxim de poze (10).",
+    "listing_limit_reached": "Ai atins numărul maxim de anunțuri active în Market (20).",
+    "too_long": "Textul este prea lung.",
+    "empty": "Textul nu poate fi gol.",
+    "not_allowed": "Nu ai dreptul să faci această acțiune.",
+    "not_found": "Elementul nu a fost găsit. Poate a fost șters între timp.",
+    "announcement_not_open": "Anunțul nu mai este deschis.",
+    "listing_not_active": "Anunțul din Market nu mai este activ.",
+    "cannot_contact_self": "Nu poți începe o conversație cu tine însuți.",
+    "duplicate": "Există deja o înregistrare identică.",
+    "invalid": "Datele trimise nu sunt valide.",
+    "gone": "Elementul la care te referi nu mai există.",
+    "timeout": "Serverul a răspuns prea greu. Încearcă din nou.",
+    "busy": "Serverul este ocupat momentan. Încearcă din nou în câteva secunde.",
+    "storage_type": "Acest tip de fișier nu este permis.",
+    "storage_size": "Fișierul este prea mare.",
+    "storage_refused": "Încărcarea a fost refuzată: ai trimis prea multe fișiere azi sau nu ai acces aici.",
+    "generic": "A apărut o eroare neașteptată. Încearcă din nou."
   },
   "authErrors": {
     "invalid_credentials": "Email sau parolă incorecte.",

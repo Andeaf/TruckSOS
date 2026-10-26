@@ -89,17 +89,14 @@ export function ApplyBottomSheet({
 
     setLoading(true);
     setError('');
-    const err = applicationId
+    const { error: err, duplicate } = applicationId
       ? await resubmitApplication(applicationId, priceType, amount, currency, message.trim() || null)
       : await applyToAnnouncement(announcementId, priceType, amount, currency, message.trim() || null);
     setLoading(false);
 
     if (err) {
-      setError(
-        err.includes('already') || err.includes('unique')
-          ? t('mechanic.apply.errorAlreadyApplied')
-          : t('mechanic.apply.errorSubmit'),
-      );
+      // 26 oct 2026: hook-ul întoarce textul tradus (translateDbError) + flag-ul `duplicate` (23505).
+      setError(duplicate ? t('mechanic.apply.errorAlreadyApplied') : err);
       return;
     }
 

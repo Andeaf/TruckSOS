@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
+import { translateDbError } from '@/lib/db-errors';
 import { supabase } from '@/lib/supabase';
 import {
   fetchReplyEmbed,
@@ -449,7 +450,7 @@ export async function deleteMessage(
   id: string
 ): Promise<string | null> {
   const { error } = await supabase.rpc('delete_message', { p_table: table, p_id: id } as never);
-  return error?.message ?? null;
+  return translateDbError(error);
 }
 
 /** Fereastra de editare: 3 min de la trimitere (aceeași valoare ca în RPC-ul edit_message). */
@@ -471,7 +472,7 @@ export async function editMessage(
     p_id: id,
     p_content: content,
   } as never);
-  return error?.message ?? null;
+  return translateDbError(error);
 }
 
 // Întoarce conversația directă existentă cu ținta sau creează una nouă (RPC atomic).
@@ -483,7 +484,7 @@ export async function startDirectConversation(
   const { data, error } = await supabase.rpc('start_direct_conversation', {
     p_mechanic_id: targetUserId,
   } as never);
-  return { conversationId: (data as unknown as string) ?? null, error: error?.message ?? null };
+  return { conversationId: (data as unknown as string) ?? null, error: translateDbError(error) };
 }
 
 export async function deleteConversations(
@@ -492,7 +493,7 @@ export async function deleteConversations(
 ): Promise<string | null> {
   const rows = conversationIds.map((id) => ({ conversation_id: id, user_id: userId }));
   const { error } = await supabase.from('conversation_deletions').insert(rows as never);
-  return error?.message ?? null;
+  return translateDbError(error);
 }
 
 export async function sendMessage(
@@ -529,7 +530,7 @@ export async function sendMessage(
     // Returnăm și citatul + contextele, ca bula proprie să le afișeze instant (optimist).
     .select('*' + (v14 ? replyEmbed() : '') + MESSAGE_ATTACH_EMBEDS)
     .single();
-  return { message: (data as unknown as Message) ?? null, error: error?.message ?? null };
+  return { message: (data as unknown as Message) ?? null, error: translateDbError(error) };
 }
 
 /**
@@ -562,7 +563,7 @@ export async function sendFileMessage(
     } as never)
     .select('*' + (v14 ? replyEmbed() : '') + MESSAGE_ATTACH_EMBEDS)
     .single();
-  return { message: (data as unknown as Message) ?? null, error: insertError?.message ?? null };
+  return { message: (data as unknown as Message) ?? null, error: translateDbError(insertError) };
 }
 
 /**

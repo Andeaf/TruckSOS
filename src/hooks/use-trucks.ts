@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { translateDbError } from '@/lib/db-errors';
 import { supabase } from '@/lib/supabase';
 import type { Truck } from '@/types/database';
 
@@ -32,7 +33,7 @@ export async function addTruck(
   data: Omit<Truck, 'id' | 'created_at'>
 ): Promise<string | null> {
   const { error } = await supabase.from('trucks').insert(data);
-  return error?.message ?? null;
+  return translateDbError(error);
 }
 
 export async function updateTruck(
@@ -42,10 +43,10 @@ export async function updateTruck(
   >
 ): Promise<string | null> {
   const { error } = await supabase.from('trucks').update(data).eq('id', id);
-  return error?.message ?? null;
+  return translateDbError(error);
 }
 
 export async function deleteTruck(id: string): Promise<string | null> {
   const { error } = await supabase.from('trucks').delete().eq('id', id);
-  return error?.message ?? null;
+  return translateDbError(error);
 }

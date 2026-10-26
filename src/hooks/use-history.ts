@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { translateDbError } from '@/lib/db-errors';
 import { supabase } from '@/lib/supabase';
 import type { Announcement } from '@/types/database';
 
@@ -45,5 +46,5 @@ export async function hideFromHistory(ids?: string[]): Promise<string | null> {
   const { error } = await supabase.rpc('set_announcements_hidden', {
     p_ids: ids && ids.length > 0 ? ids : null,
   } as never);
-  return error?.message ?? null;
+  return translateDbError(error);
 }

@@ -205,11 +205,8 @@ export function MarketDetailScreen({ role, guest = false }: MarketDetailScreenPr
           const err = await setMarketListingStatus(listing.id, next);
           setBusy(false);
           if (err) {
-            // Re-listarea poate lovi plafonul de 20 anunțuri active (trigger DB).
-            Alert.alert(
-              t('common.error'),
-              err.includes('listing_limit_reached') ? t('market.limitReachedMessage') : undefined,
-            );
+            // Re-listarea poate lovi plafonul de 20 anunțuri active (trigger DB); textul vine tradus din hook.
+            Alert.alert(t('common.error'), err);
             return;
           }
           setListing({ ...listing, status: next });

@@ -1,3 +1,4 @@
+import { translateDbError } from '@/lib/db-errors';
 import { supabase } from '@/lib/supabase';
 import type { AnnouncementStatus, ReportReason, ReportStatus } from '@/types/database';
 import type { Database } from '@/types/supabase';
@@ -146,13 +147,13 @@ type RpcName = keyof Database['public']['Functions'];
 
 async function rpcData<T>(fn: RpcName, args: Record<string, unknown>, fallback: T): Promise<Result<T>> {
   const { data, error } = await supabase.rpc(fn, args as never);
-  if (error) return { data: fallback, error: error.message };
+  if (error) return { data: fallback, error: translateDbError(error) };
   return { data: (data as T) ?? fallback, error: null };
 }
 
 async function rpcVoid(fn: RpcName, args: Record<string, unknown>): Promise<string | null> {
   const { error } = await supabase.rpc(fn, args as never);
-  return error?.message ?? null;
+  return translateDbError(error);
 }
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
@@ -280,7 +281,7 @@ async function fetchPaged<T>(
   const out: T[] = [];
   for (let from = 0; ; from += SERIES_PAGE) {
     const { data, error } = await page(from, from + SERIES_PAGE - 1);
-    if (error) return { data: out, error: error.message };
+    if (error) return { data: out, error: translateDbError(error) };
     const rows = (data ?? []) as T[];
     out.push(...rows);
     if (rows.length < SERIES_PAGE) break;
@@ -312,4 +313,23 @@ export function fetchAnnouncementsSeries(since: string) {
       .order('created_at', { ascending: true })
       .range(from, to)
   );
+}
+
+// ── Curățare conturi-bot (migrarea 20261031000100_hygiene_limits, §8) ────────
+/** Conturile create în [from, to) fără nicio urmă de folosire. dryRun = true doar numără.
+ *  Serverul cere: admin, to ≤ acum − 24 h, from < to, interval ≤ 31 zile (altfel `bad_interval`). */
+export async function purgeAccounts(
+  from: Date,
+  to: Date,
+  dryRun: boolean
+): Promise<{ data: { dryRun: boolean; count: number } | null; error: string | null }> {
+  // `as never`: admin_purge_accounts nu e încă în tipurile generate — dispare la regenerarea lor.
+  const { data, error } = await supabase.rpc('admin_purge_accounts' as never, {
+    p_from: from.toISOString(),
+    p_to: to.toISOString(),
+    p_dry_run: dryRun,
+  } as never);
+  if (error) return { data: null, error: translateDbError(error) };
+  const row = data as { dry_run: boolean; count: number } | null;
+  return { data: row ? { dryRun: row.dry_run, count: row.count } : null, error: null };
 }

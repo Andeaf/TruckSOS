@@ -6,6 +6,7 @@ import { clearAuthEntry, readAuthEntry, setAuthEntry } from '@/lib/auth-entry';
 import { translateAuthError } from '@/lib/auth-errors';
 import { getCaptchaToken } from '@/lib/captcha';
 import { readStoredSession, supabase } from '@/lib/supabase';
+import { translateDbError } from '@/lib/db-errors';
 import { registerPushToken, unregisterPushToken } from '@/lib/push';
 import { buildDiagnosticEntry, flushDiagnostics, queueDiagnostic } from '@/lib/diagnostic-log';
 import { diagnoseNetwork, isNetworkError } from '@/lib/network-diagnosis';
@@ -502,7 +503,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .update(updates as never)
       .eq('id', userId);
     await fetchProfile(userId);
-    return error?.message ?? null;
+    return translateDbError(error);
   }
 
   async function createProfile(

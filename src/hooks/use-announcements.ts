@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { translateDbError } from '@/lib/db-errors';
 import { supabase } from '@/lib/supabase';
 import type { Announcement, Application, Profile, PriceType, PublicUser } from '@/types/database';
 import { useAuth } from '@/hooks/use-auth';
@@ -101,7 +102,7 @@ export async function createAnnouncement(
     } as never)
     .select('id')
     .single();
-  return { id: (data as { id: string } | null)?.id ?? null, error: error?.message ?? null };
+  return { id: (data as { id: string } | null)?.id ?? null, error: translateDbError(error) };
 }
 
 export async function resolveAnnouncement(id: string): Promise<string | null> {
@@ -109,7 +110,7 @@ export async function resolveAnnouncement(id: string): Promise<string | null> {
     .from('announcements')
     .update({ status: 'resolved' } as never)
     .eq('id', id);
-  return error?.message ?? null;
+  return translateDbError(error);
 }
 
 export async function cancelAnnouncement(id: string): Promise<string | null> {
@@ -117,7 +118,7 @@ export async function cancelAnnouncement(id: string): Promise<string | null> {
     .from('announcements')
     .update({ status: 'cancelled' } as never)
     .eq('id', id);
-  return error?.message ?? null;
+  return translateDbError(error);
 }
 
 /**
@@ -131,7 +132,7 @@ export async function resolveOpenAnnouncement(id: string): Promise<string | null
   const { error } = await supabase.rpc('resolve_open_announcement', {
     p_announcement_id: id,
   } as never);
-  return error?.message ?? null;
+  return translateDbError(error);
 }
 
 /**
@@ -161,7 +162,7 @@ export async function repostAnnouncement(id: string): Promise<string | null> {
   const { error } = await supabase.rpc('repost_announcement', {
     p_announcement_id: id,
   } as never);
-  return error?.message ?? null;
+  return translateDbError(error);
 }
 
 /**
@@ -189,7 +190,7 @@ export async function deleteAnnouncement(id: string): Promise<string | null> {
     .delete()
     .eq('id', id);
 
-  return error?.message ?? null;
+  return translateDbError(error);
 }
 
 export async function fetchAnnouncementById(
@@ -207,7 +208,7 @@ export async function acceptAnnouncement(announcementId: string): Promise<string
   const { error } = await supabase.rpc('accept_announcement', {
     p_announcement_id: announcementId,
   } as never);
-  return error?.message ?? null;
+  return translateDbError(error);
 }
 
 export async function fetchOpenAnnouncementById(
@@ -227,7 +228,7 @@ export async function applyToAnnouncement(
   priceAmount: number,
   currency: string,
   message: string | null,
-): Promise<string | null> {
+): Promise<{ error: string | null; duplicate: boolean }> {
   const { error } = await supabase.rpc('apply_to_announcement', {
     p_announcement_id: announcementId,
     p_price_type: priceType,
@@ -235,7 +236,8 @@ export async function applyToAnnouncement(
     p_currency: currency,
     p_message: message || null,
   } as never);
-  return error?.message ?? null;
+  // `duplicate` = deja ai candidat (unique pe announcement_id + mechanic_id, 23505); textul e tradus.
+  return { error: translateDbError(error), duplicate: (error as { code?: string } | null)?.code === '23505' };
 }
 
 export async function fetchRejectedAnnouncementIds(mechanicId: string): Promise<Set<string>> {
@@ -294,28 +296,28 @@ export async function acceptApplication(
   const { data, error } = await supabase.rpc('accept_application', {
     p_application_id: applicationId,
   } as never);
-  return { conversationId: (data as string) ?? null, error: error?.message ?? null };
+  return { conversationId: (data as string) ?? null, error: translateDbError(error) };
 }
 
 export async function rejectApplication(applicationId: string): Promise<string | null> {
   const { error } = await supabase.rpc('reject_application', {
     p_application_id: applicationId,
   } as never);
-  return error?.message ?? null;
+  return translateDbError(error);
 }
 
 export async function withdrawApplication(applicationId: string): Promise<string | null> {
   const { error } = await supabase.rpc('withdraw_application', {
     p_application_id: applicationId,
   } as never);
-  return error?.message ?? null;
+  return translateDbError(error);
 }
 
 export async function dismissApplication(applicationId: string): Promise<string | null> {
   const { error } = await supabase.rpc('dismiss_application', {
     p_application_id: applicationId,
   } as never);
-  return error?.message ?? null;
+  return translateDbError(error);
 }
 
 export async function resubmitApplication(
@@ -324,7 +326,7 @@ export async function resubmitApplication(
   priceAmount: number,
   currency: string,
   message: string | null,
-): Promise<string | null> {
+): Promise<{ error: string | null; duplicate: boolean }> {
   const { error } = await supabase.rpc('resubmit_application', {
     p_application_id: applicationId,
     p_price_type: priceType,
@@ -332,7 +334,7 @@ export async function resubmitApplication(
     p_currency: currency,
     p_message: message || null,
   } as never);
-  return error?.message ?? null;
+  return { error: translateDbError(error), duplicate: (error as { code?: string } | null)?.code === '23505' };
 }
 
 /**

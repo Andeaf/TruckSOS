@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
+import { translateDbError } from '@/lib/db-errors';
 import { supabase } from '@/lib/supabase';
 import {
   fetchReplyEmbed,
@@ -302,7 +303,7 @@ export async function sendChannelMessage(
     .insert(row as never)
     .select(await channelMessageSelect())
     .single();
-  return { message: (data as unknown as ChannelMessageWithSender) ?? null, error: error?.message ?? null };
+  return { message: (data as unknown as ChannelMessageWithSender) ?? null, error: translateDbError(error) };
 }
 
 /** Fișier în canal (Faza 19.5) — simetric cu sendFileMessage din chatul privat. */
@@ -330,7 +331,7 @@ export async function sendChannelFileMessage(
     } as never)
     .select(await channelMessageSelect())
     .single();
-  return { message: (data as unknown as ChannelMessageWithSender) ?? null, error: insertError?.message ?? null };
+  return { message: (data as unknown as ChannelMessageWithSender) ?? null, error: translateDbError(insertError) };
 }
 
 /**

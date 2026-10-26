@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { translateDbError } from '@/lib/db-errors';
 import { supabase } from '@/lib/supabase';
 import type { Rating } from '@/types/database';
 
@@ -28,7 +29,7 @@ export async function upsertRating(
       { mechanic_id: mechanicId, driver_id: driverId, stars, comment } as never,
       { onConflict: 'mechanic_id,driver_id' },
     );
-  return error?.message ?? null;
+  return translateDbError(error);
 }
 
 /** Rating-ul MEU pentru un mecanic (pt. pre-completarea sheet-ului la re-evaluare). */

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { translateDbError } from '@/lib/db-errors';
 import { supabase } from '@/lib/supabase';
 import { uploadPhoto, deletePhotos, signedUrls } from '@/lib/storage';
 import type { PickedImage } from '@/lib/media';
@@ -205,7 +206,7 @@ export async function createMarketListing(
     .insert({ seller_id: sellerId, ...fields } as never)
     .select('id')
     .single();
-  return { id: (data as { id: string } | null)?.id ?? null, error: error?.message ?? null };
+  return { id: (data as { id: string } | null)?.id ?? null, error: translateDbError(error) };
 }
 
 export async function updateMarketListing(
@@ -216,7 +217,7 @@ export async function updateMarketListing(
     .from('market_listings')
     .update(fields as never)
     .eq('id', listingId);
-  return error?.message ?? null;
+  return translateDbError(error);
 }
 
 export async function setMarketListingStatus(
@@ -227,7 +228,7 @@ export async function setMarketListingStatus(
     .from('market_listings')
     .update({ status } as never)
     .eq('id', listingId);
-  return error?.message ?? null;
+  return translateDbError(error);
 }
 
 /** Șterge anunțul: întâi obiectele Storage (client-side, R2), apoi rândul (cascade poze). */
@@ -237,7 +238,7 @@ export async function deleteMarketListing(
 ): Promise<string | null> {
   await deletePhotos(photoPaths); // best-effort; rândurile cascade oricum
   const { error } = await supabase.from('market_listings').delete().eq('id', listingId);
-  return error?.message ?? null;
+  return translateDbError(error);
 }
 
 /**
@@ -292,5 +293,5 @@ export async function startMarketConversation(
   const { data, error } = await supabase.rpc('start_market_conversation', {
     p_listing_id: listingId,
   } as never);
-  return { conversationId: (data as string | null) ?? null, error: error?.message ?? null };
+  return { conversationId: (data as string | null) ?? null, error: translateDbError(error) };
 }

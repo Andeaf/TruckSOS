@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
+import i18n from '@/i18n';
+import { translateDbError } from '@/lib/db-errors';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -58,7 +60,7 @@ export function BlockedProvider({ children }: { children: React.ReactNode }) {
 
   const block = useCallback(async (targetId: string): Promise<string | null> => {
     const { error } = await supabase.rpc('block_user', { p_target: targetId } as never);
-    if (error) return error.message;
+    if (error) return translateDbError(error);
     // Optimist, idempotent (serverul face ON CONFLICT DO NOTHING).
     setRows((prev) =>
       prev.some((r) => r.blocked_id === targetId)
@@ -70,13 +72,13 @@ export function BlockedProvider({ children }: { children: React.ReactNode }) {
 
   const unblock = useCallback(
     async (targetId: string): Promise<string | null> => {
-      if (!userId) return 'not_authenticated';
+      if (!userId) return i18n.t('common.noSession');
       const { error } = await supabase
         .from('blocked_users')
         .delete()
         .eq('blocker_id', userId)
         .eq('blocked_id', targetId);
-      if (error) return error.message;
+      if (error) return translateDbError(error);
       setRows((prev) => prev.filter((r) => r.blocked_id !== targetId));
       return null;
     },

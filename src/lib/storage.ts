@@ -2,6 +2,7 @@ import { File } from 'expo-file-system';
 import * as Crypto from 'expo-crypto';
 import { Platform } from 'react-native';
 
+import { translateDbError } from '@/lib/db-errors';
 import { supabase } from '@/lib/supabase';
 import { compressImage } from '@/lib/images';
 
@@ -74,11 +75,11 @@ export async function uploadPhoto(
       .upload(path, bytes, { contentType: 'image/jpeg', upsert: false });
     if (error) {
       console.warn('[storage] upload refuzat pt. path:', path, '→', error.message);
-      return { path: null, error: error.message };
+      return { path: null, error: translateDbError(error) };
     }
     return { path, error: null };
   } catch (e) {
-    return { path: null, error: e instanceof Error ? e.message : 'upload_failed' };
+    return { path: null, error: translateDbError(e ?? 'upload_failed') };
   }
 }
 
@@ -146,11 +147,11 @@ export async function uploadFile(
       });
     if (error) {
       console.warn('[storage] upload fișier refuzat pt. path:', path, '→', error.message);
-      return { path: null, error: error.message };
+      return { path: null, error: translateDbError(error) };
     }
     return { path, error: null };
   } catch (e) {
-    return { path: null, error: e instanceof Error ? e.message : 'upload_failed' };
+    return { path: null, error: translateDbError(e ?? 'upload_failed') };
   }
 }
 
@@ -234,5 +235,5 @@ export function signedUrlExpiry(url: string): number | null {
 export async function deletePhotos(paths: string[]): Promise<string | null> {
   if (paths.length === 0) return null;
   const { error } = await supabase.storage.from(BUCKET).remove(paths);
-  return error?.message ?? null;
+  return translateDbError(error);
 }
