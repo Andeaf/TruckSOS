@@ -7,7 +7,7 @@
 -- anon_table_allow. Listele se schimbă DOAR în aceeași migrare care schimbă drepturile.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(14);
+select plan(22);
 
 -- ── Liste de referință (temporare, dispar la rollback) ────────────────────────────────────
 create temp table allowlist(fn text) on commit drop;
@@ -19,6 +19,7 @@ insert into allowlist values
   ('search_mechanics'), ('search_users'), ('set_announcements_hidden'),
   ('start_direct_conversation'), ('start_market_conversation'), ('withdraw_application'),
   ('record_announcement_view'), ('get_own_profile'),
+  ('admin_purge_accounts'),                                       -- 20261031000100 (faza 2)
   ('admin_ban_user'), ('admin_dashboard_stats'), ('admin_delete_announcement'),
   ('admin_delete_listing'), ('admin_delete_message'), ('admin_delete_review'),
   ('admin_list_channel_messages'), ('admin_list_recent_announcements'),
@@ -184,6 +185,60 @@ select ok(
                  and cfg ~ '(^|[=, ])app([, ]|$)')
   and not exists (select 1 from pg_extension where extname = 'pg_graphql'),
   'Schema privată app nu e expusă prin PostgREST; pg_graphql nu e instalat');
+
+-- ── Faza 2 (20261031000100): igienă, limite, Storage ───────────────────────────────────────
+-- 15. Nicio politică `TO public` în schema public (toate sunt TO authenticated / TO anon)
+select is(
+  (select coalesce(string_agg(tablename || '.' || policyname, ', ' order by tablename, policyname), '') from pg_policies
+    where schemaname = 'public' and roles = array['public']::name[]),
+  '', 'Nicio politică TO public în schema public');
+
+-- 16. Toate funcțiile din public au search_path fixat (nu doar cele SECURITY DEFINER)
+select is(
+  (select coalesce(string_agg(fn, ', ' order by fn), '') from fns where not has_sp),
+  '', 'Toate funcțiile din public au search_path fixat');
+
+-- 17. Funcțiile-trigger (public + app) nu sunt executabile de anon/authenticated
+select is(
+  (select coalesce(string_agg(n.nspname || '.' || p.proname, ', ' order by n.nspname, p.proname), '')
+     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname in ('public', 'app') and p.prorettype = 'trigger'::regtype
+      and (has_function_privilege('anon', p.oid, 'EXECUTE') or has_function_privilege('authenticated', p.oid, 'EXECUTE'))),
+  '', 'Funcțiile-trigger nu sunt executabile prin API');
+
+-- 18. Limitele de ritm: 5 triggere aaa_rate_limit active
+select is(
+  (select count(*)::int from pg_trigger t join pg_class c on c.oid = t.tgrelid
+    where t.tgname = 'aaa_rate_limit' and t.tgenabled <> 'D'
+      and c.relname in ('announcements', 'channel_messages', 'messages', 'market_listings', 'reports')),
+  5, 'Triggerele de limitare a ritmului sunt prezente și active (5/5)');
+
+-- 19. Evidența app.rate_events: RLS activ, nimic pentru anon/authenticated
+select ok(
+  (select relrowsecurity from pg_class where oid = 'app.rate_events'::regclass)
+  and not has_table_privilege('anon', 'app.rate_events', 'SELECT, INSERT, UPDATE, DELETE')
+  and not has_table_privilege('authenticated', 'app.rate_events', 'SELECT, INSERT, UPDATE, DELETE'),
+  'app.rate_events: RLS activ, fără drepturi pentru anon/authenticated');
+
+-- 20. Bucket photos: allowlist MIME fără tipuri randabile ca pagină
+select ok(
+  (select allowed_mime_types is not null
+      and not (allowed_mime_types && array['text/html', 'image/svg+xml', 'application/xhtml+xml', 'text/xml',
+                                          'application/xml', 'application/javascript', 'text/javascript'])
+     from storage.buckets where id = 'photos'),
+  'Bucket photos: allowlist MIME fără html/svg/xml/js');
+
+-- 21. Politicile de INSERT pe Storage includ cota per utilizator
+select is(
+  (select count(*)::int from pg_policies where schemaname = 'storage' and tablename = 'objects'
+     and cmd = 'INSERT' and with_check like '%storage_quota_ok%'),
+  5, 'Toate cele 5 politici de INSERT pe Storage au cota per utilizator');
+
+-- 22. Constrângerile de lungime: 26, toate validate
+select is(
+  (select count(*)::int from pg_constraint where connamespace = 'public'::regnamespace and contype = 'c'
+     and conname like '%\_len' and convalidated),
+  26, 'Constrângerile de lungime (26) sunt validate');
 
 select * from finish();
 rollback;

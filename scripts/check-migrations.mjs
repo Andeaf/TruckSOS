@@ -38,8 +38,9 @@ function blank(text) {
     .replace(/--[^\n]*/g, keepNewlines);
 }
 
-// Acceptă `x`, `public.x`, `"x"`, `"public"."x"`.
-const qualified = String.raw`(?:"?public"?\.)?`;
+// Acceptă `x`, `public.x`, `app.x`, `"x"`, `"public"."x"` (din 26 oct 2026 există și schema privată `app`;
+// regulile de RLS/grant se aplică la fel acolo).
+const qualified = String.raw`(?:"?[a-z_][a-z0-9_]*"?\.)?`;
 const ident = String.raw`${qualified}"?([A-Za-z_][A-Za-z0-9_]*)"?`;
 const lineOf = (text, index) => text.slice(0, index).split('\n').length;
 
