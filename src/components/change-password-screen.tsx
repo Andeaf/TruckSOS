@@ -16,6 +16,7 @@ import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
 import { translateAuthError } from '@/lib/auth-errors';
+import { MIN_PASSWORD_LENGTH } from '@/lib/auth-rules';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -41,7 +42,7 @@ export function ChangePasswordScreen({ backPath }: { backPath: string }) {
       setError(t('settings.changePasswordScreen.errorEmpty'));
       return;
     }
-    if (next.length < 6) {
+    if (next.length < MIN_PASSWORD_LENGTH) {
       setError(t('auth.register.errorPasswordLength'));
       return;
     }

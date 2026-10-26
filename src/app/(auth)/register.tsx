@@ -24,6 +24,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useNetworkDiagnosis } from '@/hooks/use-network-diagnosis';
 import { setAuthEntry } from '@/lib/auth-entry';
 import { translateAuthError } from '@/lib/auth-errors';
+import { MIN_PASSWORD_LENGTH } from '@/lib/auth-rules';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -93,7 +94,7 @@ export default function RegisterScreen() {
       setError(t('auth.register.errorEmpty'));
       return;
     }
-    if (password.length < 6) {
+    if (password.length < MIN_PASSWORD_LENGTH) {
       setError(t('auth.register.errorPasswordLength'));
       return;
     }

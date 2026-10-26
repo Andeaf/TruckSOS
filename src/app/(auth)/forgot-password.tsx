@@ -19,6 +19,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { translateAuthError } from '@/lib/auth-errors';
+import { MIN_PASSWORD_LENGTH } from '@/lib/auth-rules';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -74,7 +75,7 @@ export default function ForgotPasswordScreen() {
       setError(t('auth.otp.errorCode'));
       return;
     }
-    if (password.length < 6) {
+    if (password.length < MIN_PASSWORD_LENGTH) {
       setError(t('auth.register.errorPasswordLength'));
       return;
     }
