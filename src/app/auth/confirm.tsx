@@ -27,9 +27,15 @@ import { supabase } from '@/lib/supabase';
  *   - NATIV (Android 1.1.0 prin App Links; iOS doar dacă e deschis prin schema custom):
  *     linkul vine dintr-un tap, deci verificăm imediat; succes → `router.replace('/')`
  *     după ce sesiunea a ajuns în AuthProvider, iar garda duce la alegerea rolului.
+ *   - CU SESIUNE ACTIVĂ (26 oct 2026, AUDIT #13 / PLAN_1.1_FIX 1.1): pe nicio platformă NU
+ *     verificăm automat. `verifyOtp` ar înlocui tăcut sesiunea curentă cu contul din link — un
+ *     atacator și-ar putea trimite propriul link de activare unei victime conectate, care ar
+ *     ajunge să-și completeze profilul (telefonul) în contul lui. Arătăm cine e conectat și
+ *     cerem o alegere explicită: „Activează contul din link" (deconectare DOAR pe acest
+ *     dispozitiv, apoi verificare) sau „Rămân conectat".
  */
 
-type Phase = 'idle' | 'verifying' | 'done' | 'invalid' | 'network';
+type Phase = 'idle' | 'verifying' | 'switch' | 'done' | 'invalid' | 'network';
 
 const ACCEPTED_TYPES = ['signup', 'email'];
 const IS_WEB = Platform.OS === 'web';
@@ -46,15 +52,19 @@ export default function ConfirmEmailLinkScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const theme = useTheme();
-  const { session } = useAuth();
+  const { session, loading: authLoading } = useAuth();
 
   const tokenHash = firstParam(params.token_hash).trim();
   const linkType = firstParam(params.type).trim();
   const valid = tokenHash.length > 0 && ACCEPTED_TYPES.includes(linkType);
 
+  // Nativ: spinner până aflăm dacă există o sesiune (AuthProvider o citește din storage).
   const [phase, setPhase] = useState<Phase>(() =>
     !valid ? 'invalid' : IS_WEB ? 'idle' : 'verifying'
   );
+  // E-mailul contului conectat în clipa deschiderii linkului — rămâne afișat și după ce
+  // `session` devine null prin deconectarea cerută de utilizator.
+  const [signedInEmail, setSignedInEmail] = useState<string | null>(null);
   const [networkMessage, setNetworkMessage] = useState('');
   const [nativeVerified, setNativeVerified] = useState(false);
   const mounted = useRef(true);
@@ -90,14 +100,38 @@ export default function ConfirmEmailLinkScreen() {
     else setNativeVerified(true);
   }
 
-  // Nativ: verificare imediată, o singură dată (ref-ul ține și la montarea dublă din dev).
+  // Decizia se ia o singură dată, abia când AuthProvider știe dacă există o sesiune
+  // (ref-ul ține și la montarea dublă din dev):
+  //   - sesiune activă (nativ sau web) → ecranul „Ești deja conectat", fără nicio verificare;
+  //   - fără sesiune: nativ → verificare imediată (linkul vine dintr-un tap);
+  //                   web → rămâne pe buton (clienții de mail deschid linkurile în avans).
   useEffect(() => {
-    if (IS_WEB || !valid || started.current) return;
+    if (!valid || started.current || authLoading) return;
     started.current = true;
-    void verify();
-    // Rulează doar la montare: tokenul din link nu se schimbă pe același ecran.
+    if (session) {
+      setSignedInEmail(session.user.email ?? null);
+      setPhase('switch');
+      return;
+    }
+    if (!IS_WEB) void verify();
+    // Tokenul din link nu se schimbă pe același ecran; `verify` e stabil pentru acest token.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [valid, authLoading, session]);
+
+  // „Activează contul din link" cu o sesiune activă: deconectare DOAR pe acest dispozitiv
+  // (scope local — celelalte dispozitive ale contului curent rămân conectate), apoi verificarea.
+  async function switchToLinkedAccount() {
+    setPhase('verifying');
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
+    if (!mounted.current) return;
+    if (error) {
+      // Fără deconectare nu verificăm: altfel am ajunge exact în situația pe care o evităm.
+      setNetworkMessage(translateAuthError(error) ?? '');
+      setPhase('switch');
+      return;
+    }
+    await verify();
+  }
 
   // Nativ, după succes: predăm gărzii abia când sesiunea a ajuns în AuthProvider — altfel
   // ruta „/" fără sesiune ar fi trimisă la login.
@@ -107,6 +141,8 @@ export default function ConfirmEmailLinkScreen() {
 
   const goToLogin = () => router.replace('/(auth)/login' as never);
   const continueOnWeb = () => router.replace('/' as never);
+  // „Rămân conectat": nimic nu s-a schimbat; garda duce la ecranul rolului curent.
+  const staySignedIn = () => router.replace('/' as never);
   const openApp = () => {
     // Schema custom: o deschide orice versiune instalată (ruta /login din aplicație).
     // Pe web, ca în /p/[id]: navigare în aceeași filă, nu fereastră nouă.
@@ -164,6 +200,26 @@ export default function ConfirmEmailLinkScreen() {
             </ThemedText>
             <View style={styles.actions}>
               <Button title={t('auth.confirmLink.goToLogin')} onPress={goToLogin} />
+            </View>
+          </>
+        ) : phase === 'switch' ? (
+          <>
+            <ThemedText type="subtitle" style={styles.center}>
+              {t('auth.confirmLink.switchTitle')}
+            </ThemedText>
+            <ThemedText themeColor="textSecondary" style={styles.center}>
+              {t('auth.confirmLink.switchBody', { email: signedInEmail ?? '' })}
+            </ThemedText>
+            {networkMessage ? (
+              <ThemedText style={[styles.center, styles.error]}>{networkMessage}</ThemedText>
+            ) : null}
+            <View style={styles.actions}>
+              <Button title={t('auth.confirmLink.switchStay')} onPress={staySignedIn} />
+              <Button
+                variant="secondary"
+                title={t('auth.confirmLink.switchActivate')}
+                onPress={() => void switchToLinkedAccount()}
+              />
             </View>
           </>
         ) : (

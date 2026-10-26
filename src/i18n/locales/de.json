@@ -248,7 +248,11 @@
       "getIos": "Für iPhone laden",
       "continueWeb": "Im Web fortfahren",
       "errorBody": "Dieser Link ist abgelaufen oder wurde bereits verwendet. Melde dich mit E-Mail und Passwort an oder fordere in der App einen neuen Code an.",
-      "goToLogin": "Zur Anmeldung"
+      "goToLogin": "Zur Anmeldung",
+      "switchTitle": "Du bist bereits angemeldet",
+      "switchBody": "Du bist als {{email}} angemeldet. Dieser Link aktiviert ein anderes Konto: wenn du es aktivierst, wird das aktuelle Konto auf diesem Gerät abgemeldet.",
+      "switchActivate": "Konto aus dem Link aktivieren",
+      "switchStay": "Angemeldet bleiben"
     },
     "forgot": {
       "subtitle": "Gib die E-Mail deines Kontos ein — wir senden dir einen Code zum Zurücksetzen des Passworts.",

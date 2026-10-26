@@ -248,7 +248,11 @@
       "getIos": "Get it for iPhone",
       "continueWeb": "Continue on the web",
       "errorBody": "This link has expired or was already used. Sign in with your email and password, or request a new code in the app.",
-      "goToLogin": "Go to sign in"
+      "goToLogin": "Go to sign in",
+      "switchTitle": "You are already signed in",
+      "switchBody": "You are signed in as {{email}}. This link activates a different account: activating it signs the current account out on this device.",
+      "switchActivate": "Activate the account from the link",
+      "switchStay": "Stay signed in"
     },
     "forgot": {
       "subtitle": "Enter your account email — we'll send you a password reset code.",

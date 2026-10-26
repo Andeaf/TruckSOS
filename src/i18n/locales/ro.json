@@ -248,7 +248,11 @@
       "getIos": "Descarcă pentru iPhone",
       "continueWeb": "Continuă pe web",
       "errorBody": "Linkul a expirat sau a fost deja folosit. Conectează-te cu e-mailul și parola sau cere un cod nou din aplicație.",
-      "goToLogin": "Mergi la conectare"
+      "goToLogin": "Mergi la conectare",
+      "switchTitle": "Ești deja conectat",
+      "switchBody": "Ești conectat ca {{email}}. Acest link activează un alt cont: dacă îl activezi, contul curent va fi deconectat pe acest dispozitiv.",
+      "switchActivate": "Activează contul din link",
+      "switchStay": "Rămân conectat"
     },
     "forgot": {
       "subtitle": "Introdu email-ul contului — îți trimitem un cod de resetare a parolei.",
