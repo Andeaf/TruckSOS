@@ -348,10 +348,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       options: { data: { full_name: fullName } },
     });
     if (error) return { error: translateAuthError(error), needsConfirmation: false };
-    // Anti-enumerare: pentru un email deja confirmat Supabase întoarce un user „fals"
-    // fără identities și NU trimite nimic — altfel omul ar aștepta degeaba un cod.
+    // Anti-enumerare (26 oct 2026, AUDIT #41, decizia D2): pentru un email deja înregistrat Supabase
+    // întoarce un user „fals" fără identities și nu trimite nimic. Până acum transformam asta în
+    // „Există deja un cont" — adică dezvăluiam oricui dacă o adresă are cont. Acum ecranul arată
+    // același pas neutru („dacă adresa e nouă, primești un cod; dacă ai deja cont, intră cu
+    // parola"), cu linkul spre autentificare dedesubt.
     if (data.user && data.user.identities?.length === 0) {
-      return { error: i18n.t('authErrors.user_already_exists'), needsConfirmation: false };
+      return { error: null, needsConfirmation: true };
     }
     // Fără sesiune = confirmarea emailului e activă → ecranul cere codul primit pe mail.
     return { error: null, needsConfirmation: !data.session };

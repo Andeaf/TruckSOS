@@ -200,7 +200,7 @@
       "errorPasswordLength": "Parola trebuie să aibă cel puțin 8 caractere.",
       "errorPasswordMismatch": "Parolele nu coincid.",
       "verifyEmailTitle": "Verifică email-ul",
-      "verifyEmailMessage": "Ți-am trimis un cod de 6 cifre la\n{{email}}\n\nIntrodu-l mai jos ca să-ți confirmi contul.",
+      "verifyEmailMessage": "Dacă adresa\n{{email}}\nnu are încă un cont, primești un cod de 6 cifre în câteva secunde. Dacă ai deja cont, intră cu parola sau cere o parolă nouă.\n\nIntrodu codul mai jos ca să-ți confirmi contul.",
       "verifyButton": "Confirmă email-ul",
       "goToLogin": "Mergi la autentificare",
       "hasAccount": "Ai deja cont?",

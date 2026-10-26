@@ -200,7 +200,7 @@
       "errorPasswordLength": "Password must be at least 8 characters.",
       "errorPasswordMismatch": "Passwords don't match.",
       "verifyEmailTitle": "Verify your email",
-      "verifyEmailMessage": "We sent a 6-digit code to\n{{email}}\n\nEnter it below to confirm your account.",
+      "verifyEmailMessage": "If\n{{email}}\ndoes not have an account yet, you will receive a 6-digit code within a few seconds. If you already have an account, sign in with your password or request a new one.\n\nEnter the code below to confirm your account.",
       "verifyButton": "Confirm email",
       "goToLogin": "Go to sign in",
       "hasAccount": "Already have an account?",
