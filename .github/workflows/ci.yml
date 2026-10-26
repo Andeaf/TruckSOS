@@ -28,3 +28,26 @@ jobs:
 
       - name: Migrations follow the grants convention
         run: npm run check:migrations
+
+  db-tests:
+    # Faza 0.3 (PLAN_1.1_FIX, 26 oct 2026): toate migrările aplicate de la zero pe un Postgres local
+    # (supabase start), apoi testele pgTAP din supabase/tests/ (checklist-ul de securitate + testele
+    # negative ale fazelor următoare). Serviciile grele sunt excluse: aici contează doar baza.
+    name: Migrations + pgTAP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Postgres and apply all migrations
+        run: supabase start -x studio,imgproxy,mailpit,logflare,vector,edge-runtime,realtime,supavisor,postgres-meta
+
+      - name: pgTAP tests
+        run: supabase test db
+
+      - name: Stop
+        if: always()
+        run: supabase stop --no-backup
