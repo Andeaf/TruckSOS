@@ -146,21 +146,29 @@
       "title": "Curățare conturi",
       "back": "Înapoi",
       "section": "Întreținere",
-      "intro": "Șterge conturile create în interval care n-au nicio urmă de folosire: niciun anunț, mesaj, candidatură, anunț în Market, evaluare, raport, conversație, camion, favorit, token de notificări sau fișier, și fără telefon, firmă sau poză în profil. Adminii nu sunt atinși. Intervalul se oprește cu cel puțin 24 h în urmă, ca să nu prindă conturi aflate încă în înregistrare.",
+      "intro": "Listează conturile create în interval care n-au nicio urmă de folosire: niciun anunț, mesaj, candidatură, anunț în Market, evaluare, raport, conversație, camion, favorit, token de push, fișier și niciun telefon, firmă sau poză în profil. Adminii nu intră niciodată în listă.",
       "datesHint": "Date în formatul AAAA-LL-ZZ, ziua în UTC. „Până la” e exclusiv: conturile create în ziua aceea nu intră. Cel mult 31 de zile.",
       "from": "De la",
       "to": "Până la (exclusiv)",
       "datePlaceholder": "AAAA-LL-ZZ",
       "count": "Numără",
       "countResult": "Conturi fără activitate în interval: {{count}}",
-      "deleteButton": "Șterge conturile ({{count}})",
-      "confirmTitle": "Ștergi conturile?",
-      "confirmBody": "Conturi de șters: {{count}}. Ștergerea e definitivă și nu poate fi anulată. Continui?",
-      "deleted": "Conturi șterse: {{count}}",
       "invalidDate": "Dată invalidă. Folosește formatul AAAA-LL-ZZ (ex. 2026-10-01).",
       "invalidRange": "„De la” trebuie să fie înainte de „Până la”.",
       "tooRecent": "„Până la” poate fi cel târziu {{maxTo}} (intervalul se oprește cu 24 h în urmă).",
-      "tooLong": "Intervalul poate avea cel mult 31 de zile."
+      "tooLong": "Intervalul poate avea cel mult 31 de zile.",
+      "dryRunNote": "Doar numărare și listare. Ștergerea reală se activează în faza 11 (MFA pentru admini); până atunci serverul o refuză.",
+      "rowMeta": "Rol: {{role}} · înscris: {{created}} · ultima conectare: {{lastSignIn}} · {{provider}} · {{confirmed}}",
+      "noProfile": "fără profil",
+      "never": "niciodată",
+      "confirmed": "e-mail confirmat",
+      "unconfirmed": "e-mail neconfirmat",
+      "criterion": {
+        "fara_profil": "Cont fără profil (înscrierea nu s-a terminat)",
+        "email_neconfirmat": "E-mail neconfirmat, profil gol",
+        "nelogat_dupa_inscriere": "Profil gol, nicio conectare după înscriere",
+        "profil_gol_fara_activitate": "Profil gol, fără nicio activitate"
+      }
     }
   },
   "auth": {

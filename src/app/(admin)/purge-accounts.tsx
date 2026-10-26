@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -11,14 +11,15 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useWideLayout } from '@/components/web-sidebar';
 import { Radius, Spacing } from '@/constants/theme';
-import { purgeAccounts } from '@/hooks/use-admin';
+import { purgeAccountsDryRun, type PurgeCandidate } from '@/hooks/use-admin';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { useTheme } from '@/hooks/use-theme';
 
 /**
  * Curățare după un val de conturi-bot (RPC admin_purge_accounts, migrarea
- * 20261031000100_hygiene_limits §8). Întâi „Numără” (dry run), apoi ștergerea, cu
- * confirmare explicită, pe EXACT intervalul numărat.
+ * 20261031000100_hygiene_limits §8). DOAR DRY-RUN până la faza 11 (decizia lui David,
+ * 26 oct 2026): serverul refuză ștergerea reală (`purge_disabled_until_phase_11`), iar ecranul
+ * doar numără și listează conturile care AR FI șterse (criteriu, înscriere, ultima activitate, rol).
  *
  * Datele sunt zile UTC (AAAA-LL-ZZ), iar „Până la” e exclusiv — la fel ca serverul
  * (`created_at >= p_from AND created_at < p_to`). Validarea din client oglindește
@@ -49,10 +50,19 @@ function latestToDay(): string {
   return utcDay(Date.now() - DAY_MS);
 }
 
+/** Momentul ISO → „AAAA-LL-ZZ HH:MM” în UTC (aceeași bază ca intervalul). */
+function fmtUtc(iso: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toISOString().slice(0, 16).replace('T', ' ');
+}
+
 interface Counted {
   from: Date;
   to: Date;
   count: number;
+  accounts: PurgeCandidate[];
 }
 
 export default function AdminPurgeAccounts() {
@@ -68,8 +78,7 @@ export default function AdminPurgeAccounts() {
   const [toError, setToError] = useState<string | undefined>();
   const [error, setError] = useState<string | null>(null);
   const [counted, setCounted] = useState<Counted | null>(null);
-  const [deleted, setDeleted] = useState<number | null>(null);
-  const [busy, setBusy] = useState<'count' | 'delete' | null>(null);
+  const [busy, setBusy] = useState(false);
 
   function goBack() {
     // Pe web, după reîncărcarea paginii, istoricul e gol.
@@ -77,10 +86,8 @@ export default function AdminPurgeAccounts() {
     else router.replace('/(admin)/dashboard' as never);
   }
 
-  /** Orice schimbare de dată invalidează numărătoarea: ștergerea trebuie să vizeze intervalul numărat. */
   function resetOutcome() {
     setCounted(null);
-    setDeleted(null);
     setError(null);
   }
 
@@ -124,43 +131,17 @@ export default function AdminPurgeAccounts() {
     resetOutcome();
     const range = validate();
     if (!range) return;
-    setBusy('count');
-    const { data, error: err } = await purgeAccounts(range.from, range.to, true);
-    setBusy(null);
+    setBusy(true);
+    const { data, error: err } = await purgeAccountsDryRun(range.from, range.to);
+    setBusy(false);
     if (err) setError(err);
-    else if (data) setCounted({ ...range, count: data.count });
+    else if (data) setCounted({ ...range, count: data.count, accounts: data.accounts });
   }
 
-  /** Confirmarea e așteptată ÎN handler-ul protejat, deci un al doilea tap cât e deschis dialogul iese imediat. */
-  function confirmDelete(count: number): Promise<boolean> {
-    return new Promise((resolve) => {
-      Alert.alert(
-        t('admin.purge.confirmTitle'),
-        t('admin.purge.confirmBody', { count }),
-        [
-          { text: t('admin.common.cancel'), style: 'cancel', onPress: () => resolve(false) },
-          { text: t('admin.common.delete'), style: 'destructive', onPress: () => resolve(true) },
-        ],
-        { cancelable: true, onDismiss: () => resolve(false) }
-      );
-    });
-  }
-
-  async function handleDelete() {
-    if (!counted || counted.count <= 0) return;
-    const ok = await confirmDelete(counted.count);
-    if (!ok) return;
-    setError(null);
-    setBusy('delete');
-    const { data, error: err } = await purgeAccounts(counted.from, counted.to, false);
-    setBusy(null);
-    if (err) {
-      setError(err);
-      return;
-    }
-    // Numărul real întors de server (poate diferi de numărătoare dacă între timp un cont a devenit activ).
-    setCounted(null);
-    setDeleted(data?.count ?? 0);
+  function criterionLabel(code: string): string {
+    const key = `admin.purge.criterion.${code}`;
+    const text = t(key);
+    return text === key ? code : text;
   }
 
   const content = (
@@ -168,6 +149,12 @@ export default function AdminPurgeAccounts() {
       contentContainerStyle={[styles.scroll, wide && w.scroll]}
       keyboardShouldPersistTaps="handled">
       <ThemedText themeColor="textSecondary">{t('admin.purge.intro')}</ThemedText>
+      <View style={[styles.notice, { backgroundColor: theme.neutralBg }]}>
+        <Feather name="lock" size={18} color={theme.textSecondary} />
+        <ThemedText type="small" themeColor="textSecondary" style={styles.noticeText}>
+          {t('admin.purge.dryRunNote')}
+        </ThemedText>
+      </View>
 
       <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
         <View style={[styles.dates, wide && w.dates]}>
@@ -203,8 +190,8 @@ export default function AdminPurgeAccounts() {
           title={t('admin.purge.count')}
           onPress={() => void guard(handleCount)}
           variant="secondary"
-          loading={busy === 'count'}
-          disabled={busy !== null}
+          loading={busy}
+          disabled={busy}
         />
       </View>
 
@@ -220,24 +207,25 @@ export default function AdminPurgeAccounts() {
           <ThemedText style={styles.resultText}>
             {t('admin.purge.countResult', { count: counted.count })}
           </ThemedText>
-          {counted.count > 0 ? (
-            <Button
-              title={t('admin.purge.deleteButton', { count: counted.count })}
-              onPress={() => void guard(handleDelete)}
-              variant="danger"
-              loading={busy === 'delete'}
-              disabled={busy !== null}
-            />
-          ) : null}
-        </View>
-      ) : null}
-
-      {deleted !== null ? (
-        <View style={[styles.notice, { backgroundColor: theme.successBg }]}>
-          <Feather name="check-circle" size={18} color={theme.successText} />
-          <ThemedText themeColor="successText" style={styles.noticeText}>
-            {t('admin.purge.deleted', { count: deleted })}
-          </ThemedText>
+          {counted.accounts.map((a) => (
+            <View key={a.id} style={[styles.row, { borderTopColor: theme.backgroundSelected }]}>
+              <ThemedText style={styles.rowTitle} numberOfLines={1}>
+                {a.email ?? a.id}
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {criterionLabel(a.criterion)}
+              </ThemedText>
+              <ThemedText type="small" themeColor="textTertiary">
+                {t('admin.purge.rowMeta', {
+                  role: a.role ?? t('admin.purge.noProfile'),
+                  created: fmtUtc(a.createdAt) ?? '-',
+                  lastSignIn: fmtUtc(a.lastSignInAt) ?? t('admin.purge.never'),
+                  provider: a.provider ?? '-',
+                  confirmed: a.emailConfirmed ? t('admin.purge.confirmed') : t('admin.purge.unconfirmed'),
+                })}
+              </ThemedText>
+            </View>
+          ))}
         </View>
       ) : null}
     </ScrollView>
@@ -277,6 +265,8 @@ const styles = StyleSheet.create({
   },
   noticeText: { flex: 1 },
   resultText: { fontWeight: '700', fontSize: 16 },
+  row: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: Spacing.two, gap: 2 },
+  rowTitle: { fontWeight: '600' },
 });
 
 /** Stilurile variantei late (ca în Utilizatori, design 10d). */

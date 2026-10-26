@@ -628,7 +628,11 @@ SELECT cron.schedule(
 -- Conturile create în interval, fără NICIO urmă de folosire reală (anunț, mesaj, candidatură, listing,
 -- evaluare, raport, conversație, camion, favorit, token de push, fișier în Storage, profil completat
 -- cu telefon/firmă/poză) și care nu sunt admini. Intervalul se termină cu cel puțin 24 h în urmă, ca
--- să nu prindă conturi aflate în onboarding. p_dry_run = true (implicit) doar numără.
+-- să nu prindă conturi aflate în onboarding.
+-- DOAR DRY-RUN până la FAZA 11 (decizia lui David, 26 oct 2026): ștergerea reală se activează abia
+-- când is_admin() va cere aal2 (MFA) — faza 11 înlocuiește funcția și scoate gardă de mai jos.
+-- Dry-run-ul întoarce și lista conturilor (criteriu, înscriere, ultima activitate, rol), ca adminul
+-- să vadă ce ar fi șters.
 CREATE OR REPLACE FUNCTION public.admin_purge_accounts(p_from timestamptz, p_to timestamptz, p_dry_run boolean DEFAULT true)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -636,39 +640,56 @@ CREATE OR REPLACE FUNCTION public.admin_purge_accounts(p_from timestamptz, p_to 
  SET search_path = ''
 AS $function$
 DECLARE
-  v_ids uuid[];
+  v_accounts jsonb;
+  v_count integer;
 BEGIN
   IF NOT public.is_admin() THEN RAISE EXCEPTION 'not_admin'; END IF;
+  IF NOT p_dry_run THEN
+    -- Faza 11 (is_admin cu aal2) activează ștergerea; până atunci funcția nu șterge nimic.
+    RAISE EXCEPTION 'purge_disabled_until_phase_11';
+  END IF;
   IF p_from IS NULL OR p_to IS NULL OR p_to <= p_from OR p_to - p_from > interval '31 days'
      OR p_to > now() - interval '24 hours' THEN
     RAISE EXCEPTION 'bad_interval';
   END IF;
-  SELECT coalesce(array_agg(u.id), '{}') INTO v_ids
-    FROM auth.users u
-   WHERE u.created_at >= p_from AND u.created_at < p_to
-     AND NOT EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = u.id
-                        AND (p.role = 'admin' OR p.phone IS NOT NULL OR p.company_name IS NOT NULL OR p.avatar_path IS NOT NULL))
-     AND NOT EXISTS (SELECT 1 FROM public.announcements a WHERE a.driver_id = u.id OR a.mechanic_id = u.id)
-     AND NOT EXISTS (SELECT 1 FROM public.messages m WHERE m.sender_id = u.id)
-     AND NOT EXISTS (SELECT 1 FROM public.channel_messages cm WHERE cm.sender_id = u.id)
-     AND NOT EXISTS (SELECT 1 FROM public.applications ap WHERE ap.mechanic_id = u.id)
-     AND NOT EXISTS (SELECT 1 FROM public.conversations c WHERE c.driver_id = u.id OR c.mechanic_id = u.id)
-     AND NOT EXISTS (SELECT 1 FROM public.market_listings l WHERE l.seller_id = u.id)
-     AND NOT EXISTS (SELECT 1 FROM public.ratings r WHERE r.driver_id = u.id OR r.mechanic_id = u.id)
-     AND NOT EXISTS (SELECT 1 FROM public.reports rp WHERE rp.reporter_id = u.id OR rp.reported_user_id = u.id)
-     AND NOT EXISTS (SELECT 1 FROM public.trucks t WHERE t.driver_id = u.id)
-     AND NOT EXISTS (SELECT 1 FROM public.favorite_mechanics f WHERE f.driver_id = u.id OR f.mechanic_id = u.id)
-     AND NOT EXISTS (SELECT 1 FROM public.push_tokens pt WHERE pt.user_id = u.id)
-     AND NOT EXISTS (SELECT 1 FROM storage.objects o WHERE o.owner_id = u.id::text);
-  IF p_dry_run THEN
-    RETURN jsonb_build_object('dry_run', true, 'count', coalesce(array_length(v_ids, 1), 0));
-  END IF;
-  -- Ștergerea din auth.users declanșează on_auth_user_deleted → handle_auth_user_deleted (curățare).
-  DELETE FROM auth.users WHERE id = ANY (v_ids);
-  INSERT INTO public.admin_audit_log (admin_id, action, target_type, target_id, details)
-  VALUES (auth.uid(), 'purge_accounts', 'user', NULL,
-          jsonb_build_object('from', p_from, 'to', p_to, 'count', coalesce(array_length(v_ids, 1), 0)));
-  RETURN jsonb_build_object('dry_run', false, 'count', coalesce(array_length(v_ids, 1), 0));
+  SELECT count(*), coalesce(jsonb_agg(jsonb_build_object(
+           'id', c.id,
+           'email', c.email,
+           'role', c.role,
+           'provider', c.provider,
+           'created_at', c.created_at,
+           'last_sign_in_at', c.last_sign_in_at,
+           'email_confirmed', c.email_confirmed,
+           'criterion', CASE
+             WHEN c.role IS NULL THEN 'fara_profil'
+             WHEN NOT c.email_confirmed THEN 'email_neconfirmat'
+             WHEN c.last_sign_in_at IS NULL OR c.last_sign_in_at < c.created_at + interval '1 minute' THEN 'nelogat_dupa_inscriere'
+             ELSE 'profil_gol_fara_activitate' END
+         ) ORDER BY c.created_at), '[]'::jsonb)
+    INTO v_count, v_accounts
+    FROM (
+      SELECT u.id, u.email, u.created_at, u.last_sign_in_at,
+             (u.email_confirmed_at IS NOT NULL) AS email_confirmed,
+             (SELECT p.role FROM public.profiles p WHERE p.id = u.id) AS role,
+             (SELECT string_agg(i.provider, ',') FROM auth.identities i WHERE i.user_id = u.id) AS provider
+        FROM auth.users u
+       WHERE u.created_at >= p_from AND u.created_at < p_to
+         AND NOT EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = u.id
+                            AND (p.role = 'admin' OR p.phone IS NOT NULL OR p.company_name IS NOT NULL OR p.avatar_path IS NOT NULL))
+         AND NOT EXISTS (SELECT 1 FROM public.announcements a WHERE a.driver_id = u.id OR a.mechanic_id = u.id)
+         AND NOT EXISTS (SELECT 1 FROM public.messages m WHERE m.sender_id = u.id)
+         AND NOT EXISTS (SELECT 1 FROM public.channel_messages cm WHERE cm.sender_id = u.id)
+         AND NOT EXISTS (SELECT 1 FROM public.applications ap WHERE ap.mechanic_id = u.id)
+         AND NOT EXISTS (SELECT 1 FROM public.conversations c WHERE c.driver_id = u.id OR c.mechanic_id = u.id)
+         AND NOT EXISTS (SELECT 1 FROM public.market_listings l WHERE l.seller_id = u.id)
+         AND NOT EXISTS (SELECT 1 FROM public.ratings r WHERE r.driver_id = u.id OR r.mechanic_id = u.id)
+         AND NOT EXISTS (SELECT 1 FROM public.reports rp WHERE rp.reporter_id = u.id OR rp.reported_user_id = u.id)
+         AND NOT EXISTS (SELECT 1 FROM public.trucks t WHERE t.driver_id = u.id)
+         AND NOT EXISTS (SELECT 1 FROM public.favorite_mechanics f WHERE f.driver_id = u.id OR f.mechanic_id = u.id)
+         AND NOT EXISTS (SELECT 1 FROM public.push_tokens pt WHERE pt.user_id = u.id)
+         AND NOT EXISTS (SELECT 1 FROM storage.objects o WHERE o.owner_id = u.id::text)
+    ) c;
+  RETURN jsonb_build_object('dry_run', true, 'count', v_count, 'accounts', v_accounts);
 END; $function$;
 REVOKE ALL ON FUNCTION public.admin_purge_accounts(timestamptz, timestamptz, boolean) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_purge_accounts(timestamptz, timestamptz, boolean) TO authenticated;

@@ -316,20 +316,60 @@ export function fetchAnnouncementsSeries(since: string) {
 }
 
 // ── Curățare conturi-bot (migrarea 20261031000100_hygiene_limits, §8) ────────
-/** Conturile create în [from, to) fără nicio urmă de folosire. dryRun = true doar numără.
- *  Serverul cere: admin, to ≤ acum − 24 h, from < to, interval ≤ 31 zile (altfel `bad_interval`). */
-export async function purgeAccounts(
+export interface PurgeCandidate {
+  id: string;
+  email: string | null;
+  role: string | null;
+  provider: string | null;
+  createdAt: string;
+  lastSignInAt: string | null;
+  emailConfirmed: boolean;
+  /** fara_profil | email_neconfirmat | nelogat_dupa_inscriere | profil_gol_fara_activitate */
+  criterion: string;
+}
+
+/** Conturile create în [from, to) fără nicio urmă de folosire — DOAR dry-run până la faza 11
+ *  (serverul refuză ștergerea cu `purge_disabled_until_phase_11`). Serverul mai cere: admin,
+ *  to ≤ acum − 24 h, from < to, interval ≤ 31 zile (altfel `bad_interval`). */
+export async function purgeAccountsDryRun(
   from: Date,
-  to: Date,
-  dryRun: boolean
-): Promise<{ data: { dryRun: boolean; count: number } | null; error: string | null }> {
+  to: Date
+): Promise<{ data: { count: number; accounts: PurgeCandidate[] } | null; error: string | null }> {
   // `as never`: admin_purge_accounts nu e încă în tipurile generate — dispare la regenerarea lor.
   const { data, error } = await supabase.rpc('admin_purge_accounts' as never, {
     p_from: from.toISOString(),
     p_to: to.toISOString(),
-    p_dry_run: dryRun,
+    p_dry_run: true,
   } as never);
   if (error) return { data: null, error: translateDbError(error) };
-  const row = data as { dry_run: boolean; count: number } | null;
-  return { data: row ? { dryRun: row.dry_run, count: row.count } : null, error: null };
+  const row = data as {
+    count: number;
+    accounts: {
+      id: string;
+      email: string | null;
+      role: string | null;
+      provider: string | null;
+      created_at: string;
+      last_sign_in_at: string | null;
+      email_confirmed: boolean;
+      criterion: string;
+    }[];
+  } | null;
+  if (!row) return { data: null, error: null };
+  return {
+    data: {
+      count: row.count,
+      accounts: (row.accounts ?? []).map((a) => ({
+        id: a.id,
+        email: a.email,
+        role: a.role,
+        provider: a.provider,
+        createdAt: a.created_at,
+        lastSignInAt: a.last_sign_in_at,
+        emailConfirmed: a.email_confirmed,
+        criterion: a.criterion,
+      })),
+    },
+    error: null,
+  };
 }
