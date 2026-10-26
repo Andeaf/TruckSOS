@@ -18,6 +18,7 @@
         }
       },
       "predictiveBackGestureEnabled": false,
+      "allowBackup": false,
       "package": "com.andeaf.trucksos",
       "googleServicesFile": "./google-services.json",
       "blockedPermissions": [
