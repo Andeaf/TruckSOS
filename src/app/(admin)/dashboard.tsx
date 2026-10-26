@@ -40,6 +40,11 @@ export default function AdminDashboard() {
     router.replace(mode === 'driver' ? '/(driver)/announcements' : '/(mechanic)/feed');
   }
 
+  // `as never`: ruta nouă intră în tipurile typedRoutes abia la regenerarea lor de dev server.
+  function openPurge() {
+    router.push('/(admin)/purge-accounts' as never);
+  }
+
   const loadStats = useCallback(
     () =>
       fetchDashboardStats().then(({ data }) => {
@@ -184,6 +189,17 @@ export default function AdminDashboard() {
               </View>
             </View>
           </View>
+
+          <View style={w.section}>
+            <ThemedText themeColor="textTertiary" style={w.sectionLabel}>
+              {t('admin.purge.section')}
+            </ThemedText>
+            <View style={w.userModeRow}>
+              <View style={w.userModeButton}>
+                <Button title={t('admin.purge.title')} onPress={openPurge} variant="secondary" />
+              </View>
+            </View>
+          </View>
         </ScrollView>
         {chartModal}
       </ThemedView>
@@ -240,6 +256,13 @@ export default function AdminDashboard() {
             onPress={() => enterAs('mechanic')}
             variant="secondary"
           />
+        </View>
+
+        <View style={styles.userMode}>
+          <ThemedText themeColor="textSecondary" type="small" style={styles.sectionTitle}>
+            {t('admin.purge.section')}
+          </ThemedText>
+          <Button title={t('admin.purge.title')} onPress={openPurge} variant="secondary" />
         </View>
       </ScrollView>
       {chartModal}

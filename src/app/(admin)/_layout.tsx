@@ -97,6 +97,8 @@ export default function AdminLayout() {
         }}
         listeners={{ tabPress: refreshPending }}
       />
+      {/* Ecran deschis din Panou, ascuns din bară și din sidebar (href: null). */}
+      <Tabs.Screen name="purge-accounts" options={{ href: null, title: t('admin.purge.title') }} />
     </Tabs>
   );
 }
