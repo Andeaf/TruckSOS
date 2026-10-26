@@ -146,7 +146,7 @@ src/
   i18n/                i18next setup + ro / en / de resources
   types/               domain types + generated Supabase schema
 supabase/
-  migrations/          ordered SQL migrations (schema, RLS, RPC, triggers, cron)
+  migrations/          ordered SQL migrations (schema, RLS, RPC, triggers, cron), named <YYYYMMDDHHMMSS>_<name>.sql
   functions/           Edge Functions (Deno): delete-account, cleanup-announcements
 web/                   legal pages (privacy, terms, account deletion) served at trucksos.net
 public/                web static assets, App Links / Universal Links files, CSP headers

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Verifică, în CI și local (`npm run check:migrations`), că migrațiile noi respectă
-// convenția de grant-uri din 20261025_grants_baseline.sql. Din 30 oct 2026 Supabase
+// convenția de grant-uri din 20261025000100_grants_baseline.sql. Din 30 oct 2026 Supabase
 // nu mai acordă automat privilegii Data API pe obiectele noi din `public`: un tabel
 // creat fără GRANT merge în Studio și pică în aplicație cu „permission denied”.
 //
@@ -13,7 +13,8 @@
 //   CREATE VIEW v       → GRANT SELECT … ON v TO …
 //                       → dacă GRANT-ul include anon: view-ul e `security_invoker = true`
 //   CREATE FUNCTION f   → (dacă nu întoarce trigger) REVOKE EXECUTE ON FUNCTION f … FROM PUBLIC
-//   numele fișierului   → YYYYMMDD_descriere.sql
+//   numele fișierului   → YYYYMMDDHHMMSS_descriere.sql (versiune unică de 14 cifre; din 25 oct 2026,
+//                         faza 0.1 din PLAN_1.1_FIX — CLI-ul Supabase cere versiuni unice)
 //
 // Ieșire: lista problemelor `fișier:linie — mesaj`; cod de ieșire 1 dacă există vreuna.
 // Comentariile și corpurile $$ … $$ sunt ignorate la detecție (dar grant-urile trebuie
@@ -125,13 +126,17 @@ function checkFile(file) {
   }
 }
 
-// `_TEST_*` și `*_ALL_*` sunt fișiere locale (gitignorate): teste și concatenări, nu migrații.
+// Helperele manuale (`_TEST_*`, `*_ALL_*`) stau în supabase/checks/ (gitignorate); aici sunt doar migrări.
 const files = readdirSync(MIGRATIONS_DIR)
   .filter((f) => f.endsWith('.sql') && !f.startsWith('_') && !/_TEST_|_ALL_/.test(f))
   .sort();
 
+const versions = new Set();
 for (const file of files) {
-  if (!/^\d{8}_[a-z0-9_]+\.sql$/.test(file)) report(file, 1, 'numele nu respectă YYYYMMDD_descriere.sql');
+  if (!/^\d{14}_[a-z0-9_]+\.sql$/.test(file)) report(file, 1, 'numele nu respectă YYYYMMDDHHMMSS_descriere.sql (14 cifre)');
+  const version = file.slice(0, 14);
+  if (versions.has(version)) report(file, 1, `versiunea ${version} e folosită de două fișiere (CLI-ul cere versiuni unice)`);
+  versions.add(version);
   if (file.slice(0, 8) < CONVENTION_SINCE) continue;
   checkFile(file);
 }

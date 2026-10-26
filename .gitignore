@@ -3,11 +3,12 @@
 # ─── Planuri & helpere de test (rămân doar local, nu ajung pe Git) ───────────
 # Planurile de fază sunt documente de lucru; SEED-urile și _TEST_-urile sunt
 # helpere rulate manual în Studio, nu migrări reale. Fișierul *_ALL_* e doar
-# concatenarea migrărilor individuale (care rămân versionate).
+# concatenarea migrărilor individuale (care rămân versionate). Din 25 oct 2026
+# helperele stau în supabase/checks/ (supabase/tests/ e rezervat testelor pgTAP din CI).
 PLAN*.md
 SEED_*.sql
-supabase/migrations/_TEST_*.sql
-supabase/migrations/*_ALL_*.sql
+supabase/checks/_TEST_*.sql
+supabase/checks/*_ALL_*.sql
 
 # ─── Dependencies ────────────────────────────────────────────────────────────
 node_modules/

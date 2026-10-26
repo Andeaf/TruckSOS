@@ -218,7 +218,7 @@ export async function registerPushToken(userId: string): Promise<string | null> 
     // RPC SECURITY DEFINER: revendică tokenul pentru contul curent. Un `upsert` direct
     // NU poate muta un token de pe alt cont (RLS UPDATE cere user_id = auth.uid() pe
     // rândul VECHI) → tokenul ar rămâne legat de contul precedent și notificările ar
-    // ajunge pe dispozitivul greșit. Vezi 20260715_faza14_fix_push_token_claim.sql.
+    // ajunge pe dispozitivul greșit. Vezi 20260715000700_faza14_fix_push_token_claim.sql.
     // Supabase NU aruncă la eșec (întoarce {error}) — netratat, tokenul ar părea
     // înregistrat deși n-a intrat în DB (bug găsit 22 iul: RPC-ul lipsea din Studio).
     // 2 sept 2026: un singur apel, fără retry, a costat 83% din tokenuri — orice

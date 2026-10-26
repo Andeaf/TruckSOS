@@ -1,5 +1,5 @@
 // 23 aug 2026 — Edge Function `cleanup-announcements`
-// Rulează ORAR (pg_cron + pg_net, vezi migrarea 20260823_cleanup_cron.sql) și aplică
+// Rulează ORAR (pg_cron + pg_net, vezi migrarea 20260823000100_cleanup_cron.sql) și aplică
 // politica de retenție decisă pe 23 aug:
 //   1. Anunțurile `open` mai vechi de 30h → `cancelled` (expiră: dispar din feed,
 //      dar RÂNDUL rămâne — istoricul șoferului și RLS-ul de rating au nevoie de el).
