@@ -27,7 +27,7 @@ export function AccountGateSheet() {
   const router = useRouter();
   const pathname = usePathname();
   const segments = useSegments() as string[];
-  const { reason, close } = useAccountGateSheet();
+  const { reason, link, close } = useAccountGateSheet();
 
   // Conținutul rămâne cât durează animația de închidere (reason devine null instant).
   const lastShown = useRef(reason);
@@ -41,6 +41,11 @@ export function AccountGateSheet() {
    * (`resolvePendingLink`). Din ecranele de autentificare nu ținem nimic minte.
    */
   function rememberCurrentScreen() {
+    // 25 oct 2026: ecranul cerut explicit (detaliul pe care a apăsat) are prioritate.
+    if (link) {
+      setPendingLink(link);
+      return;
+    }
     const group = segments[0];
     if (group === '(auth)') return;
     const isGroup = !!group && group.startsWith('(') && group.endsWith(')');

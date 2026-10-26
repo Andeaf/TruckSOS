@@ -170,7 +170,7 @@
       "errorEmpty": "Please enter your email and password.",
       "noAccountForSignIn": "There's no account for the sign-in you used. Tap “Sign up” to create one.",
       "forgotPassword": "Forgot your password?",
-      "continueAsGuest": "Continue without an account"
+      "continueAsGuest": "Try the app as a visitor"
     },
     "social": {
       "or": "or",
@@ -1044,6 +1044,9 @@
       "translate": "Create an account to translate the announcement.",
       "marketPublish": "Create an account to post on the Market.",
       "marketContact": "Create an account to contact the seller.",
+      "viewAnnouncement": "Create an account to see the announcement details.",
+      "viewProfile": "Create an account to see the profile.",
+      "viewListing": "Create an account to see the Market listing details.",
       "generic": "Create an account to use everything TruckSOS offers."
     }
   },

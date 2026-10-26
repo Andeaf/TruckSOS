@@ -18,6 +18,7 @@ import {
   Shadows,
   Spacing,
 } from '@/constants/theme';
+import { useAccountGate } from '@/hooks/use-account-gate';
 import { useAuth } from '@/hooks/use-auth';
 import { useGuestOpenAnnouncements } from '@/hooks/use-guest-data';
 import { useResolvedScheme } from '@/hooks/use-settings';
@@ -34,6 +35,7 @@ export function GuestAnnouncementsScreen() {
   const scheme = useResolvedScheme();
   const insets = useSafeAreaInsets();
   const { hasDraft } = useAuth();
+  const { requireAccount } = useAccountGate();
   const { announcements, loading, error, refresh } = useGuestOpenAnnouncements();
 
   useFocusEffect(
@@ -72,12 +74,8 @@ export function GuestAnnouncementsScreen() {
           <AnnouncementCard
             announcement={item}
             driverName={item.driver?.full_name}
-            onPress={() =>
-              router.push({
-                pathname: '/(guest)/announcements/[id]',
-                params: { id: item.id },
-              } as never)
-            }
+            // 25 oct 2026: detaliile anunțului se văd doar cu cont; după cont revine pe el.
+            onPress={() => requireAccount('viewAnnouncement', `/(guest)/announcements/${item.id}`)}
           />
         )}
         ListEmptyComponent={

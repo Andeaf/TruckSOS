@@ -27,9 +27,9 @@ function isLangPref(value: string | null): value is LangPref {
 export async function loadThemePref(): Promise<ThemePref> {
   try {
     const stored = await AsyncStorage.getItem(THEME_KEY);
-    return isThemePref(stored) ? stored : 'auto';
+    return isThemePref(stored) ? stored : 'light';
   } catch {
-    return 'auto';
+    return 'light';
   }
 }
 

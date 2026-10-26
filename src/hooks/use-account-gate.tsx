@@ -21,12 +21,21 @@ export type AccountGateReason =
   | 'translate'
   | 'marketPublish'
   | 'marketContact'
+  | 'viewAnnouncement'
+  | 'viewProfile'
+  | 'viewListing'
   | 'generic';
 
 interface AccountGateContextValue {
-  requireAccount: (reason: AccountGateReason) => boolean;
-  /** Pentru foaie: motivul afișat acum (`null` = închisă). */
+  /**
+   * `link` (opțional, 25 oct 2026): ecranul pe care omul l-a cerut (de ex. detaliul unui
+   * anunț) — după cont revine ACOLO, nu pe lista de unde a apăsat (foaia îl salvează ca
+   * link amânat, cu grupul `(guest)`, tradus apoi de `resolvePendingLink`).
+   */
+  requireAccount: (reason: AccountGateReason, link?: string) => boolean;
+  /** Pentru foaie: motivul afișat acum (`null` = închisă) și ecranul cerut. */
   reason: AccountGateReason | null;
+  link: string | null;
   close: () => void;
 }
 
@@ -35,12 +44,14 @@ const AccountGateContext = createContext<AccountGateContextValue | null>(null);
 export function AccountGateProvider({ children }: { children: ReactNode }) {
   const { session } = useAuth();
   const [reason, setReason] = useState<AccountGateReason | null>(null);
+  const [link, setLink] = useState<string | null>(null);
   const hasSession = !!session;
 
   const requireAccount = useCallback(
-    (next: AccountGateReason) => {
+    (next: AccountGateReason, nextLink?: string) => {
       if (hasSession) return true;
       setReason(next);
+      setLink(nextLink ?? null);
       return false;
     },
     [hasSession]
@@ -49,8 +60,8 @@ export function AccountGateProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     // Odată cu sesiunea (login din altă parte) foaia nu mai are ce căuta pe ecran.
-    () => ({ requireAccount, reason: hasSession ? null : reason, close }),
-    [requireAccount, reason, hasSession, close]
+    () => ({ requireAccount, reason: hasSession ? null : reason, link, close }),
+    [requireAccount, reason, link, hasSession, close]
   );
 
   return <AccountGateContext.Provider value={value}>{children}</AccountGateContext.Provider>;
@@ -62,13 +73,19 @@ function useAccountGateContext(): AccountGateContextValue {
   return ctx;
 }
 
-export function useAccountGate(): { requireAccount: (reason: AccountGateReason) => boolean } {
+export function useAccountGate(): {
+  requireAccount: (reason: AccountGateReason, link?: string) => boolean;
+} {
   const { requireAccount } = useAccountGateContext();
   return { requireAccount };
 }
 
 /** Doar pentru `AccountGateSheet`. */
-export function useAccountGateSheet(): { reason: AccountGateReason | null; close: () => void } {
-  const { reason, close } = useAccountGateContext();
-  return { reason, close };
+export function useAccountGateSheet(): {
+  reason: AccountGateReason | null;
+  link: string | null;
+  close: () => void;
+} {
+  const { reason, link, close } = useAccountGateContext();
+  return { reason, link, close };
 }

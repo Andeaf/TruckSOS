@@ -170,7 +170,7 @@
       "errorEmpty": "Bitte E-Mail und Passwort eingeben.",
       "noAccountForSignIn": "Für diese Anmeldung gibt es kein Konto. Tippe auf „Registrieren“, um eines zu erstellen.",
       "forgotPassword": "Passwort vergessen?",
-      "continueAsGuest": "Ohne Konto fortfahren"
+      "continueAsGuest": "App als Besucher ausprobieren"
     },
     "social": {
       "or": "oder",
@@ -1044,6 +1044,9 @@
       "translate": "Erstelle ein Konto, um die Anzeige zu übersetzen.",
       "marketPublish": "Erstelle ein Konto, um im Markt zu inserieren.",
       "marketContact": "Erstelle ein Konto, um den Verkäufer zu kontaktieren.",
+      "viewAnnouncement": "Erstelle ein Konto, um die Details der Anzeige zu sehen.",
+      "viewProfile": "Erstelle ein Konto, um das Profil zu sehen.",
+      "viewListing": "Erstelle ein Konto, um die Details der Markt-Anzeige zu sehen.",
       "generic": "Erstelle ein Konto, um alles in TruckSOS zu nutzen."
     }
   },

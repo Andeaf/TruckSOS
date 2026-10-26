@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { EmptyState } from '@/components/empty-state';
@@ -9,6 +9,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { ThemedView } from '@/components/themed-view';
 import { Input } from '@/components/ui/input';
 import { Spacing } from '@/constants/theme';
+import { useAccountGate } from '@/hooks/use-account-gate';
 import { fetchGuestMechanics, type GuestDataError } from '@/hooks/use-guest-data';
 import { SEARCH_MIN_LENGTH } from '@/hooks/use-mechanic-search';
 import { useSignedUrls } from '@/hooks/use-signed-urls';
@@ -26,7 +27,7 @@ const DEBOUNCE_MS = 300;
 export function GuestMechanicsScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
-  const router = useRouter();
+  const { requireAccount } = useAccountGate();
   const [query, setQuery] = useState('');
   const [mechanics, setMechanics] = useState<GuestProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,12 +113,8 @@ export function GuestMechanicsScreen() {
               avatarUrl={item.avatar_path ? avatarUrls[item.avatar_path] : undefined}
               isFavorite={favoriteIds.has(item.id)}
               onToggleFavorite={() => handleToggleFavorite(item.id)}
-              onPress={() =>
-                router.push({
-                  pathname: '/(guest)/mechanics/[id]',
-                  params: { id: item.id },
-                } as never)
-              }
+              // 25 oct 2026: profilul se vede doar cu cont; după cont revine pe el (/p/<id>).
+              onPress={() => requireAccount('viewProfile', `/(guest)/mechanics/${item.id}`)}
             />
           )}
           ListEmptyComponent={

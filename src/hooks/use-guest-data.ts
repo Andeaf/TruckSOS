@@ -14,7 +14,6 @@ import type {
   Announcement,
   ChannelMessage,
   GuestAnnouncement,
-  GuestAnnouncementPhoto,
   GuestChannel,
   GuestChannelMessage,
   GuestMarketListing,
@@ -175,30 +174,6 @@ export async function fetchGuestAnnouncement(
     return { data: { announcement, driver: drivers[announcement.driver_id] ?? null }, error: null };
   } catch {
     return { data: null, error: 'failed' };
-  }
-}
-
-/** Pozele anunțului (max 20), gata semnate. Cele pe care Storage le refuză lipsesc. */
-export async function fetchGuestAnnouncementPhotos(
-  id: string,
-): Promise<GuestResult<{ id: string; url: string }[]>> {
-  if (!id) return { data: [], error: null };
-  try {
-    const { data, error } = await supabase
-      .from('guest_announcement_photos')
-      .select('id, announcement_id, storage_path, created_at')
-      .eq('announcement_id', id)
-      .order('created_at', { ascending: true })
-      .limit(PHOTOS_LIMIT);
-    if (error || !data) return { data: [], error: toGuestError(error) ?? 'failed' };
-    const rows = data as GuestAnnouncementPhoto[];
-    const urls = await signedUrls(rows.map((r) => r.storage_path));
-    return {
-      data: rows.filter((r) => urls[r.storage_path]).map((r) => ({ id: r.id, url: urls[r.storage_path] })),
-      error: null,
-    };
-  } catch {
-    return { data: [], error: 'failed' };
   }
 }
 

@@ -170,7 +170,7 @@
       "errorEmpty": "Completează email-ul și parola.",
       "noAccountForSignIn": "Nu există niciun cont pentru datele cu care ai intrat. Apasă „Înregistrează-te” ca să îți creezi unul.",
       "forgotPassword": "Ai uitat parola?",
-      "continueAsGuest": "Continuă fără cont"
+      "continueAsGuest": "Încearcă aplicația ca vizitator"
     },
     "social": {
       "or": "sau",
@@ -1047,6 +1047,9 @@
       "translate": "Fă-ți cont ca să traduci anunțul.",
       "marketPublish": "Fă-ți cont ca să publici în Market.",
       "marketContact": "Fă-ți cont ca să contactezi vânzătorul.",
+      "viewAnnouncement": "Fă-ți cont ca să vezi detaliile anunțului.",
+      "viewProfile": "Fă-ți cont ca să vezi profilul.",
+      "viewListing": "Fă-ți cont ca să vezi detaliile anunțului din Market.",
       "generic": "Fă-ți cont ca să folosești tot ce oferă TruckSOS."
     }
   },

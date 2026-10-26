@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { ChatScreen } from '@/components/chat-screen';
@@ -16,7 +16,6 @@ import { displayName } from '@/lib/display-name';
  */
 export default function GuestCommunityRoute() {
   const { t } = useTranslation();
-  const router = useRouter();
   const { requireAccount } = useAccountGate();
   const [messages, setMessages] = useState<GuestChannelMessageWithSender[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,12 +46,8 @@ export default function GuestCommunityRoute() {
       renderSenderName={(message) => displayName(message.sender, t)}
       renderSenderAvatarPath={(message) => message.sender.avatar_path}
       renderSenderRole={(message) => t(`auth.roleSelect.${message.sender.role}Title`)}
-      onPressUser={(userId, message) => {
-        // Oaspetele are doar profilul de mecanic (tab-ul Mecanici).
-        if (message?.sender.role === 'mechanic') {
-          router.push({ pathname: '/(guest)/mechanics/[id]', params: { id: userId } } as never);
-        }
-      }}
+      // 25 oct 2026: profilul se vede doar cu cont; după cont revine pe el (/p/<id>, orice rol).
+      onPressUser={(userId) => requireAccount('viewProfile', `/(guest)/mechanics/${userId}`)}
       readOnly={{
         label: t('guest.channelReadOnly'),
         onPress: () => requireAccount('message'),

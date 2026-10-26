@@ -1659,42 +1659,6 @@ export type Database = {
       }
     }
     Views: {
-      guest_announcement_photos: {
-        Row: {
-          announcement_id: string | null
-          created_at: string | null
-          id: string | null
-          storage_path: string | null
-        }
-        Insert: {
-          announcement_id?: string | null
-          created_at?: string | null
-          id?: string | null
-          storage_path?: string | null
-        }
-        Update: {
-          announcement_id?: string | null
-          created_at?: string | null
-          id?: string | null
-          storage_path?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "announcement_photos_announcement_id_fkey"
-            columns: ["announcement_id"]
-            isOneToOne: false
-            referencedRelation: "announcements"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "announcement_photos_announcement_id_fkey"
-            columns: ["announcement_id"]
-            isOneToOne: false
-            referencedRelation: "guest_announcements"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       guest_announcements: {
         Row: {
           created_at: string | null

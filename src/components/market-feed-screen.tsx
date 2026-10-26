@@ -314,7 +314,10 @@ export function MarketFeedScreen({ role, guest = false }: MarketFeedScreenProps)
             coverUrl={covers[item.id]}
             horizontal={viewMode === 'list'}
             onPress={() =>
-              router.push({ pathname: `${base}/[id]`, params: { id: item.id } } as never)
+              // 25 oct 2026: oaspetele nu vede detaliile din Market; după cont revine pe anunț.
+              guest
+                ? requireAccount('viewListing', `/(guest)/market/${item.id}`)
+                : router.push({ pathname: `${base}/[id]`, params: { id: item.id } } as never)
             }
           />
         )}

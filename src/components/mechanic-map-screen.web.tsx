@@ -10,6 +10,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { DARK_MAP_STYLE, ROMANIA_REGION } from '@/constants/map-style';
 import { Radius, Spacing } from '@/constants/theme';
+import { useAccountGate } from '@/hooks/use-account-gate';
 import { useAuth } from '@/hooks/use-auth';
 import { useOpenAnnouncements, type AnnouncementWithDriver } from '@/hooks/use-announcements';
 import { useGuestOpenAnnouncements } from '@/hooks/use-guest-data';
@@ -60,6 +61,7 @@ export default function MechanicMapScreenWeb({ guest = false }: { guest?: boolea
   const memberFeed = useOpenAnnouncements(session?.user.id);
   const guestFeed = useGuestOpenAnnouncements();
   const { announcements, refresh } = guest ? guestFeed : memberFeed;
+  const { requireAccount } = useAccountGate();
   const { viewed, refresh: refreshViewed } = useViewedAnnouncements(session?.user.id);
   const { radiusKm, coords, locationError, refreshCoords } = useRadiusFilter();
 
@@ -370,10 +372,10 @@ export default function MechanicMapScreenWeb({ guest = false }: { guest?: boolea
         {selected && visible.some((v) => v.id === selected.id) ? (
           <Pressable
             onPress={() =>
-              router.push({
-                pathname: (guest ? '/(guest)/announcements/[id]' : '/(mechanic)/feed/[id]') as never,
-                params: { id: selected.id },
-              })
+              // 25 oct 2026: oaspetele nu vede detaliul anunțului; după cont revine pe el.
+              guest
+                ? requireAccount('viewAnnouncement', `/(guest)/announcements/${selected.id}`)
+                : router.push({ pathname: '/(mechanic)/feed/[id]' as never, params: { id: selected.id } })
             }
             style={({ pressed }) => [styles.cardWrapper, pressed && styles.pressed]}>
             <ThemedView type="backgroundElement" style={styles.card}>

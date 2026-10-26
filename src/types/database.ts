@@ -332,14 +332,6 @@ export interface GuestAnnouncement {
 }
 
 /** 1.1 (B): view guest_* (migrarea 20261026). */
-export interface GuestAnnouncementPhoto {
-  id: string;
-  announcement_id: string;
-  storage_path: string;
-  created_at: string;
-}
-
-/** 1.1 (B): view guest_* (migrarea 20261026). */
 export interface GuestMarketListing {
   id: string;
   seller_id: string;

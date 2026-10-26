@@ -42,7 +42,7 @@ const SettingsContext = createContext<SettingsValue | null>(null);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const systemScheme = useColorScheme();
-  const [theme, setThemeState] = useState<ThemePref>('auto');
+  const [theme, setThemeState] = useState<ThemePref>('light');
   const [lang, setLangState] = useState<LangPref>('auto');
   const [ready, setReady] = useState(false);
   const [adminViewAs, setAdminViewAs] = useState<AdminViewAs>('admin');
@@ -92,7 +92,7 @@ export function useSettings(): SettingsValue {
 export function useResolvedScheme(): Scheme {
   const context = useContext(SettingsContext);
   const systemScheme = useColorScheme();
-  return context?.resolvedScheme ?? resolveScheme('auto', systemScheme);
+  return context?.resolvedScheme ?? resolveScheme('light', systemScheme);
 }
 
 function resolveScheme(theme: ThemePref, systemScheme: string | null | undefined): Scheme {

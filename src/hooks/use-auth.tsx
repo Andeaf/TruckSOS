@@ -21,7 +21,7 @@ import {
   subscribeAnnouncementDraft,
 } from '@/lib/announcement-draft';
 import type { Profile } from '@/types/database';
-import i18n from '@/i18n';
+import i18n, { SUPPORTED_LANGUAGES } from '@/i18n';
 
 interface AuthContextValue {
   session: Session | null;
@@ -349,11 +349,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fullName: string
   ): Promise<{ error: string | null; needsConfirmation: boolean }> {
     await setAuthEntry('signup');
+    // 1.1: limba aplicației pleacă în metadatele contului (`.Data.lang` în template-ul
+    // „Confirm signup" din Supabase), ca e-mailul cu codul să vină într-o singură limbă.
+    // Clienții vechi n-o trimit → template-ul cade pe varianta trilingvă.
+    const lang = (SUPPORTED_LANGUAGES as readonly string[]).includes(i18n.language)
+      ? i18n.language
+      : 'en';
     const captchaToken = await getCaptchaToken();
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName }, ...(captchaToken ? { captchaToken } : {}) },
+      options: { data: { full_name: fullName, lang }, ...(captchaToken ? { captchaToken } : {}) },
     });
     if (error) return { error: translateAuthError(error), needsConfirmation: false };
     // Anti-enumerare (26 oct 2026, AUDIT #41, decizia D2): pentru un email deja înregistrat Supabase
