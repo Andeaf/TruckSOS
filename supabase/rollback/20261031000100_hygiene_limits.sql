@@ -94,16 +94,30 @@ BEGIN
   END LOOP;
 END $$;
 
--- 4. EXECUTE implicit (PUBLIC) înapoi pe funcțiile-trigger din public (starea de dinainte)
-DO $$
-DECLARE r record;
-BEGIN
-  FOR r IN SELECT p.oid::regprocedure AS sig FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
-            WHERE n.nspname = 'public' AND p.prorettype = 'trigger'::regtype
-  LOOP
-    EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO PUBLIC', r.sig);
-  END LOOP;
-END $$;
+-- 4. Drepturile de dinainte pe funcțiile-trigger din public, EXACT (citite din producție pe 27 oct 2026,
+--    înainte de aplicare): 20 de funcții aveau PUBLIC + anon + authenticated (explicit, acordate de
+--    postgres); on_channel_message_notify, on_message_notify și set_announcement_source_lang aveau doar
+--    postgres + service_role — REVOKE-ul din migrare nu le-a schimbat, deci nici rollback-ul nu le atinge.
+GRANT EXECUTE ON FUNCTION public.enforce_announcement_photo_limit() TO PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.enforce_market_listing_limit() TO PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.enforce_market_photo_limit() TO PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.guard_announcement_client_writes() TO PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.guard_not_banned() TO PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.guard_profile_privileged_columns() TO PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.handle_auth_user_deleted() TO PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.on_announcement_delete_tombstone_messages() TO PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.on_announcement_notify() TO PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.on_application_accepted_notify() TO PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.on_application_notify() TO PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.on_listing_delete_tombstone_messages() TO PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.on_market_listing_notify() TO PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.on_profile_delete_tombstone_messages() TO PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.ratings_after_change() TO PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.ratings_touch_updated_at() TO PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.reports_snapshot_from_source() TO PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.seed_channel_push_prefs_for_channel() TO PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.seed_channel_push_prefs_for_profile() TO PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.set_updated_at() TO PUBLIC, anon, authenticated;
 
 -- 3. Cele 9 funcții: definițiile originale (fără search_path)
 ALTER FUNCTION public.distance_km(double precision, double precision, double precision, double precision) RESET search_path;
