@@ -335,14 +335,14 @@ export async function purgeAccountsDryRun(
   from: Date,
   to: Date
 ): Promise<{ data: { count: number; accounts: PurgeCandidate[] } | null; error: string | null }> {
-  // `as never`: admin_purge_accounts nu e încă în tipurile generate — dispare la regenerarea lor.
-  const { data, error } = await supabase.rpc('admin_purge_accounts' as never, {
+  const { data, error } = await supabase.rpc('admin_purge_accounts', {
     p_from: from.toISOString(),
     p_to: to.toISOString(),
     p_dry_run: true,
-  } as never);
+  });
   if (error) return { data: null, error: translateDbError(error) };
-  const row = data as {
+  // Funcția întoarce jsonb (`Json` în tipurile generate); forma e cea din migrarea 20261031000100 §8.
+  const row = data as unknown as {
     count: number;
     accounts: {
       id: string;

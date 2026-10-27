@@ -1996,6 +1996,10 @@ export type Database = {
       admin_list_recent_reviews: { Args: { p_limit?: number }; Returns: Json }
       admin_list_reports: { Args: { p_status?: string }; Returns: Json }
       admin_pending_reports_count: { Args: never; Returns: number }
+      admin_purge_accounts: {
+        Args: { p_dry_run?: boolean; p_from: string; p_to: string }
+        Returns: Json
+      }
       admin_report_context: {
         Args: {
           p_after?: number
