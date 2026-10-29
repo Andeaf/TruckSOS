@@ -1,5 +1,6 @@
 -- ROLLBACK pentru 20261031000200_announcement_limit_insert_fix.sql — `BEGIN;` + fișier + `COMMIT;`.
--- Readuce exact funcția din 20261031000100_hygiene_limits (cu ocolirea la INSERT; doar pentru urgență).
+-- Readuce exact funcția din 20261031000100_hygiene_limits (cu ocolirea la INSERT și plafonul de 3 deschise
+-- în loc de 5; doar pentru urgență).
 SET LOCAL lock_timeout = '5s';
 
 CREATE OR REPLACE FUNCTION app.limit_announcements()

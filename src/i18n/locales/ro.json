@@ -317,7 +317,7 @@
   },
   "dbErrors": {
     "rate_limited": "Prea multe acțiuni într-un timp scurt. Așteaptă puțin și încearcă din nou.",
-    "rate_limited_open": "Ai deja 3 anunțuri deschise. Rezolvă sau anulează unul înainte să publici altul.",
+    "rate_limited_open": "Ai deja 5 anunțuri deschise. Rezolvă sau anulează unul înainte să publici altul.",
     "account_banned": "Contul tău este suspendat.",
     "photo_limit_reached": "Ai atins numărul maxim de poze (10).",
     "listing_limit_reached": "Ai atins numărul maxim de anunțuri active în Market (20).",

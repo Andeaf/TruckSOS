@@ -317,7 +317,7 @@
   },
   "dbErrors": {
     "rate_limited": "Too many actions in a short time. Please wait a bit and try again.",
-    "rate_limited_open": "You already have 3 open announcements. Resolve or cancel one before posting another.",
+    "rate_limited_open": "You already have 5 open announcements. Resolve or cancel one before posting another.",
     "account_banned": "Your account is suspended.",
     "photo_limit_reached": "You've reached the maximum number of photos (10).",
     "listing_limit_reached": "You've reached the maximum number of active Market listings (20).",

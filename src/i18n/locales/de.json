@@ -317,7 +317,7 @@
   },
   "dbErrors": {
     "rate_limited": "Zu viele Aktionen in kurzer Zeit. Bitte warte kurz und versuche es erneut.",
-    "rate_limited_open": "Du hast bereits 3 offene Anzeigen. Schließe oder storniere eine, bevor du eine neue veröffentlichst.",
+    "rate_limited_open": "Du hast bereits 5 offene Anzeigen. Schließe oder storniere eine, bevor du eine neue veröffentlichst.",
     "account_banned": "Dein Konto ist gesperrt.",
     "photo_limit_reached": "Du hast die maximale Anzahl an Fotos (10) erreicht.",
     "listing_limit_reached": "Du hast die maximale Anzahl aktiver Market-Anzeigen (20) erreicht.",
