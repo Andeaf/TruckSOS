@@ -30,13 +30,23 @@ jobs:
         run: npm run check:migrations
 
   db-tests:
-    # Faza 0.3 + 0.3-bis (PLAN_1.1_FIX, 26–29 oct 2026): baseline-ul schemei de producție și migrările de
-    # după el, aplicate de la zero pe un Postgres Supabase local (supabase start); apoi paritatea cu
-    # producția (supabase/baseline/parity.sql vs parity.expected.txt) și testele pgTAP din supabase/tests/.
+    # Faza 0.3 + 0.3-bis (PLAN_1.1_FIX, 26–31 oct 2026), un singur job, în ordinea în care a evoluat producția:
+    #   1. doar baseline-ul (20261031000300) aplicat de la zero pe un Postgres Supabase local (supabase start);
+    #   2. paritatea cu producția (supabase/baseline/parity.sql vs parity.expected.txt) — dovada că baseline-ul
+    #      reproduce exact schema de producție de la 29 oct 2026; expected.txt e legat de baseline și NU se
+    #      regenerează când migrările noi ajung în producție;
+    #   3. migrările de după baseline, aplicate incremental (supabase migration up --local), exact ca pe producție;
+    #   4. testele pgTAP din supabase/tests/ pe schema completă.
+    # Migrările noi NU se verifică prin paritate (ar ieși roșu prin construcție cât nu sunt aplicate în producție),
+    # ci prin repetiția pe producție (amprenta catalogului + măsurătorile de oaspete) și prin pgTAP.
+    # Un singur `supabase start` pe job: imaginile vin de pe public.ecr.aws, cu limită pe pull-urile anonime.
     # Serviciile grele sunt excluse: aici contează doar baza (auth și storage rămân pornite — schemele
     # auth.users și storage.objects/buckets sunt create de ele).
     name: Migrations, parity & pgTAP
     runs-on: ubuntu-latest
+    env:
+      # Aceeași identitate e și în scripts/check-migrations.mjs (BASELINE_VERSION): se schimbă împreună.
+      BASELINE_FILE: 20261031000300_baseline_production_schema.sql
     steps:
       - uses: actions/checkout@v4
 
@@ -44,7 +54,17 @@ jobs:
         with:
           version: 2.109.1
 
-      - name: Start local Postgres and apply all migrations
+      - name: Set aside the migrations after the baseline
+        # `supabase start` aplică tot ce găsește în supabase/migrations/; pentru paritate vrem doar baseline-ul.
+        # Fișierele se mută în afara folderului supabase/ și revin la pasul 3.
+        run: |
+          mkdir -p /tmp/pending
+          find supabase/migrations -maxdepth 1 -name '*.sql' ! -name "$BASELINE_FILE" -exec mv -t /tmp/pending {} +
+          test -f "supabase/migrations/$BASELINE_FILE"
+          echo "pending after baseline: $(ls /tmp/pending | wc -l)"; ls /tmp/pending || true
+
+      - name: Start local Postgres and apply the baseline
+        id: start
         # Imaginile vin de pe public.ecr.aws, care limitează pull-urile anonime (toomanyrequests în run 40853794809);
         # trei încercări cu pauză înainte de a declara eșec.
         run: |
@@ -62,10 +82,9 @@ jobs:
         run: |
           psql "postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres" -X -q -v ON_ERROR_STOP=1 -c "DROP EXTENSION IF EXISTS pg_graphql;"
 
-      - name: Schema parity with production
-        # Aceeași interogare pe Postgres-ul local trebuie să dea exact rândurile obținute pe producție
-        # (scripts/baseline-parity-expected.mjs). Orice diferență = baseline-ul sau o migrare nouă nu
-        # reproduce producția.
+      - name: Schema parity with production (baseline only)
+        # Aceeași interogare pe Postgres-ul local trebuie să dea exact rândurile obținute pe producție la 29 oct 2026
+        # (scripts/baseline-parity-expected.mjs). Orice diferență = baseline-ul nu reproduce producția.
         env:
           PGCLIENTENCODING: UTF8
         run: |
@@ -74,8 +93,22 @@ jobs:
           tr -d '\r' < supabase/baseline/parity.expected.txt > /tmp/parity.expected.txt
           diff -u /tmp/parity.expected.txt /tmp/parity.actual.txt
 
+      - name: Apply the migrations after the baseline
+        # Revin în supabase/migrations/ și se aplică incremental pe baza locală (istoricul local are baseline-ul);
+        # toate au versiunea > baseline (check-migrations o impune). Fără fișiere = pas gol.
+        id: apply
+        if: ${{ !cancelled() && steps.start.outcome == 'success' }}
+        run: |
+          if [ -n "$(ls -A /tmp/pending)" ]; then
+            mv /tmp/pending/*.sql supabase/migrations/
+            supabase migration up --local
+          else
+            echo "no migrations after the baseline"
+          fi
+
       - name: pgTAP tests
-        if: always()
+        # Rulează și când paritatea pică (vrem ambele rezultate), dar nu pe o schemă aplicată pe jumătate.
+        if: ${{ !cancelled() && steps.start.outcome == 'success' && steps.apply.outcome == 'success' }}
         run: supabase test db
 
       - name: Stop

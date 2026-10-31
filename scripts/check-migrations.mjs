@@ -135,7 +135,9 @@ const files = readdirSync(MIGRATIONS_DIR)
 // Baseline-ul schemei de producție (0.3-bis, 29 oct 2026) e generat din catalog de scripts/baseline-generate.mjs
 // și verificat în CI prin paritate cu producția (supabase/baseline/parity.sql); conține și obiectele de
 // dinaintea convenției, deci nu se judecă după ea. Numele și unicitatea versiunii se verifică în continuare.
-const BASELINE = /^20261031000300_baseline_production_schema\.sql$/;
+// Aceeași identitate e scrisă și în .github/workflows/ci.yml (env BASELINE_FILE): la o nouă tăietură de baseline se schimbă împreună.
+const BASELINE_VERSION = '20261031000300';
+const BASELINE = new RegExp(`^${BASELINE_VERSION}_baseline_production_schema\\.sql$`);
 
 const versions = new Set();
 for (const file of files) {
@@ -143,6 +145,10 @@ for (const file of files) {
   const version = file.slice(0, 14);
   if (versions.has(version)) report(file, 1, `versiunea ${version} e folosită de două fișiere (CLI-ul cere versiuni unice)`);
   versions.add(version);
+  // CI aplică întâi doar baseline-ul (paritate), apoi restul cu `migration up --local`; CLI-ul (ca și `db push`)
+  // refuză o migrare cu versiune mai mică decât ultima din istoric („rerun with --include-all”), deci o astfel
+  // de migrare ar bloca și CI-ul și aplicarea pe producție.
+  if (!BASELINE.test(file) && version <= BASELINE_VERSION) report(file, 1, `versiunea ${version} nu e mai mare decât baseline-ul ${BASELINE_VERSION}`);
   if (file.slice(0, 8) < CONVENTION_SINCE || BASELINE.test(file)) continue;
   checkFile(file);
 }
