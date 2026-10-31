@@ -93,18 +93,100 @@ jobs:
           tr -d '\r' < supabase/baseline/parity.expected.txt > /tmp/parity.expected.txt
           diff -u /tmp/parity.expected.txt /tmp/parity.actual.txt
 
+      # ── Poarta 4.1 (PLAN_1.1_FIX, faza 4): cererile reale 1.0.x, înainte și după migrările de după baseline ──
+      # Fixturile (supabase/gate/fixtures.sql) sunt DATE, nu schemă: paritatea de mai sus nu le vede.
+      # Pașii porții și repetiția de rollback rulează doar când există migrări după baseline.
+      - uses: actions/setup-node@v4
+        if: ${{ !cancelled() && steps.start.outcome == 'success' }}
+        with:
+          node-version: 22
+
+      - name: Gate 4.1 fixtures and fingerprint before
+        id: gate_before
+        if: ${{ !cancelled() && steps.start.outcome == 'success' }}
+        env:
+          PGCLIENTENCODING: UTF8
+        run: |
+          if [ -z "$(ls -A /tmp/pending)" ]; then echo "no migrations after the baseline: gate skipped"; exit 0; fi
+          mkdir -p /tmp/gate /tmp/fp
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -q -v ON_ERROR_STOP=1 -f supabase/gate/fixtures.sql
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -q -A -t -v ON_ERROR_STOP=1 -f supabase/gate/fingerprint.sql | tr -d '\r' > /tmp/fp/baseline.txt
+          wc -l /tmp/fp/baseline.txt
+          eval "$(supabase status -o env)"
+          export API_URL ANON_KEY SERVICE_ROLE_KEY
+          node scripts/replay-1_0_8.mjs run --phase before --out /tmp/gate/before
+          # Valorile după scrieri (plăcuță/VIN/coordonate intacte etc.), apoi urmele scrierilor dispar, ca „after”
+          # să vadă aceleași date (comparăm numărul de rânduri).
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -q -v ON_ERROR_STOP=1 -f supabase/gate/post-check.sql
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -q -v ON_ERROR_STOP=1 -f supabase/gate/cleanup.sql
+
       - name: Apply the migrations after the baseline
         # Revin în supabase/migrations/ și se aplică incremental pe baza locală (istoricul local are baseline-ul);
         # toate au versiunea > baseline (check-migrations o impune). Fără fișiere = pas gol.
+        # Durata e măsurată (David: durata tranzacției se raportează înainte de repetiția pe producție);
+        # include și overhead-ul CLI-ului — măsura exactă e în pasul de rollback (psql \timing).
         id: apply
         if: ${{ !cancelled() && steps.start.outcome == 'success' }}
         run: |
           if [ -n "$(ls -A /tmp/pending)" ]; then
             mv /tmp/pending/*.sql supabase/migrations/
+            start=$(date +%s%N)
             supabase migration up --local
+            echo "migration up --local: $(( ($(date +%s%N) - start) / 1000000 )) ms (inclusiv CLI)"
           else
             echo "no migrations after the baseline"
           fi
+
+      - name: Gate 4.1 replay after and compare
+        # Cache-ul de schemă al PostgREST se reîncarcă sigur prin restartul containerului (NOTIFY pgrst din
+        # migrare rămâne pentru producție, unde nu putem restarta). Cod 2 = hint-ul `profiles!driver_id` nu
+        # rezolvă prin view → STOP și raport către David (D1 = (a), fără varianta (iii) aleasă de Claude).
+        if: ${{ !cancelled() && steps.gate_before.outcome == 'success' && steps.apply.outcome == 'success' }}
+        run: |
+          if [ ! -d /tmp/gate/before ]; then echo "gate skipped"; exit 0; fi
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -q -v ON_ERROR_STOP=1 -c "NOTIFY pgrst, 'reload schema';"
+          docker restart $(docker ps -q --filter name=supabase_rest_)
+          eval "$(supabase status -o env)"
+          export API_URL ANON_KEY SERVICE_ROLE_KEY
+          ready=0
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -H "apikey: $ANON_KEY" "$API_URL/rest/v1/" || true)
+            if [ "$code" = "200" ]; then ready=1; break; fi; sleep 2
+          done
+          [ "$ready" = "1" ] || { echo "PostgREST nu a răspuns 200 după restart"; exit 1; }
+          node scripts/replay-1_0_8.mjs run --phase after --out /tmp/gate/after
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -q -v ON_ERROR_STOP=1 -f supabase/gate/post-check.sql
+          node scripts/replay-1_0_8.mjs compare /tmp/gate/before /tmp/gate/after
+
+      - name: Rollback rehearsal (migrations after the baseline)
+        # David (§8-bis.3): rollback-ul se testează înainte de producție; fără Docker local, singurul banc e aici.
+        # Amprenta „după rollback” trebuie să fie identică cu cea de dinainte de migrare; apoi migrarea se
+        # re-aplică cu psql (durata exactă a tranzacției, \timing) și amprenta trebuie să revină la „după migrare”.
+        if: ${{ !cancelled() && steps.gate_before.outcome == 'success' && steps.apply.outcome == 'success' }}
+        env:
+          PGCLIENTENCODING: UTF8
+        run: |
+          if [ ! -f /tmp/fp/baseline.txt ]; then echo "no migrations after the baseline: rehearsal skipped"; exit 0; fi
+          DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+          fp() { psql "$DB" -X -q -A -t -v ON_ERROR_STOP=1 -f supabase/gate/fingerprint.sql | tr -d '\r' > "$1"; }
+          fp /tmp/fp/applied.txt
+          for f in $(ls supabase/migrations/*.sql | grep -v "$BASELINE_FILE" | sort -r); do
+            rb="supabase/rollback/$(basename "$f")"
+            test -f "$rb" || { echo "lipsește rollback-ul $rb"; exit 1; }
+            echo "rollback: $rb"
+            psql "$DB" -X -q -1 -v ON_ERROR_STOP=1 -f "$rb"
+          done
+          fp /tmp/fp/rolled_back.txt
+          echo "diff baseline vs rolled back (trebuie gol):"
+          diff -u /tmp/fp/baseline.txt /tmp/fp/rolled_back.txt
+          for f in $(ls supabase/migrations/*.sql | grep -v "$BASELINE_FILE" | sort); do
+            start=$(date +%s%N)
+            psql "$DB" -X -q -1 -v ON_ERROR_STOP=1 -f "$f"
+            echo "re-apply $f: $(( ($(date +%s%N) - start) / 1000000 )) ms (o singură tranzacție psql -1)"
+          done
+          fp /tmp/fp/reapplied.txt
+          echo "diff applied vs re-applied (trebuie gol):"
+          diff -u /tmp/fp/applied.txt /tmp/fp/reapplied.txt
 
       - name: pgTAP tests
         # Rulează și când paritatea pică (vrem ambele rezultate), dar nu pe o schemă aplicată pe jumătate.

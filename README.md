@@ -117,6 +117,7 @@ Design decisions worth calling out:
 - **Push from the database.** Notification fan-out is a trigger → `pg_net` HTTP call to Expo Push, with per-user language, batching for busy channels and a cooldown to avoid duplicate alerts. No separate worker to run.
 - **Offline-tolerant chat.** Messages are reconciled after the app comes back from background; Realtime is a hint, the database is the source of truth.
 - **Schema as migrations.** `supabase/migrations` holds a baseline generated from the production catalog (`scripts/baseline-generate.mjs`) plus every migration after it; CI applies them from scratch and checks the result against production (`supabase/baseline/parity.sql`). The 92 historical migrations (July–October 2026) are kept in `supabase/migrations-archive/`. Client types are generated from the live schema (`npm run gen:types`).
+- **Compatibility gate for published clients.** Before a migration can reach production, CI replays the real request shapes of the installed app versions (`supabase/gate/shapes-1.0.x.csv`, extracted from the API logs and anonymised) against the local stack before and after the migration, as a driver, an accepted mechanic, a non-accepted mechanic, an admin and a guest (`scripts/replay-1_0_8.mjs`): same HTTP status, same row counts, same JSON keys, or the job fails. The same job rehearses the rollback (catalog fingerprint before / after rollback / after re-apply must match).
 
 ## Security
 
@@ -149,6 +150,7 @@ supabase/
   migrations/          baseline of the production schema + migrations after it, named <YYYYMMDDHHMMSS>_<name>.sql
   migrations-archive/  the 92 historical migrations the baseline replaces (reference only, not applied)
   baseline/            catalog extraction + parity query/expected output used by CI
+  gate/                compatibility gate: request shapes of published clients, fixtures, catalog fingerprint
   tests/               pgTAP tests run by CI (supabase test db)
   functions/           Edge Functions (Deno): delete-account, cleanup-announcements
 web/                   legal pages (privacy, terms, account deletion) served at trucksos.net
