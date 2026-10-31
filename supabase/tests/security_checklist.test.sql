@@ -112,14 +112,15 @@ select ok(
 
 -- 8. Gărzile din 26 sept + garda de ban pe toate tabelele de conținut (12 triggere active)
 select is(
+  -- Faza 4 (20261101000100): profiles și announcements sunt tabele în `app`; în `public` au rămas view-uri.
   (select count(*)::int from (values
-      ('profiles', 'profiles_guard_privileged'), ('announcements', 'announcements_guard_client'),
-      ('reports', 'reports_snapshot'),
-      ('announcements', 'ban_guard_ins'), ('applications', 'ban_guard_ins'), ('channel_messages', 'ban_guard_ins'),
-      ('ratings', 'ban_guard_ins'), ('reports', 'ban_guard_ins'), ('conversations', 'ban_guard_ins'),
-      ('market_listings', 'ban_guard_ins'), ('market_listing_photos', 'ban_guard_ins'), ('messages', 'ban_guard_ins')
+      ('app.profiles', 'profiles_guard_privileged'), ('app.announcements', 'announcements_guard_client'),
+      ('public.reports', 'reports_snapshot'),
+      ('app.announcements', 'ban_guard_ins'), ('public.applications', 'ban_guard_ins'), ('public.channel_messages', 'ban_guard_ins'),
+      ('public.ratings', 'ban_guard_ins'), ('public.reports', 'ban_guard_ins'), ('public.conversations', 'ban_guard_ins'),
+      ('public.market_listings', 'ban_guard_ins'), ('public.market_listing_photos', 'ban_guard_ins'), ('public.messages', 'ban_guard_ins')
     ) e(tbl, trg)
-    join pg_trigger t on t.tgname = e.trg and t.tgrelid = ('public.' || e.tbl)::regclass and t.tgenabled <> 'D'),
+    join pg_trigger t on t.tgname = e.trg and t.tgrelid = e.tbl::regclass and t.tgenabled <> 'D'),
   12, 'Triggerele de gardă sunt prezente și active (12/12)');
 
 -- 9. Nicio politică de scriere cu USING/WITH CHECK = true
@@ -234,9 +235,9 @@ select is(
      and cmd = 'INSERT' and with_check like '%storage_quota_ok%'),
   5, 'Toate cele 5 politici de INSERT pe Storage au cota per utilizator');
 
--- 22. Constrângerile de lungime: 26, toate validate
+-- 22. Constrângerile de lungime: 26, toate validate (14 dintre ele au urmat profiles/announcements în `app`, faza 4)
 select is(
-  (select count(*)::int from pg_constraint where connamespace = 'public'::regnamespace and contype = 'c'
+  (select count(*)::int from pg_constraint where connamespace in ('public'::regnamespace, 'app'::regnamespace) and contype = 'c'
      and conname like '%\_len' and convalidated),
   26, 'Constrângerile de lungime (26) sunt validate');
 
