@@ -30,22 +30,52 @@ jobs:
         run: npm run check:migrations
 
   db-tests:
-    # Faza 0.3 (PLAN_1.1_FIX, 26 oct 2026): toate migrările aplicate de la zero pe un Postgres local
-    # (supabase start), apoi testele pgTAP din supabase/tests/ (checklist-ul de securitate + testele
-    # negative ale fazelor următoare). Serviciile grele sunt excluse: aici contează doar baza.
-    name: Migrations + pgTAP
+    # Faza 0.3 + 0.3-bis (PLAN_1.1_FIX, 26–29 oct 2026): baseline-ul schemei de producție și migrările de
+    # după el, aplicate de la zero pe un Postgres Supabase local (supabase start); apoi paritatea cu
+    # producția (supabase/baseline/parity.sql vs parity.expected.txt) și testele pgTAP din supabase/tests/.
+    # Serviciile grele sunt excluse: aici contează doar baza (auth și storage rămân pornite — schemele
+    # auth.users și storage.objects/buckets sunt create de ele).
+    name: Migrations, parity & pgTAP
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.109.1
 
       - name: Start local Postgres and apply all migrations
-        run: supabase start -x studio,imgproxy,mailpit,logflare,vector,edge-runtime,realtime,supavisor,postgres-meta
+        # Imaginile vin de pe public.ecr.aws, care limitează pull-urile anonime (toomanyrequests în run 40853794809);
+        # trei încercări cu pauză înainte de a declara eșec.
+        run: |
+          for attempt in 1 2 3; do
+            if supabase start -x studio,imgproxy,mailpit,logflare,vector,edge-runtime,realtime,supavisor,postgres-meta; then
+              exit 0
+            fi
+            echo "supabase start failed (attempt $attempt)"; supabase stop --no-backup || true; sleep 45
+          done
+          exit 1
+
+      - name: Match platform settings that are not migrations
+        # Producția nu are pg_graphql (dezactivat din Dashboard; checklist-ul 14 o cere). Local vine pornit;
+        # îl scoatem ca supabase_admin (owner-ul extensiei), înainte de paritate și pgTAP.
+        run: |
+          psql "postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres" -X -q -v ON_ERROR_STOP=1 -c "DROP EXTENSION IF EXISTS pg_graphql;"
+
+      - name: Schema parity with production
+        # Aceeași interogare pe Postgres-ul local trebuie să dea exact rândurile obținute pe producție
+        # (scripts/baseline-parity-expected.mjs). Orice diferență = baseline-ul sau o migrare nouă nu
+        # reproduce producția.
+        env:
+          PGCLIENTENCODING: UTF8
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -q -A -t -v ON_ERROR_STOP=1 \
+            -f supabase/baseline/parity.sql | tr -d '\r' > /tmp/parity.actual.txt
+          tr -d '\r' < supabase/baseline/parity.expected.txt > /tmp/parity.expected.txt
+          diff -u /tmp/parity.expected.txt /tmp/parity.actual.txt
 
       - name: pgTAP tests
+        if: always()
         run: supabase test db
 
       - name: Stop

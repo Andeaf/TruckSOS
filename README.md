@@ -116,7 +116,7 @@ Design decisions worth calling out:
 - **Database as the backend.** Business rules live in Postgres: every table has RLS, every sensitive write goes through a `SECURITY DEFINER` RPC (`accept_application`, `block_user`, `admin_*`, …), and triggers guard privileged columns so a client can never promote itself, change ratings or edit someone else's data — even with a valid session token.
 - **Push from the database.** Notification fan-out is a trigger → `pg_net` HTTP call to Expo Push, with per-user language, batching for busy channels and a cooldown to avoid duplicate alerts. No separate worker to run.
 - **Offline-tolerant chat.** Messages are reconciled after the app comes back from background; Realtime is a hint, the database is the source of truth.
-- **Schema as migrations.** 80+ ordered SQL migrations in `supabase/migrations`; client types are generated from the live schema (`npm run gen:types`).
+- **Schema as migrations.** `supabase/migrations` holds a baseline generated from the production catalog (`scripts/baseline-generate.mjs`) plus every migration after it; CI applies them from scratch and checks the result against production (`supabase/baseline/parity.sql`). The 92 historical migrations (July–October 2026) are kept in `supabase/migrations-archive/`. Client types are generated from the live schema (`npm run gen:types`).
 
 ## Security
 
@@ -146,7 +146,10 @@ src/
   i18n/                i18next setup + ro / en / de resources
   types/               domain types + generated Supabase schema
 supabase/
-  migrations/          ordered SQL migrations (schema, RLS, RPC, triggers, cron), named <YYYYMMDDHHMMSS>_<name>.sql
+  migrations/          baseline of the production schema + migrations after it, named <YYYYMMDDHHMMSS>_<name>.sql
+  migrations-archive/  the 92 historical migrations the baseline replaces (reference only, not applied)
+  baseline/            catalog extraction + parity query/expected output used by CI
+  tests/               pgTAP tests run by CI (supabase test db)
   functions/           Edge Functions (Deno): delete-account, cleanup-announcements
 web/                   legal pages (privacy, terms, account deletion) served at trucksos.net
 public/                web static assets, App Links / Universal Links files, CSP headers
@@ -169,7 +172,7 @@ Backend setup for a fresh Supabase project:
 
 ```bash
 npx supabase link --project-ref <your-ref>
-npx supabase db push                         # applies supabase/migrations in order
+npx supabase db push                         # applies supabase/migrations in order (baseline first)
 npx supabase functions deploy delete-account
 npx supabase functions deploy cleanup-announcements
 npm run gen:types                            # regenerate src/types/supabase.ts

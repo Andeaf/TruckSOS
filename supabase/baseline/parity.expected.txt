@@ -1,0 +1,1348 @@
+bucket|photos|photos|public=false|limit=57671680|mime=image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,image/gif,image/bmp,image/tiff,image/avif,video/*,video/mp4,video/quicktime,video/webm,video/3gpp,video/3gpp2,video/3gp,video/m4v,video/x-m4v,video/mpeg,video/x-matroska,video/x-msvideo,audio/*,audio/mpeg,audio/mp3,audio/mp4,audio/aac,audio/ogg,audio/opus,audio/flac,audio/wav,audio/x-wav,audio/x-m4a,audio/webm,audio/amr,audio/3gpp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.oasis.opendocument.text,application/vnd.oasis.opendocument.spreadsheet,application/vnd.oasis.opendocument.presentation,application/rtf,text/rtf,text/plain,text/csv,text/vcard,text/x-vcard,message/rfc822,application/vnd.ms-outlook,application/json,application/zip,application/x-zip-compressed,application/x-rar-compressed,application/vnd.rar,application/x-7z-compressed,application/gzip,application/x-tar,application/octet-stream
+column_priv|app.rate_events|anon|INSERT|-
+column_priv|app.rate_events|anon|REFERENCES|-
+column_priv|app.rate_events|anon|SELECT|-
+column_priv|app.rate_events|anon|UPDATE|-
+column_priv|app.rate_events|authenticated|INSERT|-
+column_priv|app.rate_events|authenticated|REFERENCES|-
+column_priv|app.rate_events|authenticated|SELECT|-
+column_priv|app.rate_events|authenticated|UPDATE|-
+column_priv|app.rate_events|service_role|INSERT|id,user_id,kind,created_at
+column_priv|app.rate_events|service_role|REFERENCES|id,user_id,kind,created_at
+column_priv|app.rate_events|service_role|SELECT|id,user_id,kind,created_at
+column_priv|app.rate_events|service_role|UPDATE|id,user_id,kind,created_at
+column_priv|public.admin_audit_log|anon|INSERT|-
+column_priv|public.admin_audit_log|anon|REFERENCES|-
+column_priv|public.admin_audit_log|anon|SELECT|-
+column_priv|public.admin_audit_log|anon|UPDATE|-
+column_priv|public.admin_audit_log|authenticated|INSERT|-
+column_priv|public.admin_audit_log|authenticated|REFERENCES|-
+column_priv|public.admin_audit_log|authenticated|SELECT|id,admin_id,action,target_type,target_id,details,created_at
+column_priv|public.admin_audit_log|authenticated|UPDATE|-
+column_priv|public.admin_audit_log|service_role|INSERT|id,admin_id,action,target_type,target_id,details,created_at
+column_priv|public.admin_audit_log|service_role|REFERENCES|id,admin_id,action,target_type,target_id,details,created_at
+column_priv|public.admin_audit_log|service_role|SELECT|id,admin_id,action,target_type,target_id,details,created_at
+column_priv|public.admin_audit_log|service_role|UPDATE|id,admin_id,action,target_type,target_id,details,created_at
+column_priv|public.announcement_photos|anon|INSERT|-
+column_priv|public.announcement_photos|anon|REFERENCES|-
+column_priv|public.announcement_photos|anon|SELECT|-
+column_priv|public.announcement_photos|anon|UPDATE|-
+column_priv|public.announcement_photos|authenticated|INSERT|id,announcement_id,storage_path,created_at
+column_priv|public.announcement_photos|authenticated|REFERENCES|-
+column_priv|public.announcement_photos|authenticated|SELECT|id,announcement_id,storage_path,created_at
+column_priv|public.announcement_photos|authenticated|UPDATE|-
+column_priv|public.announcement_photos|service_role|INSERT|id,announcement_id,storage_path,created_at
+column_priv|public.announcement_photos|service_role|REFERENCES|id,announcement_id,storage_path,created_at
+column_priv|public.announcement_photos|service_role|SELECT|id,announcement_id,storage_path,created_at
+column_priv|public.announcement_photos|service_role|UPDATE|id,announcement_id,storage_path,created_at
+column_priv|public.announcement_translations|anon|INSERT|-
+column_priv|public.announcement_translations|anon|REFERENCES|-
+column_priv|public.announcement_translations|anon|SELECT|-
+column_priv|public.announcement_translations|anon|UPDATE|-
+column_priv|public.announcement_translations|authenticated|INSERT|-
+column_priv|public.announcement_translations|authenticated|REFERENCES|-
+column_priv|public.announcement_translations|authenticated|SELECT|announcement_id,lang,source_lang,text,provider,created_at
+column_priv|public.announcement_translations|authenticated|UPDATE|-
+column_priv|public.announcement_translations|service_role|INSERT|announcement_id,lang,source_lang,text,provider,created_at
+column_priv|public.announcement_translations|service_role|REFERENCES|announcement_id,lang,source_lang,text,provider,created_at
+column_priv|public.announcement_translations|service_role|SELECT|announcement_id,lang,source_lang,text,provider,created_at
+column_priv|public.announcement_translations|service_role|UPDATE|announcement_id,lang,source_lang,text,provider,created_at
+column_priv|public.announcement_views|anon|INSERT|-
+column_priv|public.announcement_views|anon|REFERENCES|-
+column_priv|public.announcement_views|anon|SELECT|-
+column_priv|public.announcement_views|anon|UPDATE|-
+column_priv|public.announcement_views|authenticated|INSERT|-
+column_priv|public.announcement_views|authenticated|REFERENCES|-
+column_priv|public.announcement_views|authenticated|SELECT|announcement_id,viewer_id,viewed_at
+column_priv|public.announcement_views|authenticated|UPDATE|-
+column_priv|public.announcement_views|service_role|INSERT|announcement_id,viewer_id,viewed_at
+column_priv|public.announcement_views|service_role|REFERENCES|announcement_id,viewer_id,viewed_at
+column_priv|public.announcement_views|service_role|SELECT|announcement_id,viewer_id,viewed_at
+column_priv|public.announcement_views|service_role|UPDATE|announcement_id,viewer_id,viewed_at
+column_priv|public.announcements|anon|INSERT|-
+column_priv|public.announcements|anon|REFERENCES|-
+column_priv|public.announcements|anon|SELECT|id,driver_id,description,location,status,created_at,truck_make,truck_model,truck_year,lat_approx,lng_approx
+column_priv|public.announcements|anon|UPDATE|-
+column_priv|public.announcements|authenticated|INSERT|id,driver_id,description,location,status,mechanic_id,created_at,updated_at,truck_make,truck_model,truck_year,plate_number,latitude,longitude,hidden_from_history,chassis_number,lat_approx,lng_approx,source_lang,source_lang_detected
+column_priv|public.announcements|authenticated|REFERENCES|-
+column_priv|public.announcements|authenticated|SELECT|id,driver_id,description,location,status,mechanic_id,created_at,updated_at,truck_make,truck_model,truck_year,plate_number,latitude,longitude,hidden_from_history,chassis_number,lat_approx,lng_approx,source_lang,source_lang_detected
+column_priv|public.announcements|authenticated|UPDATE|id,driver_id,description,location,status,mechanic_id,created_at,updated_at,truck_make,truck_model,truck_year,plate_number,latitude,longitude,hidden_from_history,chassis_number,lat_approx,lng_approx,source_lang,source_lang_detected
+column_priv|public.announcements|service_role|INSERT|id,driver_id,description,location,status,mechanic_id,created_at,updated_at,truck_make,truck_model,truck_year,plate_number,latitude,longitude,hidden_from_history,chassis_number,lat_approx,lng_approx,source_lang,source_lang_detected
+column_priv|public.announcements|service_role|REFERENCES|id,driver_id,description,location,status,mechanic_id,created_at,updated_at,truck_make,truck_model,truck_year,plate_number,latitude,longitude,hidden_from_history,chassis_number,lat_approx,lng_approx,source_lang,source_lang_detected
+column_priv|public.announcements|service_role|SELECT|id,driver_id,description,location,status,mechanic_id,created_at,updated_at,truck_make,truck_model,truck_year,plate_number,latitude,longitude,hidden_from_history,chassis_number,lat_approx,lng_approx,source_lang,source_lang_detected
+column_priv|public.announcements|service_role|UPDATE|id,driver_id,description,location,status,mechanic_id,created_at,updated_at,truck_make,truck_model,truck_year,plate_number,latitude,longitude,hidden_from_history,chassis_number,lat_approx,lng_approx,source_lang,source_lang_detected
+column_priv|public.app_versions|anon|INSERT|-
+column_priv|public.app_versions|anon|REFERENCES|-
+column_priv|public.app_versions|anon|SELECT|platform,latest_version,store_url,updated_at
+column_priv|public.app_versions|anon|UPDATE|-
+column_priv|public.app_versions|authenticated|INSERT|-
+column_priv|public.app_versions|authenticated|REFERENCES|-
+column_priv|public.app_versions|authenticated|SELECT|platform,latest_version,store_url,updated_at
+column_priv|public.app_versions|authenticated|UPDATE|platform,latest_version,store_url,updated_at
+column_priv|public.app_versions|service_role|INSERT|platform,latest_version,store_url,updated_at
+column_priv|public.app_versions|service_role|REFERENCES|platform,latest_version,store_url,updated_at
+column_priv|public.app_versions|service_role|SELECT|platform,latest_version,store_url,updated_at
+column_priv|public.app_versions|service_role|UPDATE|platform,latest_version,store_url,updated_at
+column_priv|public.applications|anon|INSERT|-
+column_priv|public.applications|anon|REFERENCES|-
+column_priv|public.applications|anon|SELECT|-
+column_priv|public.applications|anon|UPDATE|-
+column_priv|public.applications|authenticated|INSERT|-
+column_priv|public.applications|authenticated|REFERENCES|-
+column_priv|public.applications|authenticated|SELECT|id,announcement_id,mechanic_id,price_type,price_amount,currency,message,status,created_at,updated_at
+column_priv|public.applications|authenticated|UPDATE|-
+column_priv|public.applications|service_role|INSERT|id,announcement_id,mechanic_id,price_type,price_amount,currency,message,status,created_at,updated_at
+column_priv|public.applications|service_role|REFERENCES|id,announcement_id,mechanic_id,price_type,price_amount,currency,message,status,created_at,updated_at
+column_priv|public.applications|service_role|SELECT|id,announcement_id,mechanic_id,price_type,price_amount,currency,message,status,created_at,updated_at
+column_priv|public.applications|service_role|UPDATE|id,announcement_id,mechanic_id,price_type,price_amount,currency,message,status,created_at,updated_at
+column_priv|public.blocked_users|anon|INSERT|-
+column_priv|public.blocked_users|anon|REFERENCES|-
+column_priv|public.blocked_users|anon|SELECT|-
+column_priv|public.blocked_users|anon|UPDATE|-
+column_priv|public.blocked_users|authenticated|INSERT|blocker_id,blocked_id,created_at
+column_priv|public.blocked_users|authenticated|REFERENCES|-
+column_priv|public.blocked_users|authenticated|SELECT|blocker_id,blocked_id,created_at
+column_priv|public.blocked_users|authenticated|UPDATE|-
+column_priv|public.blocked_users|service_role|INSERT|blocker_id,blocked_id,created_at
+column_priv|public.blocked_users|service_role|REFERENCES|blocker_id,blocked_id,created_at
+column_priv|public.blocked_users|service_role|SELECT|blocker_id,blocked_id,created_at
+column_priv|public.blocked_users|service_role|UPDATE|blocker_id,blocked_id,created_at
+column_priv|public.channel_messages|anon|INSERT|-
+column_priv|public.channel_messages|anon|REFERENCES|-
+column_priv|public.channel_messages|anon|SELECT|id,channel_id,sender_id,content,created_at,reply_to_id,listing_id,recommended_mechanic_id,announcement_id,mentions,has_image
+column_priv|public.channel_messages|anon|UPDATE|-
+column_priv|public.channel_messages|authenticated|INSERT|id,channel_id,sender_id,content,created_at,image_path,deleted_at,edited_at,reply_to_id,deleted_by_admin,listing_id,recommended_mechanic_id,file_path,file_name,file_size,announcement_id,file_duration,mentions,has_image
+column_priv|public.channel_messages|authenticated|REFERENCES|-
+column_priv|public.channel_messages|authenticated|SELECT|id,channel_id,sender_id,content,created_at,image_path,deleted_at,edited_at,reply_to_id,deleted_by_admin,listing_id,recommended_mechanic_id,file_path,file_name,file_size,announcement_id,file_duration,mentions,has_image
+column_priv|public.channel_messages|authenticated|UPDATE|-
+column_priv|public.channel_messages|service_role|INSERT|id,channel_id,sender_id,content,created_at,image_path,deleted_at,edited_at,reply_to_id,deleted_by_admin,listing_id,recommended_mechanic_id,file_path,file_name,file_size,announcement_id,file_duration,mentions,has_image
+column_priv|public.channel_messages|service_role|REFERENCES|id,channel_id,sender_id,content,created_at,image_path,deleted_at,edited_at,reply_to_id,deleted_by_admin,listing_id,recommended_mechanic_id,file_path,file_name,file_size,announcement_id,file_duration,mentions,has_image
+column_priv|public.channel_messages|service_role|SELECT|id,channel_id,sender_id,content,created_at,image_path,deleted_at,edited_at,reply_to_id,deleted_by_admin,listing_id,recommended_mechanic_id,file_path,file_name,file_size,announcement_id,file_duration,mentions,has_image
+column_priv|public.channel_messages|service_role|UPDATE|id,channel_id,sender_id,content,created_at,image_path,deleted_at,edited_at,reply_to_id,deleted_by_admin,listing_id,recommended_mechanic_id,file_path,file_name,file_size,announcement_id,file_duration,mentions,has_image
+column_priv|public.channel_push_prefs|anon|INSERT|-
+column_priv|public.channel_push_prefs|anon|REFERENCES|-
+column_priv|public.channel_push_prefs|anon|SELECT|-
+column_priv|public.channel_push_prefs|anon|UPDATE|-
+column_priv|public.channel_push_prefs|authenticated|INSERT|user_id,channel_id,enabled,updated_at
+column_priv|public.channel_push_prefs|authenticated|REFERENCES|-
+column_priv|public.channel_push_prefs|authenticated|SELECT|user_id,channel_id,enabled,updated_at
+column_priv|public.channel_push_prefs|authenticated|UPDATE|user_id,channel_id,enabled,updated_at
+column_priv|public.channel_push_prefs|service_role|INSERT|user_id,channel_id,enabled,updated_at
+column_priv|public.channel_push_prefs|service_role|REFERENCES|user_id,channel_id,enabled,updated_at
+column_priv|public.channel_push_prefs|service_role|SELECT|user_id,channel_id,enabled,updated_at
+column_priv|public.channel_push_prefs|service_role|UPDATE|user_id,channel_id,enabled,updated_at
+column_priv|public.channel_push_state|anon|INSERT|-
+column_priv|public.channel_push_state|anon|REFERENCES|-
+column_priv|public.channel_push_state|anon|SELECT|-
+column_priv|public.channel_push_state|anon|UPDATE|-
+column_priv|public.channel_push_state|authenticated|INSERT|-
+column_priv|public.channel_push_state|authenticated|REFERENCES|-
+column_priv|public.channel_push_state|authenticated|SELECT|-
+column_priv|public.channel_push_state|authenticated|UPDATE|-
+column_priv|public.channel_push_state|service_role|INSERT|user_id,channel_id,last_pushed_at
+column_priv|public.channel_push_state|service_role|REFERENCES|user_id,channel_id,last_pushed_at
+column_priv|public.channel_push_state|service_role|SELECT|user_id,channel_id,last_pushed_at
+column_priv|public.channel_push_state|service_role|UPDATE|user_id,channel_id,last_pushed_at
+column_priv|public.channel_reads|anon|INSERT|-
+column_priv|public.channel_reads|anon|REFERENCES|-
+column_priv|public.channel_reads|anon|SELECT|-
+column_priv|public.channel_reads|anon|UPDATE|-
+column_priv|public.channel_reads|authenticated|INSERT|channel_id,user_id,last_read_at
+column_priv|public.channel_reads|authenticated|REFERENCES|-
+column_priv|public.channel_reads|authenticated|SELECT|channel_id,user_id,last_read_at
+column_priv|public.channel_reads|authenticated|UPDATE|channel_id,user_id,last_read_at
+column_priv|public.channel_reads|service_role|INSERT|channel_id,user_id,last_read_at
+column_priv|public.channel_reads|service_role|REFERENCES|channel_id,user_id,last_read_at
+column_priv|public.channel_reads|service_role|SELECT|channel_id,user_id,last_read_at
+column_priv|public.channel_reads|service_role|UPDATE|channel_id,user_id,last_read_at
+column_priv|public.channels|anon|INSERT|-
+column_priv|public.channels|anon|REFERENCES|-
+column_priv|public.channels|anon|SELECT|id,name,type,created_at
+column_priv|public.channels|anon|UPDATE|-
+column_priv|public.channels|authenticated|INSERT|-
+column_priv|public.channels|authenticated|REFERENCES|-
+column_priv|public.channels|authenticated|SELECT|id,name,type,created_at
+column_priv|public.channels|authenticated|UPDATE|-
+column_priv|public.channels|service_role|INSERT|id,name,type,created_at
+column_priv|public.channels|service_role|REFERENCES|id,name,type,created_at
+column_priv|public.channels|service_role|SELECT|id,name,type,created_at
+column_priv|public.channels|service_role|UPDATE|id,name,type,created_at
+column_priv|public.client_diagnostics|anon|INSERT|-
+column_priv|public.client_diagnostics|anon|REFERENCES|-
+column_priv|public.client_diagnostics|anon|SELECT|-
+column_priv|public.client_diagnostics|anon|UPDATE|-
+column_priv|public.client_diagnostics|authenticated|INSERT|id,user_id,occurred_at,uploaded_at,kind,diagnosis,error_message,probes,network,clock_drift_ms,platform,os_version,device_model,app_version,locale
+column_priv|public.client_diagnostics|authenticated|REFERENCES|-
+column_priv|public.client_diagnostics|authenticated|SELECT|id,user_id,occurred_at,uploaded_at,kind,diagnosis,error_message,probes,network,clock_drift_ms,platform,os_version,device_model,app_version,locale
+column_priv|public.client_diagnostics|authenticated|UPDATE|-
+column_priv|public.client_diagnostics|service_role|INSERT|id,user_id,occurred_at,uploaded_at,kind,diagnosis,error_message,probes,network,clock_drift_ms,platform,os_version,device_model,app_version,locale
+column_priv|public.client_diagnostics|service_role|REFERENCES|id,user_id,occurred_at,uploaded_at,kind,diagnosis,error_message,probes,network,clock_drift_ms,platform,os_version,device_model,app_version,locale
+column_priv|public.client_diagnostics|service_role|SELECT|id,user_id,occurred_at,uploaded_at,kind,diagnosis,error_message,probes,network,clock_drift_ms,platform,os_version,device_model,app_version,locale
+column_priv|public.client_diagnostics|service_role|UPDATE|id,user_id,occurred_at,uploaded_at,kind,diagnosis,error_message,probes,network,clock_drift_ms,platform,os_version,device_model,app_version,locale
+column_priv|public.conversation_deletions|anon|INSERT|-
+column_priv|public.conversation_deletions|anon|REFERENCES|-
+column_priv|public.conversation_deletions|anon|SELECT|-
+column_priv|public.conversation_deletions|anon|UPDATE|-
+column_priv|public.conversation_deletions|authenticated|INSERT|conversation_id,user_id,deleted_at
+column_priv|public.conversation_deletions|authenticated|REFERENCES|-
+column_priv|public.conversation_deletions|authenticated|SELECT|conversation_id,user_id,deleted_at
+column_priv|public.conversation_deletions|authenticated|UPDATE|conversation_id,user_id,deleted_at
+column_priv|public.conversation_deletions|service_role|INSERT|conversation_id,user_id,deleted_at
+column_priv|public.conversation_deletions|service_role|REFERENCES|conversation_id,user_id,deleted_at
+column_priv|public.conversation_deletions|service_role|SELECT|conversation_id,user_id,deleted_at
+column_priv|public.conversation_deletions|service_role|UPDATE|conversation_id,user_id,deleted_at
+column_priv|public.conversations|anon|INSERT|-
+column_priv|public.conversations|anon|REFERENCES|-
+column_priv|public.conversations|anon|SELECT|-
+column_priv|public.conversations|anon|UPDATE|-
+column_priv|public.conversations|authenticated|INSERT|-
+column_priv|public.conversations|authenticated|REFERENCES|-
+column_priv|public.conversations|authenticated|SELECT|id,announcement_id,driver_id,mechanic_id,created_at,is_direct,listing_id
+column_priv|public.conversations|authenticated|UPDATE|-
+column_priv|public.conversations|service_role|INSERT|id,announcement_id,driver_id,mechanic_id,created_at,is_direct,listing_id
+column_priv|public.conversations|service_role|REFERENCES|id,announcement_id,driver_id,mechanic_id,created_at,is_direct,listing_id
+column_priv|public.conversations|service_role|SELECT|id,announcement_id,driver_id,mechanic_id,created_at,is_direct,listing_id
+column_priv|public.conversations|service_role|UPDATE|id,announcement_id,driver_id,mechanic_id,created_at,is_direct,listing_id
+column_priv|public.direct_push_state|anon|INSERT|-
+column_priv|public.direct_push_state|anon|REFERENCES|-
+column_priv|public.direct_push_state|anon|SELECT|-
+column_priv|public.direct_push_state|anon|UPDATE|-
+column_priv|public.direct_push_state|authenticated|INSERT|-
+column_priv|public.direct_push_state|authenticated|REFERENCES|-
+column_priv|public.direct_push_state|authenticated|SELECT|-
+column_priv|public.direct_push_state|authenticated|UPDATE|-
+column_priv|public.direct_push_state|service_role|INSERT|user_id,sender_id,window_start,count_in_window,last_pushed_at
+column_priv|public.direct_push_state|service_role|REFERENCES|user_id,sender_id,window_start,count_in_window,last_pushed_at
+column_priv|public.direct_push_state|service_role|SELECT|user_id,sender_id,window_start,count_in_window,last_pushed_at
+column_priv|public.direct_push_state|service_role|UPDATE|user_id,sender_id,window_start,count_in_window,last_pushed_at
+column_priv|public.favorite_mechanics|anon|INSERT|-
+column_priv|public.favorite_mechanics|anon|REFERENCES|-
+column_priv|public.favorite_mechanics|anon|SELECT|-
+column_priv|public.favorite_mechanics|anon|UPDATE|-
+column_priv|public.favorite_mechanics|authenticated|INSERT|driver_id,mechanic_id,created_at
+column_priv|public.favorite_mechanics|authenticated|REFERENCES|-
+column_priv|public.favorite_mechanics|authenticated|SELECT|driver_id,mechanic_id,created_at
+column_priv|public.favorite_mechanics|authenticated|UPDATE|-
+column_priv|public.favorite_mechanics|service_role|INSERT|driver_id,mechanic_id,created_at
+column_priv|public.favorite_mechanics|service_role|REFERENCES|driver_id,mechanic_id,created_at
+column_priv|public.favorite_mechanics|service_role|SELECT|driver_id,mechanic_id,created_at
+column_priv|public.favorite_mechanics|service_role|UPDATE|driver_id,mechanic_id,created_at
+column_priv|public.guest_announcements|anon|INSERT|-
+column_priv|public.guest_announcements|anon|REFERENCES|-
+column_priv|public.guest_announcements|anon|SELECT|id,driver_id,description,location,status,created_at,truck_make,truck_model,truck_year,lat_approx,lng_approx
+column_priv|public.guest_announcements|anon|UPDATE|-
+column_priv|public.guest_announcements|authenticated|INSERT|-
+column_priv|public.guest_announcements|authenticated|REFERENCES|-
+column_priv|public.guest_announcements|authenticated|SELECT|id,driver_id,description,location,status,created_at,truck_make,truck_model,truck_year,lat_approx,lng_approx
+column_priv|public.guest_announcements|authenticated|UPDATE|-
+column_priv|public.guest_announcements|service_role|INSERT|-
+column_priv|public.guest_announcements|service_role|REFERENCES|-
+column_priv|public.guest_announcements|service_role|SELECT|-
+column_priv|public.guest_announcements|service_role|UPDATE|-
+column_priv|public.guest_channel_messages|anon|INSERT|-
+column_priv|public.guest_channel_messages|anon|REFERENCES|-
+column_priv|public.guest_channel_messages|anon|SELECT|id,channel_id,sender_id,content,created_at,reply_to_id,mentions,has_image,announcement_id,listing_id,recommended_mechanic_id
+column_priv|public.guest_channel_messages|anon|UPDATE|-
+column_priv|public.guest_channel_messages|authenticated|INSERT|-
+column_priv|public.guest_channel_messages|authenticated|REFERENCES|-
+column_priv|public.guest_channel_messages|authenticated|SELECT|id,channel_id,sender_id,content,created_at,reply_to_id,mentions,has_image,announcement_id,listing_id,recommended_mechanic_id
+column_priv|public.guest_channel_messages|authenticated|UPDATE|-
+column_priv|public.guest_channel_messages|service_role|INSERT|-
+column_priv|public.guest_channel_messages|service_role|REFERENCES|-
+column_priv|public.guest_channel_messages|service_role|SELECT|-
+column_priv|public.guest_channel_messages|service_role|UPDATE|-
+column_priv|public.guest_channels|anon|INSERT|-
+column_priv|public.guest_channels|anon|REFERENCES|-
+column_priv|public.guest_channels|anon|SELECT|id,name,type,created_at
+column_priv|public.guest_channels|anon|UPDATE|-
+column_priv|public.guest_channels|authenticated|INSERT|-
+column_priv|public.guest_channels|authenticated|REFERENCES|-
+column_priv|public.guest_channels|authenticated|SELECT|id,name,type,created_at
+column_priv|public.guest_channels|authenticated|UPDATE|-
+column_priv|public.guest_channels|service_role|INSERT|-
+column_priv|public.guest_channels|service_role|REFERENCES|-
+column_priv|public.guest_channels|service_role|SELECT|-
+column_priv|public.guest_channels|service_role|UPDATE|-
+column_priv|public.guest_market_listing_photos|anon|INSERT|-
+column_priv|public.guest_market_listing_photos|anon|REFERENCES|-
+column_priv|public.guest_market_listing_photos|anon|SELECT|id,listing_id,storage_path,position
+column_priv|public.guest_market_listing_photos|anon|UPDATE|-
+column_priv|public.guest_market_listing_photos|authenticated|INSERT|-
+column_priv|public.guest_market_listing_photos|authenticated|REFERENCES|-
+column_priv|public.guest_market_listing_photos|authenticated|SELECT|id,listing_id,storage_path,position
+column_priv|public.guest_market_listing_photos|authenticated|UPDATE|-
+column_priv|public.guest_market_listing_photos|service_role|INSERT|-
+column_priv|public.guest_market_listing_photos|service_role|REFERENCES|-
+column_priv|public.guest_market_listing_photos|service_role|SELECT|-
+column_priv|public.guest_market_listing_photos|service_role|UPDATE|-
+column_priv|public.guest_market_listings|anon|INSERT|-
+column_priv|public.guest_market_listings|anon|REFERENCES|-
+column_priv|public.guest_market_listings|anon|SELECT|id,seller_id,title,description,price,currency,category,status,created_at
+column_priv|public.guest_market_listings|anon|UPDATE|-
+column_priv|public.guest_market_listings|authenticated|INSERT|-
+column_priv|public.guest_market_listings|authenticated|REFERENCES|-
+column_priv|public.guest_market_listings|authenticated|SELECT|id,seller_id,title,description,price,currency,category,status,created_at
+column_priv|public.guest_market_listings|authenticated|UPDATE|-
+column_priv|public.guest_market_listings|service_role|INSERT|-
+column_priv|public.guest_market_listings|service_role|REFERENCES|-
+column_priv|public.guest_market_listings|service_role|SELECT|-
+column_priv|public.guest_market_listings|service_role|UPDATE|-
+column_priv|public.guest_profiles|anon|INSERT|-
+column_priv|public.guest_profiles|anon|REFERENCES|-
+column_priv|public.guest_profiles|anon|SELECT|id,full_name,role,avatar_path,specialization,activity_zone,company_name,rating_avg,rating_count,created_at
+column_priv|public.guest_profiles|anon|UPDATE|-
+column_priv|public.guest_profiles|authenticated|INSERT|-
+column_priv|public.guest_profiles|authenticated|REFERENCES|-
+column_priv|public.guest_profiles|authenticated|SELECT|id,full_name,role,avatar_path,specialization,activity_zone,company_name,rating_avg,rating_count,created_at
+column_priv|public.guest_profiles|authenticated|UPDATE|-
+column_priv|public.guest_profiles|service_role|INSERT|-
+column_priv|public.guest_profiles|service_role|REFERENCES|-
+column_priv|public.guest_profiles|service_role|SELECT|-
+column_priv|public.guest_profiles|service_role|UPDATE|-
+column_priv|public.market_listing_photos|anon|INSERT|-
+column_priv|public.market_listing_photos|anon|REFERENCES|-
+column_priv|public.market_listing_photos|anon|SELECT|id,listing_id,storage_path,position
+column_priv|public.market_listing_photos|anon|UPDATE|-
+column_priv|public.market_listing_photos|authenticated|INSERT|id,listing_id,storage_path,position,created_at
+column_priv|public.market_listing_photos|authenticated|REFERENCES|-
+column_priv|public.market_listing_photos|authenticated|SELECT|id,listing_id,storage_path,position,created_at
+column_priv|public.market_listing_photos|authenticated|UPDATE|id,listing_id,storage_path,position,created_at
+column_priv|public.market_listing_photos|service_role|INSERT|id,listing_id,storage_path,position,created_at
+column_priv|public.market_listing_photos|service_role|REFERENCES|id,listing_id,storage_path,position,created_at
+column_priv|public.market_listing_photos|service_role|SELECT|id,listing_id,storage_path,position,created_at
+column_priv|public.market_listing_photos|service_role|UPDATE|id,listing_id,storage_path,position,created_at
+column_priv|public.market_listings|anon|INSERT|-
+column_priv|public.market_listings|anon|REFERENCES|-
+column_priv|public.market_listings|anon|SELECT|id,seller_id,title,description,price,currency,category,status,created_at
+column_priv|public.market_listings|anon|UPDATE|-
+column_priv|public.market_listings|authenticated|INSERT|id,seller_id,title,description,price,currency,category,status,created_at,updated_at
+column_priv|public.market_listings|authenticated|REFERENCES|-
+column_priv|public.market_listings|authenticated|SELECT|id,seller_id,title,description,price,currency,category,status,created_at,updated_at
+column_priv|public.market_listings|authenticated|UPDATE|id,seller_id,title,description,price,currency,category,status,created_at,updated_at
+column_priv|public.market_listings|service_role|INSERT|id,seller_id,title,description,price,currency,category,status,created_at,updated_at
+column_priv|public.market_listings|service_role|REFERENCES|id,seller_id,title,description,price,currency,category,status,created_at,updated_at
+column_priv|public.market_listings|service_role|SELECT|id,seller_id,title,description,price,currency,category,status,created_at,updated_at
+column_priv|public.market_listings|service_role|UPDATE|id,seller_id,title,description,price,currency,category,status,created_at,updated_at
+column_priv|public.message_reads|anon|INSERT|-
+column_priv|public.message_reads|anon|REFERENCES|-
+column_priv|public.message_reads|anon|SELECT|-
+column_priv|public.message_reads|anon|UPDATE|-
+column_priv|public.message_reads|authenticated|INSERT|conversation_id,user_id,last_read_at
+column_priv|public.message_reads|authenticated|REFERENCES|-
+column_priv|public.message_reads|authenticated|SELECT|conversation_id,user_id,last_read_at
+column_priv|public.message_reads|authenticated|UPDATE|conversation_id,user_id,last_read_at
+column_priv|public.message_reads|service_role|INSERT|conversation_id,user_id,last_read_at
+column_priv|public.message_reads|service_role|REFERENCES|conversation_id,user_id,last_read_at
+column_priv|public.message_reads|service_role|SELECT|conversation_id,user_id,last_read_at
+column_priv|public.message_reads|service_role|UPDATE|conversation_id,user_id,last_read_at
+column_priv|public.messages|anon|INSERT|-
+column_priv|public.messages|anon|REFERENCES|-
+column_priv|public.messages|anon|SELECT|-
+column_priv|public.messages|anon|UPDATE|-
+column_priv|public.messages|authenticated|INSERT|id,conversation_id,sender_id,content,created_at,image_path,deleted_at,edited_at,reply_to_id,deleted_by_admin,listing_id,recommended_mechanic_id,file_path,file_name,file_size,announcement_id,file_duration,mentions
+column_priv|public.messages|authenticated|REFERENCES|-
+column_priv|public.messages|authenticated|SELECT|id,conversation_id,sender_id,content,created_at,image_path,deleted_at,edited_at,reply_to_id,deleted_by_admin,listing_id,recommended_mechanic_id,file_path,file_name,file_size,announcement_id,file_duration,mentions
+column_priv|public.messages|authenticated|UPDATE|-
+column_priv|public.messages|service_role|INSERT|id,conversation_id,sender_id,content,created_at,image_path,deleted_at,edited_at,reply_to_id,deleted_by_admin,listing_id,recommended_mechanic_id,file_path,file_name,file_size,announcement_id,file_duration,mentions
+column_priv|public.messages|service_role|REFERENCES|id,conversation_id,sender_id,content,created_at,image_path,deleted_at,edited_at,reply_to_id,deleted_by_admin,listing_id,recommended_mechanic_id,file_path,file_name,file_size,announcement_id,file_duration,mentions
+column_priv|public.messages|service_role|SELECT|id,conversation_id,sender_id,content,created_at,image_path,deleted_at,edited_at,reply_to_id,deleted_by_admin,listing_id,recommended_mechanic_id,file_path,file_name,file_size,announcement_id,file_duration,mentions
+column_priv|public.messages|service_role|UPDATE|id,conversation_id,sender_id,content,created_at,image_path,deleted_at,edited_at,reply_to_id,deleted_by_admin,listing_id,recommended_mechanic_id,file_path,file_name,file_size,announcement_id,file_duration,mentions
+column_priv|public.profiles|anon|INSERT|-
+column_priv|public.profiles|anon|REFERENCES|-
+column_priv|public.profiles|anon|SELECT|id,full_name,role,created_at,specialization,activity_zone,rating_avg,rating_count,avatar_path,company_name
+column_priv|public.profiles|anon|UPDATE|-
+column_priv|public.profiles|authenticated|INSERT|id,full_name,role,created_at,specialization,activity_zone,phone,rating_avg,rating_count,avatar_path,push_enabled,notify_radius_km,latitude,longitude,lang,deleted_at,company_name,contact_email,banned_at,banned_until,ban_reason,address,vat_number,market_push_enabled,mention_push_enabled
+column_priv|public.profiles|authenticated|REFERENCES|-
+column_priv|public.profiles|authenticated|SELECT|id,full_name,role,created_at,specialization,activity_zone,phone,rating_avg,rating_count,avatar_path,push_enabled,notify_radius_km,latitude,longitude,lang,deleted_at,company_name,contact_email,banned_at,banned_until,ban_reason,address,vat_number,market_push_enabled,mention_push_enabled
+column_priv|public.profiles|authenticated|UPDATE|id,full_name,role,created_at,specialization,activity_zone,phone,rating_avg,rating_count,avatar_path,push_enabled,notify_radius_km,latitude,longitude,lang,deleted_at,company_name,contact_email,banned_at,banned_until,ban_reason,address,vat_number,market_push_enabled,mention_push_enabled
+column_priv|public.profiles|service_role|INSERT|id,full_name,role,created_at,specialization,activity_zone,phone,rating_avg,rating_count,avatar_path,push_enabled,notify_radius_km,latitude,longitude,lang,deleted_at,company_name,contact_email,banned_at,banned_until,ban_reason,address,vat_number,market_push_enabled,mention_push_enabled
+column_priv|public.profiles|service_role|REFERENCES|id,full_name,role,created_at,specialization,activity_zone,phone,rating_avg,rating_count,avatar_path,push_enabled,notify_radius_km,latitude,longitude,lang,deleted_at,company_name,contact_email,banned_at,banned_until,ban_reason,address,vat_number,market_push_enabled,mention_push_enabled
+column_priv|public.profiles|service_role|SELECT|id,full_name,role,created_at,specialization,activity_zone,phone,rating_avg,rating_count,avatar_path,push_enabled,notify_radius_km,latitude,longitude,lang,deleted_at,company_name,contact_email,banned_at,banned_until,ban_reason,address,vat_number,market_push_enabled,mention_push_enabled
+column_priv|public.profiles|service_role|UPDATE|id,full_name,role,created_at,specialization,activity_zone,phone,rating_avg,rating_count,avatar_path,push_enabled,notify_radius_km,latitude,longitude,lang,deleted_at,company_name,contact_email,banned_at,banned_until,ban_reason,address,vat_number,market_push_enabled,mention_push_enabled
+column_priv|public.push_tokens|anon|INSERT|-
+column_priv|public.push_tokens|anon|REFERENCES|-
+column_priv|public.push_tokens|anon|SELECT|-
+column_priv|public.push_tokens|anon|UPDATE|-
+column_priv|public.push_tokens|authenticated|INSERT|token,user_id,updated_at,platform,device_token,app_build
+column_priv|public.push_tokens|authenticated|REFERENCES|-
+column_priv|public.push_tokens|authenticated|SELECT|token,user_id,updated_at,platform,device_token,app_build
+column_priv|public.push_tokens|authenticated|UPDATE|token,user_id,updated_at,platform,device_token,app_build
+column_priv|public.push_tokens|service_role|INSERT|token,user_id,updated_at,platform,device_token,app_build
+column_priv|public.push_tokens|service_role|REFERENCES|token,user_id,updated_at,platform,device_token,app_build
+column_priv|public.push_tokens|service_role|SELECT|token,user_id,updated_at,platform,device_token,app_build
+column_priv|public.push_tokens|service_role|UPDATE|token,user_id,updated_at,platform,device_token,app_build
+column_priv|public.ratings|anon|INSERT|-
+column_priv|public.ratings|anon|REFERENCES|-
+column_priv|public.ratings|anon|SELECT|-
+column_priv|public.ratings|anon|UPDATE|-
+column_priv|public.ratings|authenticated|INSERT|id,mechanic_id,driver_id,stars,comment,created_at,updated_at
+column_priv|public.ratings|authenticated|REFERENCES|-
+column_priv|public.ratings|authenticated|SELECT|id,mechanic_id,driver_id,stars,comment,created_at,updated_at
+column_priv|public.ratings|authenticated|UPDATE|id,mechanic_id,driver_id,stars,comment,created_at,updated_at
+column_priv|public.ratings|service_role|INSERT|id,mechanic_id,driver_id,stars,comment,created_at,updated_at
+column_priv|public.ratings|service_role|REFERENCES|id,mechanic_id,driver_id,stars,comment,created_at,updated_at
+column_priv|public.ratings|service_role|SELECT|id,mechanic_id,driver_id,stars,comment,created_at,updated_at
+column_priv|public.ratings|service_role|UPDATE|id,mechanic_id,driver_id,stars,comment,created_at,updated_at
+column_priv|public.reports|anon|INSERT|-
+column_priv|public.reports|anon|REFERENCES|-
+column_priv|public.reports|anon|SELECT|-
+column_priv|public.reports|anon|UPDATE|-
+column_priv|public.reports|authenticated|INSERT|id,reporter_id,reported_user_id,message_id,message_table,reason,details,content_snapshot,image_path_snapshot,status,created_at,listing_id
+column_priv|public.reports|authenticated|REFERENCES|-
+column_priv|public.reports|authenticated|SELECT|id,reporter_id,reported_user_id,message_id,message_table,reason,details,content_snapshot,image_path_snapshot,status,created_at,listing_id
+column_priv|public.reports|authenticated|UPDATE|-
+column_priv|public.reports|service_role|INSERT|id,reporter_id,reported_user_id,message_id,message_table,reason,details,content_snapshot,image_path_snapshot,status,created_at,listing_id
+column_priv|public.reports|service_role|REFERENCES|id,reporter_id,reported_user_id,message_id,message_table,reason,details,content_snapshot,image_path_snapshot,status,created_at,listing_id
+column_priv|public.reports|service_role|SELECT|id,reporter_id,reported_user_id,message_id,message_table,reason,details,content_snapshot,image_path_snapshot,status,created_at,listing_id
+column_priv|public.reports|service_role|UPDATE|id,reporter_id,reported_user_id,message_id,message_table,reason,details,content_snapshot,image_path_snapshot,status,created_at,listing_id
+column_priv|public.search_history|anon|INSERT|-
+column_priv|public.search_history|anon|REFERENCES|-
+column_priv|public.search_history|anon|SELECT|-
+column_priv|public.search_history|anon|UPDATE|-
+column_priv|public.search_history|authenticated|INSERT|driver_id,mechanic_id,searched_at
+column_priv|public.search_history|authenticated|REFERENCES|-
+column_priv|public.search_history|authenticated|SELECT|driver_id,mechanic_id,searched_at
+column_priv|public.search_history|authenticated|UPDATE|driver_id,mechanic_id,searched_at
+column_priv|public.search_history|service_role|INSERT|driver_id,mechanic_id,searched_at
+column_priv|public.search_history|service_role|REFERENCES|driver_id,mechanic_id,searched_at
+column_priv|public.search_history|service_role|SELECT|driver_id,mechanic_id,searched_at
+column_priv|public.search_history|service_role|UPDATE|driver_id,mechanic_id,searched_at
+column_priv|public.translation_requests|anon|INSERT|-
+column_priv|public.translation_requests|anon|REFERENCES|-
+column_priv|public.translation_requests|anon|SELECT|-
+column_priv|public.translation_requests|anon|UPDATE|-
+column_priv|public.translation_requests|authenticated|INSERT|-
+column_priv|public.translation_requests|authenticated|REFERENCES|-
+column_priv|public.translation_requests|authenticated|SELECT|-
+column_priv|public.translation_requests|authenticated|UPDATE|-
+column_priv|public.translation_requests|service_role|INSERT|id,user_id,requested_at
+column_priv|public.translation_requests|service_role|REFERENCES|id,user_id,requested_at
+column_priv|public.translation_requests|service_role|SELECT|id,user_id,requested_at
+column_priv|public.translation_requests|service_role|UPDATE|id,user_id,requested_at
+column_priv|public.trucks|anon|INSERT|-
+column_priv|public.trucks|anon|REFERENCES|-
+column_priv|public.trucks|anon|SELECT|-
+column_priv|public.trucks|anon|UPDATE|-
+column_priv|public.trucks|authenticated|INSERT|id,driver_id,make,model,year,nickname,created_at,plate_number,chassis_number
+column_priv|public.trucks|authenticated|REFERENCES|-
+column_priv|public.trucks|authenticated|SELECT|id,driver_id,make,model,year,nickname,created_at,plate_number,chassis_number
+column_priv|public.trucks|authenticated|UPDATE|id,driver_id,make,model,year,nickname,created_at,plate_number,chassis_number
+column_priv|public.trucks|service_role|INSERT|id,driver_id,make,model,year,nickname,created_at,plate_number,chassis_number
+column_priv|public.trucks|service_role|REFERENCES|id,driver_id,make,model,year,nickname,created_at,plate_number,chassis_number
+column_priv|public.trucks|service_role|SELECT|id,driver_id,make,model,year,nickname,created_at,plate_number,chassis_number
+column_priv|public.trucks|service_role|UPDATE|id,driver_id,make,model,year,nickname,created_at,plate_number,chassis_number
+column|app.rate_events|001|id|bigint|notnull=true|identity=|generated=|default=nextval('app.rate_events_id_seq'::regclass)|collation=-|comment=-
+column|app.rate_events|002|user_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|app.rate_events|003|kind|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|app.rate_events|004|created_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.admin_audit_log|001|id|uuid|notnull=true|identity=|generated=|default=gen_random_uuid()|collation=-|comment=-
+column|public.admin_audit_log|002|admin_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.admin_audit_log|003|action|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.admin_audit_log|004|target_type|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.admin_audit_log|005|target_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.admin_audit_log|006|details|jsonb|notnull=true|identity=|generated=|default='{}'::jsonb|collation=-|comment=-
+column|public.admin_audit_log|007|created_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.announcement_photos|001|id|uuid|notnull=true|identity=|generated=|default=gen_random_uuid()|collation=-|comment=-
+column|public.announcement_photos|002|announcement_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcement_photos|003|storage_path|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcement_photos|004|created_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.announcement_translations|001|announcement_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcement_translations|002|lang|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcement_translations|003|source_lang|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcement_translations|004|text|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcement_translations|005|provider|text|notnull=true|identity=|generated=|default='google-translate-v2'::text|collation=-|comment=-
+column|public.announcement_translations|006|created_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.announcement_views|001|announcement_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcement_views|002|viewer_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcement_views|003|viewed_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.announcements|001|id|uuid|notnull=true|identity=|generated=|default=gen_random_uuid()|collation=-|comment=-
+column|public.announcements|002|driver_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcements|003|description|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcements|004|location|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcements|005|status|text|notnull=true|identity=|generated=|default='open'::text|collation=-|comment=-
+column|public.announcements|006|mechanic_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcements|007|created_at|timestamp with time zone|notnull=false|identity=|generated=|default=now()|collation=-|comment=-
+column|public.announcements|008|updated_at|timestamp with time zone|notnull=false|identity=|generated=|default=now()|collation=-|comment=-
+column|public.announcements|009|truck_make|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcements|010|truck_model|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcements|011|truck_year|smallint|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcements|012|plate_number|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcements|013|latitude|double precision|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcements|014|longitude|double precision|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcements|015|hidden_from_history|boolean|notnull=true|identity=|generated=|default=false|collation=-|comment=-
+column|public.announcements|016|chassis_number|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcements|017|lat_approx|numeric|notnull=false|identity=|generated=s|default=round((latitude)::numeric, 2)|collation=-|comment=-
+column|public.announcements|018|lng_approx|numeric|notnull=false|identity=|generated=s|default=round((longitude)::numeric, 2)|collation=-|comment=-
+column|public.announcements|019|source_lang|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.announcements|020|source_lang_detected|boolean|notnull=true|identity=|generated=|default=false|collation=-|comment=-
+column|public.app_versions|001|platform|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.app_versions|002|latest_version|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.app_versions|003|store_url|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.app_versions|004|updated_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.applications|001|id|uuid|notnull=true|identity=|generated=|default=gen_random_uuid()|collation=-|comment=-
+column|public.applications|002|announcement_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.applications|003|mechanic_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.applications|004|price_type|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.applications|005|price_amount|numeric(10,2)|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.applications|006|currency|text|notnull=true|identity=|generated=|default='RON'::text|collation=-|comment=-
+column|public.applications|007|message|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.applications|008|status|text|notnull=true|identity=|generated=|default='pending'::text|collation=-|comment=-
+column|public.applications|009|created_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.applications|010|updated_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.blocked_users|001|blocker_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.blocked_users|002|blocked_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.blocked_users|003|created_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.channel_messages|001|id|uuid|notnull=true|identity=|generated=|default=gen_random_uuid()|collation=-|comment=-
+column|public.channel_messages|002|channel_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_messages|003|sender_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_messages|004|content|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_messages|005|created_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.channel_messages|006|image_path|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_messages|007|deleted_at|timestamp with time zone|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_messages|008|edited_at|timestamp with time zone|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_messages|009|reply_to_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_messages|010|deleted_by_admin|boolean|notnull=true|identity=|generated=|default=false|collation=-|comment=-
+column|public.channel_messages|011|listing_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_messages|012|recommended_mechanic_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_messages|013|file_path|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_messages|014|file_name|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_messages|015|file_size|integer|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_messages|016|announcement_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_messages|017|file_duration|integer|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_messages|018|mentions|jsonb|notnull=false|identity=|generated=|default=-|collation=-|comment=Menționări „@Nume" (10 sept 2026): array JSON de {id, name}; textul rămâne simplu în content.
+column|public.channel_messages|019|has_image|boolean|notnull=false|identity=|generated=s|default=(image_path IS NOT NULL)|collation=-|comment=-
+column|public.channel_push_prefs|001|user_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_push_prefs|002|channel_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_push_prefs|003|enabled|boolean|notnull=true|identity=|generated=|default=true|collation=-|comment=-
+column|public.channel_push_prefs|004|updated_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.channel_push_state|001|user_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_push_state|002|channel_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_push_state|003|last_pushed_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.channel_reads|001|channel_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_reads|002|user_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.channel_reads|003|last_read_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.channels|001|id|uuid|notnull=true|identity=|generated=|default=gen_random_uuid()|collation=-|comment=-
+column|public.channels|002|name|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.channels|003|type|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.channels|004|created_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.client_diagnostics|001|id|uuid|notnull=true|identity=|generated=|default=gen_random_uuid()|collation=-|comment=-
+column|public.client_diagnostics|002|user_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.client_diagnostics|003|occurred_at|timestamp with time zone|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.client_diagnostics|004|uploaded_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.client_diagnostics|005|kind|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.client_diagnostics|006|diagnosis|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.client_diagnostics|007|error_message|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.client_diagnostics|008|probes|jsonb|notnull=true|identity=|generated=|default='{}'::jsonb|collation=-|comment=-
+column|public.client_diagnostics|009|network|jsonb|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.client_diagnostics|010|clock_drift_ms|integer|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.client_diagnostics|011|platform|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.client_diagnostics|012|os_version|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.client_diagnostics|013|device_model|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.client_diagnostics|014|app_version|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.client_diagnostics|015|locale|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.conversation_deletions|001|conversation_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.conversation_deletions|002|user_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.conversation_deletions|003|deleted_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.conversations|001|id|uuid|notnull=true|identity=|generated=|default=gen_random_uuid()|collation=-|comment=-
+column|public.conversations|002|announcement_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.conversations|003|driver_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.conversations|004|mechanic_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.conversations|005|created_at|timestamp with time zone|notnull=false|identity=|generated=|default=now()|collation=-|comment=-
+column|public.conversations|006|is_direct|boolean|notnull=true|identity=|generated=|default=false|collation=-|comment=-
+column|public.conversations|007|listing_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.direct_push_state|001|user_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.direct_push_state|002|sender_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.direct_push_state|003|window_start|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.direct_push_state|004|count_in_window|integer|notnull=true|identity=|generated=|default=1|collation=-|comment=-
+column|public.direct_push_state|005|last_pushed_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.favorite_mechanics|001|driver_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.favorite_mechanics|002|mechanic_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.favorite_mechanics|003|created_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.guest_announcements|001|id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_announcements|002|driver_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_announcements|003|description|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_announcements|004|location|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_announcements|005|status|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_announcements|006|created_at|timestamp with time zone|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_announcements|007|truck_make|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_announcements|008|truck_model|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_announcements|009|truck_year|smallint|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_announcements|010|lat_approx|numeric|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_announcements|011|lng_approx|numeric|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_channel_messages|001|id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_channel_messages|002|channel_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_channel_messages|003|sender_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_channel_messages|004|content|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_channel_messages|005|created_at|timestamp with time zone|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_channel_messages|006|reply_to_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_channel_messages|007|mentions|jsonb|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_channel_messages|008|has_image|boolean|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_channel_messages|009|announcement_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_channel_messages|010|listing_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_channel_messages|011|recommended_mechanic_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_channels|001|id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_channels|002|name|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_channels|003|type|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_channels|004|created_at|timestamp with time zone|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_market_listing_photos|001|id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_market_listing_photos|002|listing_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_market_listing_photos|003|storage_path|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_market_listing_photos|004|position|smallint|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_market_listings|001|id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_market_listings|002|seller_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_market_listings|003|title|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_market_listings|004|description|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_market_listings|005|price|numeric(12,2)|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_market_listings|006|currency|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_market_listings|007|category|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_market_listings|008|status|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_market_listings|009|created_at|timestamp with time zone|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_profiles|001|id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_profiles|002|full_name|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_profiles|003|role|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_profiles|004|avatar_path|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_profiles|005|specialization|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_profiles|006|activity_zone|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_profiles|007|company_name|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_profiles|008|rating_avg|numeric(2,1)|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_profiles|009|rating_count|integer|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.guest_profiles|010|created_at|timestamp with time zone|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.market_listing_photos|001|id|uuid|notnull=true|identity=|generated=|default=gen_random_uuid()|collation=-|comment=-
+column|public.market_listing_photos|002|listing_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.market_listing_photos|003|storage_path|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.market_listing_photos|004|position|smallint|notnull=true|identity=|generated=|default=0|collation=-|comment=-
+column|public.market_listing_photos|005|created_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.market_listings|001|id|uuid|notnull=true|identity=|generated=|default=gen_random_uuid()|collation=-|comment=-
+column|public.market_listings|002|seller_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.market_listings|003|title|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.market_listings|004|description|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.market_listings|005|price|numeric(12,2)|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.market_listings|006|currency|text|notnull=true|identity=|generated=|default='EUR'::text|collation=-|comment=-
+column|public.market_listings|007|category|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.market_listings|008|status|text|notnull=true|identity=|generated=|default='active'::text|collation=-|comment=-
+column|public.market_listings|009|created_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.market_listings|010|updated_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.message_reads|001|conversation_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.message_reads|002|user_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.message_reads|003|last_read_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.messages|001|id|uuid|notnull=true|identity=|generated=|default=gen_random_uuid()|collation=-|comment=-
+column|public.messages|002|conversation_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.messages|003|sender_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.messages|004|content|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.messages|005|created_at|timestamp with time zone|notnull=false|identity=|generated=|default=now()|collation=-|comment=-
+column|public.messages|006|image_path|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.messages|007|deleted_at|timestamp with time zone|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.messages|008|edited_at|timestamp with time zone|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.messages|009|reply_to_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.messages|010|deleted_by_admin|boolean|notnull=true|identity=|generated=|default=false|collation=-|comment=-
+column|public.messages|011|listing_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.messages|012|recommended_mechanic_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.messages|013|file_path|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.messages|014|file_name|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.messages|015|file_size|integer|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.messages|016|announcement_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.messages|017|file_duration|integer|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.messages|018|mentions|jsonb|notnull=false|identity=|generated=|default=-|collation=-|comment=Menționări „@Nume" (10 sept 2026): array JSON de {id, name}; textul rămâne simplu în content.
+column|public.profiles|001|id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.profiles|002|full_name|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.profiles|003|role|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.profiles|004|created_at|timestamp with time zone|notnull=false|identity=|generated=|default=now()|collation=-|comment=-
+column|public.profiles|005|specialization|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.profiles|006|activity_zone|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.profiles|007|phone|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.profiles|008|rating_avg|numeric(2,1)|notnull=true|identity=|generated=|default=0|collation=-|comment=-
+column|public.profiles|009|rating_count|integer|notnull=true|identity=|generated=|default=0|collation=-|comment=-
+column|public.profiles|010|avatar_path|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.profiles|011|push_enabled|boolean|notnull=true|identity=|generated=|default=true|collation=-|comment=-
+column|public.profiles|012|notify_radius_km|integer|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.profiles|013|latitude|double precision|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.profiles|014|longitude|double precision|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.profiles|015|lang|text|notnull=true|identity=|generated=|default='ro'::text|collation=-|comment=-
+column|public.profiles|016|deleted_at|timestamp with time zone|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.profiles|017|company_name|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.profiles|018|contact_email|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.profiles|019|banned_at|timestamp with time zone|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.profiles|020|banned_until|timestamp with time zone|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.profiles|021|ban_reason|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.profiles|022|address|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.profiles|023|vat_number|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.profiles|024|market_push_enabled|boolean|notnull=true|identity=|generated=|default=true|collation=-|comment=Setări → Notificări: anunțuri noi pe Market. Independent de push_enabled (comutatorul global îl domină).
+column|public.profiles|025|mention_push_enabled|boolean|notnull=true|identity=|generated=|default=true|collation=-|comment=-
+column|public.push_tokens|001|token|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.push_tokens|002|user_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.push_tokens|003|updated_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.push_tokens|004|platform|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.push_tokens|005|device_token|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.push_tokens|006|app_build|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.ratings|001|id|uuid|notnull=true|identity=|generated=|default=gen_random_uuid()|collation=-|comment=-
+column|public.ratings|002|mechanic_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.ratings|003|driver_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.ratings|004|stars|smallint|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.ratings|005|comment|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.ratings|006|created_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.ratings|007|updated_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.reports|001|id|uuid|notnull=true|identity=|generated=|default=gen_random_uuid()|collation=-|comment=-
+column|public.reports|002|reporter_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.reports|003|reported_user_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.reports|004|message_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.reports|005|message_table|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.reports|006|reason|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.reports|007|details|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.reports|008|content_snapshot|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.reports|009|image_path_snapshot|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.reports|010|status|text|notnull=true|identity=|generated=|default='pending'::text|collation=-|comment=-
+column|public.reports|011|created_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.reports|012|listing_id|uuid|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.search_history|001|driver_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.search_history|002|mechanic_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.search_history|003|searched_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.translation_requests|001|id|bigint|notnull=true|identity=a|generated=|default=-|collation=-|comment=-
+column|public.translation_requests|002|user_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.translation_requests|003|requested_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.trucks|001|id|uuid|notnull=true|identity=|generated=|default=gen_random_uuid()|collation=-|comment=-
+column|public.trucks|002|driver_id|uuid|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.trucks|003|make|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.trucks|004|model|text|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.trucks|005|year|smallint|notnull=true|identity=|generated=|default=-|collation=-|comment=-
+column|public.trucks|006|nickname|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.trucks|007|created_at|timestamp with time zone|notnull=true|identity=|generated=|default=now()|collation=-|comment=-
+column|public.trucks|008|plate_number|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+column|public.trucks|009|chassis_number|text|notnull=false|identity=|generated=|default=-|collation=-|comment=-
+constraint|app.rate_events|rate_events_pkey|p|PRIMARY KEY (id)|validated=true|deferrable=false
+constraint|public.admin_audit_log|admin_audit_log_admin_id_fkey|f|FOREIGN KEY (admin_id) REFERENCES public.profiles(id)|validated=true|deferrable=false
+constraint|public.admin_audit_log|admin_audit_log_pkey|p|PRIMARY KEY (id)|validated=true|deferrable=false
+constraint|public.announcement_photos|announcement_photos_announcement_id_fkey|f|FOREIGN KEY (announcement_id) REFERENCES public.announcements(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.announcement_photos|announcement_photos_pkey|p|PRIMARY KEY (id)|validated=true|deferrable=false
+constraint|public.announcement_translations|announcement_translations_announcement_id_fkey|f|FOREIGN KEY (announcement_id) REFERENCES public.announcements(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.announcement_translations|announcement_translations_lang_check|c|CHECK (lang = ANY (ARRAY['ro'::text, 'en'::text, 'de'::text]))|validated=true|deferrable=false
+constraint|public.announcement_translations|announcement_translations_pkey|p|PRIMARY KEY (announcement_id, lang)|validated=true|deferrable=false
+constraint|public.announcement_views|announcement_views_announcement_id_fkey|f|FOREIGN KEY (announcement_id) REFERENCES public.announcements(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.announcement_views|announcement_views_pkey|p|PRIMARY KEY (announcement_id, viewer_id)|validated=true|deferrable=false
+constraint|public.announcement_views|announcement_views_viewer_id_fkey|f|FOREIGN KEY (viewer_id) REFERENCES auth.users(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.announcements|announcements_chassis_number_len|c|CHECK (char_length(chassis_number) <= 30)|validated=true|deferrable=false
+constraint|public.announcements|announcements_coords_both|c|CHECK ((latitude IS NULL) = (longitude IS NULL))|validated=true|deferrable=false
+constraint|public.announcements|announcements_coords_range|c|CHECK ((latitude IS NULL OR latitude >= '-90'::integer::double precision AND latitude <= 90::double precision) AND (longitude IS NULL OR longitude >= '-180'::integer::double precision AND longitude <= 180::double precision))|validated=true|deferrable=false
+constraint|public.announcements|announcements_description_len|c|CHECK (char_length(description) <= 4000)|validated=true|deferrable=false
+constraint|public.announcements|announcements_driver_id_fkey|f|FOREIGN KEY (driver_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.announcements|announcements_location_len|c|CHECK (char_length(location) <= 300)|validated=true|deferrable=false
+constraint|public.announcements|announcements_mechanic_id_fkey|f|FOREIGN KEY (mechanic_id) REFERENCES public.profiles(id) ON DELETE SET NULL|validated=true|deferrable=false
+constraint|public.announcements|announcements_pkey|p|PRIMARY KEY (id)|validated=true|deferrable=false
+constraint|public.announcements|announcements_plate_number_len|c|CHECK (char_length(plate_number) <= 20)|validated=true|deferrable=false
+constraint|public.announcements|announcements_status_check|c|CHECK (status = ANY (ARRAY['open'::text, 'accepted'::text, 'resolved'::text, 'cancelled'::text]))|validated=true|deferrable=false
+constraint|public.announcements|announcements_truck_make_len|c|CHECK (char_length(truck_make) <= 80)|validated=true|deferrable=false
+constraint|public.announcements|announcements_truck_model_len|c|CHECK (char_length(truck_model) <= 80)|validated=true|deferrable=false
+constraint|public.app_versions|app_versions_latest_version_check|c|CHECK (latest_version ~ '^\d+(\.\d+){1,3}$'::text)|validated=true|deferrable=false
+constraint|public.app_versions|app_versions_pkey|p|PRIMARY KEY (platform)|validated=true|deferrable=false
+constraint|public.app_versions|app_versions_platform_check|c|CHECK (platform = ANY (ARRAY['android'::text, 'ios'::text]))|validated=true|deferrable=false
+constraint|public.app_versions|app_versions_store_url_https|c|CHECK (store_url IS NULL OR store_url ~ '^https://'::text)|validated=true|deferrable=false
+constraint|public.applications|applications_announcement_id_fkey|f|FOREIGN KEY (announcement_id) REFERENCES public.announcements(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.applications|applications_announcement_id_mechanic_id_key|u|UNIQUE (announcement_id, mechanic_id)|validated=true|deferrable=false
+constraint|public.applications|applications_mechanic_id_fkey|f|FOREIGN KEY (mechanic_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.applications|applications_message_len|c|CHECK (char_length(message) <= 2000)|validated=true|deferrable=false
+constraint|public.applications|applications_pkey|p|PRIMARY KEY (id)|validated=true|deferrable=false
+constraint|public.applications|applications_price_amount_check|c|CHECK (price_amount > 0::numeric)|validated=true|deferrable=false
+constraint|public.applications|applications_price_type_check|c|CHECK (price_type = ANY (ARRAY['fixed'::text, 'hourly'::text]))|validated=true|deferrable=false
+constraint|public.applications|applications_status_check|c|CHECK (status = ANY (ARRAY['pending'::text, 'accepted'::text, 'rejected'::text]))|validated=true|deferrable=false
+constraint|public.blocked_users|blocked_users_blocked_id_fkey|f|FOREIGN KEY (blocked_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.blocked_users|blocked_users_blocker_id_fkey|f|FOREIGN KEY (blocker_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.blocked_users|blocked_users_check|c|CHECK (blocker_id <> blocked_id)|validated=true|deferrable=false
+constraint|public.blocked_users|blocked_users_pkey|p|PRIMARY KEY (blocker_id, blocked_id)|validated=true|deferrable=false
+constraint|public.channel_messages|channel_messages_announcement_id_fkey|f|FOREIGN KEY (announcement_id) REFERENCES public.announcements(id) ON DELETE SET NULL|validated=true|deferrable=false
+constraint|public.channel_messages|channel_messages_channel_id_fkey|f|FOREIGN KEY (channel_id) REFERENCES public.channels(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.channel_messages|channel_messages_content_len|c|CHECK (char_length(content) <= 4000)|validated=true|deferrable=false
+constraint|public.channel_messages|channel_messages_listing_id_fkey|f|FOREIGN KEY (listing_id) REFERENCES public.market_listings(id) ON DELETE SET NULL|validated=true|deferrable=false
+constraint|public.channel_messages|channel_messages_mentions_is_array|c|CHECK (mentions IS NULL OR jsonb_typeof(mentions) = 'array'::text)|validated=true|deferrable=false
+constraint|public.channel_messages|channel_messages_pkey|p|PRIMARY KEY (id)|validated=true|deferrable=false
+constraint|public.channel_messages|channel_messages_recommended_mechanic_id_fkey|f|FOREIGN KEY (recommended_mechanic_id) REFERENCES public.profiles(id) ON DELETE SET NULL|validated=true|deferrable=false
+constraint|public.channel_messages|channel_messages_reply_to_id_fkey|f|FOREIGN KEY (reply_to_id) REFERENCES public.channel_messages(id) ON DELETE SET NULL|validated=true|deferrable=false
+constraint|public.channel_messages|channel_messages_sender_id_fkey|f|FOREIGN KEY (sender_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.channel_messages|channel_messages_text_or_image|c|CHECK (deleted_at IS NOT NULL OR content <> ''::text OR image_path IS NOT NULL OR file_path IS NOT NULL OR listing_id IS NOT NULL OR recommended_mechanic_id IS NOT NULL OR announcement_id IS NOT NULL)|validated=true|deferrable=false
+constraint|public.channel_push_prefs|channel_push_prefs_channel_id_fkey|f|FOREIGN KEY (channel_id) REFERENCES public.channels(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.channel_push_prefs|channel_push_prefs_pkey|p|PRIMARY KEY (user_id, channel_id)|validated=true|deferrable=false
+constraint|public.channel_push_prefs|channel_push_prefs_user_id_fkey|f|FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.channel_push_state|channel_push_state_channel_id_fkey|f|FOREIGN KEY (channel_id) REFERENCES public.channels(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.channel_push_state|channel_push_state_pkey|p|PRIMARY KEY (user_id, channel_id)|validated=true|deferrable=false
+constraint|public.channel_push_state|channel_push_state_user_id_fkey|f|FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.channel_reads|channel_reads_channel_id_fkey|f|FOREIGN KEY (channel_id) REFERENCES public.channels(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.channel_reads|channel_reads_pkey|p|PRIMARY KEY (channel_id, user_id)|validated=true|deferrable=false
+constraint|public.channel_reads|channel_reads_user_id_fkey|f|FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.channels|channels_pkey|p|PRIMARY KEY (id)|validated=true|deferrable=false
+constraint|public.channels|channels_type_check|c|CHECK (type = ANY (ARRAY['global'::text, 'regional'::text]))|validated=true|deferrable=false
+constraint|public.client_diagnostics|client_diagnostics_app_version_check|c|CHECK (length(app_version) <= 20)|validated=true|deferrable=false
+constraint|public.client_diagnostics|client_diagnostics_device_model_check|c|CHECK (length(device_model) <= 80)|validated=true|deferrable=false
+constraint|public.client_diagnostics|client_diagnostics_diagnosis_check|c|CHECK (length(diagnosis) <= 20)|validated=true|deferrable=false
+constraint|public.client_diagnostics|client_diagnostics_error_message_check|c|CHECK (length(error_message) <= 500)|validated=true|deferrable=false
+constraint|public.client_diagnostics|client_diagnostics_kind_check|c|CHECK (length(kind) <= 40)|validated=true|deferrable=false
+constraint|public.client_diagnostics|client_diagnostics_locale_check|c|CHECK (length(locale) <= 10)|validated=true|deferrable=false
+constraint|public.client_diagnostics|client_diagnostics_os_version_check|c|CHECK (length(os_version) <= 40)|validated=true|deferrable=false
+constraint|public.client_diagnostics|client_diagnostics_pkey|p|PRIMARY KEY (id)|validated=true|deferrable=false
+constraint|public.client_diagnostics|client_diagnostics_platform_check|c|CHECK (length(platform) <= 16)|validated=true|deferrable=false
+constraint|public.client_diagnostics|client_diagnostics_user_id_fkey|f|FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.conversation_deletions|conversation_deletions_conversation_id_fkey|f|FOREIGN KEY (conversation_id) REFERENCES public.conversations(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.conversation_deletions|conversation_deletions_pkey|p|PRIMARY KEY (conversation_id, user_id)|validated=true|deferrable=false
+constraint|public.conversation_deletions|conversation_deletions_user_id_fkey|f|FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.conversations|conversations_announcement_id_fkey|f|FOREIGN KEY (announcement_id) REFERENCES public.announcements(id) ON DELETE SET NULL|validated=true|deferrable=false
+constraint|public.conversations|conversations_announcement_id_key|u|UNIQUE (announcement_id)|validated=true|deferrable=false
+constraint|public.conversations|conversations_driver_id_fkey|f|FOREIGN KEY (driver_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.conversations|conversations_listing_id_fkey|f|FOREIGN KEY (listing_id) REFERENCES public.market_listings(id) ON DELETE SET NULL|validated=true|deferrable=false
+constraint|public.conversations|conversations_mechanic_id_fkey|f|FOREIGN KEY (mechanic_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.conversations|conversations_pkey|p|PRIMARY KEY (id)|validated=true|deferrable=false
+constraint|public.direct_push_state|direct_push_state_pkey|p|PRIMARY KEY (user_id, sender_id)|validated=true|deferrable=false
+constraint|public.direct_push_state|direct_push_state_sender_id_fkey|f|FOREIGN KEY (sender_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.direct_push_state|direct_push_state_user_id_fkey|f|FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.favorite_mechanics|favorite_mechanics_driver_id_fkey|f|FOREIGN KEY (driver_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.favorite_mechanics|favorite_mechanics_mechanic_id_fkey|f|FOREIGN KEY (mechanic_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.favorite_mechanics|favorite_mechanics_pkey|p|PRIMARY KEY (driver_id, mechanic_id)|validated=true|deferrable=false
+constraint|public.market_listing_photos|market_listing_photos_listing_id_fkey|f|FOREIGN KEY (listing_id) REFERENCES public.market_listings(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.market_listing_photos|market_listing_photos_pkey|p|PRIMARY KEY (id)|validated=true|deferrable=false
+constraint|public.market_listings|market_listings_category_check|c|CHECK (category = ANY (ARRAY['tires'::text, 'parts'::text, 'trucks'::text, 'trailers'::text, 'accessories'::text, 'other'::text]))|validated=true|deferrable=false
+constraint|public.market_listings|market_listings_currency_check|c|CHECK (currency = ANY (ARRAY['RON'::text, 'EUR'::text]))|validated=true|deferrable=false
+constraint|public.market_listings|market_listings_description_check|c|CHECK (char_length(description) <= 4000)|validated=true|deferrable=false
+constraint|public.market_listings|market_listings_description_len|c|CHECK (char_length(description) <= 4000)|validated=true|deferrable=false
+constraint|public.market_listings|market_listings_pkey|p|PRIMARY KEY (id)|validated=true|deferrable=false
+constraint|public.market_listings|market_listings_price_check|c|CHECK (price > 0::numeric)|validated=true|deferrable=false
+constraint|public.market_listings|market_listings_seller_id_fkey|f|FOREIGN KEY (seller_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.market_listings|market_listings_status_check|c|CHECK (status = ANY (ARRAY['active'::text, 'sold'::text]))|validated=true|deferrable=false
+constraint|public.market_listings|market_listings_title_check|c|CHECK (char_length(title) >= 3 AND char_length(title) <= 80)|validated=true|deferrable=false
+constraint|public.market_listings|market_listings_title_len|c|CHECK (char_length(title) <= 120)|validated=true|deferrable=false
+constraint|public.message_reads|message_reads_conversation_id_fkey|f|FOREIGN KEY (conversation_id) REFERENCES public.conversations(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.message_reads|message_reads_pkey|p|PRIMARY KEY (conversation_id, user_id)|validated=true|deferrable=false
+constraint|public.message_reads|message_reads_user_id_fkey|f|FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.messages|messages_announcement_id_fkey|f|FOREIGN KEY (announcement_id) REFERENCES public.announcements(id) ON DELETE SET NULL|validated=true|deferrable=false
+constraint|public.messages|messages_content_len|c|CHECK (char_length(content) <= 4000)|validated=true|deferrable=false
+constraint|public.messages|messages_conversation_id_fkey|f|FOREIGN KEY (conversation_id) REFERENCES public.conversations(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.messages|messages_listing_id_fkey|f|FOREIGN KEY (listing_id) REFERENCES public.market_listings(id) ON DELETE SET NULL|validated=true|deferrable=false
+constraint|public.messages|messages_mentions_is_array|c|CHECK (mentions IS NULL OR jsonb_typeof(mentions) = 'array'::text)|validated=true|deferrable=false
+constraint|public.messages|messages_pkey|p|PRIMARY KEY (id)|validated=true|deferrable=false
+constraint|public.messages|messages_recommended_mechanic_id_fkey|f|FOREIGN KEY (recommended_mechanic_id) REFERENCES public.profiles(id) ON DELETE SET NULL|validated=true|deferrable=false
+constraint|public.messages|messages_reply_to_id_fkey|f|FOREIGN KEY (reply_to_id) REFERENCES public.messages(id) ON DELETE SET NULL|validated=true|deferrable=false
+constraint|public.messages|messages_sender_id_fkey|f|FOREIGN KEY (sender_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.messages|messages_text_or_image|c|CHECK (deleted_at IS NOT NULL OR content <> ''::text OR image_path IS NOT NULL OR file_path IS NOT NULL OR listing_id IS NOT NULL OR recommended_mechanic_id IS NOT NULL OR announcement_id IS NOT NULL)|validated=true|deferrable=false
+constraint|public.profiles|profiles_activity_zone_len|c|CHECK (char_length(activity_zone) <= 300)|validated=true|deferrable=false
+constraint|public.profiles|profiles_address_len|c|CHECK (char_length(address) <= 300)|validated=true|deferrable=false
+constraint|public.profiles|profiles_company_name_len|c|CHECK (char_length(company_name) <= 120)|validated=true|deferrable=false
+constraint|public.profiles|profiles_contact_email_len|c|CHECK (char_length(contact_email) <= 254)|validated=true|deferrable=false
+constraint|public.profiles|profiles_full_name_len|c|CHECK (char_length(full_name) <= 120)|validated=true|deferrable=false
+constraint|public.profiles|profiles_phone_len|c|CHECK (char_length(phone) <= 32)|validated=true|deferrable=false
+constraint|public.profiles|profiles_pkey|p|PRIMARY KEY (id)|validated=true|deferrable=false
+constraint|public.profiles|profiles_role_check|c|CHECK (role = ANY (ARRAY['driver'::text, 'mechanic'::text, 'admin'::text]))|validated=true|deferrable=false
+constraint|public.profiles|profiles_specialization_len|c|CHECK (char_length(specialization) <= 1000)|validated=true|deferrable=false
+constraint|public.profiles|profiles_vat_number_len|c|CHECK (char_length(vat_number) <= 32)|validated=true|deferrable=false
+constraint|public.push_tokens|push_tokens_pkey|p|PRIMARY KEY (token)|validated=true|deferrable=false
+constraint|public.push_tokens|push_tokens_platform_check|c|CHECK (platform IS NULL OR (platform = ANY (ARRAY['ios'::text, 'android'::text])))|validated=true|deferrable=false
+constraint|public.push_tokens|push_tokens_user_id_fkey|f|FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.ratings|ratings_comment_len|c|CHECK (char_length(comment) <= 1000)|validated=true|deferrable=false
+constraint|public.ratings|ratings_driver_id_fkey|f|FOREIGN KEY (driver_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.ratings|ratings_mechanic_id_driver_id_key|u|UNIQUE (mechanic_id, driver_id)|validated=true|deferrable=false
+constraint|public.ratings|ratings_mechanic_id_fkey|f|FOREIGN KEY (mechanic_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.ratings|ratings_pkey|p|PRIMARY KEY (id)|validated=true|deferrable=false
+constraint|public.ratings|ratings_stars_check|c|CHECK (stars >= 1 AND stars <= 5)|validated=true|deferrable=false
+constraint|public.reports|reports_details_len|c|CHECK (char_length(details) <= 2000)|validated=true|deferrable=false
+constraint|public.reports|reports_listing_id_fkey|f|FOREIGN KEY (listing_id) REFERENCES public.market_listings(id) ON DELETE SET NULL|validated=true|deferrable=false
+constraint|public.reports|reports_message_table_check|c|CHECK (message_table = ANY (ARRAY['messages'::text, 'channel_messages'::text]))|validated=true|deferrable=false
+constraint|public.reports|reports_pkey|p|PRIMARY KEY (id)|validated=true|deferrable=false
+constraint|public.reports|reports_reason_check|c|CHECK (reason = ANY (ARRAY['spam'::text, 'harassment'::text, 'inappropriate'::text, 'scam'::text, 'other'::text]))|validated=true|deferrable=false
+constraint|public.reports|reports_reported_user_id_fkey|f|FOREIGN KEY (reported_user_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.reports|reports_reporter_id_fkey|f|FOREIGN KEY (reporter_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.reports|reports_status_check|c|CHECK (status = ANY (ARRAY['pending'::text, 'reviewed'::text, 'dismissed'::text]))|validated=true|deferrable=false
+constraint|public.search_history|search_history_driver_id_fkey|f|FOREIGN KEY (driver_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.search_history|search_history_mechanic_id_fkey|f|FOREIGN KEY (mechanic_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.search_history|search_history_pkey|p|PRIMARY KEY (driver_id, mechanic_id)|validated=true|deferrable=false
+constraint|public.translation_requests|translation_requests_pkey|p|PRIMARY KEY (id)|validated=true|deferrable=false
+constraint|public.translation_requests|translation_requests_user_id_fkey|f|FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.trucks|trucks_chassis_number_len|c|CHECK (char_length(chassis_number) <= 30)|validated=true|deferrable=false
+constraint|public.trucks|trucks_driver_id_fkey|f|FOREIGN KEY (driver_id) REFERENCES public.profiles(id) ON DELETE CASCADE|validated=true|deferrable=false
+constraint|public.trucks|trucks_make_len|c|CHECK (char_length(make) <= 80)|validated=true|deferrable=false
+constraint|public.trucks|trucks_model_len|c|CHECK (char_length(model) <= 80)|validated=true|deferrable=false
+constraint|public.trucks|trucks_nickname_len|c|CHECK (char_length(nickname) <= 80)|validated=true|deferrable=false
+constraint|public.trucks|trucks_pkey|p|PRIMARY KEY (id)|validated=true|deferrable=false
+constraint|public.trucks|trucks_plate_number_len|c|CHECK (char_length(plate_number) <= 20)|validated=true|deferrable=false
+cron|cleanup-announcements-hourly|17 * * * *|active=true|command=8fd6f75ec1240f4f59db7aa0ebee2f6c
+cron|cleanup-client-diagnostics-daily|41 3 * * *|active=true|command=b9d8885c77f77baa274a6b05131cd4a9
+cron|cleanup-direct-push-state-daily|53 3 * * *|active=true|command=7d40cef0993852933a362eb48ee48bdd
+cron|cleanup-rate-events-daily|47 3 * * *|active=true|command=0c4961b8e86236694b43bfa02f9160a3
+cron|cleanup-translation-requests-daily|57 3 * * *|active=true|command=5036b6ef72bfc1b966789546ac091e0e
+default_acl|GLOBAL|S|-
+default_acl|GLOBAL|f|PUBLIC=false;-
+default_acl|GLOBAL|r|-
+default_acl|app|S|-
+default_acl|app|f|PUBLIC=none;-
+default_acl|app|r|-
+default_acl|extensions|S|-
+default_acl|extensions|f|PUBLIC=false;anon=X,authenticated=X,service_role=X
+default_acl|extensions|r|-
+default_acl|public|S|-
+default_acl|public|f|PUBLIC=false;service_role=X
+default_acl|public|r|-
+default_acl|storage|S|anon=rwU,authenticated=rwU,service_role=rwU
+default_acl|storage|f|PUBLIC=false;anon=X,authenticated=X,service_role=X
+default_acl|storage|r|anon=arwdDxtm,authenticated=arwdDxtm,service_role=arwdDxtm
+extension|pg_cron|true
+extension|pg_graphql|false
+extension|pg_net|true
+extension|pg_stat_statements|true
+extension|pgcrypto|true
+extension|supabase_vault|true
+extension|unaccent|true
+extension|uuid-ossp|true
+function|app.like_escape(p_query text)|sql|f|i|secdef=false|strict=true|config=search_path=""|returns=text|args=p_query text|body=6e564ac6fc3030acf71cc33432c1e26e|anon=true|authenticated=true|service_role=true|public=false
+function|app.limit_announcements()|plpgsql|f|v|secdef=true|strict=false|config=search_path=""|returns=trigger|args=|body=3d83cb5c08cf84ada5314ce3989cf552|anon=false|authenticated=false|service_role=false|public=false
+function|app.limit_channel_messages()|plpgsql|f|v|secdef=true|strict=false|config=search_path=""|returns=trigger|args=|body=3bf72cf4972b20deb93155b90da4651f|anon=false|authenticated=false|service_role=false|public=false
+function|app.limit_market_listings()|plpgsql|f|v|secdef=true|strict=false|config=search_path=""|returns=trigger|args=|body=46451926f8c7462adb66ea7d311352d8|anon=false|authenticated=false|service_role=false|public=false
+function|app.limit_messages()|plpgsql|f|v|secdef=true|strict=false|config=search_path=""|returns=trigger|args=|body=5e81c917cb1ef06b16c0a032970690d9|anon=false|authenticated=false|service_role=false|public=false
+function|app.limit_reports()|plpgsql|f|v|secdef=true|strict=false|config=search_path=""|returns=trigger|args=|body=e37e4493a7955f9079d9fe11229a3af9|anon=false|authenticated=false|service_role=false|public=false
+function|app.rate_limit_ok(p_kind text, p_window interval, p_max integer)|plpgsql|f|v|secdef=true|strict=false|config=search_path=""|returns=boolean|args=p_kind text, p_window interval, p_max integer|body=c3ce8e48b153d348b970a1bd0414b187|anon=false|authenticated=false|service_role=false|public=false
+function|app.search_norm(p_text text)|sql|f|s|secdef=false|strict=false|config=search_path=""|returns=text|args=p_text text|body=59629d82df5cd39a82d1f65a7693802f|anon=true|authenticated=true|service_role=true|public=false
+function|app.storage_quota_ok()|sql|f|s|secdef=true|strict=false|config=search_path=""|returns=boolean|args=|body=822fd9685f9066e765234408f6945988|anon=false|authenticated=true|service_role=false|public=false
+function|app.uuid_or_null(p_text text)|sql|f|i|secdef=false|strict=true|config=search_path=""|returns=uuid|args=p_text text|body=f98ca7e21d3a28d27bf30ed91e04f7ca|anon=true|authenticated=true|service_role=true|public=false
+function|extensions.unaccent(regdictionary, text)|c|f|s|secdef=false|strict=true|config=-|returns=text|args=regdictionary, text|body=26018d65d186aaf6b4c5c0c20984ff03|anon=true|authenticated=true|service_role=true|public=true
+function|extensions.unaccent(text)|c|f|s|secdef=false|strict=true|config=-|returns=text|args=text|body=26018d65d186aaf6b4c5c0c20984ff03|anon=true|authenticated=true|service_role=true|public=true
+function|public._purge_user_data(p_uid uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=text[]|args=p_uid uuid|body=56345e637ac57fa30c1b1e42d823b172|anon=false|authenticated=false|service_role=true|public=false
+function|public.accept_announcement(p_announcement_id uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_announcement_id uuid|body=888ef9cc8e8c87a7a66c45516661b1d9|anon=false|authenticated=false|service_role=true|public=false
+function|public.accept_application(p_application_id uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=uuid|args=p_application_id uuid|body=1b34f160c7c67b04066a3adf344ac2c9|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_ban_user(p_uid uuid, p_reason text, p_until timestamp with time zone)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_uid uuid, p_reason text, p_until timestamp with time zone DEFAULT NULL::timestamp with time zone|body=dc25a4af25d3d717d09c1b4c477b13b8|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_dashboard_stats()|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=jsonb|args=|body=405fccedfe819b2b5e02ee4c15603374|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_delete_announcement(p_id uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_id uuid|body=ba708ee6d1bca235d0183f27e5c5729a|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_delete_listing(p_id uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_id uuid|body=63c8b0e852928ca8ddf3b40476b5e0b3|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_delete_message(p_table text, p_id uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_table text, p_id uuid|body=dddf2df13746b511d61eb54b2203e4c5|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_delete_review(p_id uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_id uuid|body=aaf775d851aea0893716780e57a5aaf6|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_list_channel_messages(p_limit integer)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=jsonb|args=p_limit integer DEFAULT 100|body=ac37a58e6073457312b0667a173cabf0|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_list_recent_announcements(p_limit integer)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=jsonb|args=p_limit integer DEFAULT 100|body=3fe9aae830d93cab5ed2828ee01c60ae|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_list_recent_listings(p_limit integer)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=jsonb|args=p_limit integer DEFAULT 100|body=0227d7015895931bd6b5bfdb483f4e65|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_list_recent_reviews(p_limit integer)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=jsonb|args=p_limit integer DEFAULT 100|body=aaee333f42d641d01c48772581e19b7d|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_list_reports(p_status text)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=jsonb|args=p_status text DEFAULT 'pending'::text|body=517f61db22dcdd1e8492abb492b5e328|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_pending_reports_count()|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=integer|args=|body=337de8e6780cb241c1eb7ac408dd292f|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_purge_accounts(p_from timestamp with time zone, p_to timestamp with time zone, p_dry_run boolean)|plpgsql|f|v|secdef=true|strict=false|config=search_path=""|returns=jsonb|args=p_from timestamp with time zone, p_to timestamp with time zone, p_dry_run boolean DEFAULT true|body=197b4082c36c098a89d03cb20556a171|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_report_context(p_table text, p_message_id uuid, p_before integer, p_after integer)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=jsonb|args=p_table text, p_message_id uuid, p_before integer DEFAULT 25, p_after integer DEFAULT 25|body=1fea7c36b0fd068a5f9656c0cc4ba11f|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_report_conversation(p_report_id uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=jsonb|args=p_report_id uuid|body=c6cb1121e5b728ada06c621f6ad09716|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_search_announcements(p_query text, p_limit integer)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=jsonb|args=p_query text, p_limit integer DEFAULT 100|body=e4070d09c49db0fe0989cf0a13d53eca|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_search_users(p_query text)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=jsonb|args=p_query text|body=5047cea807dadf6f97a7aeb78a8a6df3|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_unban_user(p_uid uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_uid uuid|body=0d77eb3a908e1a7a6e7c85e49d320763|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_update_profile(p_uid uuid, p_fields jsonb)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_uid uuid, p_fields jsonb|body=1507ffb44efde818b3d09c103e64f317|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_update_report_status(p_id uuid, p_status text)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_id uuid, p_status text|body=5b597d66f6228587bcee36d00a42f4e9|anon=false|authenticated=true|service_role=true|public=false
+function|public.admin_user_detail(p_uid uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=jsonb|args=p_uid uuid|body=a8c8053510d58a0d56756f3656de6c53|anon=false|authenticated=true|service_role=true|public=false
+function|public.apply_to_announcement(p_announcement_id uuid, p_price_type text, p_price_amount numeric, p_currency text, p_message text)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_announcement_id uuid, p_price_type text, p_price_amount numeric, p_currency text DEFAULT 'RON'::text, p_message text DEFAULT NULL::text|body=ee9ea2bbe6c04e87cc4c361e5061621d|anon=false|authenticated=true|service_role=true|public=false
+function|public.block_user(p_target uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_target uuid|body=e57c762979b55bdda582d024dcff8a67|anon=false|authenticated=true|service_role=true|public=false
+function|public.claim_push_token(p_token text, p_platform text, p_device_token text, p_previous_token text, p_app_build text)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_token text, p_platform text DEFAULT NULL::text, p_device_token text DEFAULT NULL::text, p_previous_token text DEFAULT NULL::text, p_app_build text DEFAULT NULL::text|body=f84e3bd95e7ebf0f2e0bbac607c7c011|anon=false|authenticated=true|service_role=true|public=false
+function|public.delete_message(p_table text, p_id uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_table text, p_id uuid|body=b038db2f590b20629fa2c2fb8d8c66c9|anon=false|authenticated=true|service_role=true|public=false
+function|public.direct_push_allowed(p_user uuid, p_sender uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=boolean|args=p_user uuid, p_sender uuid|body=546826d4f6d2cdba840c5cf60476733b|anon=false|authenticated=false|service_role=true|public=false
+function|public.dismiss_application(p_application_id uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_application_id uuid|body=de3cf1057ddb135faab99c7ceefda88d|anon=false|authenticated=true|service_role=true|public=false
+function|public.distance_km(lat1 double precision, lon1 double precision, lat2 double precision, lon2 double precision)|sql|f|i|secdef=false|strict=false|config=search_path=""|returns=double precision|args=lat1 double precision, lon1 double precision, lat2 double precision, lon2 double precision|body=0b34294f5f94068e95f497f34d361fe6|anon=false|authenticated=true|service_role=true|public=false
+function|public.edit_message(p_table text, p_id uuid, p_content text)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_table text, p_id uuid, p_content text|body=f160876a990e4f70d162ef621ab27e09|anon=false|authenticated=true|service_role=true|public=false
+function|public.enforce_announcement_photo_limit()|plpgsql|f|v|secdef=false|strict=false|config=search_path=""|returns=trigger|args=|body=ffb96bcb5cef5c5dabeff2b734fe5c22|anon=false|authenticated=false|service_role=true|public=false
+function|public.enforce_market_listing_limit()|plpgsql|f|v|secdef=false|strict=false|config=search_path=""|returns=trigger|args=|body=a374dfade2e3c3e083d62f73e40c1819|anon=false|authenticated=false|service_role=true|public=false
+function|public.enforce_market_photo_limit()|plpgsql|f|v|secdef=false|strict=false|config=search_path=""|returns=trigger|args=|body=4ba1c0de690bfe5f6bfc6e7e1f3ec92b|anon=false|authenticated=false|service_role=true|public=false
+function|public.get_driver_phone(p_driver_id uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=text|args=p_driver_id uuid|body=65985cf922ca2bedbb24ef79bd06c8a2|anon=false|authenticated=true|service_role=true|public=false
+function|public.get_mechanic_phone(p_mechanic_id uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=text|args=p_mechanic_id uuid|body=d482d325d6b0065e4b6b280276bc073a|anon=false|authenticated=true|service_role=true|public=false
+function|public.get_own_profile()|sql|f|s|secdef=true|strict=false|config=search_path=public|returns=SETOF public.profiles|args=|body=726a4c6812bad03c4b3e84b79d4d0e32|anon=false|authenticated=true|service_role=true|public=false
+function|public.guard_announcement_client_writes()|plpgsql|f|v|secdef=false|strict=false|config=search_path=public|returns=trigger|args=|body=3e9a53b3e44bdd2ec4531c74e1577fa6|anon=false|authenticated=false|service_role=true|public=false
+function|public.guard_not_banned()|plpgsql|f|v|secdef=false|strict=false|config=search_path=""|returns=trigger|args=|body=9b9ed04ccc22206526d0da7dab57848d|anon=false|authenticated=false|service_role=true|public=false
+function|public.guard_profile_privileged_columns()|plpgsql|f|v|secdef=false|strict=false|config=search_path=public|returns=trigger|args=|body=27336ed68ebcbeff7c98f9dfae973aa3|anon=false|authenticated=false|service_role=true|public=false
+function|public.guest_search_market(p_query text, p_category text, p_sort text, p_limit integer, p_offset integer)|sql|f|s|secdef=false|strict=false|config=search_path=public, extensions|returns=SETOF public.guest_market_listings|args=p_query text, p_category text DEFAULT NULL::text, p_sort text DEFAULT 'recent'::text, p_limit integer DEFAULT 30, p_offset integer DEFAULT 0|body=04ca8103fe27337ebee6e9e19584ec40|anon=true|authenticated=false|service_role=true|public=false
+function|public.guest_search_mechanics(p_query text)|sql|f|s|secdef=false|strict=false|config=search_path=public, extensions|returns=SETOF public.guest_profiles|args=p_query text|body=b46185cd35255b19ca2f4d0a0f58dc67|anon=true|authenticated=false|service_role=true|public=false
+function|public.handle_auth_user_deleted()|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=trigger|args=|body=2e3fc4036ebc20d8a1827229b4e6ee8f|anon=false|authenticated=false|service_role=true|public=false
+function|public.is_admin(p_uid uuid)|sql|f|s|secdef=true|strict=false|config=search_path=public|returns=boolean|args=p_uid uuid DEFAULT auth.uid()|body=13fb4629a70d0e399dd19728ff6bd8f5|anon=false|authenticated=true|service_role=true|public=false
+function|public.is_banned(p_uid uuid)|sql|f|s|secdef=true|strict=false|config=search_path=public|returns=boolean|args=p_uid uuid DEFAULT auth.uid()|body=d0c21e9c8948b86a9df55a21c65a71b6|anon=false|authenticated=true|service_role=true|public=false
+function|public.is_block_between(p_a uuid, p_b uuid)|sql|f|s|secdef=true|strict=false|config=search_path=public|returns=boolean|args=p_a uuid, p_b uuid|body=153e0b8b2e07592606dc0a30b44945a9|anon=false|authenticated=true|service_role=true|public=false
+function|public.is_blocked_by(p_blocker uuid, p_blocked uuid)|sql|f|s|secdef=true|strict=false|config=search_path=public|returns=boolean|args=p_blocker uuid, p_blocked uuid|body=6313b2b11fb1adb55215bc2d459c152a|anon=false|authenticated=false|service_role=true|public=false
+function|public.is_conversation_blocked(p_conversation_id uuid)|sql|f|s|secdef=true|strict=false|config=search_path=public|returns=boolean|args=p_conversation_id uuid|body=0b9aa86adb1843bb2ab950bc42353e7b|anon=false|authenticated=true|service_role=true|public=false
+function|public.notify_mechanics_new_announcement(p_announcement public.announcements)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public, extensions|returns=void|args=p_announcement public.announcements|body=292dbe2475d8a3b8385b6eb08c26184e|anon=false|authenticated=false|service_role=true|public=false
+function|public.notify_push(p_user_id uuid, p_title text, p_body text, p_data jsonb, p_tag text, p_ios_title text, p_ios_body text)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public, extensions|returns=void|args=p_user_id uuid, p_title text, p_body text, p_data jsonb DEFAULT '{}'::jsonb, p_tag text DEFAULT NULL::text, p_ios_title text DEFAULT NULL::text, p_ios_body text DEFAULT NULL::text|body=07caf2999cefeef2c271af5374113b97|anon=false|authenticated=false|service_role=true|public=false
+function|public.on_announcement_delete_tombstone_messages()|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=trigger|args=|body=3fe6f27e2a30cb494198eab409bf0848|anon=false|authenticated=false|service_role=true|public=false
+function|public.on_announcement_notify()|plpgsql|f|v|secdef=true|strict=false|config=search_path=public, extensions|returns=trigger|args=|body=201e30a251fede41284b517f25d2f8fa|anon=false|authenticated=false|service_role=true|public=false
+function|public.on_application_accepted_notify()|plpgsql|f|v|secdef=true|strict=false|config=search_path=public, extensions|returns=trigger|args=|body=6129f6a77631096d398c1dfda821669e|anon=false|authenticated=false|service_role=true|public=false
+function|public.on_application_notify()|plpgsql|f|v|secdef=true|strict=false|config=search_path=public, extensions|returns=trigger|args=|body=a5a41c3f20f30d11ca14209f887dd9dc|anon=false|authenticated=false|service_role=true|public=false
+function|public.on_channel_message_notify()|plpgsql|f|v|secdef=true|strict=false|config=search_path=public, extensions|returns=trigger|args=|body=95fd90a5500b623cc1978184d03c5465|anon=false|authenticated=false|service_role=true|public=false
+function|public.on_listing_delete_tombstone_messages()|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=trigger|args=|body=4a7a4300743d71cfb241aae6af927c61|anon=false|authenticated=false|service_role=true|public=false
+function|public.on_market_listing_notify()|plpgsql|f|v|secdef=true|strict=false|config=search_path=public, extensions|returns=trigger|args=|body=15f57ce5f09af28e166248c22b4e9280|anon=false|authenticated=false|service_role=true|public=false
+function|public.on_message_notify()|plpgsql|f|v|secdef=true|strict=false|config=search_path=public, extensions|returns=trigger|args=|body=34273416531aef1b62156995a313f6db|anon=false|authenticated=false|service_role=true|public=false
+function|public.on_profile_delete_tombstone_messages()|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=trigger|args=|body=365963ac295ed04fb62fe3aeb3014995|anon=false|authenticated=false|service_role=true|public=false
+function|public.purge_user_data()|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=text[]|args=|body=53e24d38442806e47098a2a95ebafe7a|anon=false|authenticated=true|service_role=true|public=false
+function|public.push_text(p_lang text, p_key text)|sql|f|i|secdef=false|strict=false|config=search_path=""|returns=text|args=p_lang text, p_key text|body=c2dca5f597f5c788944c1e5ff9589b4d|anon=false|authenticated=true|service_role=true|public=false
+function|public.ratings_after_change()|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=trigger|args=|body=1b31b0eb776fb823f6920371fe1e97a9|anon=false|authenticated=false|service_role=true|public=false
+function|public.ratings_touch_updated_at()|plpgsql|f|v|secdef=false|strict=false|config=search_path=""|returns=trigger|args=|body=92d09bac7925290a633e97c74a1444b6|anon=false|authenticated=false|service_role=true|public=false
+function|public.recompute_mechanic_rating(p_mechanic uuid)|sql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_mechanic uuid|body=55bf7e0f2f7748375fe6310b0c2c176e|anon=false|authenticated=false|service_role=true|public=false
+function|public.record_announcement_view(p_announcement_id uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_announcement_id uuid|body=b6268f623fa8764d389e1c22b1e50e7d|anon=false|authenticated=true|service_role=true|public=false
+function|public.reject_application(p_application_id uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_application_id uuid|body=f85422142167b009b4d884c68e93289b|anon=false|authenticated=true|service_role=true|public=false
+function|public.reports_snapshot_from_source()|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=trigger|args=|body=2e56b80cc49a2a0fbd2a20c200d5c4ee|anon=false|authenticated=false|service_role=true|public=false
+function|public.repost_announcement(p_announcement_id uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_announcement_id uuid|body=aad6b70df75a2dbc9c014bb22d87b5cc|anon=false|authenticated=true|service_role=true|public=false
+function|public.resolve_open_announcement(p_announcement_id uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_announcement_id uuid|body=609f4e69e5442330e5e9ee525876b33a|anon=false|authenticated=true|service_role=true|public=false
+function|public.resubmit_application(p_application_id uuid, p_price_type text, p_price_amount numeric, p_currency text, p_message text)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_application_id uuid, p_price_type text, p_price_amount numeric, p_currency text DEFAULT 'RON'::text, p_message text DEFAULT NULL::text|body=d623db67ab2c9adca36e5be937345a03|anon=false|authenticated=true|service_role=true|public=false
+function|public.search_market_listings(p_query text, p_category text, p_sort text, p_limit integer, p_offset integer)|sql|f|s|secdef=false|strict=false|config=search_path=public, extensions|returns=SETOF public.market_listings|args=p_query text, p_category text DEFAULT NULL::text, p_sort text DEFAULT 'recent'::text, p_limit integer DEFAULT 30, p_offset integer DEFAULT 0|body=ccd5a7fce800bd8f9d7fb53997ae8a48|anon=false|authenticated=true|service_role=true|public=false
+function|public.search_mechanics(p_query text)|sql|f|s|secdef=false|strict=false|config=search_path=public, extensions|returns=TABLE(id uuid, full_name text, specialization text, activity_zone text, rating_avg numeric, rating_count integer, avatar_path text)|args=p_query text|body=04848b2117c5917e77a18819c8cb3a57|anon=false|authenticated=true|service_role=true|public=false
+function|public.search_users(p_query text)|sql|f|s|secdef=false|strict=false|config=search_path=public, extensions|returns=TABLE(id uuid, full_name text, role text, specialization text, activity_zone text, rating_avg numeric, rating_count integer, avatar_path text)|args=p_query text|body=7a321878f271be8e9d6a9404c509ae51|anon=false|authenticated=true|service_role=true|public=false
+function|public.seed_channel_push_prefs_for_channel()|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=trigger|args=|body=a7f9f1734b293b483c1e0c4f0103e65d|anon=false|authenticated=false|service_role=true|public=false
+function|public.seed_channel_push_prefs_for_profile()|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=trigger|args=|body=2ee1ee04384c35300f316ba16ae07972|anon=false|authenticated=false|service_role=true|public=false
+function|public.set_announcement_source_lang()|plpgsql|f|v|secdef=false|strict=false|config=search_path=public|returns=trigger|args=|body=46e8ccf3689e3e0f85eac4a3841b0cc8|anon=false|authenticated=false|service_role=true|public=false
+function|public.set_announcements_hidden(p_ids uuid[])|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=integer|args=p_ids uuid[] DEFAULT NULL::uuid[]|body=0c03460eabd7470ea5b15f0bf005f4ec|anon=false|authenticated=true|service_role=true|public=false
+function|public.set_updated_at()|plpgsql|f|v|secdef=false|strict=false|config=search_path=""|returns=trigger|args=|body=f019c2a85daf0ed4058b77a7a14664a9|anon=false|authenticated=false|service_role=true|public=false
+function|public.start_direct_conversation(p_mechanic_id uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=uuid|args=p_mechanic_id uuid|body=e300b50ed25b2505fa3b450b3ec1b1f4|anon=false|authenticated=true|service_role=true|public=false
+function|public.start_market_conversation(p_listing_id uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=uuid|args=p_listing_id uuid|body=eda018db65484a39e57be753b7c08a5c|anon=false|authenticated=true|service_role=true|public=false
+function|public.storage_api_delete(p_bucket text, p_name text)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_bucket text, p_name text|body=b6ca700c40111858bb1787fdfc16a9cb|anon=false|authenticated=false|service_role=true|public=false
+function|public.user_lang(p_user_id uuid)|sql|f|s|secdef=false|strict=false|config=search_path=""|returns=text|args=p_user_id uuid|body=438c491a3ce1ecd153bf570d1d5c278d|anon=false|authenticated=true|service_role=true|public=false
+function|public.withdraw_application(p_application_id uuid)|plpgsql|f|v|secdef=true|strict=false|config=search_path=public|returns=void|args=p_application_id uuid|body=dfeaadbe2c6ca44c15ee572c73da394a|anon=false|authenticated=true|service_role=true|public=false
+index|app.rate_events_pkey|CREATE UNIQUE INDEX rate_events_pkey ON app.rate_events USING btree (id)|valid=true
+index|app.rate_events_user_kind_time|CREATE INDEX rate_events_user_kind_time ON app.rate_events USING btree (user_id, kind, created_at DESC)|valid=true
+index|public.admin_audit_log_pkey|CREATE UNIQUE INDEX admin_audit_log_pkey ON public.admin_audit_log USING btree (id)|valid=true
+index|public.announcement_photos_pkey|CREATE UNIQUE INDEX announcement_photos_pkey ON public.announcement_photos USING btree (id)|valid=true
+index|public.announcement_translations_pkey|CREATE UNIQUE INDEX announcement_translations_pkey ON public.announcement_translations USING btree (announcement_id, lang)|valid=true
+index|public.announcement_views_pkey|CREATE UNIQUE INDEX announcement_views_pkey ON public.announcement_views USING btree (announcement_id, viewer_id)|valid=true
+index|public.announcement_views_viewer_idx|CREATE INDEX announcement_views_viewer_idx ON public.announcement_views USING btree (viewer_id)|valid=true
+index|public.announcements_pkey|CREATE UNIQUE INDEX announcements_pkey ON public.announcements USING btree (id)|valid=true
+index|public.app_versions_pkey|CREATE UNIQUE INDEX app_versions_pkey ON public.app_versions USING btree (platform)|valid=true
+index|public.applications_announcement_id_mechanic_id_key|CREATE UNIQUE INDEX applications_announcement_id_mechanic_id_key ON public.applications USING btree (announcement_id, mechanic_id)|valid=true
+index|public.applications_pkey|CREATE UNIQUE INDEX applications_pkey ON public.applications USING btree (id)|valid=true
+index|public.blocked_users_pkey|CREATE UNIQUE INDEX blocked_users_pkey ON public.blocked_users USING btree (blocker_id, blocked_id)|valid=true
+index|public.channel_messages_pkey|CREATE UNIQUE INDEX channel_messages_pkey ON public.channel_messages USING btree (id)|valid=true
+index|public.channel_push_prefs_pkey|CREATE UNIQUE INDEX channel_push_prefs_pkey ON public.channel_push_prefs USING btree (user_id, channel_id)|valid=true
+index|public.channel_push_state_pkey|CREATE UNIQUE INDEX channel_push_state_pkey ON public.channel_push_state USING btree (user_id, channel_id)|valid=true
+index|public.channel_reads_pkey|CREATE UNIQUE INDEX channel_reads_pkey ON public.channel_reads USING btree (channel_id, user_id)|valid=true
+index|public.channels_pkey|CREATE UNIQUE INDEX channels_pkey ON public.channels USING btree (id)|valid=true
+index|public.client_diagnostics_occurred_idx|CREATE INDEX client_diagnostics_occurred_idx ON public.client_diagnostics USING btree (occurred_at DESC)|valid=true
+index|public.client_diagnostics_pkey|CREATE UNIQUE INDEX client_diagnostics_pkey ON public.client_diagnostics USING btree (id)|valid=true
+index|public.client_diagnostics_user_idx|CREATE INDEX client_diagnostics_user_idx ON public.client_diagnostics USING btree (user_id, occurred_at DESC)|valid=true
+index|public.conversation_deletions_pkey|CREATE UNIQUE INDEX conversation_deletions_pkey ON public.conversation_deletions USING btree (conversation_id, user_id)|valid=true
+index|public.conversations_announcement_id_key|CREATE UNIQUE INDEX conversations_announcement_id_key ON public.conversations USING btree (announcement_id)|valid=true
+index|public.conversations_pkey|CREATE UNIQUE INDEX conversations_pkey ON public.conversations USING btree (id)|valid=true
+index|public.direct_push_state_pkey|CREATE UNIQUE INDEX direct_push_state_pkey ON public.direct_push_state USING btree (user_id, sender_id)|valid=true
+index|public.favorite_mechanics_pkey|CREATE UNIQUE INDEX favorite_mechanics_pkey ON public.favorite_mechanics USING btree (driver_id, mechanic_id)|valid=true
+index|public.idx_admin_audit_created|CREATE INDEX idx_admin_audit_created ON public.admin_audit_log USING btree (created_at DESC)|valid=true
+index|public.idx_announcement_photos_ann|CREATE INDEX idx_announcement_photos_ann ON public.announcement_photos USING btree (announcement_id)|valid=true
+index|public.idx_announcements_driver|CREATE INDEX idx_announcements_driver ON public.announcements USING btree (driver_id)|valid=true
+index|public.idx_announcements_mechanic|CREATE INDEX idx_announcements_mechanic ON public.announcements USING btree (mechanic_id) WHERE (mechanic_id IS NOT NULL)|valid=true
+index|public.idx_announcements_open_geo|CREATE INDEX idx_announcements_open_geo ON public.announcements USING btree (latitude, longitude) WHERE (status = 'open'::text)|valid=true
+index|public.idx_announcements_status_created|CREATE INDEX idx_announcements_status_created ON public.announcements USING btree (status, created_at DESC)|valid=true
+index|public.idx_applications_announcement|CREATE INDEX idx_applications_announcement ON public.applications USING btree (announcement_id)|valid=true
+index|public.idx_applications_mechanic|CREATE INDEX idx_applications_mechanic ON public.applications USING btree (mechanic_id)|valid=true
+index|public.idx_blocked_users_blocked_blocker|CREATE INDEX idx_blocked_users_blocked_blocker ON public.blocked_users USING btree (blocked_id, blocker_id)|valid=true
+index|public.idx_channel_messages_channel_created|CREATE INDEX idx_channel_messages_channel_created ON public.channel_messages USING btree (channel_id, created_at DESC)|valid=true
+index|public.idx_channel_push_prefs_channel_enabled|CREATE INDEX idx_channel_push_prefs_channel_enabled ON public.channel_push_prefs USING btree (channel_id) WHERE enabled|valid=true
+index|public.idx_channels_single_global|CREATE UNIQUE INDEX idx_channels_single_global ON public.channels USING btree (type) WHERE (type = 'global'::text)|valid=true
+index|public.idx_conversations_direct_pair|CREATE UNIQUE INDEX idx_conversations_direct_pair ON public.conversations USING btree (driver_id, mechanic_id) WHERE is_direct|valid=true
+index|public.idx_conversations_driver|CREATE INDEX idx_conversations_driver ON public.conversations USING btree (driver_id)|valid=true
+index|public.idx_conversations_market_pair|CREATE UNIQUE INDEX idx_conversations_market_pair ON public.conversations USING btree (listing_id, driver_id) WHERE (listing_id IS NOT NULL)|valid=true
+index|public.idx_conversations_mechanic|CREATE INDEX idx_conversations_mechanic ON public.conversations USING btree (mechanic_id)|valid=true
+index|public.idx_market_listing_photos_listing|CREATE INDEX idx_market_listing_photos_listing ON public.market_listing_photos USING btree (listing_id, "position")|valid=true
+index|public.idx_market_listings_category_active|CREATE INDEX idx_market_listings_category_active ON public.market_listings USING btree (category) WHERE (status = 'active'::text)|valid=true
+index|public.idx_market_listings_seller|CREATE INDEX idx_market_listings_seller ON public.market_listings USING btree (seller_id, created_at DESC)|valid=true
+index|public.idx_market_listings_status_created|CREATE INDEX idx_market_listings_status_created ON public.market_listings USING btree (status, created_at DESC)|valid=true
+index|public.idx_messages_conversation_created|CREATE INDEX idx_messages_conversation_created ON public.messages USING btree (conversation_id, created_at DESC)|valid=true
+index|public.idx_profiles_mechanic_geo|CREATE INDEX idx_profiles_mechanic_geo ON public.profiles USING btree (latitude, longitude) WHERE (role = 'mechanic'::text)|valid=true
+index|public.idx_profiles_mechanic_push|CREATE INDEX idx_profiles_mechanic_push ON public.profiles USING btree (role, push_enabled) WHERE (role = 'mechanic'::text)|valid=true
+index|public.idx_ratings_driver|CREATE INDEX idx_ratings_driver ON public.ratings USING btree (driver_id)|valid=true
+index|public.idx_ratings_mechanic|CREATE INDEX idx_ratings_mechanic ON public.ratings USING btree (mechanic_id)|valid=true
+index|public.idx_reports_reporter|CREATE INDEX idx_reports_reporter ON public.reports USING btree (reporter_id)|valid=true
+index|public.idx_reports_status_created|CREATE INDEX idx_reports_status_created ON public.reports USING btree (status, created_at DESC)|valid=true
+index|public.idx_search_history_recent|CREATE INDEX idx_search_history_recent ON public.search_history USING btree (driver_id, searched_at DESC)|valid=true
+index|public.idx_translation_requests_user_time|CREATE INDEX idx_translation_requests_user_time ON public.translation_requests USING btree (user_id, requested_at DESC)|valid=true
+index|public.idx_trucks_driver|CREATE INDEX idx_trucks_driver ON public.trucks USING btree (driver_id)|valid=true
+index|public.market_listing_photos_pkey|CREATE UNIQUE INDEX market_listing_photos_pkey ON public.market_listing_photos USING btree (id)|valid=true
+index|public.market_listings_pkey|CREATE UNIQUE INDEX market_listings_pkey ON public.market_listings USING btree (id)|valid=true
+index|public.message_reads_pkey|CREATE UNIQUE INDEX message_reads_pkey ON public.message_reads USING btree (conversation_id, user_id)|valid=true
+index|public.messages_pkey|CREATE UNIQUE INDEX messages_pkey ON public.messages USING btree (id)|valid=true
+index|public.profiles_pkey|CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)|valid=true
+index|public.push_tokens_device_token_idx|CREATE INDEX push_tokens_device_token_idx ON public.push_tokens USING btree (device_token) WHERE (device_token IS NOT NULL)|valid=true
+index|public.push_tokens_pkey|CREATE UNIQUE INDEX push_tokens_pkey ON public.push_tokens USING btree (token)|valid=true
+index|public.push_tokens_user_id_idx|CREATE INDEX push_tokens_user_id_idx ON public.push_tokens USING btree (user_id)|valid=true
+index|public.ratings_mechanic_id_driver_id_key|CREATE UNIQUE INDEX ratings_mechanic_id_driver_id_key ON public.ratings USING btree (mechanic_id, driver_id)|valid=true
+index|public.ratings_pkey|CREATE UNIQUE INDEX ratings_pkey ON public.ratings USING btree (id)|valid=true
+index|public.reports_pkey|CREATE UNIQUE INDEX reports_pkey ON public.reports USING btree (id)|valid=true
+index|public.search_history_pkey|CREATE UNIQUE INDEX search_history_pkey ON public.search_history USING btree (driver_id, mechanic_id)|valid=true
+index|public.translation_requests_pkey|CREATE UNIQUE INDEX translation_requests_pkey ON public.translation_requests USING btree (id)|valid=true
+index|public.trucks_pkey|CREATE UNIQUE INDEX trucks_pkey ON public.trucks USING btree (id)|valid=true
+index|public.uq_reports_reporter_listing|CREATE UNIQUE INDEX uq_reports_reporter_listing ON public.reports USING btree (reporter_id, listing_id) WHERE (listing_id IS NOT NULL)|valid=true
+index|public.uq_reports_reporter_message|CREATE UNIQUE INDEX uq_reports_reporter_message ON public.reports USING btree (reporter_id, message_id) WHERE (message_id IS NOT NULL)|valid=true
+policy|public.admin_audit_log|audit_select_admin|PERMISSIVE|authenticated|SELECT|using=public.is_admin()|check=-
+policy|public.announcement_photos|announcement_photos_delete|PERMISSIVE|authenticated|DELETE|using=(EXISTS ( SELECT 1 FROM public.announcements a WHERE ((a.id = announcement_photos.announcement_id) AND (a.driver_id = auth.uid()))))|check=-
+policy|public.announcement_photos|announcement_photos_insert|PERMISSIVE|authenticated|INSERT|using=-|check=(EXISTS ( SELECT 1 FROM public.announcements a WHERE ((a.id = announcement_photos.announcement_id) AND (a.driver_id = auth.uid()))))
+policy|public.announcement_photos|announcement_photos_select_admin|PERMISSIVE|authenticated|SELECT|using=public.is_admin()|check=-
+policy|public.announcement_photos|announcement_photos_select|PERMISSIVE|authenticated|SELECT|using=(EXISTS ( SELECT 1 FROM public.announcements a WHERE ((a.id = announcement_photos.announcement_id) AND ((a.driver_id = auth.uid()) OR (a.mechanic_id = auth.uid()) OR ((a.status = 'open'::text) AND (EXISTS ( SELECT 1 FROM public.profiles p WHERE ((p.id = auth.uid()) AND (p.role = 'mechanic'::text)))))))))|check=-
+policy|public.announcement_translations|announcement_translations_select_visible|PERMISSIVE|authenticated|SELECT|using=(EXISTS ( SELECT 1 FROM public.announcements a WHERE (a.id = announcement_translations.announcement_id)))|check=-
+policy|public.announcement_views|announcement_views_select_admin|PERMISSIVE|authenticated|SELECT|using=public.is_admin()|check=-
+policy|public.announcements|announcements_insert_admin|PERMISSIVE|authenticated|INSERT|using=-|check=((driver_id = auth.uid()) AND public.is_admin())
+policy|public.announcements|announcements_insert_driver|PERMISSIVE|authenticated|INSERT|using=-|check=((driver_id = auth.uid()) AND (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'driver'::text)))))
+policy|public.announcements|announcements_insert_mechanic|PERMISSIVE|authenticated|INSERT|using=-|check=((driver_id = auth.uid()) AND (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'mechanic'::text)))))
+policy|public.announcements|announcements_select_admin|PERMISSIVE|authenticated|SELECT|using=public.is_admin()|check=-
+policy|public.announcements|announcements_select_anon|PERMISSIVE|anon|SELECT|using=(status = 'open'::text)|check=-
+policy|public.announcements|announcements_select_driver|PERMISSIVE|authenticated|SELECT|using=(driver_id = auth.uid())|check=-
+policy|public.announcements|announcements_select_mechanic_accepted|PERMISSIVE|authenticated|SELECT|using=(mechanic_id = auth.uid())|check=-
+policy|public.announcements|announcements_select_mechanic_open|PERMISSIVE|authenticated|SELECT|using=((status = 'open'::text) AND (EXISTS ( SELECT 1 FROM public.profiles WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'mechanic'::text)))))|check=-
+policy|public.announcements|announcements_select_not_blocked|RESTRICTIVE|authenticated|SELECT|using=((driver_id = auth.uid()) OR (mechanic_id = auth.uid()) OR public.is_admin() OR (NOT public.is_block_between(driver_id, auth.uid())))|check=-
+policy|public.announcements|announcements_update_cancel|PERMISSIVE|authenticated|UPDATE|using=((driver_id = auth.uid()) AND (status = 'open'::text))|check=((driver_id = auth.uid()) AND (status = 'cancelled'::text))
+policy|public.announcements|announcements_update_resolve|PERMISSIVE|authenticated|UPDATE|using=((driver_id = auth.uid()) AND (status = 'accepted'::text))|check=((driver_id = auth.uid()) AND (status = 'resolved'::text))
+policy|public.announcements|driver can delete own non-accepted announcements|PERMISSIVE|authenticated|DELETE|using=((driver_id = auth.uid()) AND (status <> 'accepted'::text))|check=-
+policy|public.app_versions|app_versions_select_anon|PERMISSIVE|anon|SELECT|using=true|check=-
+policy|public.app_versions|app_versions_select_authenticated|PERMISSIVE|authenticated|SELECT|using=(auth.uid() IS NOT NULL)|check=-
+policy|public.app_versions|app_versions_update_admin|PERMISSIVE|authenticated|UPDATE|using=public.is_admin()|check=public.is_admin()
+policy|public.applications|driver sees applications to own announcements|PERMISSIVE|authenticated|SELECT|using=(EXISTS ( SELECT 1 FROM public.announcements WHERE ((announcements.id = applications.announcement_id) AND (announcements.driver_id = auth.uid()))))|check=-
+policy|public.applications|mechanic sees own applications|PERMISSIVE|authenticated|SELECT|using=(mechanic_id = auth.uid())|check=-
+policy|public.blocked_users|blocked_delete_own|PERMISSIVE|authenticated|DELETE|using=(blocker_id = auth.uid())|check=-
+policy|public.blocked_users|blocked_insert_own|PERMISSIVE|authenticated|INSERT|using=-|check=((blocker_id = auth.uid()) AND (blocked_id <> auth.uid()))
+policy|public.blocked_users|blocked_select_own|PERMISSIVE|authenticated|SELECT|using=(blocker_id = auth.uid())|check=-
+policy|public.channel_messages|channel_messages_insert_own|PERMISSIVE|authenticated|INSERT|using=-|check=(sender_id = auth.uid())
+policy|public.channel_messages|channel_messages_select_anon|PERMISSIVE|anon|SELECT|using=((deleted_at IS NULL) AND (created_at > (now() - '7 days'::interval)))|check=-
+policy|public.channel_messages|channel_messages_select_since_join|PERMISSIVE|authenticated|SELECT|using=((auth.uid() IS NOT NULL) AND ((created_at >= ( SELECT p.created_at FROM public.profiles p WHERE (p.id = ( SELECT auth.uid() AS uid)))) OR public.is_admin()))|check=-
+policy|public.channel_push_prefs|channel_push_prefs_own|PERMISSIVE|authenticated|ALL|using=(user_id = auth.uid())|check=(user_id = auth.uid())
+policy|public.channel_reads|channel_reads_own|PERMISSIVE|authenticated|ALL|using=(user_id = auth.uid())|check=(user_id = auth.uid())
+policy|public.channels|channels_select_all|PERMISSIVE|authenticated|SELECT|using=(auth.uid() IS NOT NULL)|check=-
+policy|public.channels|channels_select_anon|PERMISSIVE|anon|SELECT|using=true|check=-
+policy|public.client_diagnostics|client_diagnostics_insert_own|PERMISSIVE|authenticated|INSERT|using=-|check=(user_id = auth.uid())
+policy|public.client_diagnostics|client_diagnostics_select_admin|PERMISSIVE|authenticated|SELECT|using=public.is_admin()|check=-
+policy|public.conversation_deletions|user manages own deletions|PERMISSIVE|authenticated|ALL|using=(user_id = auth.uid())|check=(user_id = auth.uid())
+policy|public.conversations|conversations_select_participant|PERMISSIVE|authenticated|SELECT|using=((driver_id = auth.uid()) OR (mechanic_id = auth.uid()))|check=-
+policy|public.favorite_mechanics|favorites_delete_own|PERMISSIVE|authenticated|DELETE|using=(driver_id = auth.uid())|check=-
+policy|public.favorite_mechanics|favorites_insert_own|PERMISSIVE|authenticated|INSERT|using=-|check=((driver_id = auth.uid()) AND (EXISTS ( SELECT 1 FROM public.profiles p WHERE ((p.id = favorite_mechanics.mechanic_id) AND (p.role = 'mechanic'::text)))))
+policy|public.favorite_mechanics|favorites_select_own|PERMISSIVE|authenticated|SELECT|using=(driver_id = auth.uid())|check=-
+policy|public.market_listing_photos|market_photos_delete_seller|PERMISSIVE|authenticated|DELETE|using=(EXISTS ( SELECT 1 FROM public.market_listings l WHERE ((l.id = market_listing_photos.listing_id) AND (l.seller_id = auth.uid()))))|check=-
+policy|public.market_listing_photos|market_photos_insert_seller|PERMISSIVE|authenticated|INSERT|using=-|check=(EXISTS ( SELECT 1 FROM public.market_listings l WHERE ((l.id = market_listing_photos.listing_id) AND (l.seller_id = auth.uid()))))
+policy|public.market_listing_photos|market_photos_select_anon|PERMISSIVE|anon|SELECT|using=(EXISTS ( SELECT 1 FROM public.market_listings l WHERE ((l.id = market_listing_photos.listing_id) AND (l.status = 'active'::text))))|check=-
+policy|public.market_listing_photos|market_photos_select|PERMISSIVE|authenticated|SELECT|using=(EXISTS ( SELECT 1 FROM public.market_listings l WHERE (l.id = market_listing_photos.listing_id)))|check=-
+policy|public.market_listing_photos|market_photos_update_seller|PERMISSIVE|authenticated|UPDATE|using=(EXISTS ( SELECT 1 FROM public.market_listings l WHERE ((l.id = market_listing_photos.listing_id) AND (l.seller_id = auth.uid()))))|check=(EXISTS ( SELECT 1 FROM public.market_listings l WHERE ((l.id = market_listing_photos.listing_id) AND (l.seller_id = auth.uid()))))
+policy|public.market_listings|market_delete_own|PERMISSIVE|authenticated|DELETE|using=(seller_id = auth.uid())|check=-
+policy|public.market_listings|market_insert_own|PERMISSIVE|authenticated|INSERT|using=-|check=(seller_id = auth.uid())
+policy|public.market_listings|market_select_anon|PERMISSIVE|anon|SELECT|using=(status = 'active'::text)|check=-
+policy|public.market_listings|market_select_authenticated|PERMISSIVE|authenticated|SELECT|using=(auth.uid() IS NOT NULL)|check=-
+policy|public.market_listings|market_select_not_blocked|RESTRICTIVE|authenticated|SELECT|using=((seller_id = auth.uid()) OR public.is_admin() OR (NOT public.is_block_between(seller_id, auth.uid())))|check=-
+policy|public.market_listings|market_update_own|PERMISSIVE|authenticated|UPDATE|using=(seller_id = auth.uid())|check=(seller_id = auth.uid())
+policy|public.message_reads|message_reads_select_participants|PERMISSIVE|authenticated|SELECT|using=((user_id = auth.uid()) OR (EXISTS ( SELECT 1 FROM public.conversations c WHERE ((c.id = message_reads.conversation_id) AND ((c.driver_id = auth.uid()) OR (c.mechanic_id = auth.uid()))))))|check=-
+policy|public.message_reads|user manages own reads|PERMISSIVE|authenticated|ALL|using=(user_id = auth.uid())|check=(user_id = auth.uid())
+policy|public.messages|messages_insert_not_blocked|RESTRICTIVE|authenticated|INSERT|using=-|check=(NOT public.is_conversation_blocked(conversation_id))
+policy|public.messages|messages_insert_participant|PERMISSIVE|authenticated|INSERT|using=-|check=((sender_id = auth.uid()) AND (EXISTS ( SELECT 1 FROM public.conversations WHERE ((conversations.id = messages.conversation_id) AND ((conversations.driver_id = auth.uid()) OR (conversations.mechanic_id = auth.uid()))))))
+policy|public.messages|messages_select_participant|PERMISSIVE|authenticated|SELECT|using=(EXISTS ( SELECT 1 FROM public.conversations WHERE ((conversations.id = messages.conversation_id) AND ((conversations.driver_id = auth.uid()) OR (conversations.mechanic_id = auth.uid())))))|check=-
+policy|public.profiles|profiles_insert_own|PERMISSIVE|authenticated|INSERT|using=-|check=(auth.uid() = id)
+policy|public.profiles|profiles_select_all|PERMISSIVE|authenticated|SELECT|using=(auth.uid() IS NOT NULL)|check=-
+policy|public.profiles|profiles_select_anon|PERMISSIVE|anon|SELECT|using=((deleted_at IS NULL) AND (NOT ((banned_at IS NOT NULL) AND ((banned_until IS NULL) OR (banned_until > now())))))|check=-
+policy|public.profiles|profiles_update_own|PERMISSIVE|authenticated|UPDATE|using=(auth.uid() = id)|check=-
+policy|public.push_tokens|push_tokens_delete_own|PERMISSIVE|authenticated|DELETE|using=(user_id = auth.uid())|check=-
+policy|public.push_tokens|push_tokens_insert_own|PERMISSIVE|authenticated|INSERT|using=-|check=(user_id = auth.uid())
+policy|public.push_tokens|push_tokens_select_own|PERMISSIVE|authenticated|SELECT|using=(user_id = auth.uid())|check=-
+policy|public.push_tokens|push_tokens_update_own|PERMISSIVE|authenticated|UPDATE|using=(user_id = auth.uid())|check=(user_id = auth.uid())
+policy|public.ratings|ratings_delete_own|PERMISSIVE|authenticated|DELETE|using=(driver_id = auth.uid())|check=-
+policy|public.ratings|ratings_insert_own|PERMISSIVE|authenticated|INSERT|using=-|check=((driver_id = auth.uid()) AND (EXISTS ( SELECT 1 FROM public.announcements a WHERE ((a.driver_id = auth.uid()) AND (a.mechanic_id = ratings.mechanic_id) AND (a.status = 'resolved'::text)))))
+policy|public.ratings|ratings_select_all|PERMISSIVE|authenticated|SELECT|using=(auth.uid() IS NOT NULL)|check=-
+policy|public.ratings|ratings_update_own|PERMISSIVE|authenticated|UPDATE|using=(driver_id = auth.uid())|check=((driver_id = auth.uid()) AND (EXISTS ( SELECT 1 FROM public.announcements a WHERE ((a.driver_id = auth.uid()) AND (a.mechanic_id = ratings.mechanic_id) AND (a.status = 'resolved'::text)))))
+policy|public.reports|reports_insert_own|PERMISSIVE|authenticated|INSERT|using=-|check=(reporter_id = auth.uid())
+policy|public.reports|reports_select_own|PERMISSIVE|authenticated|SELECT|using=(reporter_id = auth.uid())|check=-
+policy|public.search_history|history_delete_own|PERMISSIVE|authenticated|DELETE|using=(driver_id = auth.uid())|check=-
+policy|public.search_history|history_insert_own|PERMISSIVE|authenticated|INSERT|using=-|check=(driver_id = auth.uid())
+policy|public.search_history|history_select_own|PERMISSIVE|authenticated|SELECT|using=(driver_id = auth.uid())|check=-
+policy|public.search_history|history_update_own|PERMISSIVE|authenticated|UPDATE|using=(driver_id = auth.uid())|check=(driver_id = auth.uid())
+policy|public.trucks|driver owns trucks|PERMISSIVE|authenticated|ALL|using=(driver_id = auth.uid())|check=(driver_id = auth.uid())
+policy|storage.objects|photos_delete_announcement|PERMISSIVE|authenticated|DELETE|using=((bucket_id = 'photos'::text) AND ((storage.foldername(name))[1] = 'announcements'::text) AND (EXISTS ( SELECT 1 FROM public.announcements a WHERE ((a.id = app.uuid_or_null((storage.foldername(objects.name))[2])) AND (a.driver_id = auth.uid())))))|check=-
+policy|storage.objects|photos_delete_avatar|PERMISSIVE|authenticated|DELETE|using=((bucket_id = 'photos'::text) AND ((storage.foldername(name))[1] = 'avatars'::text) AND ((storage.foldername(name))[2] = (auth.uid())::text))|check=-
+policy|storage.objects|photos_delete_market|PERMISSIVE|authenticated|DELETE|using=((bucket_id = 'photos'::text) AND ((storage.foldername(name))[1] = 'market'::text) AND (EXISTS ( SELECT 1 FROM public.market_listings l WHERE ((l.id = app.uuid_or_null((storage.foldername(objects.name))[2])) AND (l.seller_id = auth.uid())))))|check=-
+policy|storage.objects|photos_insert_announcement|PERMISSIVE|authenticated|INSERT|using=-|check=((bucket_id = 'photos'::text) AND ((storage.foldername(name))[1] = 'announcements'::text) AND app.storage_quota_ok() AND (EXISTS ( SELECT 1 FROM public.announcements a WHERE ((a.id = app.uuid_or_null((storage.foldername(objects.name))[2])) AND (a.driver_id = auth.uid())))))
+policy|storage.objects|photos_insert_avatar|PERMISSIVE|authenticated|INSERT|using=-|check=((bucket_id = 'photos'::text) AND ((storage.foldername(name))[1] = 'avatars'::text) AND ((storage.foldername(name))[2] = (auth.uid())::text) AND app.storage_quota_ok())
+policy|storage.objects|photos_insert_channel|PERMISSIVE|authenticated|INSERT|using=-|check=((bucket_id = 'photos'::text) AND ((storage.foldername(name))[1] = 'channel'::text) AND app.storage_quota_ok() AND (EXISTS ( SELECT 1 FROM public.channels c WHERE (c.id = app.uuid_or_null((storage.foldername(objects.name))[2])))))
+policy|storage.objects|photos_insert_chat|PERMISSIVE|authenticated|INSERT|using=-|check=((bucket_id = 'photos'::text) AND ((storage.foldername(name))[1] = 'chat'::text) AND app.storage_quota_ok() AND (EXISTS ( SELECT 1 FROM public.conversations c WHERE ((c.id = app.uuid_or_null((storage.foldername(objects.name))[2])) AND ((c.driver_id = auth.uid()) OR (c.mechanic_id = auth.uid()))))))
+policy|storage.objects|photos_insert_market|PERMISSIVE|authenticated|INSERT|using=-|check=((bucket_id = 'photos'::text) AND ((storage.foldername(name))[1] = 'market'::text) AND app.storage_quota_ok() AND (EXISTS ( SELECT 1 FROM public.market_listings l WHERE ((l.id = app.uuid_or_null((storage.foldername(objects.name))[2])) AND (l.seller_id = auth.uid())))))
+policy|storage.objects|photos_select_admin|PERMISSIVE|authenticated|SELECT|using=((bucket_id = 'photos'::text) AND public.is_admin())|check=-
+policy|storage.objects|photos_select_announcement|PERMISSIVE|authenticated|SELECT|using=((bucket_id = 'photos'::text) AND ((storage.foldername(name))[1] = 'announcements'::text) AND (EXISTS ( SELECT 1 FROM public.announcements a WHERE ((a.id = app.uuid_or_null((storage.foldername(objects.name))[2])) AND ((a.driver_id = auth.uid()) OR (a.mechanic_id = auth.uid()) OR ((a.status = 'open'::text) AND (EXISTS ( SELECT 1 FROM public.profiles p WHERE ((p.id = auth.uid()) AND (p.role = 'mechanic'::text))))))))))|check=-
+policy|storage.objects|photos_select_avatar_anon|PERMISSIVE|anon|SELECT|using=((bucket_id = 'photos'::text) AND ((storage.foldername(name))[1] = 'avatars'::text))|check=-
+policy|storage.objects|photos_select_avatar|PERMISSIVE|authenticated|SELECT|using=((bucket_id = 'photos'::text) AND ((storage.foldername(name))[1] = 'avatars'::text))|check=-
+policy|storage.objects|photos_select_channel|PERMISSIVE|authenticated|SELECT|using=((bucket_id = 'photos'::text) AND ((storage.foldername(name))[1] = 'channel'::text) AND (EXISTS ( SELECT 1 FROM public.channels c WHERE (c.id = app.uuid_or_null((storage.foldername(objects.name))[2])))))|check=-
+policy|storage.objects|photos_select_chat|PERMISSIVE|authenticated|SELECT|using=((bucket_id = 'photos'::text) AND ((storage.foldername(name))[1] = 'chat'::text) AND (EXISTS ( SELECT 1 FROM public.conversations c WHERE ((c.id = app.uuid_or_null((storage.foldername(objects.name))[2])) AND ((c.driver_id = auth.uid()) OR (c.mechanic_id = auth.uid()))))))|check=-
+policy|storage.objects|photos_select_market_anon|PERMISSIVE|anon|SELECT|using=((bucket_id = 'photos'::text) AND ((storage.foldername(name))[1] = 'market'::text) AND (EXISTS ( SELECT 1 FROM public.market_listings l WHERE ((l.id = app.uuid_or_null((storage.foldername(objects.name))[2])) AND (l.status = 'active'::text)))))|check=-
+policy|storage.objects|photos_select_market|PERMISSIVE|authenticated|SELECT|using=((bucket_id = 'photos'::text) AND ((storage.foldername(name))[1] = 'market'::text) AND (EXISTS ( SELECT 1 FROM public.market_listings l WHERE (l.id = app.uuid_or_null((storage.foldername(objects.name))[2])))))|check=-
+publication_def|supabase_realtime|alltables=false|truetruetruetrue
+publication|supabase_realtime|public.channel_messages
+publication|supabase_realtime|public.channel_reads
+publication|supabase_realtime|public.conversations
+publication|supabase_realtime|public.message_reads
+publication|supabase_realtime|public.messages
+schema|app|anon|usage=true|create=false
+schema|app|authenticated|usage=true|create=false
+schema|app|service_role|usage=true|create=false
+schema|public|anon|usage=true|create=false
+schema|public|authenticated|usage=true|create=false
+schema|public|service_role|usage=true|create=false
+sequence_priv|app.rate_events_id_seq|anon|
+sequence_priv|app.rate_events_id_seq|authenticated|
+sequence_priv|app.rate_events_id_seq|service_role|
+sequence_priv|public.translation_requests_id_seq|anon|
+sequence_priv|public.translation_requests_id_seq|authenticated|
+sequence_priv|public.translation_requests_id_seq|service_role|
+sequence|app.rate_events_id_seq|bigint|start=1|inc=1|min=1|max=9223372036854775807|cache=1|cycle=false
+sequence|public.translation_requests_id_seq|bigint|start=1|inc=1|min=1|max=9223372036854775807|cache=1|cycle=false
+table_priv|app.rate_events|anon|
+table_priv|app.rate_events|authenticated|
+table_priv|app.rate_events|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.admin_audit_log|anon|
+table_priv|public.admin_audit_log|authenticated|SELECT
+table_priv|public.admin_audit_log|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.announcement_photos|anon|
+table_priv|public.announcement_photos|authenticated|SELECT,INSERT,DELETE
+table_priv|public.announcement_photos|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.announcement_translations|anon|
+table_priv|public.announcement_translations|authenticated|SELECT
+table_priv|public.announcement_translations|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.announcement_views|anon|
+table_priv|public.announcement_views|authenticated|SELECT
+table_priv|public.announcement_views|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.announcements|anon|
+table_priv|public.announcements|authenticated|SELECT,INSERT,UPDATE,DELETE
+table_priv|public.announcements|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.app_versions|anon|SELECT
+table_priv|public.app_versions|authenticated|SELECT,UPDATE
+table_priv|public.app_versions|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.applications|anon|
+table_priv|public.applications|authenticated|SELECT
+table_priv|public.applications|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.blocked_users|anon|
+table_priv|public.blocked_users|authenticated|SELECT,INSERT,DELETE
+table_priv|public.blocked_users|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.channel_messages|anon|
+table_priv|public.channel_messages|authenticated|SELECT,INSERT
+table_priv|public.channel_messages|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.channel_push_prefs|anon|
+table_priv|public.channel_push_prefs|authenticated|SELECT,INSERT,UPDATE,DELETE
+table_priv|public.channel_push_prefs|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.channel_push_state|anon|
+table_priv|public.channel_push_state|authenticated|
+table_priv|public.channel_push_state|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.channel_reads|anon|
+table_priv|public.channel_reads|authenticated|SELECT,INSERT,UPDATE,DELETE
+table_priv|public.channel_reads|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.channels|anon|
+table_priv|public.channels|authenticated|SELECT
+table_priv|public.channels|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.client_diagnostics|anon|
+table_priv|public.client_diagnostics|authenticated|SELECT,INSERT
+table_priv|public.client_diagnostics|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.conversation_deletions|anon|
+table_priv|public.conversation_deletions|authenticated|SELECT,INSERT,UPDATE,DELETE
+table_priv|public.conversation_deletions|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.conversations|anon|
+table_priv|public.conversations|authenticated|SELECT
+table_priv|public.conversations|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.direct_push_state|anon|
+table_priv|public.direct_push_state|authenticated|
+table_priv|public.direct_push_state|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.favorite_mechanics|anon|
+table_priv|public.favorite_mechanics|authenticated|SELECT,INSERT,DELETE
+table_priv|public.favorite_mechanics|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.guest_announcements|anon|SELECT
+table_priv|public.guest_announcements|authenticated|SELECT
+table_priv|public.guest_announcements|service_role|
+table_priv|public.guest_channel_messages|anon|SELECT
+table_priv|public.guest_channel_messages|authenticated|SELECT
+table_priv|public.guest_channel_messages|service_role|
+table_priv|public.guest_channels|anon|SELECT
+table_priv|public.guest_channels|authenticated|SELECT
+table_priv|public.guest_channels|service_role|
+table_priv|public.guest_market_listing_photos|anon|SELECT
+table_priv|public.guest_market_listing_photos|authenticated|SELECT
+table_priv|public.guest_market_listing_photos|service_role|
+table_priv|public.guest_market_listings|anon|SELECT
+table_priv|public.guest_market_listings|authenticated|SELECT
+table_priv|public.guest_market_listings|service_role|
+table_priv|public.guest_profiles|anon|SELECT
+table_priv|public.guest_profiles|authenticated|SELECT
+table_priv|public.guest_profiles|service_role|
+table_priv|public.market_listing_photos|anon|
+table_priv|public.market_listing_photos|authenticated|SELECT,INSERT,UPDATE,DELETE
+table_priv|public.market_listing_photos|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.market_listings|anon|
+table_priv|public.market_listings|authenticated|SELECT,INSERT,UPDATE,DELETE
+table_priv|public.market_listings|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.message_reads|anon|
+table_priv|public.message_reads|authenticated|SELECT,INSERT,UPDATE,DELETE
+table_priv|public.message_reads|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.messages|anon|
+table_priv|public.messages|authenticated|SELECT,INSERT
+table_priv|public.messages|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.profiles|anon|
+table_priv|public.profiles|authenticated|SELECT,INSERT,UPDATE
+table_priv|public.profiles|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.push_tokens|anon|
+table_priv|public.push_tokens|authenticated|SELECT,INSERT,UPDATE,DELETE
+table_priv|public.push_tokens|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.ratings|anon|
+table_priv|public.ratings|authenticated|SELECT,INSERT,UPDATE,DELETE
+table_priv|public.ratings|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.reports|anon|
+table_priv|public.reports|authenticated|SELECT,INSERT
+table_priv|public.reports|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.search_history|anon|
+table_priv|public.search_history|authenticated|SELECT,INSERT,UPDATE,DELETE
+table_priv|public.search_history|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.translation_requests|anon|
+table_priv|public.translation_requests|authenticated|
+table_priv|public.translation_requests|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table_priv|public.trucks|anon|
+table_priv|public.trucks|authenticated|SELECT,INSERT,UPDATE,DELETE
+table_priv|public.trucks|service_role|SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER
+table|app.rate_events|rls=true|force=false|replident=d|options=-|comment=-
+table|public.admin_audit_log|rls=true|force=false|replident=d|options=-|comment=-
+table|public.announcement_photos|rls=true|force=false|replident=d|options=-|comment=-
+table|public.announcement_translations|rls=true|force=false|replident=d|options=-|comment=-
+table|public.announcement_views|rls=true|force=false|replident=d|options=-|comment=Cine a deschis detaliul unui anunț (unic per utilizator; fără autor și admini). Citire doar admin (24 sept 2026).
+table|public.announcements|rls=true|force=false|replident=d|options=-|comment=-
+table|public.app_versions|rls=true|force=false|replident=d|options=-|comment=Versiunea live per platformă; aplicația recomandă update-ul dacă e mai veche (17 sept 2026).
+table|public.applications|rls=true|force=false|replident=d|options=-|comment=-
+table|public.blocked_users|rls=true|force=false|replident=d|options=-|comment=-
+table|public.channel_messages|rls=true|force=false|replident=f|options=-|comment=-
+table|public.channel_push_prefs|rls=true|force=false|replident=d|options=-|comment=-
+table|public.channel_push_state|rls=true|force=false|replident=d|options=-|comment=-
+table|public.channel_reads|rls=true|force=false|replident=f|options=-|comment=-
+table|public.channels|rls=true|force=false|replident=d|options=-|comment=-
+table|public.client_diagnostics|rls=true|force=false|replident=d|options=-|comment=-
+table|public.conversation_deletions|rls=true|force=false|replident=d|options=-|comment=-
+table|public.conversations|rls=true|force=false|replident=f|options=-|comment=-
+table|public.direct_push_state|rls=true|force=false|replident=d|options=-|comment=-
+table|public.favorite_mechanics|rls=true|force=false|replident=d|options=-|comment=-
+table|public.market_listing_photos|rls=true|force=false|replident=d|options=-|comment=-
+table|public.market_listings|rls=true|force=false|replident=d|options=-|comment=-
+table|public.message_reads|rls=true|force=false|replident=f|options=-|comment=-
+table|public.messages|rls=true|force=false|replident=f|options=-|comment=-
+table|public.profiles|rls=true|force=false|replident=d|options=-|comment=-
+table|public.push_tokens|rls=true|force=false|replident=d|options=-|comment=-
+table|public.ratings|rls=true|force=false|replident=d|options=-|comment=-
+table|public.reports|rls=true|force=false|replident=d|options=-|comment=-
+table|public.search_history|rls=true|force=false|replident=d|options=-|comment=-
+table|public.translation_requests|rls=true|force=false|replident=d|options=-|comment=-
+table|public.trucks|rls=true|force=false|replident=d|options=-|comment=-
+trigger|auth.users|on_auth_user_deleted|CREATE TRIGGER on_auth_user_deleted AFTER DELETE ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_auth_user_deleted()|enabled=O
+trigger|public.announcement_photos|trg_announcement_photo_limit|CREATE TRIGGER trg_announcement_photo_limit BEFORE INSERT ON public.announcement_photos FOR EACH ROW EXECUTE FUNCTION public.enforce_announcement_photo_limit()|enabled=O
+trigger|public.announcements|aaa_rate_limit|CREATE TRIGGER aaa_rate_limit BEFORE INSERT OR UPDATE OF status ON public.announcements FOR EACH ROW EXECUTE FUNCTION app.limit_announcements()|enabled=O
+trigger|public.announcements|announcements_guard_client|CREATE TRIGGER announcements_guard_client BEFORE INSERT OR UPDATE ON public.announcements FOR EACH ROW EXECUTE FUNCTION public.guard_announcement_client_writes()|enabled=O
+trigger|public.announcements|announcements_notify|CREATE TRIGGER announcements_notify AFTER INSERT ON public.announcements FOR EACH ROW EXECUTE FUNCTION public.on_announcement_notify()|enabled=O
+trigger|public.announcements|announcements_set_source_lang|CREATE TRIGGER announcements_set_source_lang BEFORE INSERT ON public.announcements FOR EACH ROW EXECUTE FUNCTION public.set_announcement_source_lang()|enabled=O
+trigger|public.announcements|announcements_updated_at|CREATE TRIGGER announcements_updated_at BEFORE UPDATE ON public.announcements FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()|enabled=O
+trigger|public.announcements|ban_guard_ins|CREATE TRIGGER ban_guard_ins BEFORE INSERT OR UPDATE ON public.announcements FOR EACH ROW EXECUTE FUNCTION public.guard_not_banned()|enabled=O
+trigger|public.announcements|trg_announcement_delete_tombstone|CREATE TRIGGER trg_announcement_delete_tombstone BEFORE DELETE ON public.announcements FOR EACH ROW EXECUTE FUNCTION public.on_announcement_delete_tombstone_messages()|enabled=O
+trigger|public.applications|applications_accepted_notify|CREATE TRIGGER applications_accepted_notify AFTER UPDATE OF status ON public.applications FOR EACH ROW WHEN (new.status = 'accepted'::text AND old.status IS DISTINCT FROM 'accepted'::text) EXECUTE FUNCTION public.on_application_accepted_notify()|enabled=O
+trigger|public.applications|applications_notify|CREATE TRIGGER applications_notify AFTER INSERT ON public.applications FOR EACH ROW EXECUTE FUNCTION public.on_application_notify()|enabled=O
+trigger|public.applications|ban_guard_ins|CREATE TRIGGER ban_guard_ins BEFORE INSERT ON public.applications FOR EACH ROW EXECUTE FUNCTION public.guard_not_banned()|enabled=O
+trigger|public.applications|trg_applications_updated_at|CREATE TRIGGER trg_applications_updated_at BEFORE UPDATE ON public.applications FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()|enabled=O
+trigger|public.channel_messages|aaa_rate_limit|CREATE TRIGGER aaa_rate_limit BEFORE INSERT ON public.channel_messages FOR EACH ROW EXECUTE FUNCTION app.limit_channel_messages()|enabled=O
+trigger|public.channel_messages|ban_guard_ins|CREATE TRIGGER ban_guard_ins BEFORE INSERT ON public.channel_messages FOR EACH ROW EXECUTE FUNCTION public.guard_not_banned()|enabled=O
+trigger|public.channel_messages|channel_messages_notify|CREATE TRIGGER channel_messages_notify AFTER INSERT ON public.channel_messages FOR EACH ROW EXECUTE FUNCTION public.on_channel_message_notify()|enabled=O
+trigger|public.channels|channels_seed_channel_push_prefs|CREATE TRIGGER channels_seed_channel_push_prefs AFTER INSERT ON public.channels FOR EACH ROW EXECUTE FUNCTION public.seed_channel_push_prefs_for_channel()|enabled=O
+trigger|public.conversations|ban_guard_ins|CREATE TRIGGER ban_guard_ins BEFORE INSERT ON public.conversations FOR EACH ROW EXECUTE FUNCTION public.guard_not_banned()|enabled=O
+trigger|public.market_listing_photos|ban_guard_ins|CREATE TRIGGER ban_guard_ins BEFORE INSERT ON public.market_listing_photos FOR EACH ROW EXECUTE FUNCTION public.guard_not_banned()|enabled=O
+trigger|public.market_listing_photos|trg_market_photo_limit|CREATE TRIGGER trg_market_photo_limit BEFORE INSERT ON public.market_listing_photos FOR EACH ROW EXECUTE FUNCTION public.enforce_market_photo_limit()|enabled=O
+trigger|public.market_listings|aaa_rate_limit|CREATE TRIGGER aaa_rate_limit BEFORE INSERT ON public.market_listings FOR EACH ROW EXECUTE FUNCTION app.limit_market_listings()|enabled=O
+trigger|public.market_listings|ban_guard_ins|CREATE TRIGGER ban_guard_ins BEFORE INSERT OR UPDATE ON public.market_listings FOR EACH ROW EXECUTE FUNCTION public.guard_not_banned()|enabled=O
+trigger|public.market_listings|market_listings_notify|CREATE TRIGGER market_listings_notify AFTER INSERT ON public.market_listings FOR EACH ROW EXECUTE FUNCTION public.on_market_listing_notify()|enabled=O
+trigger|public.market_listings|market_listings_updated_at|CREATE TRIGGER market_listings_updated_at BEFORE UPDATE ON public.market_listings FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()|enabled=O
+trigger|public.market_listings|trg_listing_delete_tombstone|CREATE TRIGGER trg_listing_delete_tombstone BEFORE DELETE ON public.market_listings FOR EACH ROW EXECUTE FUNCTION public.on_listing_delete_tombstone_messages()|enabled=O
+trigger|public.market_listings|trg_market_listing_limit|CREATE TRIGGER trg_market_listing_limit BEFORE INSERT OR UPDATE ON public.market_listings FOR EACH ROW EXECUTE FUNCTION public.enforce_market_listing_limit()|enabled=O
+trigger|public.messages|aaa_rate_limit|CREATE TRIGGER aaa_rate_limit BEFORE INSERT ON public.messages FOR EACH ROW EXECUTE FUNCTION app.limit_messages()|enabled=O
+trigger|public.messages|ban_guard_ins|CREATE TRIGGER ban_guard_ins BEFORE INSERT ON public.messages FOR EACH ROW EXECUTE FUNCTION public.guard_not_banned()|enabled=O
+trigger|public.messages|messages_notify|CREATE TRIGGER messages_notify AFTER INSERT ON public.messages FOR EACH ROW EXECUTE FUNCTION public.on_message_notify()|enabled=O
+trigger|public.profiles|profiles_guard_privileged|CREATE TRIGGER profiles_guard_privileged BEFORE INSERT OR UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.guard_profile_privileged_columns()|enabled=O
+trigger|public.profiles|profiles_seed_channel_push_prefs|CREATE TRIGGER profiles_seed_channel_push_prefs AFTER INSERT ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.seed_channel_push_prefs_for_profile()|enabled=O
+trigger|public.profiles|trg_profile_delete_tombstone|CREATE TRIGGER trg_profile_delete_tombstone BEFORE DELETE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.on_profile_delete_tombstone_messages()|enabled=O
+trigger|public.ratings|ban_guard_ins|CREATE TRIGGER ban_guard_ins BEFORE INSERT OR UPDATE ON public.ratings FOR EACH ROW EXECUTE FUNCTION public.guard_not_banned()|enabled=O
+trigger|public.ratings|ratings_recompute|CREATE TRIGGER ratings_recompute AFTER INSERT OR DELETE OR UPDATE ON public.ratings FOR EACH ROW EXECUTE FUNCTION public.ratings_after_change()|enabled=O
+trigger|public.ratings|ratings_set_updated_at|CREATE TRIGGER ratings_set_updated_at BEFORE UPDATE ON public.ratings FOR EACH ROW EXECUTE FUNCTION public.ratings_touch_updated_at()|enabled=O
+trigger|public.reports|aaa_rate_limit|CREATE TRIGGER aaa_rate_limit BEFORE INSERT ON public.reports FOR EACH ROW EXECUTE FUNCTION app.limit_reports()|enabled=O
+trigger|public.reports|ban_guard_ins|CREATE TRIGGER ban_guard_ins BEFORE INSERT ON public.reports FOR EACH ROW EXECUTE FUNCTION public.guard_not_banned()|enabled=O
+trigger|public.reports|reports_snapshot|CREATE TRIGGER reports_snapshot BEFORE INSERT ON public.reports FOR EACH ROW EXECUTE FUNCTION public.reports_snapshot_from_source()|enabled=O
+view|public.guest_announcements|options=security_invoker=true|def=017556c90b2bff4bf1b6d20086e7d5be
+view|public.guest_channel_messages|options=security_invoker=true|def=b473d9db5e1ecaae114faceef4bb5761
+view|public.guest_channels|options=security_invoker=true|def=96679df8c2eff79f92dd6b024939c8b3
+view|public.guest_market_listing_photos|options=security_invoker=true|def=e8c13c45b014d4ad8d61a983f4395b40
+view|public.guest_market_listings|options=security_invoker=true|def=a799fc546a12376bb485d83d2875d3bd
+view|public.guest_profiles|options=security_invoker=true|def=dcb92fa5c560f40b5217be7b2a36c66c

@@ -132,17 +132,22 @@ const files = readdirSync(MIGRATIONS_DIR)
   .filter((f) => f.endsWith('.sql') && !f.startsWith('_') && !/_TEST_|_ALL_/.test(f))
   .sort();
 
+// Baseline-ul schemei de producție (0.3-bis, 29 oct 2026) e generat din catalog de scripts/baseline-generate.mjs
+// și verificat în CI prin paritate cu producția (supabase/baseline/parity.sql); conține și obiectele de
+// dinaintea convenției, deci nu se judecă după ea. Numele și unicitatea versiunii se verifică în continuare.
+const BASELINE = /^20261031000300_baseline_production_schema\.sql$/;
+
 const versions = new Set();
 for (const file of files) {
   if (!/^\d{14}_[a-z0-9_]+\.sql$/.test(file)) report(file, 1, 'numele nu respectă YYYYMMDDHHMMSS_descriere.sql (14 cifre)');
   const version = file.slice(0, 14);
   if (versions.has(version)) report(file, 1, `versiunea ${version} e folosită de două fișiere (CLI-ul cere versiuni unice)`);
   versions.add(version);
-  if (file.slice(0, 8) < CONVENTION_SINCE) continue;
+  if (file.slice(0, 8) < CONVENTION_SINCE || BASELINE.test(file)) continue;
   checkFile(file);
 }
 
-const checked = files.filter((f) => f.slice(0, 8) >= CONVENTION_SINCE).length;
+const checked = files.filter((f) => f.slice(0, 8) >= CONVENTION_SINCE && !BASELINE.test(f)).length;
 if (problems.length > 0) {
   console.error(`check-migrations: ${problems.length} problemă(e) în ${checked} fișier(e) verificate:`);
   for (const p of problems) console.error(`  ${p}`);
