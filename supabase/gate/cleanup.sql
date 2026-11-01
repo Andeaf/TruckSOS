@@ -17,6 +17,8 @@ DELETE FROM public.conversations
 DELETE FROM public.applications
  WHERE id NOT IN ('22222222-0000-4000-8000-000000000001', '22222222-0000-4000-8000-000000000002', '22222222-0000-4000-8000-000000000003');
 DELETE FROM public.announcement_views WHERE viewer_id::text LIKE 'c0000000-%';
+-- Rating-urile create de replay (N2 rezolvat cu M2 face upsert-ul A -> M2 permis): doar cel din fixtures ramane.
+DELETE FROM public.ratings WHERE id <> 'bbbbbbbb-0000-4000-8000-000000000001';
 DELETE FROM public.push_tokens WHERE token LIKE 'ExponentPushToken[gate-%';
 DELETE FROM app.rate_events WHERE user_id::text LIKE 'a0000000-%' OR user_id::text LIKE 'c0000000-%' OR user_id::text LIKE 'e0000000-%';
 
@@ -42,6 +44,7 @@ BEGIN
   IF (SELECT count(*) FROM public.applications) <> 3 THEN RAISE EXCEPTION 'cleanup: candidaturi'; END IF;
   IF (SELECT count(*) FROM public.profiles WHERE id::text LIKE 'e0000000-%') <> 0 THEN RAISE EXCEPTION 'cleanup: profil W'; END IF;
   IF (SELECT rating_avg FROM public.profiles WHERE id = 'c0000000-0000-4000-8000-0000000000c1') <> 5.0 THEN RAISE EXCEPTION 'cleanup: rating M1'; END IF;
+  IF (SELECT count(*) FROM public.ratings) <> 1 THEN RAISE EXCEPTION 'cleanup: ratings'; END IF;
 END $$;
 
 COMMIT;

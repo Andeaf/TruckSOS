@@ -293,8 +293,9 @@ async function run() {
   await step('POST ratings upsert A->M1 as driver_a', { method: 'POST', path: '/rest/v1/ratings', search: '?on_conflict=mechanic_id%2Cdriver_id', token: A, headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
     body: { mechanic_id: ID.M1, driver_id: ID.A, stars: 4, comment: `Gate ${phase}: nota` } });
   await step('GET ratings mine for M1 as driver_a', { method: 'GET', path: '/rest/v1/ratings', search: `?select=*&mechanic_id=eq.${ID.M1}&driver_id=eq.${ID.A}`, token: A });
-  await step('POST ratings for unrelated mechanic (trebuie respins) as driver_a', { method: 'POST', path: '/rest/v1/ratings', search: '?on_conflict=mechanic_id%2Cdriver_id', token: A, headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
-    body: { mechanic_id: ID.M2, driver_id: ID.A, stars: 1, comment: null } });
+  // B e șofer, fără anunț rezolvat cu A: politica ratings_insert_own respinge (M2 nu mai e „fără legătură”: N2 e rezolvat cu el).
+  await step('POST ratings for unrelated user B (trebuie respins) as driver_a', { method: 'POST', path: '/rest/v1/ratings', search: '?on_conflict=mechanic_id%2Cdriver_id', token: A, headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+    body: { mechanic_id: ID.B, driver_id: ID.A, stars: 1, comment: null } });
   // RPC-urile din 1.0.8 cu argumentele din cod
   await step('RPC get_mechanic_phone M1 as driver_a', { method: 'POST', path: '/rest/v1/rpc/get_mechanic_phone', token: A, body: { p_mechanic_id: ID.M1 } });
   await step('RPC get_mechanic_phone M2 as driver_a (conversatie directa)', { method: 'POST', path: '/rest/v1/rpc/get_mechanic_phone', token: A, body: { p_mechanic_id: ID.M2 } });
