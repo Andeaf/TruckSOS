@@ -16,19 +16,22 @@ export type PublicReview = Pick<Rating, 'id' | 'stars' | 'comment' | 'created_at
 /**
  * Upsert pe (mechanic_id, driver_id): prima dată trece prin politica INSERT, apoi
  * prin UPDATE. Ambele cer un anunț `resolved` comun. Trigger-ul recalculează media.
+ * 1.1 (faza 4.3): prin RPC-ul `rate_mechanic` (SECURITY INVOKER, aceleași politici), nu
+ * upsert direct pe `ratings` — la decommission mascarea `ratings.driver_id` rămâne doar o
+ * migrare. `driver_id` îl pune serverul din sesiune (auth.uid()); parametrul rămâne pentru
+ * apelanți.
  */
 export async function upsertRating(
   mechanicId: string,
-  driverId: string,
+  _driverId: string,
   stars: number,
   comment: string | null,
 ): Promise<string | null> {
-  const { error } = await supabase
-    .from('ratings')
-    .upsert(
-      { mechanic_id: mechanicId, driver_id: driverId, stars, comment } as never,
-      { onConflict: 'mechanic_id,driver_id' },
-    );
+  const { error } = await supabase.rpc('rate_mechanic' as never, {
+    p_mechanic_id: mechanicId,
+    p_stars: stars,
+    p_comment: comment,
+  } as never);
   return translateDbError(error);
 }
 

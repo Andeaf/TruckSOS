@@ -43,29 +43,66 @@ export function useMyAnnouncements() {
   return { announcements, loading, refresh };
 }
 
-// Hook for mechanic: all open announcements from all drivers
-// (5 aug) `excludeUserId`: mecanicii pot posta și ei anunțuri — pe feed/hartă
-// propriile anunțuri se exclud (nu-ți poți face ofertă singur; ale tale stau
-// sub segmentul „Ale mele").
-export function useOpenAnnouncements(excludeUserId?: string) {
-  const [announcements, setAnnouncements] = useState<AnnouncementWithDriver[]>([]);
-  const [loading, setLoading] = useState(true);
+/** Anunț din feed-ul pe rază (1.1, faza 4.3): forma de azi + distanța calculată de server. */
+export type OpenAnnouncementNear = AnnouncementWithDriver & {
+  /** km față de poziția trimisă; null fără poziție sau pentru anunțurile fără coordonate. */
+  distance_km: number | null;
+};
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    let query = supabase
-      .from('announcements')
-      .select('*, driver:profiles!driver_id(full_name,avatar_path)')
-      .eq('status', 'open')
-      .order('created_at', { ascending: false })
-      .limit(200);
-    if (excludeUserId) query = query.neq('driver_id', excludeUserId);
-    const { data } = await query;
-    setAnnouncements((data as unknown as AnnouncementWithDriver[]) ?? []);
-    setLoading(false);
-  }, [excludeUserId]);
+/** Rândul întors de RPC-ul `open_announcements_near` (tipurile generate îl primesc în 4.5). */
+type OpenAnnouncementNearRow = Omit<Announcement, 'plate_number' | 'chassis_number'> & {
+  lat_approx: number | string | null;
+  lng_approx: number | string | null;
+  distance_km: number | null;
+  driver_full_name: string | null;
+  driver_avatar_path: string | null;
+};
 
-  return { announcements, loading, refresh };
+export interface OpenAnnouncementsNearParams {
+  /** Raza + poziția: toate trei sau niciuna (serverul ignoră raza fără poziție). */
+  latitude?: number;
+  longitude?: number;
+  radiusKm?: number;
+  limit: number;
+  /** Cursor: `created_at` BRUT al ultimului rând (cu microsecunde — nu trece prin Date). */
+  before?: string;
+}
+
+/**
+ * Feed-ul mecanicului (1.1, faza 4.3), calculat pe server: anunțurile `open` ale ALTORA
+ * (serverul le exclude pe ale tale, după sesiune), fără plăcuță/VIN, coordonatele deja
+ * mascate (~1 km pentru cine nu e șoferul, mecanicul acceptat sau admin). Cu rază:
+ * ordonat după distanță, cel mult 100; fără rază: created_at DESC, paginat cu `before`.
+ * Nu aruncă: eroarea se întoarce, iar apelantul păstrează lista veche.
+ */
+export async function fetchOpenAnnouncementsNear(
+  params: OpenAnnouncementsNearParams,
+): Promise<{ data: OpenAnnouncementNear[]; error: { code?: string; message: string } | null }> {
+  const args: Record<string, unknown> = { p_limit: params.limit };
+  if (params.latitude != null && params.longitude != null && params.radiusKm != null) {
+    args.p_lat = params.latitude;
+    args.p_lng = params.longitude;
+    args.p_radius_km = params.radiusKm;
+  }
+  if (params.before) args.p_before = params.before;
+  try {
+    const { data, error } = await supabase.rpc('open_announcements_near' as never, args as never);
+    if (error) return { data: [], error };
+    const rows = (data ?? []) as unknown as OpenAnnouncementNearRow[];
+    return {
+      data: rows.map(
+        ({ lat_approx: _lat, lng_approx: _lng, driver_full_name, driver_avatar_path, ...rest }) => ({
+          ...rest,
+          plate_number: null,
+          chassis_number: null,
+          driver: { full_name: driver_full_name ?? '', avatar_path: driver_avatar_path, deleted_at: null },
+        }),
+      ),
+      error: null,
+    };
+  } catch (e) {
+    return { data: [], error: { message: e instanceof Error ? e.message : String(e) } };
+  }
 }
 
 export interface CreateAnnouncementOptions {

@@ -15,15 +15,20 @@ import { useChannels, useChannelUnreadCount } from '@/hooks/use-channel-chat';
 import { TabIcon } from '@/components/ui/tab-icon';
 import { useFeedBadge, useApplicationsBadge } from '@/hooks/use-mechanic-badges';
 import { useMarketBadge } from '@/hooks/use-market-badge';
+import { OpenAnnouncementsProvider } from '@/hooks/use-open-announcements';
 import { RadiusFilterProvider } from '@/hooks/use-radius-filter';
 import { formatBadge } from '@/lib/badge';
 
 export default function MechanicLayout() {
   // RadiusFilterProvider trebuie să învelească componenta care citește `useRadiusFilter`
   // (bulina de Feed respectă raza activă) — de aceea tab-urile sunt un copil separat.
+  // OpenAnnouncementsProvider (1.1, faza 4.3) stă înăuntru (citește raza): feed-ul și harta
+  // folosesc același set de anunțuri, cu același cache.
   return (
     <RadiusFilterProvider>
-      <MechanicTabs />
+      <OpenAnnouncementsProvider>
+        <MechanicTabs />
+      </OpenAnnouncementsProvider>
     </RadiusFilterProvider>
   );
 }

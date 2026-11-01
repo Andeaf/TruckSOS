@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -13,8 +13,14 @@ import { DARK_MAP_STYLE, ROMANIA_REGION, USER_REGION_DELTA } from '@/constants/m
 import { Radius, Spacing } from '@/constants/theme';
 import { useAccountGate } from '@/hooks/use-account-gate';
 import { useAuth } from '@/hooks/use-auth';
-import { useOpenAnnouncements, type AnnouncementWithDriver } from '@/hooks/use-announcements';
+import { type AnnouncementWithDriver } from '@/hooks/use-announcements';
 import { useGuestOpenAnnouncements } from '@/hooks/use-guest-data';
+import {
+  clusterForViewport,
+  useOpenAnnouncements,
+  type MapCluster,
+  type MapViewport,
+} from '@/hooks/use-open-announcements';
 import { applyRadiusFilter, useRadiusFilter } from '@/hooks/use-radius-filter';
 import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
@@ -28,11 +34,60 @@ import { getCurrentCoords, getLastKnownCoords } from '@/lib/location';
  * doar le numărăm, ca mecanicul să știe că harta nu e lista completă.
  */
 
+/** Plafonul hărții fără rază (membru): cât arăta vechiul feed (`.limit(200)`). */
+const MAP_MEMBER_MIN_PINS = 200;
+
 /** Anunț cu coordonate garantat non-null — îngustăm tipul o singură dată, la filtrare. */
 type Located = AnnouncementWithDriver & { latitude: number; longitude: number };
 
 function hasCoords(a: AnnouncementWithDriver): a is Located {
   return a.latitude != null && a.longitude != null;
+}
+
+function regionToViewport(r: Region): MapViewport {
+  return {
+    north: r.latitude + r.latitudeDelta / 2,
+    south: r.latitude - r.latitudeDelta / 2,
+    east: r.longitude + r.longitudeDelta / 2,
+    west: r.longitude - r.longitudeDelta / 2,
+  };
+}
+
+/**
+ * Pinul unui grup (1.1, faza 4.3): cerc cu numărul de anunțuri. `tracksViewChanges` pornit
+ * doar până la primul cadru — pe Android un marker cu view propriu care urmărește mereu
+ * schimbările costă la fiecare frame, iar oprit de la început poate ieși gol. Cifra nouă =
+ * `key` nou (remontare), deci textul nu rămâne vechi.
+ */
+function ClusterMarker({
+  cluster,
+  color,
+  label,
+  onPress,
+}: {
+  cluster: MapCluster<Located>;
+  color: string;
+  label: string;
+  onPress: () => void;
+}) {
+  const [tracks, setTracks] = useState(true);
+  useEffect(() => {
+    const id = setTimeout(() => setTracks(false), 500);
+    return () => clearTimeout(id);
+  }, []);
+  return (
+    <Marker
+      coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
+      tracksViewChanges={tracks}
+      onPress={onPress}
+      accessibilityLabel={label}>
+      <View style={[styles.cluster, { backgroundColor: color }]}>
+        <Text style={styles.clusterText} maxFontSizeMultiplier={1.3}>
+          {cluster.count}
+        </Text>
+      </View>
+    </Marker>
+  );
 }
 
 /**
@@ -50,9 +105,32 @@ export default function MechanicMapScreen({ guest = false }: { guest?: boolean }
   // Propriile anunțuri nu apar pe hartă (le gestionezi sub „Ale mele" din feed).
   // Oaspetele (1.1, B3): sursa e view-ul de oaspete. Ambele hook-uri citesc DOAR la
   // `refresh()` (nimic la montare), deci cel nefolosit nu face nicio cerere.
-  const memberFeed = useOpenAnnouncements(session?.user.id);
+  // 1.1 (faza 4.3): membrul ia datele din OpenAnnouncementsProvider — aceleași ca feed-ul,
+  // cu același cache de 30 s, deja filtrate pe rază de server.
+  const memberFeed = useOpenAnnouncements();
   const guestFeed = useGuestOpenAnnouncements();
-  const { announcements, refresh } = guest ? guestFeed : memberFeed;
+  const source = guest ? guestFeed : memberFeed;
+  const announcements: AnnouncementWithDriver[] = source.announcements;
+  const refresh = source.refresh;
+
+  // Fără rază, providerul aduce pagini de 50; harta arăta până la 200 de anunțuri (vechiul
+  // `.limit(200)`), deci membrul încarcă în lanț pagini până la plafon sau până nu mai sunt.
+  // Ref-ul ține lista din care s-a cerut ultima pagină: o pagină eșuată (rețea slabă) lasă
+  // aceeași listă, deci nu reîncercăm în buclă; următorul refresh reia lanțul.
+  const lastChainedFromRef = useRef<AnnouncementWithDriver[] | null>(null);
+  const {
+    announcements: memberAnnouncements,
+    hasMore: memberHasMore,
+    loadingMore: memberLoadingMore,
+    loadMore: memberLoadMore,
+  } = memberFeed;
+  useEffect(() => {
+    if (guest || !memberHasMore || memberLoadingMore) return;
+    if (memberAnnouncements.length === 0 || memberAnnouncements.length >= MAP_MEMBER_MIN_PINS) return;
+    if (lastChainedFromRef.current === memberAnnouncements) return;
+    lastChainedFromRef.current = memberAnnouncements;
+    void memberLoadMore();
+  }, [guest, memberAnnouncements, memberHasMore, memberLoadingMore, memberLoadMore]);
   const { requireAccount } = useAccountGate();
   const { viewed, refresh: refreshViewed } = useViewedAnnouncements(session?.user.id);
   const { radiusKm, coords, locationError, refreshCoords } = useRadiusFilter();
@@ -60,6 +138,11 @@ export default function MechanicMapScreen({ guest = false }: { guest?: boolean }
   // `initialRegion` se aplică o singură dată, la montare → randăm harta abia după ce
   // știm de unde pornim (poziția mecanicului sau, la refuz/eroare, centrul României).
   const [region, setRegion] = useState<Region | null>(null);
+  // Zona afișată acum (după pan/zoom) — decide gruparea pinurilor.
+  // Legată de tema cu care a fost raportată: la schimbarea temei harta se remontează
+  // (key={scheme}) și revine la `initialRegion`, deci zona veche nu mai e valabilă.
+  const [viewState, setViewState] = useState<{ scheme: string; region: Region } | null>(null);
+  const viewRegion = viewState?.scheme === scheme ? viewState.region : null;
   const [selected, setSelected] = useState<Located | null>(null);
   const mapRef = useRef<MapView>(null);
   const rangeMenuRef = useRef<RadiusFilterMenuHandle>(null);
@@ -119,11 +202,39 @@ export default function MechanicMapScreen({ guest = false }: { guest?: boolean }
     }, [refresh, refreshViewed, refreshCoords])
   );
 
-  const located = announcements.filter(hasCoords);
+  const located = useMemo(() => announcements.filter(hasCoords), [announcements]);
   // Contorul „fără locație" rămâne pe lista COMPLETĂ (R8): acele anunțuri nu sunt
   // excluse de filtru, pur și simplu nu pot fi desenate.
   const missingCount = announcements.length - located.length;
-  const visible = applyRadiusFilter(located, radiusKm, coords);
+  // Membrul: serverul a filtrat deja pe rază. Oaspetele (view fără rază): filtrul rămâne local.
+  const visible = useMemo(
+    () => (guest ? applyRadiusFilter(located, radiusKm, coords) : located),
+    [guest, located, radiusKm, coords]
+  );
+  // Peste 100 de pinuri în zona vizibilă → grupuri pe grid (tap = zoom in); sub prag, ca azi.
+  const { singles, clusters } = useMemo(
+    () => {
+      // Până la primul onRegionChangeComplete, zona e cea de pornire.
+      const shown = viewRegion ?? region;
+      return clusterForViewport(visible, shown ? regionToViewport(shown) : null);
+    },
+    [visible, viewRegion, region]
+  );
+
+  function zoomIntoCluster(cluster: MapCluster<Located>) {
+    setSelected(null);
+    const base = viewRegion ?? region;
+    if (!base) return;
+    mapRef.current?.animateToRegion(
+      {
+        latitude: cluster.latitude,
+        longitude: cluster.longitude,
+        latitudeDelta: base.latitudeDelta / 4,
+        longitudeDelta: base.longitudeDelta / 4,
+      },
+      400
+    );
+  }
 
   // Tap pe bula „N anunțuri fără locație" (10 sept): feedul, cu filtrul „Fără
   // locație" gata activat — acolo pot fi citite. `nonce` unic per tap (vezi feed).
@@ -200,7 +311,8 @@ export default function MechanicMapScreen({ guest = false }: { guest?: boolean }
             // marker-press (pe Android nu se emite dublu, ramura e no-op).
             onPress={(e) => {
               if (e.nativeEvent.action !== 'marker-press') setSelected(null);
-            }}>
+            }}
+            onRegionChangeComplete={(r) => setViewState({ scheme, region: r })}>
             {/* Raza filtrului, desenată — face vizibil intuitiv de ce lipsesc pin-uri. */}
             {radiusKm != null && coords != null ? (
               <Circle
@@ -211,13 +323,22 @@ export default function MechanicMapScreen({ guest = false }: { guest?: boolean }
                 fillColor={`${theme.brand}1F`}
               />
             ) : null}
-            {visible.map((item) => (
+            {singles.map((item) => (
               <Marker
                 key={item.id}
                 coordinate={{ latitude: item.latitude, longitude: item.longitude }}
                 // Anunțurile nedeschise încă ies în evidență; restul se estompează.
                 pinColor={viewed.has(item.id) ? '#9aa0a6' : theme.brand}
                 onPress={() => setSelected(item)}
+              />
+            ))}
+            {clusters.map((cluster) => (
+              <ClusterMarker
+                key={`${cluster.key}:${cluster.count}`}
+                cluster={cluster}
+                color={theme.brand}
+                label={t('mechanic.map.pinCount', { count: cluster.count })}
+                onPress={() => zoomIntoCluster(cluster)}
               />
             ))}
           </MapView>
@@ -388,4 +509,15 @@ const styles = StyleSheet.create({
   cardTitle: { flex: 1 },
   cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   pressed: { opacity: 0.9 },
+  cluster: {
+    minWidth: 36,
+    minHeight: 36,
+    paddingHorizontal: Spacing.one,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clusterText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 });

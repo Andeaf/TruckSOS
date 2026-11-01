@@ -3,7 +3,7 @@ import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { supabase } from '@/lib/supabase';
-import { applyRadiusFilter, useRadiusFilter } from '@/hooks/use-radius-filter';
+import { useRadiusFilter } from '@/hooks/use-radius-filter';
 
 /**
  * Bulinele de noutăți ale mecanicului (Faza 14.10), simetrice între Feed și Candidaturi:
@@ -36,24 +36,19 @@ export function useFeedBadge(userId: string | undefined) {
       setHasNew(false);
       return;
     }
-    const { data } = await supabase
-      .from('announcements')
-      .select('id, created_at, latitude, longitude')
-      .eq('status', 'open')
-      // Propriul anunț nu aprinde bulina (mecanicii pot posta și ei, 5 aug).
-      .neq('driver_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(500);
-    const list = (data ?? []) as unknown as {
-      id: string;
-      created_at: string;
-      latitude: number | null;
-      longitude: number | null;
-    }[];
-    // Bulina reflectă anunțurile VIZIBILE cu filtrul curent (§6.2): în afara razei nu aprinde.
-    const visible = applyRadiusFilter(list, radiusKm, coords);
-    const cutoff = new Date(lastSeen).getTime();
-    setHasNew(visible.some((a) => new Date(a.created_at).getTime() > cutoff));
+    // 1.1 (faza 4.3): numărătoarea se face pe server, în raza activă (aceeași regulă ca
+    // feed-ul: anunțurile fără coordonate contează, propriile anunțuri nu) — nu mai
+    // descărcăm 500 de rânduri doar ca să aflăm dacă există unul nou.
+    const radiusArgs =
+      radiusKm != null && coords != null
+        ? { p_lat: coords.latitude, p_lng: coords.longitude, p_radius_km: radiusKm }
+        : {};
+    const { data, error } = await supabase.rpc('open_announcements_near_count' as never, {
+      ...radiusArgs,
+      p_since: lastSeen,
+    } as never);
+    // Eroare (rețea slabă, server fără migrare): bulina rămâne stinsă, nu aprinsă fals.
+    setHasNew(!error && typeof data === 'number' && data > 0);
   }, [userId, radiusKm, coords]);
 
   const markSeen = useCallback(async () => {

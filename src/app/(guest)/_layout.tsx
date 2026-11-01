@@ -9,6 +9,7 @@ import {
 } from '@/components/tab-label';
 import { useWideLayout } from '@/components/web-sidebar';
 import { TabIcon } from '@/components/ui/tab-icon';
+import { OpenAnnouncementsProvider } from '@/hooks/use-open-announcements';
 import { RadiusFilterProvider } from '@/hooks/use-radius-filter';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -21,9 +22,13 @@ import { useTheme } from '@/hooks/use-theme';
 export default function GuestLayout() {
   // Filtrul de rază al hărții folosește poziția CURENTĂ a telefonului (nu profilul),
   // deci merge și pentru oaspeți — provider-ul trebuie să învelească tab-urile.
+  // OpenAnnouncementsProvider: harta comună îl cere necondiționat; fără sesiune nu face
+  // nicio cerere (oaspetele citește din view-urile `guest_*`).
   return (
     <RadiusFilterProvider>
-      <GuestTabs />
+      <OpenAnnouncementsProvider>
+        <GuestTabs />
+      </OpenAnnouncementsProvider>
     </RadiusFilterProvider>
   );
 }

@@ -12,8 +12,14 @@ import { DARK_MAP_STYLE, ROMANIA_REGION } from '@/constants/map-style';
 import { Radius, Spacing } from '@/constants/theme';
 import { useAccountGate } from '@/hooks/use-account-gate';
 import { useAuth } from '@/hooks/use-auth';
-import { useOpenAnnouncements, type AnnouncementWithDriver } from '@/hooks/use-announcements';
+import { type AnnouncementWithDriver } from '@/hooks/use-announcements';
 import { useGuestOpenAnnouncements } from '@/hooks/use-guest-data';
+import {
+  clusterForViewport,
+  useOpenAnnouncements,
+  type MapCluster,
+  type MapViewport,
+} from '@/hooks/use-open-announcements';
 import { applyRadiusFilter, useRadiusFilter } from '@/hooks/use-radius-filter';
 import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
@@ -39,10 +45,31 @@ import {
  * pe vechiul stub cu trimitere la feed — deci build-ul web merge și fără ea.
  */
 
+/** Plafonul hărții fără rază (membru): cât arăta vechiul feed (`.limit(200)`). */
+const MAP_MEMBER_MIN_PINS = 200;
+
 type Located = AnnouncementWithDriver & { latitude: number; longitude: number };
 
 function hasCoords(a: AnnouncementWithDriver): a is Located {
   return a.latitude != null && a.longitude != null;
+}
+
+/**
+ * Ce mai folosește gruparea pinurilor (1.1, faza 4.3) din Maps JS API, declarat local
+ * (structural) ca în `google-maps-web.ts`: zoom-ul și marginile zonei afișate.
+ */
+type GLatLngValue = { lat: () => number; lng: () => number };
+type GMapWithView = GMap & {
+  getZoom: () => number | undefined;
+  getBounds: () => { getNorthEast: () => GLatLngValue; getSouthWest: () => GLatLngValue } | null | undefined;
+};
+
+function readViewport(map: GMap): MapViewport | null {
+  const bounds = (map as GMapWithView).getBounds();
+  if (!bounds) return null;
+  const ne = bounds.getNorthEast();
+  const sw = bounds.getSouthWest();
+  return { north: ne.lat(), east: ne.lng(), south: sw.lat(), west: sw.lng() };
 }
 
 /** Zoom-uri echivalente cu delta-urile regiunilor native (țară vs. „în jurul meu"). */
@@ -58,9 +85,32 @@ export default function MechanicMapScreenWeb({ guest = false }: { guest?: boolea
   const timeAgo = useTimeAgo();
   const { session } = useAuth();
   // Oaspetele (1.1, B3): sursa e view-ul de oaspete; hook-urile citesc doar la `refresh()`.
-  const memberFeed = useOpenAnnouncements(session?.user.id);
+  // 1.1 (faza 4.3): membrul ia datele din OpenAnnouncementsProvider (comune cu feed-ul,
+  // cache 30 s, deja filtrate pe rază de server).
+  const memberFeed = useOpenAnnouncements();
   const guestFeed = useGuestOpenAnnouncements();
-  const { announcements, refresh } = guest ? guestFeed : memberFeed;
+  const source = guest ? guestFeed : memberFeed;
+  const announcements: AnnouncementWithDriver[] = source.announcements;
+  const refresh = source.refresh;
+
+  // Fără rază, providerul aduce pagini de 50; harta arăta până la 200 de anunțuri (vechiul
+  // `.limit(200)`), deci membrul încarcă în lanț pagini până la plafon sau până nu mai sunt.
+  // Ref-ul ține lista din care s-a cerut ultima pagină: o pagină eșuată (rețea slabă) lasă
+  // aceeași listă, deci nu reîncercăm în buclă; următorul refresh reia lanțul.
+  const lastChainedFromRef = useRef<AnnouncementWithDriver[] | null>(null);
+  const {
+    announcements: memberAnnouncements,
+    hasMore: memberHasMore,
+    loadingMore: memberLoadingMore,
+    loadMore: memberLoadMore,
+  } = memberFeed;
+  useEffect(() => {
+    if (guest || !memberHasMore || memberLoadingMore) return;
+    if (memberAnnouncements.length === 0 || memberAnnouncements.length >= MAP_MEMBER_MIN_PINS) return;
+    if (lastChainedFromRef.current === memberAnnouncements) return;
+    lastChainedFromRef.current = memberAnnouncements;
+    void memberLoadMore();
+  }, [guest, memberAnnouncements, memberHasMore, memberLoadingMore, memberLoadMore]);
   const { requireAccount } = useAccountGate();
   const { viewed, refresh: refreshViewed } = useViewedAnnouncements(session?.user.id);
   const { radiusKm, coords, locationError, refreshCoords } = useRadiusFilter();
@@ -69,12 +119,15 @@ export default function MechanicMapScreenWeb({ guest = false }: { guest?: boolea
     MAPS_WEB_KEY ? 'loading' : 'error',
   );
   const [selected, setSelected] = useState<Located | null>(null);
+  // Zona afișată (după pan/zoom, evenimentul `idle`) — decide gruparea pinurilor.
+  const [viewport, setViewport] = useState<MapViewport | null>(null);
   const rangeMenuRef = useRef<RadiusFilterMenuHandle>(null);
 
   const containerRef = useRef<View>(null);
   const apiRef = useRef<GMapsApi | null>(null);
   const mapRef = useRef<GMap | null>(null);
   const markersRef = useRef<Map<string, GMarker>>(new Map());
+  const clusterMarkersRef = useRef<Map<string, GMarker>>(new Map());
   const circleRef = useRef<GCircle | null>(null);
   const meMarkerRef = useRef<GMarker | null>(null);
   const centeredRef = useRef(false);
@@ -83,9 +136,15 @@ export default function MechanicMapScreenWeb({ guest = false }: { guest?: boolea
   // Contorul „fără locație" rămâne pe lista COMPLETĂ: acele anunțuri nu sunt
   // excluse de filtru, pur și simplu nu pot fi desenate.
   const missingCount = announcements.length - located.length;
+  // Membrul: serverul a filtrat deja pe rază. Oaspetele (view fără rază): filtrul rămâne local.
   const visible = useMemo(
-    () => applyRadiusFilter(located, radiusKm, coords),
-    [located, radiusKm, coords],
+    () => (guest ? applyRadiusFilter(located, radiusKm, coords) : located),
+    [guest, located, radiusKm, coords],
+  );
+  // Peste 100 de pinuri în zona vizibilă → grupuri pe grid (click = zoom in); sub prag, ca azi.
+  const { singles, clusters } = useMemo(
+    () => clusterForViewport(visible, viewport),
+    [visible, viewport],
   );
   // Handler-ele de pe pin-uri citesc lista din ref → nu recreăm markerii doar ca
   // să reîmprospătăm closure-ul (și nu servim date vechi în card).
@@ -136,6 +195,9 @@ export default function MechanicMapScreenWeb({ guest = false }: { guest?: boolea
         });
         // Tap pe hartă (nu pe pin) închide cardul — ca pe nativ.
         mapRef.current.addListener('click', () => setSelected(null));
+        // Zona afișată, după fiecare pan/zoom terminat — pentru gruparea pinurilor.
+        const map = mapRef.current;
+        map.addListener('idle', () => setViewport(readViewport(map)));
         setStatus('ready');
       })
       .catch(() => {
@@ -177,7 +239,7 @@ export default function MechanicMapScreenWeb({ guest = false }: { guest?: boolea
       strokeWeight: 2,
     });
 
-    const alive = new Set(visible.map((v) => v.id));
+    const alive = new Set(singles.map((v) => v.id));
     for (const [id, marker] of markersRef.current) {
       if (!alive.has(id)) {
         marker.setMap(null);
@@ -185,7 +247,7 @@ export default function MechanicMapScreenWeb({ guest = false }: { guest?: boolea
       }
     }
 
-    for (const item of visible) {
+    for (const item of singles) {
       const existing = markersRef.current.get(item.id);
       if (existing) {
         existing.setIcon(icon(viewed.has(item.id)));
@@ -203,7 +265,52 @@ export default function MechanicMapScreenWeb({ guest = false }: { guest?: boolea
       });
       markersRef.current.set(item.id, marker);
     }
-  }, [visible, viewed, theme.brand, status]);
+  }, [singles, viewed, theme.brand, status]);
+
+  // ── Grupurile (peste 100 de pinuri în zonă): cerc cu numărul; click → zoom in ──
+  useEffect(() => {
+    const api = apiRef.current;
+    const map = mapRef.current;
+    if (!api || !map) return;
+
+    // Cheia include numărul și culoarea: un grup schimbat (sau tema schimbată) se recreează.
+    const keyOf = (c: MapCluster<Located>) => `${c.key}:${c.count}:${theme.brand}`;
+    const alive = new Set(clusters.map(keyOf));
+    for (const [key, marker] of clusterMarkersRef.current) {
+      if (!alive.has(key)) {
+        marker.setMap(null);
+        clusterMarkersRef.current.delete(key);
+      }
+    }
+
+    for (const cluster of clusters) {
+      const key = keyOf(cluster);
+      if (clusterMarkersRef.current.has(key)) continue;
+      const position = { lat: cluster.latitude, lng: cluster.longitude };
+      const marker = new api.Marker({
+        map,
+        position,
+        icon: {
+          path: api.SymbolPath.CIRCLE,
+          scale: 16,
+          fillColor: theme.brand,
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 2,
+        },
+        label: { text: String(cluster.count), color: '#ffffff', fontSize: '12px', fontWeight: '700' },
+        title: t('mechanic.map.pinCount', { count: cluster.count }),
+        zIndex: 3,
+      });
+      marker.addListener('click', () => {
+        setSelected(null);
+        const zoom = (map as GMapWithView).getZoom() ?? COUNTRY_ZOOM;
+        map.panTo(position);
+        map.setZoom(zoom + 2);
+      });
+      clusterMarkersRef.current.set(key, marker);
+    }
+  }, [clusters, theme.brand, status, t]);
 
   // ── Cercul razei + punctul propriu ─────────────────────────────────────────
   useEffect(() => {
@@ -254,6 +361,8 @@ export default function MechanicMapScreenWeb({ guest = false }: { guest?: boolea
     () => () => {
       markersRef.current.forEach((m) => m.setMap(null));
       markersRef.current.clear();
+      clusterMarkersRef.current.forEach((m) => m.setMap(null));
+      clusterMarkersRef.current.clear();
       circleRef.current?.setMap(null);
       meMarkerRef.current?.setMap(null);
       mapRef.current = null;

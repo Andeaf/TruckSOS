@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -29,19 +29,20 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
 import {
   useMyAnnouncements,
-  useOpenAnnouncements,
   fetchPendingApplicationAnnouncementIds,
   fetchPendingApplicationCounts,
   fetchRejectedAnnouncementIds,
   type AnnouncementWithDriver,
 } from '@/hooks/use-announcements';
-import { applyRadiusFilter, useRadiusFilter } from '@/hooks/use-radius-filter';
+import { useOpenAnnouncements } from '@/hooks/use-open-announcements';
+import { useRadiusFilter } from '@/hooks/use-radius-filter';
 import { useViewedAnnouncements } from '@/hooks/use-viewed-announcements';
-import { distanceKm } from '@/lib/location';
 import { dismissNotificationsOfType } from '@/lib/push';
 import { matchesSearch } from '@/lib/search';
 
 const VIEW_MODE_KEY = 'mechanic_feed_view_mode';
+/** Sub atâtea carduri vizibile (jumătate din pagina de 50) nu se cere automat pagina următoare. */
+const AUTO_PAGE_MIN_VISIBLE = 25;
 type ViewMode = 'compact' | 'extended';
 /** `nolocation` (10 sept): pastila „Fără locație" stă în același rând cu cele de status
  * (decizie user) — toate statusurile, dar doar anunțurile fără coordonate. */
@@ -59,8 +60,11 @@ export default function MechanicFeedScreen() {
   const theme = useTheme();
   const scheme = useResolvedScheme();
   const insets = useSafeAreaInsets();
-  // Feedul altora (doar `open`; propriile se exclud — vin separat, cu toate statusurile).
-  const { announcements, loading, refresh } = useOpenAnnouncements(session?.user.id);
+  // Feedul altora (doar `open`; propriile le exclude serverul — vin separat, cu toate
+  // statusurile). 1.1 (faza 4.3): datele vin din OpenAnnouncementsProvider, comune cu harta,
+  // deja filtrate pe rază de server; fără rază se paginează (loadMore la capătul listei).
+  const { announcements, loading, loadingMore, hasMore, radiusApplied, refresh, loadMore } =
+    useOpenAnnouncements();
   // Anunțurile PROPRII (decizie 5 aug, rev. 2): fără pagină separată — stau în capul
   // listei, iar „+" postează direct de aici, exact ca la transportatori.
   const { announcements: myAnnouncements, refresh: refreshMine } = useMyAnnouncements();
@@ -86,20 +90,19 @@ export default function MechanicFeedScreen() {
   const { radiusKm, coords, locationError, refreshCoords } = useRadiusFilter();
 
   // Filtrul e „aplicat" doar cu rază ȘI poziție — fără poziție, lista rămâne completă.
+  // Filtrarea propriu-zisă o face serverul (faza 4.3); aici doar decidem afișarea distanței.
+  // `radiusApplied`: cât timp răspunsul cu rază n-a sosit, lista e încă cea fără rază.
   const filterActive = radiusKm != null && coords != null;
-  const filtered = useMemo(
-    () => applyRadiusFilter(announcements, radiusKm, coords),
-    [announcements, radiusKm, coords]
-  );
+  const radiusShown = filterActive && radiusApplied;
 
   // Lista finală: PROPRIILE anunțuri primele (scutite de filtrul de rază — sunt de
   // gestionat, nu de găsit), apoi feedul altora. Chips-urile de status se aplică
   // peste tot: ale altora sunt mereu `open`, deci apar doar la Toate/Active;
   // Acceptate/Rezolvate rămân practic vederile propriilor anunțuri.
   // „Fără locație" = ca „Toate", dar doar anunțurile fără coordonate (ale mele + ale
-  // altora). Cele fără coordonate trec oricum de filtrul de rază (applyRadiusFilter
-  // le păstrează), deci pastila arată exact anunțurile care lipsesc de pe hartă.
-  const merged = useMemo<AnnouncementWithDriver[]>(() => {
+  // altora). Cele fără coordonate trec oricum de filtrul de rază (serverul le păstrează,
+  // ca applyRadiusFilter), deci pastila arată exact anunțurile care lipsesc de pe hartă.
+  const merged = useMemo<(AnnouncementWithDriver & { distance_km?: number | null })[]>(() => {
     const noLocationOnly = statusFilter === 'nolocation';
     const mineFiltered = myAnnouncements.filter((a) => {
       if (statusFilter === 'active') return a.status === 'open';
@@ -109,13 +112,13 @@ export default function MechanicFeedScreen() {
     });
     const mineWithDriver = mineFiltered.map((a) => ({ ...a, driver: null }));
     const others =
-      statusFilter === 'all' || statusFilter === 'active' || noLocationOnly ? filtered : [];
+      statusFilter === 'all' || statusFilter === 'active' || noLocationOnly ? announcements : [];
     const all = [...mineWithDriver, ...others];
     return noLocationOnly ? all.filter((a) => !hasLocation(a)) : all;
-  }, [myAnnouncements, statusFilter, filtered]);
+  }, [myAnnouncements, statusFilter, announcements]);
 
-  // Căutarea filtrează local peste lista deja filtrată de rază (toate anunțurile
-  // deschise sunt oricum în memorie) — instant, fără query-uri suplimentare.
+  // Căutarea filtrează local peste lista deja filtrată de rază — instant, fără query-uri
+  // suplimentare. Fără rază caută doar în paginile încărcate (restul vin la scroll).
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
   const searchActive = searchOpen && query.trim().length > 0;
@@ -184,7 +187,8 @@ export default function MechanicFeedScreen() {
   const [pullRefreshing, setPullRefreshing] = useState(false);
   const onPullRefresh = useCallback(async () => {
     setPullRefreshing(true);
-    await Promise.all([refresh(), refreshMine()]);
+    // Pull-to-refresh trece peste cache-ul de 30 s al feed-ului.
+    await Promise.all([refresh({ force: true }), refreshMine()]);
     setPullRefreshing(false);
   }, [refresh, refreshMine]);
 
@@ -282,6 +286,22 @@ export default function MechanicFeedScreen() {
         ItemSeparatorComponent={() => <View style={viewMode === 'compact' ? styles.separatorCompact : styles.separator} />}
         refreshing={pullRefreshing}
         onRefresh={onPullRefresh}
+        // Pagina următoare doar fără rază (cu rază serverul dă tot, max 100) și doar când
+        // lista arată anunțurile altora (Acceptate/Rezolvate = doar ale mele). Nu cu căutare
+        // activă și nici când lista vizibilă e sub o jumătate de pagină („Fără locație”):
+        // capătul listei s-ar atinge după fiecare pagină și s-ar parcurge singure toate.
+        onEndReached={
+          hasMore &&
+          !searchActive &&
+          visible.length >= AUTO_PAGE_MIN_VISIBLE &&
+          (statusFilter === 'all' || statusFilter === 'active' || statusFilter === 'nolocation')
+            ? () => void loadMore()
+            : undefined
+        }
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          loadingMore ? <ActivityIndicator style={styles.footerSpinner} color={theme.brand} /> : null
+        }
         renderItem={({ item }) => {
           // Propriul anunț: fără nume de autor / distanță / „Nou" — în schimb are
           // bulina de oferte și duce la detaliul de PROPRIETAR, nu la cel de ofertant.
@@ -295,13 +315,8 @@ export default function MechanicFeedScreen() {
               rejectedByUser={!isMine && rejectedIds.has(item.id)}
               appliedByUser={!isMine && appliedIds.has(item.id)}
               isNew={!isMine && !viewed.has(item.id)}
-              distanceKm={
-                isMine || !filterActive
-                  ? undefined
-                  : item.latitude == null || item.longitude == null
-                    ? null
-                    : distanceKm(coords.latitude, coords.longitude, item.latitude, item.longitude)
-              }
+              // Distanța o calculează serverul (null = anunț fără coordonate).
+              distanceKm={isMine || !radiusShown ? undefined : (item.distance_km ?? null)}
               onPress={() =>
                 router.push({
                   pathname: (isMine ? '/(mechanic)/feed/mine/[id]' : '/(mechanic)/feed/[id]') as never,
@@ -327,8 +342,9 @@ export default function MechanicFeedScreen() {
                 title={t('mechanic.feed.locationEmptyWithout')}
                 description={t('mechanic.feed.locationEmptyDescription')}
               />
-            ) : announcements.length > 0 && radiusKm != null ? (
-              // Filtrul a ascuns tot — altă cauză decât „nu există anunțuri".
+            ) : radiusShown ? (
+              // Raza activă n-a lăsat nimic (serverul a filtrat — nu mai știm câte sunt în
+              // afara ei, deci mesajul de rază e cel util: mărește raza / scoate filtrul).
               <EmptyState
                 icon="filter-alt"
                 title={t('radiusFilter.emptyFilteredTitle', { km: radiusKm })}
@@ -375,6 +391,7 @@ const styles = StyleSheet.create({
   },
   separator: { height: Spacing.two },
   separatorCompact: { height: Spacing.one },
+  footerSpinner: { paddingVertical: Spacing.three },
   listToolbar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
