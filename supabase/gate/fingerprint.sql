@@ -2,6 +2,7 @@
 -- Doar SELECT. Aceeași interogare înainte de migrare, după migrare, după rollback și după re-aplicare;
 -- `rollback` e corect dacă amprenta „după rollback” = amprenta „înainte”, iar re-aplicarea = „după migrare”.
 -- Ieșire: cat | key | val, sortată (psql -A -t), fără dependență de OID-uri (numele prin regclass/regprocedure).
+SELECT line FROM (
 SELECT cat || ' | ' || key || ' | ' || val AS line
 FROM (
   SELECT 'policy' AS cat, schemaname || '.' || tablename || '.' || policyname AS key,
@@ -69,5 +70,5 @@ FROM (
    WHERE n.nspname IN ('public', 'app', 'storage') AND c.relkind IN ('r', 'p')
   UNION ALL
   SELECT 'publication', pubname || '.' || schemaname || '.' || tablename, '-' FROM pg_publication_tables
-) f
-ORDER BY line COLLATE "C";
+) f) g
+ORDER BY g.line COLLATE "C";
