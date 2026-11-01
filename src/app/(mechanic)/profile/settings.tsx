@@ -9,6 +9,7 @@ export default function Settings() {
       blockedPath="/(mechanic)/profile/blocked"
       changePasswordPath="/(mechanic)/profile/change-password"
       changeEmailPath="/(mechanic)/profile/change-email"
+      twoFactorPath="/(mechanic)/profile/two-factor"
     />
   );
 }

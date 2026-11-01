@@ -1243,5 +1243,33 @@
     "continueWeb": "Continue on the web",
     "notFound": "This contact is no longer available.",
     "goHome": "Back to the app"
+  },
+  "twoFactor": {
+    "title": "Two-step verification",
+    "description": "Besides your password, every sign-in will ask for a 6-digit code from the authenticator app on your phone. This keeps the admin account safe even if someone learns your password.",
+    "appHint": "You need an authenticator app: Google Authenticator, Microsoft Authenticator, 1Password or iPhone Passwords.",
+    "enable": "Turn on",
+    "disable": "Turn off",
+    "scanQr": "Scan the QR code with your authenticator app. If the app is on this same phone, add the key below manually.",
+    "secretLabel": "Setup key",
+    "copySecret": "Copy key",
+    "secretCopied": "Key copied",
+    "enterCode": "6-digit code",
+    "confirm": "Confirm",
+    "codeInvalid": "Enter the 6 digits from your authenticator app.",
+    "wrongCode": "Wrong code. Check your phone's clock and try again with the new code.",
+    "codeExpired": "The code has expired. Try again with the new code.",
+    "notEnabled": "Two-step verification is not enabled on the server.",
+    "genericError": "We couldn't complete the operation. Please try again.",
+    "retry": "Try again",
+    "enabledTitle": "Two-step verification is on",
+    "enabledBody": "From now on, every sign-in will ask for the code from your authenticator app.",
+    "activeDescription": "Two-step verification is on. Every sign-in asks for the code from your authenticator app.",
+    "factorLabel": "Authenticator app",
+    "activeSince": "on since {{date}}",
+    "disableConfirmTitle": "Turn off two-step verification?",
+    "disableConfirmBody": "Your account will be protected by your password only. You can turn it on again at any time.",
+    "loginPrompt": "Enter the code from your authenticator app to sign in.",
+    "signOut": "Sign out"
   }
 }

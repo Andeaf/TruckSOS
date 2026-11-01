@@ -9,6 +9,7 @@ export default function Settings() {
       blockedPath="/(driver)/profile/blocked"
       changePasswordPath="/(driver)/profile/change-password"
       changeEmailPath="/(driver)/profile/change-email"
+      twoFactorPath="/(driver)/profile/two-factor"
     />
   );
 }

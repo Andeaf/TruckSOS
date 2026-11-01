@@ -19,6 +19,7 @@ import { useLangSync } from '@/hooks/use-lang-sync';
 import { usePushNavigation } from '@/hooks/use-push-navigation';
 import { SettingsProvider, useSettings } from '@/hooks/use-settings';
 import { isBanned } from '@/lib/ban';
+import { sessionNeedsMfa } from '@/lib/mfa';
 import { resolvePendingLink, takePendingLink } from '@/lib/pending-link';
 import i18n from '@/i18n';
 
@@ -45,6 +46,7 @@ function RootLayoutNav() {
     const inMechanic = seg[0] === '(mechanic)';
     const onRoleSelect = inAuth && seg[1] === 'role-select';
     const onBanned = inAuth && seg[1] === 'banned';
+    const onTwoFactor = inAuth && seg[1] === 'two-factor';
     const noRoute = seg.length === 0;
     // Link de profil partajat, trucksos.net/p/<id> (7 sept): ecranul /p/[id] își
     // decide singur soarta — cu sesiune rezolvă rolul și navighează, fără sesiune ține
@@ -72,6 +74,13 @@ function RootLayoutNav() {
       } else if (!inAuth && !inSharedLink && !inAuthLink) {
         router.replace('/(auth)/login');
       }
+    } else if (sessionNeedsMfa(session)) {
+      // 1.1 (PLAN_1.1_FIX 4.4): contul are autentificarea în doi pași activă, iar sesiunea e
+      // încă aal1 (login cu parola/Google/Apple, sau sesiune veche de pe telefon) → întâi codul
+      // din aplicația de autentificare. Înaintea oricărei alte ramuri (profil, admin, ban), ca
+      // nimic din cont să nu se deschidă fără el; ieșirea e „Deconectare" de pe ecran. Fără
+      // factor verificat (toți utilizatorii, inclusiv sesiunile din 1.0.8) ramura nu se atinge.
+      if (!onTwoFactor) router.replace('/(auth)/two-factor' as never);
     } else if (!profile) {
       // Doar cu confirmarea serverului ca nu exista profil (cont nou). O citire picata pe
       // retea nu mai trimite nicaieri: ramane ecranul curent / cel de incarcare (14 oct 2026).
@@ -126,7 +135,9 @@ function RootLayoutNav() {
           (nu peste auth / ban) sau pentru oaspeți (1.1: app_versions e citibil de anon);
           pe web nu apare. O dată la 24h — vezi useUpdatePrompt. */}
       <UpdatePrompt
-        enabled={(!!session && !!profile && !isBanned(profile)) || (isGuest && !session)}
+        enabled={
+          (!!session && !!profile && !isBanned(profile) && !sessionNeedsMfa(session)) || (isGuest && !session)
+        }
       />
       {/* 1.1 (Faza B2): „Ai nevoie de un cont" — o deschide useAccountGate().requireAccount. */}
       <AccountGateSheet />

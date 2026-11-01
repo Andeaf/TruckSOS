@@ -1243,5 +1243,33 @@
     "continueWeb": "Im Web fortfahren",
     "notFound": "Dieser Kontakt ist nicht mehr verfügbar.",
     "goHome": "Zurück zur App"
+  },
+  "twoFactor": {
+    "title": "Zwei-Faktor-Authentifizierung",
+    "description": "Zusätzlich zum Passwort fragen wir bei jeder Anmeldung nach einem 6-stelligen Code aus der Authenticator-App auf deinem Handy. So bleibt das Admin-Konto geschützt, selbst wenn jemand dein Passwort kennt.",
+    "appHint": "Du brauchst eine Authenticator-App: Google Authenticator, Microsoft Authenticator, 1Password oder die Passwörter-App auf dem iPhone.",
+    "enable": "Aktivieren",
+    "disable": "Deaktivieren",
+    "scanQr": "Scanne den QR-Code mit deiner Authenticator-App. Ist die App auf demselben Handy, füge den Schlüssel unten manuell hinzu.",
+    "secretLabel": "Einrichtungsschlüssel",
+    "copySecret": "Schlüssel kopieren",
+    "secretCopied": "Schlüssel kopiert",
+    "enterCode": "6-stelliger Code",
+    "confirm": "Bestätigen",
+    "codeInvalid": "Gib die 6 Ziffern aus deiner Authenticator-App ein.",
+    "wrongCode": "Falscher Code. Prüfe die Uhrzeit deines Handys und versuche es mit dem neuen Code erneut.",
+    "codeExpired": "Der Code ist abgelaufen. Versuche es mit dem neuen Code erneut.",
+    "notEnabled": "Die Zwei-Faktor-Authentifizierung ist auf dem Server nicht aktiviert.",
+    "genericError": "Der Vorgang konnte nicht abgeschlossen werden. Bitte versuche es erneut.",
+    "retry": "Erneut versuchen",
+    "enabledTitle": "Zwei-Faktor-Authentifizierung aktiviert",
+    "enabledBody": "Ab jetzt fragen wir bei jeder Anmeldung nach dem Code aus deiner Authenticator-App.",
+    "activeDescription": "Die Zwei-Faktor-Authentifizierung ist aktiv. Bei jeder Anmeldung fragen wir nach dem Code aus deiner Authenticator-App.",
+    "factorLabel": "Authenticator-App",
+    "activeSince": "aktiv seit {{date}}",
+    "disableConfirmTitle": "Zwei-Faktor-Authentifizierung deaktivieren?",
+    "disableConfirmBody": "Dein Konto ist dann nur noch durch das Passwort geschützt. Du kannst sie jederzeit wieder aktivieren.",
+    "loginPrompt": "Gib den Code aus deiner Authenticator-App ein, um dich anzumelden.",
+    "signOut": "Abmelden"
   }
 }

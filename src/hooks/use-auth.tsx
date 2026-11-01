@@ -7,6 +7,7 @@ import { translateAuthError } from '@/lib/auth-errors';
 import { getCaptchaToken } from '@/lib/captcha';
 import { readStoredSession, supabase } from '@/lib/supabase';
 import { translateDbError } from '@/lib/db-errors';
+import { sessionNeedsMfa } from '@/lib/mfa';
 import { registerPushToken, unregisterPushToken } from '@/lib/push';
 import { buildDiagnosticEntry, flushDiagnostics, queueDiagnostic } from '@/lib/diagnostic-log';
 import { diagnoseNetwork, isNetworkError } from '@/lib/network-diagnosis';
@@ -390,6 +391,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const userId = session?.user.id;
     if (!userId) return;
+    // 1.1 (4.4, review 1 nov): cu doi pași activi, telefonul se leagă de cont abia după cod — altfel cine
+    // are doar parola unui admin ar primi push-urile lui (politica push_tokens cere doar user_id = auth.uid()).
+    if (sessionNeedsMfa(session)) return;
 
     let cancelled = false;
     let attemptsLeft = 5;
@@ -419,7 +423,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       sub.remove();
     };
-  }, [session?.user.id, profileId]);
+  }, [session, profileId]);
 
   // 1.1 (Faza B2): prima sesiune (login, cont nou, sesiune găsită la pornire) închide
   // modul oaspete.

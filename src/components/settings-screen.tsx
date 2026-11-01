@@ -35,6 +35,7 @@ export function SettingsScreen({
   blockedPath,
   changePasswordPath,
   changeEmailPath,
+  twoFactorPath,
 }: {
   editPath: string;
   backPath: string;
@@ -42,6 +43,7 @@ export function SettingsScreen({
   blockedPath: string;
   changePasswordPath: string;
   changeEmailPath: string;
+  twoFactorPath: string;
 }) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -144,6 +146,14 @@ export function SettingsScreen({
               chevron={false}
             />
           )}
+          {/* PLAN_1.1_FIX 4.4: autentificarea în doi pași, doar pentru conturile admin. */}
+          {profile?.role === 'admin' ? (
+            <ListRow
+              icon="security"
+              label={t('twoFactor.title')}
+              onPress={() => router.push(twoFactorPath as never)}
+            />
+          ) : null}
         </RowGroup>
 
         <SectionLabel>{t('settings.appearance')}</SectionLabel>
