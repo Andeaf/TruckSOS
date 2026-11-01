@@ -87,8 +87,10 @@ reset role;
 -- ── 13–18. anon: predicatul și coloanele permise ──────────────────────────────────────────────
 select pg_temp.as_anon();
 -- Numărătorile sunt restrânse la fixturile acestui test (baza din CI are și datele porții 4.1).
+-- 4.2b (#27, 20261101000200): anon vede doar profilurile cu rost public: A (anunț deschis), M1, M2; nu B (șofer
+-- fără activitate), nu adminul, nu profilul șters, nu banatul.
 select is((select count(*)::int from public.profiles where id::text like '70000000-%'),
-          5, '13. anon vede doar profilurile neșterse și nebanate (din 7)');
+          3, '13. anon vede doar profilurile publice, neșterse și nebanate (3 din 7)');
 select lives_ok($$select id, full_name, role, avatar_path, company_name, rating_avg from public.profiles$$, '14. anon citește coloanele publice din profiles');
 select throws_ok($$select phone from public.profiles$$, '42501', null, '15. anon nu poate cere phone din profiles');
 select is((select count(*)::int from public.announcements where driver_id = '70000000-0000-4000-8000-0000000000a1'), 1, '16. anon vede doar anunțurile deschise (1 din 3)');
@@ -97,7 +99,7 @@ select is((select lat_approx::text
                   || '|' || (select count(*) from public.guest_profiles where id::text like '70000000-%')
                   || '|' || (select count(*) from public.guest_announcements where driver_id = '70000000-0000-4000-8000-0000000000a1')
              from public.announcements where id = '71111111-0000-4000-8000-0000000000a1'),
-          '44.43|5|1', '18. anon vede lat_approx; view-urile guest_* merg pe tabelele mutate');
+          '44.43|3|1', '18. anon vede lat_approx; view-urile guest_* merg pe tabelele mutate');
 reset role;
 
 -- ── 19–26. Scrieri prin view: ca pe tabel ─────────────────────────────────────────────────────
@@ -167,8 +169,8 @@ select is(
      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'app' and p.prokind = 'f' and pg_get_function_result(p.oid) <> 'trigger'
       and (has_function_privilege('anon', p.oid, 'EXECUTE') or has_function_privilege('authenticated', p.oid, 'EXECUTE'))
-      and p.proname not in ('uuid_or_null', 'storage_quota_ok', 'like_escape', 'search_norm', 'viewer_is_admin')),
-  '', '38. Funcțiile din app executabile prin API = doar allowlist-ul (uuid_or_null, storage_quota_ok, like_escape, search_norm, viewer_is_admin)');
+      and p.proname not in ('uuid_or_null', 'storage_quota_ok', 'like_escape', 'search_norm', 'viewer_is_admin', 'profile_visible_to_anon')),
+  '', '38. Funcțiile din app executabile prin API = doar allowlist-ul (uuid_or_null, storage_quota_ok, like_escape, search_norm, viewer_is_admin, profile_visible_to_anon)');
 select is(
   (select coalesce(string_agg(n.nspname || '.' || p.proname, ', ' order by 1), '')
      from pg_proc p join pg_namespace n on n.oid = p.pronamespace

@@ -302,6 +302,10 @@ async function run() {
   await step('RPC get_driver_phone A as mech_accepted', { method: 'POST', path: '/rest/v1/rpc/get_driver_phone', token: M1, body: { p_driver_id: ID.A } });
   await step('RPC get_driver_phone B as mech_accepted (fara conversatie: null)', { method: 'POST', path: '/rest/v1/rpc/get_driver_phone', token: M1, body: { p_driver_id: ID.B } });
   await step('RPC start_direct_conversation M2 as driver_a', { method: 'POST', path: '/rest/v1/rpc/start_direct_conversation', token: A, body: { p_mechanic_id: ID.M2 } });
+  // 1.0.8 pornește conversații directe către ORICE utilizator din 8 locuri (feed „Contactează autorul”, conversație
+  // nouă, share, profil public): mecanic → șofer cu anunț deschis și mecanic → șofer fără nicio relație trebuie să meargă.
+  await step('RPC start_direct_conversation A (autorul unui anunt deschis) as mech_open', { method: 'POST', path: '/rest/v1/rpc/start_direct_conversation', token: M2, body: { p_mechanic_id: ID.A } });
+  await step('RPC start_direct_conversation B (sofer fara relatie) as mech_accepted', { method: 'POST', path: '/rest/v1/rpc/start_direct_conversation', token: M1, body: { p_mechanic_id: ID.B } });
   await step('RPC search_mechanics as driver_a', { method: 'POST', path: '/rest/v1/rpc/search_mechanics', token: A, body: { p_query: 'gate' } });
   await step('RPC search_users as mech_open', { method: 'POST', path: '/rest/v1/rpc/search_users', token: M2, body: { p_query: 'gate' } });
   await step('RPC search_market_listings as driver_a', { method: 'POST', path: '/rest/v1/rpc/search_market_listings', token: A, body: { p_query: 'gate', p_category: null, p_sort: 'newest', p_limit: 20 } });
@@ -339,6 +343,11 @@ async function run() {
 function compare() {
   const before = JSON.parse(readFileSync(join(args[1], 'results.json'), 'utf8')).results;
   const after = JSON.parse(readFileSync(join(args[2], 'results.json'), 'utf8')).results;
+  // Schimbările de comportament VOITE de o migrare se declară explicit (cheia pasului + motivul), altfel sunt FAIL.
+  let expected = [];
+  try { expected = JSON.parse(readFileSync(join(process.cwd(), 'supabase', 'gate', 'expected-diffs.json'), 'utf8')); } catch { expected = []; }
+  const expectedByKey = new Map(expected.map((e) => [e.key, e]));
+  const accepted = [];
   const fails = [];
   const masked = [];
   const unmasked = [];
@@ -361,7 +370,13 @@ function compare() {
       stop = true;
       diffs.push(`STOP: embed-ul nu rezolvă prin view → ${msg.slice(0, 200)}`);
     }
-    if (diffs.length) fails.push(`${key}\n    ${diffs.join('\n    ')}`);
+    // O diferență declarată trece doar dacă rezultatul „after” e EXACT cel declarat (status + cod + mesaj).
+    const exp = expectedByKey.get(key);
+    const matchesExpected = exp && a.status === exp.after?.status
+      && (exp.after?.code === undefined || (a.error?.code ?? null) === exp.after.code)
+      && (exp.after?.message === undefined || (a.error?.message ?? '') === exp.after.message);
+    if (diffs.length && matchesExpected && !stop) accepted.push(`${key}\n    ${diffs.join('\n    ')}\n    motiv: ${exp.reason}`);
+    else if (diffs.length) fails.push(`${key}\n    ${diffs.join('\n    ')}${exp ? `\n    declarat în expected-diffs, dar rezultatul nu e cel declarat (${JSON.stringify(exp.after)})` : ''}`);
     else pass++;
     for (const k of kb) {
       const vb = b.keys[k], va = a.keys?.[k];
@@ -370,8 +385,12 @@ function compare() {
       if (vb.nonnull === 0 && va.nonnull > 0) unmasked.push(`${key} :: ${k}`);
     }
   }
-  console.log(`\n=== POARTA 4.1: ${pass} PASS, ${fails.length} FAIL${stop ? ', STOP (hint prin view)' : ''} ===`);
+  console.log(`\n=== POARTA 4.1: ${pass} PASS, ${fails.length} FAIL, ${accepted.length} diferențe declarate${stop ? ', STOP (hint prin view)' : ''} ===`);
   if (fails.length) { console.log('\n--- FAIL ---'); for (const f of fails) console.log('  ' + f); }
+  if (accepted.length) { console.log('\n--- diferențe declarate în supabase/gate/expected-diffs.json ---'); for (const a of accepted) console.log('  ' + a); }
+  // O declarație fără pas corespunzător sau fără diferență reală e o eroare: lista trebuie să rămână exactă.
+  const stale = expected.filter((e) => !Object.prototype.hasOwnProperty.call(before, e.key) || !accepted.some((x) => x.startsWith(e.key)));
+  if (stale.length) { console.log(`\n--- FAIL: declarații din expected-diffs.json fără pas sau fără diferență: ${stale.map((e) => e.key).join(' | ')}`); fails.push(...stale.map((e) => `expected-diffs: ${e.key}`)); }
   console.log(`\n--- informativ: chei devenite NULL după migrare (${masked.length}) ---`);
   for (const m of masked) console.log('  ' + m);
   if (unmasked.length) { console.log(`\n--- informativ: chei devenite ne-NULL (${unmasked.length}) ---`); for (const m of unmasked) console.log('  ' + m); }

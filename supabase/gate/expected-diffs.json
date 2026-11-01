@@ -1,0 +1,7 @@
+[
+  {
+    "key": "W: RPC apply_to_announcement N2 as driver_a (sofer: azi permis, #39 il inchide in 4.2b)",
+    "reason": "#39 (20261101000200): un sofer nu mai poate candida la anunturi; clientii publicati n-au butonul de candidatura la soferi.",
+    "after": { "status": 400, "code": "P0001", "message": "not_mechanic" }
+  }
+]

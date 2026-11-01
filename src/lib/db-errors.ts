@@ -44,6 +44,11 @@ const RAISED: Readonly<Record<string, string>> = {
   not_authenticated: 'common.noSession',
   no_session: 'common.noSession',
   announcement_not_open: 'dbErrors.announcement_not_open',
+  // Faza 4.2b (#39): candidează doar mecanicii, nu la propriul anunț; conversație directă doar către mecanici
+  // sau către cineva cu care există deja o relație (același cod ca „inexistent").
+  not_mechanic: 'dbErrors.not_allowed',
+  own_announcement: 'dbErrors.not_allowed',
+  target_not_mechanic: 'dbErrors.not_found',
   'Announcement not available': 'dbErrors.announcement_not_open', // resubmit_application (20260721)
   listing_not_active: 'dbErrors.listing_not_active',
   cannot_contact_self: 'dbErrors.cannot_contact_self',
