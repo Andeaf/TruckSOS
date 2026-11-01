@@ -15,6 +15,15 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', p_uid, 'role', p_role)::text, true);
   execute format('set local role %I', p_role);
 end $$;
+-- Numărul de rânduri atinse de un DML rulat ca rolul curent (un WITH cu DML nu poate sta într-o subinterogare).
+create function pg_temp.affected(p_sql text) returns int language plpgsql as $$
+declare n int;
+begin
+  execute p_sql;
+  get diagnostics n = row_count;
+  return n;
+end $$;
+grant execute on function pg_temp.affected(text) to anon, authenticated, service_role;
 create function pg_temp.as_anon() returns void language plpgsql as $$
 begin
   perform set_config('request.jwt.claims', '{"role":"anon"}', true);
@@ -93,22 +102,22 @@ reset role;
 
 -- ── 19–26. Scrieri prin view: ca pe tabel ─────────────────────────────────────────────────────
 select pg_temp.as_user('70000000-0000-4000-8000-0000000000a1', 'authenticated');
-select is((with u as (update public.profiles set phone = '+40700000009' where id = '70000000-0000-4000-8000-0000000000a1' returning 1) select count(*)::int from u),
+select is(pg_temp.affected($$update public.profiles set phone = '+40700000009' where id = '70000000-0000-4000-8000-0000000000a1'$$),
           1, '19. Proprietarul își actualizează telefonul prin view (1 rând)');
 select is((select phone from public.profiles where id = '70000000-0000-4000-8000-0000000000a1'), '+40700000009', '20. Telefonul nou e vizibil proprietarului');
-select is((with u as (update public.profiles set full_name = 'Hacked' where id = '70000000-0000-4000-8000-0000000000b1' returning 1) select count(*)::int from u),
+select is(pg_temp.affected($$update public.profiles set full_name = 'Hacked' where id = '70000000-0000-4000-8000-0000000000b1'$$),
           0, '21. Străinul: 0 rânduri (RLS pe tabel), nu update fantomă');
 select throws_ok($$update public.profiles set role = 'admin' where id = '70000000-0000-4000-8000-0000000000a1'$$, 'P0001', 'role_change_forbidden',
           '22. Garda tabelului se aplică prin view (role_change_forbidden)');
-select is((with u as (update public.announcements set status = 'cancelled' where id = '71111111-0000-4000-8000-0000000000a1' returning 1) select count(*)::int from u),
+select is(pg_temp.affected($$update public.announcements set status = 'cancelled' where id = '71111111-0000-4000-8000-0000000000a1'$$),
           1, '23. Șoferul anulează anunțul deschis prin view (1 rând)');
-select is((with u as (update public.announcements set status = 'open' where id = '71111111-0000-4000-8000-0000000000a1' returning 1) select count(*)::int from u),
+select is(pg_temp.affected($$update public.announcements set status = 'open' where id = '71111111-0000-4000-8000-0000000000a1'$$),
           0, '24. Redeschiderea directă: 0 rânduri (politica update_cancel), ca pe tabel');
-select is((with d as (delete from public.announcements where id = '71111111-0000-4000-8000-0000000000a1' returning 1) select count(*)::int from d),
+select is(pg_temp.affected($$delete from public.announcements where id = '71111111-0000-4000-8000-0000000000a1'$$),
           1, '25. Șoferul își șterge anunțul neacceptat prin view (1 rând)');
 reset role;
 select pg_temp.as_user('70000000-0000-4000-8000-0000000000b1', 'authenticated');
-select is((with d as (delete from public.announcements where id = '71111111-0000-4000-8000-0000000000a2' returning 1) select count(*)::int from d),
+select is(pg_temp.affected($$delete from public.announcements where id = '71111111-0000-4000-8000-0000000000a2'$$),
           0, '26. Alt șofer: DELETE prin view = 0 rânduri');
 reset role;
 
@@ -194,7 +203,7 @@ select is((select plate_number || '|' || latitude::text from public.announcement
           'B-02-TST|44.55', '42. service_role vede plăcuța și coordonatele exacte prin view');
 -- 43. UPDATE prin view ca service_role (cum fac Edge Functions cleanup-announcements / translate-announcement):
 --     doar coloana cerută se schimbă; plăcuța, VIN-ul, coordonatele rămân.
-select is((with u as (update public.announcements set source_lang_detected = true where id = '71111111-0000-4000-8000-0000000000a2' returning 1) select count(*)::int from u),
+select is(pg_temp.affected($$update public.announcements set source_lang_detected = true where id = '71111111-0000-4000-8000-0000000000a2'$$),
           1, '43a. UPDATE prin view ca service_role atinge rândul');
 reset role;
 select is((select plate_number || '|' || chassis_number || '|' || latitude::text || '|' || source_lang_detected::text

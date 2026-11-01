@@ -108,6 +108,7 @@ jobs:
           PGCLIENTENCODING: UTF8
         run: |
           if [ -z "$(ls -A /tmp/pending)" ]; then echo "no migrations after the baseline: gate skipped"; exit 0; fi
+          set -o pipefail
           mkdir -p /tmp/gate /tmp/fp
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -q -v ON_ERROR_STOP=1 -f supabase/gate/fixtures.sql
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -q -A -t -v ON_ERROR_STOP=1 -f supabase/gate/fingerprint.sql | tr -d '\r' > /tmp/fp/baseline.txt
@@ -167,6 +168,7 @@ jobs:
           PGCLIENTENCODING: UTF8
         run: |
           if [ ! -f /tmp/fp/baseline.txt ]; then echo "no migrations after the baseline: rehearsal skipped"; exit 0; fi
+          set -o pipefail
           DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
           fp() { psql "$DB" -X -q -A -t -v ON_ERROR_STOP=1 -f supabase/gate/fingerprint.sql | tr -d '\r' > "$1"; }
           fp /tmp/fp/applied.txt

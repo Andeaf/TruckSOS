@@ -2,7 +2,7 @@
 -- Doar SELECT. Aceeași interogare înainte de migrare, după migrare, după rollback și după re-aplicare;
 -- `rollback` e corect dacă amprenta „după rollback” = amprenta „înainte”, iar re-aplicarea = „după migrare”.
 -- Ieșire: cat | key | val, sortată (psql -A -t), fără dependență de OID-uri (numele prin regclass/regprocedure).
-SELECT cat || ' | ' || key || ' | ' || val
+SELECT cat || ' | ' || key || ' | ' || val AS line
 FROM (
   SELECT 'policy' AS cat, schemaname || '.' || tablename || '.' || policyname AS key,
          permissive || '|' || array_to_string(ARRAY(SELECT r::text FROM unnest(roles) r ORDER BY 1), ',') || '|' || cmd
@@ -70,4 +70,4 @@ FROM (
   UNION ALL
   SELECT 'publication', pubname || '.' || schemaname || '.' || tablename, '-' FROM pg_publication_tables
 ) f
-ORDER BY 1 COLLATE "C";
+ORDER BY line COLLATE "C";

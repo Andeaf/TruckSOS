@@ -270,6 +270,8 @@ async function run() {
     await step('STORAGE sign as mech_accepted (nu e al lui, dar e mecanic: permis pe deschis)', { method: 'POST', path: `/storage/v1/object/sign/photos/announcements/${N1}/gate.jpg`, token: M1, body: { expiresIn: 3600 } });
     await step('STORAGE sign as anon (trebuie respins)', { method: 'POST', path: `/storage/v1/object/sign/photos/announcements/${N1}/gate.jpg`, body: { expiresIn: 3600 } });
     await step('RPC record_announcement_view N1 as mech_open', { method: 'POST', path: '/rest/v1/rpc/record_announcement_view', token: M2, body: { p_announcement_id: N1 } });
+    // Ștergerea pozei (fluxul 1.0.8 de scoatere a unei poze; Storage-ul local nu permite DELETE direct în storage.objects)
+    await step('STORAGE delete announcements/<N1>/gate.jpg as driver_a', { method: 'DELETE', path: '/storage/v1/object/photos', token: A, body: { prefixes: [`announcements/${N1}/gate.jpg`] } });
     // use-announcements.ts cancelAnnouncement / deleteAnnouncement
     await step('PATCH announcements N1 status=cancelled as driver_a', { method: 'PATCH', path: '/rest/v1/announcements', search: `?id=eq.${N1}`, token: A, headers: rep, body: { status: 'cancelled' } });
     await step('PATCH announcements N1 status=open (redeschidere directa: trebuie 0 randuri) as driver_a', { method: 'PATCH', path: '/rest/v1/announcements', search: `?id=eq.${N1}`, token: A, headers: rep, body: { status: 'open' } });

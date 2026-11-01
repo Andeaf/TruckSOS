@@ -19,7 +19,6 @@ DELETE FROM public.applications
 DELETE FROM public.announcement_views WHERE viewer_id::text LIKE 'c0000000-%';
 DELETE FROM public.push_tokens WHERE token LIKE 'ExponentPushToken[gate-%';
 DELETE FROM app.rate_events WHERE user_id::text LIKE 'a0000000-%' OR user_id::text LIKE 'c0000000-%' OR user_id::text LIKE 'e0000000-%';
-DELETE FROM storage.objects WHERE bucket_id = 'photos' AND name LIKE 'announcements/%/gate.jpg';
 
 -- Contul nou al fazei (W1/W2) rămâne fără profil pentru faza următoare.
 DELETE FROM public.profiles WHERE id IN ('e0000000-0000-4000-8000-0000000000e1', 'e0000000-0000-4000-8000-0000000000e2');
