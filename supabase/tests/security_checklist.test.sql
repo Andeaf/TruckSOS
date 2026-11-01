@@ -19,6 +19,7 @@ insert into allowlist values
   ('search_mechanics'), ('search_users'), ('set_announcements_hidden'),
   ('start_direct_conversation'), ('start_market_conversation'), ('withdraw_application'),
   ('record_announcement_view'), ('get_own_profile'),
+  ('open_announcements_near'), ('open_announcements_near_count'), ('rate_mechanic'),  -- 20261101000300 (faza 4.3)
   ('admin_purge_accounts'),                                       -- 20261031000100 (faza 2)
   ('admin_ban_user'), ('admin_dashboard_stats'), ('admin_delete_announcement'),
   ('admin_delete_listing'), ('admin_delete_message'), ('admin_delete_review'),
@@ -31,7 +32,8 @@ insert into allowlist values
   ('distance_km'), ('push_text'), ('user_lang');
 
 create temp table anon_fn_allow(fn text) on commit drop;
-insert into anon_fn_allow values ('guest_search_mechanics'), ('guest_search_market');
+insert into anon_fn_allow values ('guest_search_mechanics'), ('guest_search_market'),
+  ('guest_announcements_near'), ('distance_km');  -- 20261101000300 (faza 4.3): feed-ul pe rază al oaspeților
 
 create temp table anon_table_allow(tbl text, col text) on commit drop;
 insert into anon_table_allow values
