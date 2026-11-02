@@ -1,5 +1,9 @@
 -- pgTAP: faza 4.3 (PLAN_1.1_FIX #9 + D12-bis, migrarea 20261101000300_feed_near_rate_mechanic):
 -- feed-ul pe rază pe server (RLS + măști ca în view), bulina, varianta pentru oaspeți și RPC-ul de notare.
+-- FRAGILITATE CUNOSCUTĂ (6d/6e): în CI rulează după poarta 4.1, deci baza are datele porții + ce lasă replay-ul (N1 șters,
+-- N2 rezolvat, ambele la București). 6d/6e cer ca NICIUN anunț deschis cu coordonate străin de fixture să fie la < 20 km
+-- de Ploiești (44.94, 26.03). Dacă un pas nou din replay/poartă lasă unul acolo, se mută punctul fixture-ului (A2 + centrul
+-- din 6d/6e) într-o zonă liberă; NU se slăbește aserțiunea (setul exact e contractul).
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(20);
