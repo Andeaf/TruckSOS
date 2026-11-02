@@ -172,6 +172,10 @@ jobs:
           DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
           fp() { psql "$DB" -X -q -A -t -v ON_ERROR_STOP=1 -f supabase/gate/fingerprint.sql | tr -d '\r' > "$1"; }
           fp /tmp/fp/applied.txt
+          # Schimbarea de catalog pe care o fac migrările (baseline → applied): e referința pentru repetiția pe
+          # producție (diferența din BEGIN … migrări … ROLLBACK trebuie să fie aceeași); artefactul `fingerprints`.
+          diff -u /tmp/fp/baseline.txt /tmp/fp/applied.txt > /tmp/fp/expected-change.diff || true
+          echo "schimbări de catalog baseline → applied: $(grep -c '^[-+][^-+]' /tmp/fp/expected-change.diff) linii (artefactul fingerprints/expected-change.diff)"
           for f in $(ls supabase/migrations/*.sql | grep -v "$BASELINE_FILE" | sort -r); do
             rb="supabase/rollback/$(basename "$f")"
             test -f "$rb" || { echo "lipsește rollback-ul $rb"; exit 1; }
@@ -189,6 +193,16 @@ jobs:
           fp /tmp/fp/reapplied.txt
           echo "diff applied vs re-applied (trebuie gol):"
           diff -u /tmp/fp/applied.txt /tmp/fp/reapplied.txt
+
+      - name: Upload fingerprints
+        # Amprentele și diferența așteptată (baseline → applied): referința cu care se compară repetiția BEGIN … ROLLBACK pe producție.
+        if: ${{ !cancelled() && steps.apply.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: fingerprints
+          path: /tmp/fp/
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: pgTAP tests
         # Rulează și când paritatea pică (vrem ambele rezultate), dar nu pe o schemă aplicată pe jumătate.

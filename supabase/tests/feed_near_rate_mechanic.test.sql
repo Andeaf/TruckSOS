@@ -2,7 +2,7 @@
 -- feed-ul pe rază pe server (RLS + măști ca în view), bulina, varianta pentru oaspeți și RPC-ul de notare.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(16);
+select plan(20);
 
 create function pg_temp.as_user(p_uid uuid, p_role text) returns void language plpgsql as $$
 begin
@@ -40,7 +40,23 @@ select ok((select distance_km between 0 and 2 from public.open_announcements_nea
           '4. distanța e calculată pe coordonatele aproximative (A1 la sub 2 km)');
 select is((select driver_full_name from public.open_announcements_near() where id = '73111111-0000-4000-8000-0000000000a1'), 'F Driver A',
           '5. numele șoferului vine din același RPC (fără embed)');
-select is((select count(*)::int from public.open_announcements_near(44.43, 26.10, 100, 2) where driver_id::text like '73000000-%'), 2, '6. p_limit limitează');
+-- Cu rază ordinea e după distanță, iar în CI datele porții (supabase/gate/fixtures.sql) au anunțuri deschise lângă
+-- București și unul fără coordonate (A6) care rămâne la orice punct; de aceea 6 nu numără doar fixture-ul, ci verifică
+-- contractul: p_limit, toate rândurile în rază, ordinea crescătoare și, într-un punct departe de poartă, exact fixture-ul.
+select is((select count(*)::int from public.open_announcements_near(44.43, 26.10, 100, 2)), 2, '6. p_limit limitează');
+select ok((select bool_and(latitude is null or distance_km <= 100) from public.open_announcements_near(44.43, 26.10, 100)),
+          '6b. toate rândurile întoarse sunt la cel mult rază de punctul dat (cele fără coordonate rămân, ca în client)');
+select ok((select bool_and((d >= prev) is not false and (d is null or prev is not null or ordinality = 1))
+             from (select distance_km as d, lag(distance_km) over (order by ordinality) as prev, ordinality
+                     from public.open_announcements_near(44.43, 26.10, 100) with ordinality) t),
+          '6c. distance_km e crescător în ordinea întoarsă, cele fără coordonate la sfârșit');
+-- Ploiești (44.94, 26.03), rază 20 km: datele porții cu coordonate sunt la ≥ 43 km; din fixture doar A2 e în rază.
+select is((select string_agg(id::text, ',') from public.open_announcements_near(44.94, 26.03, 20, 1)),
+          '73111111-0000-4000-8000-0000000000a2', '6d. punct departe de poartă + p_limit 1: exact cel mai apropiat din fixture (A2)');
+select is((select string_agg(id::text, ',' order by ordinality) from public.open_announcements_near(44.94, 26.03, 20) with ordinality
+             where latitude is not null or driver_id::text like '73000000-%'),
+          '73111111-0000-4000-8000-0000000000a2,73111111-0000-4000-8000-0000000000a3',
+          '6e. punct departe de poartă: exact fixture-ul, A2 (singurul cu coordonate în rază) apoi A3 (fără coordonate); gate A6 e singurul rând străin, fără coordonate');
 select is((select count(*)::int from public.open_announcements_near(null, null, null, 50, now() - interval '90 minutes') where driver_id::text like '73000000-%'), 3,
           '7. cursorul p_before întoarce doar anunțurile mai vechi (A2, A3, A5)');
 -- (restrâns la ultimele 15 minute: datele porții din CI au anunțuri deschise lângă București, dar mai vechi)
