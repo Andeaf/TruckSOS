@@ -7,7 +7,7 @@
 -- Rulează ca postgres (supabase test db); fiecare persoană e simulată cu SET LOCAL ROLE + request.jwt.claims.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(44);
+select plan(57);
 
 -- ── Fixturi (tranzacția se derulează înapoi la final) ──────────────────────────────────────────
 create function pg_temp.as_user(p_uid uuid, p_role text) returns void language plpgsql as $$
@@ -68,8 +68,11 @@ reset role;
 
 -- ── 8–12. Măștile pe announcements (3.2: ~1 km, fără plăcuță/VIN până la acceptare) ────────────
 select pg_temp.as_user('70000000-0000-4000-8000-0000000000c2', 'authenticated');
-select is((select plate_number || coalesce(chassis_number, '') from public.announcements where id = '71111111-0000-4000-8000-0000000000a1'), null,
-          '8. Mecanicul neacceptat nu vede plăcuța/VIN-ul anunțului deschis');
+-- 4.6: plăcuța și VIN-ul verificate separat (NULL || orice = NULL ar fi ascuns un VIN scăpat).
+select is((select plate_number from public.announcements where id = '71111111-0000-4000-8000-0000000000a1'), null,
+          '8a. Mecanicul neacceptat nu vede plăcuța anunțului deschis');
+select is((select chassis_number from public.announcements where id = '71111111-0000-4000-8000-0000000000a1'), null,
+          '8b. Mecanicul neacceptat nu vede VIN-ul anunțului deschis');
 select is((select latitude::numeric || '|' || longitude::numeric from public.announcements where id = '71111111-0000-4000-8000-0000000000a1'),
           '44.43|26.1', '9. Mecanicul neacceptat vede poziția la ~1 km (lat_approx/lng_approx)');
 select is((select count(*)::int from public.announcements where id = '71111111-0000-4000-8000-0000000000a2'), 0,
@@ -211,6 +214,55 @@ reset role;
 select is((select plate_number || '|' || chassis_number || '|' || latitude::text || '|' || source_lang_detected::text
              from app.announcements where id = '71111111-0000-4000-8000-0000000000a2'),
           'B-02-TST|VIN0002|44.55|true', '43b. După UPDATE-ul service_role, plăcuța/VIN-ul/coordonatele sunt intacte în tabel');
+
+-- ── 44–52. 4.6 (migrarea 20261103000100): un anunț redeschis nu mai poartă mecanicul acceptat cândva ──
+-- Fixture: a4 al lui B, acceptat de M1, mai vechi de 30 h (repost permis), anulat direct în tabel (drumul
+-- „SQL manual” — singurul de la accepted la cancelled), apoi redeschis prin RPC. Claims-urile de aici sunt
+-- cele de la 43a (service_role, fără sub): auth.uid() e NULL, limita de anunțuri nu se declanșează la fixture.
+insert into app.announcements (id, driver_id, description, location, status, mechanic_id, created_at, plate_number, chassis_number, latitude, longitude)
+values ('71111111-0000-4000-8000-0000000000a4', '70000000-0000-4000-8000-0000000000b1', 'T acceptat apoi redeschis', 'Cluj', 'accepted',
+        '70000000-0000-4000-8000-0000000000c1', now() - interval '40 hours', 'B-04-TST', 'VIN0004', 46.7712, 23.6236);
+select pg_temp.as_user('70000000-0000-4000-8000-0000000000c1', 'authenticated');
+select is((select plate_number || '|' || chassis_number || '|' || latitude::text from public.announcements where id = '71111111-0000-4000-8000-0000000000a4'),
+          'B-04-TST|VIN0004|46.7712', '44. Cât e acceptat, M1 vede plăcuța, VIN-ul și poziția exactă');
+reset role;
+update app.announcements set status = 'cancelled' where id = '71111111-0000-4000-8000-0000000000a4';
+select is((select mechanic_id::text from app.announcements where id = '71111111-0000-4000-8000-0000000000a4'), '70000000-0000-4000-8000-0000000000c1',
+          '45. Anularea directă (SQL) lasă mechanic_id pe loc, ca înainte');
+select pg_temp.as_user('70000000-0000-4000-8000-0000000000b1', 'authenticated');
+select lives_ok($$select public.repost_announcement('71111111-0000-4000-8000-0000000000a4')$$,
+          '46. B redeschide anunțul prin repost_announcement (sub plafon, mai vechi de 30 h)');
+reset role;
+select is((select status || '|' || coalesce(mechanic_id::text, 'null') from app.announcements where id = '71111111-0000-4000-8000-0000000000a4'),
+          'open|null', '47. Redeschis: status open și mechanic_id NULL (trigger-ul 4.6)');
+select pg_temp.as_user('70000000-0000-4000-8000-0000000000c1', 'authenticated');
+select is((select plate_number from public.announcements where id = '71111111-0000-4000-8000-0000000000a4'), null,
+          '48a. Fostul mecanic nu mai vede plăcuța anunțului redeschis');
+select is((select chassis_number from public.announcements where id = '71111111-0000-4000-8000-0000000000a4'), null,
+          '48b. Fostul mecanic nu mai vede VIN-ul anunțului redeschis');
+select is((select latitude::numeric || '|' || longitude::numeric from public.announcements where id = '71111111-0000-4000-8000-0000000000a4'),
+          '46.77|23.62', '48c. Fostul mecanic vede poziția la ~1 km, ca orice mecanic neacceptat');
+reset role;
+-- Invariantul ține pe orice drum: un UPDATE direct care pune mechanic_id pe un anunț deschis îl pierde…
+update app.announcements set mechanic_id = '70000000-0000-4000-8000-0000000000c1' where id = '71111111-0000-4000-8000-0000000000a4';
+select is((select mechanic_id from app.announcements where id = '71111111-0000-4000-8000-0000000000a4'), null,
+          '49. UPDATE direct cu mechanic_id pe un anunț deschis → rămâne NULL');
+-- …iar acceptarea reală (RPC-ul accept_application: status = accepted și mechanic_id în ACELAȘI UPDATE) e neatinsă.
+insert into public.applications (id, announcement_id, mechanic_id, price_type, price_amount, currency, status)
+values ('74111111-0000-4000-8000-0000000000a4', '71111111-0000-4000-8000-0000000000a4', '70000000-0000-4000-8000-0000000000c1', 'fixed', 100, 'RON', 'pending');
+select pg_temp.as_user('70000000-0000-4000-8000-0000000000b1', 'authenticated');
+select lives_ok($$select public.accept_application('74111111-0000-4000-8000-0000000000a4')$$,
+          '50a. B acceptă candidatura lui M1 prin RPC-ul real');
+reset role;
+select is((select status || '|' || mechanic_id::text from app.announcements where id = '71111111-0000-4000-8000-0000000000a4'),
+          'accepted|70000000-0000-4000-8000-0000000000c1', '50b. Acceptarea păstrează mechanic_id (trigger-ul acționează doar pe open)');
+-- Catalog: trigger-ul activ pe app.announcements, funcția lui neexecutabilă prin API.
+select is((select count(*)::int from pg_trigger where tgname = 'announcements_open_clears_mechanic'
+             and tgrelid = 'app.announcements'::regclass and tgenabled <> 'D'), 1,
+          '51. Trigger-ul announcements_open_clears_mechanic e prezent și activ pe app.announcements');
+select ok(not has_function_privilege('anon', 'app.announcements_open_clears_mechanic()', 'EXECUTE')
+          and not has_function_privilege('authenticated', 'app.announcements_open_clears_mechanic()', 'EXECUTE'),
+          '52. Funcția trigger-ului nu e executabilă prin API');
 
 select * from finish();
 rollback;
