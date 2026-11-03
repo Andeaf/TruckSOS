@@ -43,7 +43,7 @@ export function useFeedBadge(userId: string | undefined) {
       radiusKm != null && coords != null
         ? { p_lat: coords.latitude, p_lng: coords.longitude, p_radius_km: radiusKm }
         : {};
-    const { data, error } = await supabase.rpc('open_announcements_near_count' as never, {
+    const { data, error } = await supabase.rpc('open_announcements_near_count', {
       ...radiusArgs,
       p_since: lastSeen,
     } as never);

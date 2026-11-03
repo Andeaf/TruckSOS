@@ -27,7 +27,7 @@ export async function upsertRating(
   stars: number,
   comment: string | null,
 ): Promise<string | null> {
-  const { error } = await supabase.rpc('rate_mechanic' as never, {
+  const { error } = await supabase.rpc('rate_mechanic', {
     p_mechanic_id: mechanicId,
     p_stars: stars,
     p_comment: comment,

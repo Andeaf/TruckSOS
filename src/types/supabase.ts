@@ -170,104 +170,6 @@ export type Database = {
           },
         ]
       }
-      announcements: {
-        Row: {
-          chassis_number: string | null
-          created_at: string | null
-          description: string
-          driver_id: string
-          hidden_from_history: boolean
-          id: string
-          lat_approx: number | null
-          latitude: number | null
-          lng_approx: number | null
-          location: string
-          longitude: number | null
-          mechanic_id: string | null
-          plate_number: string | null
-          source_lang: string | null
-          source_lang_detected: boolean
-          status: string
-          truck_make: string | null
-          truck_model: string | null
-          truck_year: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          chassis_number?: string | null
-          created_at?: string | null
-          description: string
-          driver_id: string
-          hidden_from_history?: boolean
-          id?: string
-          lat_approx?: number | null
-          latitude?: number | null
-          lng_approx?: number | null
-          location: string
-          longitude?: number | null
-          mechanic_id?: string | null
-          plate_number?: string | null
-          source_lang?: string | null
-          source_lang_detected?: boolean
-          status?: string
-          truck_make?: string | null
-          truck_model?: string | null
-          truck_year?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          chassis_number?: string | null
-          created_at?: string | null
-          description?: string
-          driver_id?: string
-          hidden_from_history?: boolean
-          id?: string
-          lat_approx?: number | null
-          latitude?: number | null
-          lng_approx?: number | null
-          location?: string
-          longitude?: number | null
-          mechanic_id?: string | null
-          plate_number?: string | null
-          source_lang?: string | null
-          source_lang_detected?: boolean
-          status?: string
-          truck_make?: string | null
-          truck_model?: string | null
-          truck_year?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "announcements_driver_id_fkey"
-            columns: ["driver_id"]
-            isOneToOne: false
-            referencedRelation: "guest_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "announcements_driver_id_fkey"
-            columns: ["driver_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "announcements_mechanic_id_fkey"
-            columns: ["mechanic_id"]
-            isOneToOne: false
-            referencedRelation: "guest_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "announcements_mechanic_id_fkey"
-            columns: ["mechanic_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       app_versions: {
         Row: {
           latest_version: string
@@ -1268,90 +1170,6 @@ export type Database = {
           },
         ]
       }
-      profiles: {
-        Row: {
-          activity_zone: string | null
-          address: string | null
-          avatar_path: string | null
-          ban_reason: string | null
-          banned_at: string | null
-          banned_until: string | null
-          company_name: string | null
-          contact_email: string | null
-          created_at: string | null
-          deleted_at: string | null
-          full_name: string
-          id: string
-          lang: string
-          latitude: number | null
-          longitude: number | null
-          market_push_enabled: boolean
-          mention_push_enabled: boolean
-          notify_radius_km: number | null
-          phone: string | null
-          push_enabled: boolean
-          rating_avg: number
-          rating_count: number
-          role: string
-          specialization: string | null
-          vat_number: string | null
-        }
-        Insert: {
-          activity_zone?: string | null
-          address?: string | null
-          avatar_path?: string | null
-          ban_reason?: string | null
-          banned_at?: string | null
-          banned_until?: string | null
-          company_name?: string | null
-          contact_email?: string | null
-          created_at?: string | null
-          deleted_at?: string | null
-          full_name: string
-          id: string
-          lang?: string
-          latitude?: number | null
-          longitude?: number | null
-          market_push_enabled?: boolean
-          mention_push_enabled?: boolean
-          notify_radius_km?: number | null
-          phone?: string | null
-          push_enabled?: boolean
-          rating_avg?: number
-          rating_count?: number
-          role: string
-          specialization?: string | null
-          vat_number?: string | null
-        }
-        Update: {
-          activity_zone?: string | null
-          address?: string | null
-          avatar_path?: string | null
-          ban_reason?: string | null
-          banned_at?: string | null
-          banned_until?: string | null
-          company_name?: string | null
-          contact_email?: string | null
-          created_at?: string | null
-          deleted_at?: string | null
-          full_name?: string
-          id?: string
-          lang?: string
-          latitude?: number | null
-          longitude?: number | null
-          market_push_enabled?: boolean
-          mention_push_enabled?: boolean
-          notify_radius_km?: number | null
-          phone?: string | null
-          push_enabled?: boolean
-          rating_avg?: number
-          rating_count?: number
-          role?: string
-          specialization?: string | null
-          vat_number?: string | null
-        }
-        Relationships: []
-      }
       push_tokens: {
         Row: {
           app_build: string | null
@@ -1659,6 +1477,75 @@ export type Database = {
       }
     }
     Views: {
+      announcements: {
+        Row: {
+          chassis_number: string | null
+          created_at: string | null
+          description: string | null
+          driver_id: string | null
+          hidden_from_history: boolean | null
+          id: string | null
+          lat_approx: number | null
+          latitude: number | null
+          lng_approx: number | null
+          location: string | null
+          longitude: number | null
+          mechanic_id: string | null
+          plate_number: string | null
+          source_lang: string | null
+          source_lang_detected: boolean | null
+          status: string | null
+          truck_make: string | null
+          truck_model: string | null
+          truck_year: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          chassis_number?: never
+          created_at?: string | null
+          description?: string | null
+          driver_id?: string | null
+          hidden_from_history?: boolean | null
+          id?: string | null
+          lat_approx?: number | null
+          latitude?: never
+          lng_approx?: number | null
+          location?: string | null
+          longitude?: never
+          mechanic_id?: string | null
+          plate_number?: never
+          source_lang?: string | null
+          source_lang_detected?: boolean | null
+          status?: string | null
+          truck_make?: string | null
+          truck_model?: string | null
+          truck_year?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          chassis_number?: never
+          created_at?: string | null
+          description?: string | null
+          driver_id?: string | null
+          hidden_from_history?: boolean | null
+          id?: string | null
+          lat_approx?: number | null
+          latitude?: never
+          lng_approx?: number | null
+          location?: string | null
+          longitude?: never
+          mechanic_id?: string | null
+          plate_number?: never
+          source_lang?: string | null
+          source_lang_detected?: boolean | null
+          status?: string | null
+          truck_make?: string | null
+          truck_model?: string | null
+          truck_year?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       guest_announcements: {
         Row: {
           created_at: string | null
@@ -1699,22 +1586,7 @@ export type Database = {
           truck_model?: string | null
           truck_year?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "announcements_driver_id_fkey"
-            columns: ["driver_id"]
-            isOneToOne: false
-            referencedRelation: "guest_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "announcements_driver_id_fkey"
-            columns: ["driver_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       guest_channel_messages: {
         Row: {
@@ -1964,6 +1836,90 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          activity_zone: string | null
+          address: string | null
+          avatar_path: string | null
+          ban_reason: string | null
+          banned_at: string | null
+          banned_until: string | null
+          company_name: string | null
+          contact_email: string | null
+          created_at: string | null
+          deleted_at: string | null
+          full_name: string | null
+          id: string | null
+          lang: string | null
+          latitude: number | null
+          longitude: number | null
+          market_push_enabled: boolean | null
+          mention_push_enabled: boolean | null
+          notify_radius_km: number | null
+          phone: string | null
+          push_enabled: boolean | null
+          rating_avg: number | null
+          rating_count: number | null
+          role: string | null
+          specialization: string | null
+          vat_number: string | null
+        }
+        Insert: {
+          activity_zone?: string | null
+          address?: never
+          avatar_path?: string | null
+          ban_reason?: never
+          banned_at?: never
+          banned_until?: never
+          company_name?: string | null
+          contact_email?: never
+          created_at?: string | null
+          deleted_at?: string | null
+          full_name?: string | null
+          id?: string | null
+          lang?: never
+          latitude?: never
+          longitude?: never
+          market_push_enabled?: never
+          mention_push_enabled?: never
+          notify_radius_km?: never
+          phone?: never
+          push_enabled?: never
+          rating_avg?: number | null
+          rating_count?: number | null
+          role?: string | null
+          specialization?: string | null
+          vat_number?: never
+        }
+        Update: {
+          activity_zone?: string | null
+          address?: never
+          avatar_path?: string | null
+          ban_reason?: never
+          banned_at?: never
+          banned_until?: never
+          company_name?: string | null
+          contact_email?: never
+          created_at?: string | null
+          deleted_at?: string | null
+          full_name?: string | null
+          id?: string | null
+          lang?: never
+          latitude?: never
+          longitude?: never
+          market_push_enabled?: never
+          mention_push_enabled?: never
+          notify_radius_km?: never
+          phone?: never
+          push_enabled?: never
+          rating_avg?: number | null
+          rating_count?: number | null
+          role?: string | null
+          specialization?: string | null
+          vat_number?: never
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _purge_user_data: { Args: { p_uid: string }; Returns: string[] }
@@ -2084,19 +2040,19 @@ export type Database = {
           contact_email: string | null
           created_at: string | null
           deleted_at: string | null
-          full_name: string
-          id: string
-          lang: string
+          full_name: string | null
+          id: string | null
+          lang: string | null
           latitude: number | null
           longitude: number | null
-          market_push_enabled: boolean
-          mention_push_enabled: boolean
+          market_push_enabled: boolean | null
+          mention_push_enabled: boolean | null
           notify_radius_km: number | null
           phone: string | null
-          push_enabled: boolean
-          rating_avg: number
-          rating_count: number
-          role: string
+          push_enabled: boolean | null
+          rating_avg: number | null
+          rating_count: number | null
+          role: string | null
           specialization: string | null
           vat_number: string | null
         }[]
@@ -2106,6 +2062,29 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      guest_announcements_near: {
+        Args: {
+          p_before?: string
+          p_lat?: number
+          p_limit?: number
+          p_lng?: number
+          p_radius_km?: number
+        }
+        Returns: {
+          created_at: string
+          description: string
+          distance_km: number
+          driver_id: string
+          id: string
+          lat_approx: number
+          lng_approx: number
+          location: string
+          status: string
+          truck_make: string
+          truck_model: string
+          truck_year: number
+        }[]
       }
       guest_search_market: {
         Args: {
@@ -2167,7 +2146,7 @@ export type Database = {
       }
       notify_mechanics_new_announcement: {
         Args: {
-          p_announcement: Database["public"]["Tables"]["announcements"]["Row"]
+          p_announcement: Database["public"]["Views"]["announcements"]["Row"]
         }
         Returns: undefined
       }
@@ -2183,8 +2162,53 @@ export type Database = {
         }
         Returns: undefined
       }
+      open_announcements_near: {
+        Args: {
+          p_before?: string
+          p_lat?: number
+          p_limit?: number
+          p_lng?: number
+          p_radius_km?: number
+        }
+        Returns: {
+          created_at: string
+          description: string
+          distance_km: number
+          driver_avatar_path: string
+          driver_full_name: string
+          driver_id: string
+          hidden_from_history: boolean
+          id: string
+          lat_approx: number
+          latitude: number
+          lng_approx: number
+          location: string
+          longitude: number
+          mechanic_id: string
+          source_lang: string
+          source_lang_detected: boolean
+          status: string
+          truck_make: string
+          truck_model: string
+          truck_year: number
+          updated_at: string
+        }[]
+      }
+      open_announcements_near_count: {
+        Args: {
+          p_lat?: number
+          p_lng?: number
+          p_radius_km?: number
+          p_since?: string
+        }
+        Returns: number
+      }
       purge_user_data: { Args: never; Returns: string[] }
       push_text: { Args: { p_key: string; p_lang: string }; Returns: string }
+      rate_mechanic: {
+        Args: { p_comment?: string; p_mechanic_id: string; p_stars: number }
+        Returns: undefined
+      }
       recompute_mechanic_rating: {
         Args: { p_mechanic: string }
         Returns: undefined

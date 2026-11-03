@@ -25,6 +25,11 @@ import {
 import type { Profile } from '@/types/database';
 import i18n, { SUPPORTED_LANGUAGES } from '@/i18n';
 
+/** Rândul inserat la crearea profilului (role-select): cele 6 câmpuri reale, vezi createProfile. */
+type ProfileInsert = Pick<Profile, 'id' | 'full_name' | 'phone' | 'address' | 'vat_number'> & {
+  role: 'driver' | 'mechanic';
+};
+
 interface AuthContextValue {
   session: Session | null;
   profile: Profile | null;
@@ -527,14 +532,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       i18n.t('common.defaultUser');
     if (!userId) return i18n.t('common.noSession');
 
-    const { error } = await supabase.from('profiles').insert({
+    // 1.1 (faza 4): `profiles` e un view peste `app.profiles`, iar tipurile generate pun
+    // `never` pe coloanele mascate cu CASE (phone, address, vat_number…) pentru că
+    // generatorul nu le vede scriibile. Scrierea merge însă prin triggerul INSTEAD OF
+    // INSERT al view-ului, deci tipul real al inserării îl descriem aici, o singură dată.
+    const row: ProfileInsert = {
       id: userId,
       full_name: fullName,
       role,
       phone: details.phone,
       address: details.address ?? null,
       vat_number: details.vat_number ?? null,
-    });
+    };
+    const { error } = await supabase.from('profiles').insert(row as never);
 
     if (!error) {
       await clearAuthEntry();

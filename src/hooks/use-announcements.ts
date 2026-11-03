@@ -49,7 +49,7 @@ export type OpenAnnouncementNear = AnnouncementWithDriver & {
   distance_km: number | null;
 };
 
-/** Rândul întors de RPC-ul `open_announcements_near` (tipurile generate îl primesc în 4.5). */
+/** Rândul întors de RPC-ul `open_announcements_near`. Tipurile generate există din 4.5 (Functions), dar fără `| null` pe coloanele nullable; override-ul MergeDeep peste `Database` vine în 1.1, până atunci tipul local e sursa. */
 type OpenAnnouncementNearRow = Omit<Announcement, 'plate_number' | 'chassis_number'> & {
   lat_approx: number | string | null;
   lng_approx: number | string | null;
@@ -86,7 +86,7 @@ export async function fetchOpenAnnouncementsNear(
   }
   if (params.before) args.p_before = params.before;
   try {
-    const { data, error } = await supabase.rpc('open_announcements_near' as never, args as never);
+    const { data, error } = await supabase.rpc('open_announcements_near', args as never);
     if (error) return { data: [], error };
     const rows = (data ?? []) as unknown as OpenAnnouncementNearRow[];
     return {
