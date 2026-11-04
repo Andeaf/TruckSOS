@@ -29,6 +29,16 @@ jobs:
       - name: Migrations follow the grants convention
         run: npm run check:migrations
 
+      # Faza 3: Edge Functions push-dispatch / push-receipts (Deno) — testele unitare + verificarea tipurilor.
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Edge Functions (Deno) tests and typecheck
+        run: |
+          deno test supabase/functions/push-dispatch supabase/functions/push-receipts
+          deno check supabase/functions/push-dispatch/index.ts supabase/functions/push-receipts/index.ts
+
   db-tests:
     # Faza 0.3 + 0.3-bis (PLAN_1.1_FIX, 26–31 oct 2026), un singur job, în ordinea în care a evoluat producția:
     #   1. doar baseline-ul (20261031000300) aplicat de la zero pe un Postgres Supabase local (supabase start);
