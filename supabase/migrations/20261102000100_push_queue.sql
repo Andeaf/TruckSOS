@@ -719,8 +719,15 @@ REVOKE EXECUTE ON FUNCTION public.finish_push_receipts(jsonb) FROM PUBLIC, anon,
 GRANT EXECUTE ON FUNCTION public.finish_push_receipts(jsonb) TO service_role;
 
 -- ── 8. Observabilitate (doar postgres, prin db query: SELECT * FROM app.push_stats()) ─────────────
+-- `http_401_6h` / `http_errors_6h`: răspunsurile kick-urilor proprii (pg_net ține `net._http_response` ~6 h, deci e o
+-- fereastră, nu un istoric; tabelul nu reține URL-ul, iar singurii apelanți pg_net ai bazei sunt kick-urile,
+-- cleanup-announcements-hourly și storage_api_delete — contoarele prind și răspunsurile acelora, deci sunt o
+-- alarmă, nu un diagnostic). Orice 401 > 0 = incident de investigat (cel mai probabil `push_kick_secret` ≠
+-- `PUSH_KICK_SECRET`; posibil și cheia legacy a lui cleanup-announcements după o rotire) — decizia lui David, 3 nov.
+-- 401-urile străinilor nu trec prin bază: se numără din logurile EF (Logs Explorer, function_edge_logs cu
+-- status_code = 401 și function_id al celor două funcții).
 CREATE FUNCTION app.push_stats()
- RETURNS TABLE (queued bigint, sending bigint, sent_1h bigint, sent_24h bigint, failed_24h bigint, oldest_queued_at timestamptz, receipt_errors_24h bigint, channel_events_pending bigint)
+ RETURNS TABLE (queued bigint, sending bigint, sent_1h bigint, sent_24h bigint, failed_24h bigint, oldest_queued_at timestamptz, receipt_errors_24h bigint, channel_events_pending bigint, http_401_6h bigint, http_errors_6h bigint)
  LANGUAGE sql
  STABLE
  SET search_path TO ''
@@ -732,12 +739,51 @@ AS $function$
          (SELECT count(*) FROM app.push_queue WHERE status = 'failed' AND created_at > now() - interval '24 hours'),
          (SELECT min(created_at) FROM app.push_queue WHERE status = 'queued'),
          (SELECT count(*) FROM app.push_tickets WHERE receipt_status = 'error' AND receipt_checked_at > now() - interval '24 hours'),
-         (SELECT count(*) FROM app.channel_events);
+         (SELECT count(*) FROM app.channel_events),
+         (SELECT count(*) FROM net._http_response r WHERE r.status_code = 401 AND r.created > now() - interval '6 hours'),
+         (SELECT count(*) FROM net._http_response r WHERE (r.status_code IS DISTINCT FROM 200 OR r.error_msg IS NOT NULL OR r.timed_out) AND r.created > now() - interval '6 hours');
 $function$;
 REVOKE EXECUTE ON FUNCTION app.push_stats() FROM PUBLIC, anon, authenticated, service_role;
 
--- ── 9. Cron: apelurile către EF, cu cheia din Vault, DOAR când e ceva de făcut ─────────────────────
--- Fără secret (CI, local) funcțiile nu apelează nimic. URL-ul proiectului e cel din baseline (cleanup-announcements).
+-- Curățarea zilnică a cozii (cron `cleanup-push-queue-daily`): șterge rândurile terminate și scrie în NOTICE contoarele
+-- de incident din `push_stats()` (401-uri și erori HTTP ale kick-urilor). NOTICE-ul ajunge în logul Postgres (Logs
+-- Explorer); dacă pg_cron îl pune și în `cron.job_run_details.return_message` se vede la primul rulaj — calea sigură
+-- de citit rămâne `SELECT * FROM app.push_stats()`. Statisticile sunt într-un bloc EXCEPTION: observabilitatea nu are
+-- voie să blocheze ștergerea (de ex. dacă `net._http_response` nu e lizibilă pentru rolul cron-ului).
+CREATE FUNCTION app.cleanup_push_queue()
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+DECLARE
+  v_deleted int;
+  v_stats record;
+BEGIN
+  DELETE FROM app.push_queue WHERE status IN ('sent', 'failed') AND created_at < now() - interval '7 days';
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  BEGIN
+    SELECT * INTO v_stats FROM app.push_stats();
+    RAISE NOTICE 'cleanup_push_queue: sterse=% queued=% oldest_queued_at=% http_401_6h=% http_errors_6h=%',
+      v_deleted, v_stats.queued, v_stats.oldest_queued_at, v_stats.http_401_6h, v_stats.http_errors_6h;
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'cleanup_push_queue: sterse=% (push_stats indisponibil: %)', v_deleted, SQLERRM;
+  END;
+END;
+$function$;
+REVOKE EXECUTE ON FUNCTION app.cleanup_push_queue() FROM PUBLIC, anon, authenticated, service_role;
+
+-- ── 9. Cron: apelurile către EF, cu secretul din Vault, DOAR când e ceva de făcut ─────────────────
+-- Decizia lui David (3 nov 2026): EF-urile au `verify_jwt = false` (config.toml) și singura lor poartă e
+-- header-ul `x-push-secret`, cu secretul din Vault `push_kick_secret` (≥ 32 de octeți aleatori; același
+-- text e secretul EF `PUSH_KICK_SECRET`). Fără `Authorization`: nicio cheie service_role/anon nu mai trece
+-- prin `net.http_request_queue` / `net._http_response`. Fără secret în Vault (CI, local) funcțiile nu
+-- apelează nimic. URL-ul proiectului e cel din baseline (cleanup-announcements).
+-- Prima setare (David, ÎNAINTE de aplicarea migrării, în ordinea asta): (1) secretul = `openssl rand -hex 32` (hex sau
+-- base64url, FĂRĂ newline la coadă — SHA-256 nu iartă un `\n` diferit între Vault și env); (2) `npx supabase secrets set
+-- PUSH_KICK_SECRET=<secret>`; (3) `npx supabase functions deploy push-dispatch` + `push-receipts` (preiau `verify_jwt =
+-- false` din config.toml; până la migrare nimic nu le apelează); (4) `SELECT vault.create_secret('<secret>',
+-- 'push_kick_secret');`. Rotația: `secrets set` + `vault.update_secret(...)`. Lipsa oricărui pas = kick-urile primesc
+-- 401/404, nimic nu se pierde (rândurile rămân `queued`), dar push-urile nu pleacă.
 CREATE FUNCTION app.kick_push_dispatch()
  RETURNS void
  LANGUAGE plpgsql
@@ -745,18 +791,18 @@ CREATE FUNCTION app.kick_push_dispatch()
  SET search_path TO ''
 AS $function$
 DECLARE
-  v_key text;
+  v_secret text;
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM app.push_queue q WHERE q.status = 'queued' AND q.send_after <= now()) THEN
     RETURN;
   END IF;
-  SELECT decrypted_secret INTO v_key FROM vault.decrypted_secrets WHERE name = 'service_role_key' LIMIT 1;
-  IF v_key IS NULL THEN
+  SELECT decrypted_secret INTO v_secret FROM vault.decrypted_secrets WHERE name = 'push_kick_secret' LIMIT 1;
+  IF v_secret IS NULL THEN
     RETURN;
   END IF;
   PERFORM net.http_post(
     url     := 'https://shgagwnxgliixrzeibmt.supabase.co/functions/v1/push-dispatch',
-    headers := jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer ' || v_key),
+    headers := jsonb_build_object('Content-Type', 'application/json', 'x-push-secret', v_secret),
     body    := '{}'::jsonb,
     timeout_milliseconds := 60000
   );
@@ -771,18 +817,18 @@ CREATE FUNCTION app.kick_push_receipts()
  SET search_path TO ''
 AS $function$
 DECLARE
-  v_key text;
+  v_secret text;
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM app.push_tickets t WHERE t.receipt_checked_at IS NULL AND t.created_at <= now() - interval '15 minutes') THEN
     RETURN;
   END IF;
-  SELECT decrypted_secret INTO v_key FROM vault.decrypted_secrets WHERE name = 'service_role_key' LIMIT 1;
-  IF v_key IS NULL THEN
+  SELECT decrypted_secret INTO v_secret FROM vault.decrypted_secrets WHERE name = 'push_kick_secret' LIMIT 1;
+  IF v_secret IS NULL THEN
     RETURN;
   END IF;
   PERFORM net.http_post(
     url     := 'https://shgagwnxgliixrzeibmt.supabase.co/functions/v1/push-receipts',
-    headers := jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer ' || v_key),
+    headers := jsonb_build_object('Content-Type', 'application/json', 'x-push-secret', v_secret),
     body    := '{}'::jsonb,
     timeout_milliseconds := 90000 -- EF: buget 45 s + fetch 20 s + rpc
   );
@@ -796,8 +842,7 @@ SELECT cron.unschedule(jobid) FROM cron.job
 SELECT cron.schedule('push-dispatch',   '5 seconds',  $cron$ SELECT app.kick_push_dispatch(); $cron$);
 SELECT cron.schedule('channel-digests', '* * * * *',  $cron$ SELECT app.build_channel_digests(); $cron$);
 SELECT cron.schedule('push-receipts',   '*/15 * * * *', $cron$ SELECT app.kick_push_receipts(); $cron$);
-SELECT cron.schedule('cleanup-push-queue-daily', '23 4 * * *',
-  $cron$ DELETE FROM app.push_queue WHERE status IN ('sent', 'failed') AND created_at < now() - interval '7 days'; $cron$);
+SELECT cron.schedule('cleanup-push-queue-daily', '23 4 * * *', $cron$ SELECT app.cleanup_push_queue(); $cron$);
 -- la 5 s pg_cron scrie ~17.000 rânduri/zi în job_run_details
 SELECT cron.schedule('cleanup-cron-run-details-daily', '37 4 * * *',
   $cron$ DELETE FROM cron.job_run_details WHERE end_time < now() - interval '3 days'; $cron$);

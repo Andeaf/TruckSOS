@@ -3,7 +3,7 @@
 -- Cron-ul nu rulează în test: funcțiile sunt apelate direct. Id-urile 74… nu se ciocnesc cu datele porții / celelalte teste.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(45);
+select plan(48);
 
 create function pg_temp.as_user(p_uid uuid, p_role text) returns void language plpgsql as $$
 begin
@@ -199,6 +199,16 @@ select is((select count(*)::int from cron.job where jobname in ('push-dispatch',
           '27b. cele 5 joburi cron există');
 select ok((select split_part(extversion, '.', 1)::int * 100 + split_part(extversion, '.', 2)::int >= 105 from pg_extension where extname = 'pg_cron'),
           '27c. pg_cron >= 1.5 (intervale în secunde)');
+-- Decizia lui David (3 nov): kick-urile trimit DOAR header-ul x-push-secret cu secretul din Vault `push_kick_secret`;
+-- nicio cheie (service_role/anon) nu mai pleacă prin pg_net.
+select is((select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+            where n.nspname = 'app' and p.proname in ('kick_push_dispatch', 'kick_push_receipts')
+              and p.prosrc like '%''x-push-secret''%' and p.prosrc like '%push_kick_secret%'
+              and p.prosrc not ilike '%Authorization%' and p.prosrc not like '%service_role_key%' and p.prosrc not like '%anon_key%'), 2,
+          '27d. ambele kick-uri folosesc x-push-secret din Vault (push_kick_secret), fără Authorization / chei');
+select lives_ok($$select app.cleanup_push_queue()$$, '27e. cleanup_push_queue() rulează (NOTICE cu contoarele de incident)');
+select is((select http_401_6h is not null and http_errors_6h is not null from app.push_stats()), true,
+          '27f. push_stats() are contoarele http_401_6h / http_errors_6h (răspunsurile kick-urilor din net._http_response)');
 
 -- ── 28–30. Rapoarte și moderare (3.3) ───────────────────────────────────────────────────────────────
 select pg_temp.as_user('74000000-0000-4000-8000-0000000000e1', 'authenticated');

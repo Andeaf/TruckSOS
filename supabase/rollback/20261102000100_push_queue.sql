@@ -498,6 +498,7 @@ DROP FUNCTION IF EXISTS app.kick_push_receipts();
 DROP FUNCTION IF EXISTS app.build_channel_digests();
 DROP FUNCTION IF EXISTS app.channel_message_line(text, text, uuid, uuid, uuid, integer);
 DROP FUNCTION IF EXISTS app.push_stats();
+DROP FUNCTION IF EXISTS app.cleanup_push_queue();
 DROP TABLE IF EXISTS app.push_tickets;
 DROP TABLE IF EXISTS app.push_queue;
 DROP TABLE IF EXISTS app.channel_events;
