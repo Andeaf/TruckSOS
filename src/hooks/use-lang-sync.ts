@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 
 import i18n from '@/i18n';
 import { useAuth } from '@/hooks/use-auth';
@@ -14,6 +15,16 @@ import { useSettings } from '@/hooks/use-settings';
 export function useLangSync() {
   const { profile, updateProfile } = useAuth();
   const { lang, ready } = useSettings();
+
+  // Web: atributul `lang` al paginii urmează limba activă (cititoare de ecran, SEO).
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    if (!ready) return;
+    const active = i18n.language;
+    if (active === 'ro' || active === 'en' || active === 'de') {
+      document.documentElement.lang = active;
+    }
+  }, [ready, lang]);
 
   useEffect(() => {
     if (!ready || !profile) return;
