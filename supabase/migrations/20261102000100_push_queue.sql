@@ -40,8 +40,11 @@ END $$;
 CREATE TABLE app.push_queue (
   id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   user_id     uuid NOT NULL REFERENCES app.profiles(id) ON DELETE CASCADE,
-  title       text NOT NULL,
-  body        text NOT NULL,
+  -- Retenția (decizia lui David, 2 nov): conținutul (title, body, ios_title, ios_body) e NULL după `sent`/`failed` —
+  -- rândul păstrează doar metadate (data = tip + id-uri, status, attempts, last_error; biletele în push_tickets)
+  -- și e șters după 48 h de `cleanup_push_queue()`. De aceea coloanele sunt nullable; notify_push scrie mereu text.
+  title       text,
+  body        text,
   data        jsonb NOT NULL DEFAULT '{}'::jsonb,
   tag         text,
   ios_title   text,
@@ -552,6 +555,9 @@ CREATE FUNCTION public.claim_push_batch(p_limit integer DEFAULT 100)
  SECURITY DEFINER
  SET search_path TO ''
 AS $function$
+DECLARE
+  -- același prag ca în finish_push_batch (a 6-a eroare → failed)
+  v_max_attempts constant integer := 6;
 BEGIN
   IF p_limit IS NULL OR p_limit < 1 OR p_limit > 1000 THEN
     p_limit := 100;
@@ -560,9 +566,14 @@ BEGIN
   -- Un rând care „omoară” EF-ul nu se reia la nesfârșit: recuperarea costă o încercare (review 2 nov).
   UPDATE app.push_queue q
      SET attempts   = q.attempts + 1,
-         status     = CASE WHEN q.attempts + 1 >= 6 THEN 'failed' ELSE 'queued' END,
+         status     = CASE WHEN q.attempts + 1 >= v_max_attempts THEN 'failed' ELSE 'queued' END,
          claimed_at = NULL,
-         last_error = 'reclaimed_after_timeout'
+         last_error = 'reclaimed_after_timeout',
+         -- retenție: la failed conținutul se golește (rămân metadatele)
+         title      = CASE WHEN q.attempts + 1 >= v_max_attempts THEN NULL ELSE q.title END,
+         body       = CASE WHEN q.attempts + 1 >= v_max_attempts THEN NULL ELSE q.body END,
+         ios_title  = CASE WHEN q.attempts + 1 >= v_max_attempts THEN NULL ELSE q.ios_title END,
+         ios_body   = CASE WHEN q.attempts + 1 >= v_max_attempts THEN NULL ELSE q.ios_body END
    WHERE q.status = 'sending' AND q.claimed_at < now() - interval '2 minutes';
 
   RETURN QUERY
@@ -585,7 +596,8 @@ BEGIN
     JOIN public.push_tokens t ON t.user_id = u.user_id;
 
   UPDATE app.push_queue q
-     SET status = 'failed', claimed_at = NULL, last_error = 'no_tokens'
+     SET status = 'failed', claimed_at = NULL, last_error = 'no_tokens',
+         title = NULL, body = NULL, ios_title = NULL, ios_body = NULL
    WHERE q.status = 'sending'
      AND NOT EXISTS (SELECT 1 FROM public.push_tokens t WHERE t.user_id = q.user_id);
 END;
@@ -623,8 +635,11 @@ BEGIN
     END IF;
 
     IF r.outcome = 'sent' THEN
+      -- retenție (decizia lui David, 2 nov): la sent/failed conținutul se golește; rămân metadatele (data, status,
+      -- attempts, last_error) 48 h, apoi cleanup_push_queue() șterge rândul.
       UPDATE app.push_queue q
-         SET status = 'sent', sent_at = now(), claimed_at = NULL, last_error = NULL
+         SET status = 'sent', sent_at = now(), claimed_at = NULL, last_error = NULL,
+             title = NULL, body = NULL, ios_title = NULL, ios_body = NULL
        WHERE q.id = r.queue_id AND q.status = 'sending' AND (r.claimed_at IS NULL OR q.claimed_at = r.claimed_at);
       IF r.tickets IS NOT NULL AND jsonb_typeof(r.tickets) = 'array' THEN
         INSERT INTO app.push_tickets (ticket_id, queue_id, token)
@@ -640,7 +655,11 @@ BEGIN
              status     = CASE WHEN q.attempts + 1 >= v_max_attempts THEN 'failed' ELSE 'queued' END,
              send_after = now() + (power(2, q.attempts) * interval '30 seconds'),
              claimed_at = NULL,
-             last_error = left(r.error, 500)
+             last_error = left(r.error, 500),
+             title      = CASE WHEN q.attempts + 1 >= v_max_attempts THEN NULL ELSE q.title END,
+             body       = CASE WHEN q.attempts + 1 >= v_max_attempts THEN NULL ELSE q.body END,
+             ios_title  = CASE WHEN q.attempts + 1 >= v_max_attempts THEN NULL ELSE q.ios_title END,
+             ios_body   = CASE WHEN q.attempts + 1 >= v_max_attempts THEN NULL ELSE q.ios_body END
        WHERE q.id = r.queue_id AND q.status = 'sending' AND (r.claimed_at IS NULL OR q.claimed_at = r.claimed_at);
     ELSIF r.outcome = 'release' THEN
       UPDATE app.push_queue q
@@ -651,7 +670,8 @@ BEGIN
        WHERE q.id = r.queue_id AND q.status = 'sending' AND (r.claimed_at IS NULL OR q.claimed_at = r.claimed_at);
     ELSE
       UPDATE app.push_queue q
-         SET status = 'failed', claimed_at = NULL, last_error = left(coalesce(r.error, r.outcome), 500)
+         SET status = 'failed', claimed_at = NULL, last_error = left(coalesce(r.error, r.outcome), 500),
+             title = NULL, body = NULL, ios_title = NULL, ios_body = NULL
        WHERE q.id = r.queue_id AND q.status = 'sending' AND (r.claimed_at IS NULL OR q.claimed_at = r.claimed_at);
     END IF;
   END LOOP;
@@ -759,7 +779,12 @@ DECLARE
   v_deleted int;
   v_stats record;
 BEGIN
-  DELETE FROM app.push_queue WHERE status IN ('sent', 'failed') AND created_at < now() - interval '7 days';
+  -- 48 h, nu 7 zile (decizia lui David, 2 nov): conținutul e deja NULL din finish; biletele au nevoie de 24 h pentru
+  -- chitanțe (push_tickets se șterg în cascadă). Pentru `sent` termenul curge de la `sent_at` (review: după o pană
+  -- lungă un rând trimis târziu ar fi fost șters cu biletele lui înainte de chitanță); pentru `failed`, de la `created_at`.
+  DELETE FROM app.push_queue
+   WHERE (status = 'sent'   AND coalesce(sent_at, created_at) < now() - interval '48 hours')
+      OR (status = 'failed' AND created_at < now() - interval '48 hours');
   GET DIAGNOSTICS v_deleted = ROW_COUNT;
   BEGIN
     SELECT * INTO v_stats FROM app.push_stats();

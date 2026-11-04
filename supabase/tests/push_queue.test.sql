@@ -3,7 +3,7 @@
 -- Cron-ul nu rulează în test: funcțiile sunt apelate direct. Id-urile 74… nu se ciocnesc cu datele porții / celelalte teste.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(48);
+select plan(57);
 
 create function pg_temp.as_user(p_uid uuid, p_role text) returns void language plpgsql as $$
 begin
@@ -149,11 +149,18 @@ select is((select status || '|' || coalesce(last_error, '-') || '|' || (sent_at 
           'sent|-|true', '20. sent: status, sent_at');
 select is((select queue_id = (select id from app.push_queue where user_id = '74000000-0000-4000-8000-0000000000c1' and data->>'type' = 'feed') from app.push_tickets where ticket_id = 'q-ticket-1'),
           true, '20b. biletul e legat de rând și de token');
+-- retenție (decizia lui David, 2 nov): după sent conținutul e NULL, metadatele (data cu tipul) rămân
+select is((select (title is null and body is null and ios_title is null and ios_body is null)::text || '|' || (data->>'type') from app.push_queue where user_id = '74000000-0000-4000-8000-0000000000c1' and data->>'type' = 'feed'),
+          'true|feed', '20c. sent: title/body/ios_* golite, data păstrat');
 select is((select count(*)::int from public.push_tokens where token = 'ExponentPushToken[q-c1b]'), 0, '21. DeviceNotRegistered → tokenul e șters (celălalt rămâne)');
 select is((select status || '|' || attempts::text || '|' || (send_after > now() + interval '20 seconds')::text || '|' || last_error from app.push_queue where user_id = '74000000-0000-4000-8000-0000000000c3' and data->>'type' = 'feed'),
           'queued|1|true|HTTP 429', '22. retry: revine queued cu backoff și attempts + 1');
+select is((select (title is not null and body is not null) from app.push_queue where user_id = '74000000-0000-4000-8000-0000000000c3' and data->>'type' = 'feed'),
+          true, '22b. retry sub prag: conținutul RĂMÂNE (push-ul următor nu pleacă gol)');
 select is((select status || '|' || last_error from app.push_queue where user_id = '74000000-0000-4000-8000-0000000000e2' and tag like 'channel-%'),
           'failed|MessageTooBig: x', '23. eroare de mesaj → failed cu motivul');
+select is((select (title is null and body is null and ios_title is null and ios_body is null) from app.push_queue where user_id = '74000000-0000-4000-8000-0000000000e2' and tag like 'channel-%'),
+          true, '23b. failed: conținutul golit (rămân metadatele)');
 -- release: EF-ul n-a ajuns să trimită (buget/autentificare) → rândul revine imediat, FĂRĂ a consuma o încercare;
 -- claimed_at greșit (rândul a fost re-revendicat de alt EF) → finish e no-op
 update app.push_queue set status = 'queued', send_after = now() where user_id = '74000000-0000-4000-8000-0000000000c3' and data->>'type' = 'feed';
@@ -175,6 +182,25 @@ select public.finish_push_batch(jsonb_build_array(jsonb_build_object('queue_id',
   'outcome', 'retry', 'error', 'HTTP 503', 'tickets', '[]'::jsonb, 'dead_tokens', '[]'::jsonb)));
 select is((select status || '|' || attempts::text from app.push_queue where user_id = '74000000-0000-4000-8000-0000000000c3' and data->>'type' = 'feed'),
           'failed|6', '24. după 6 încercări rândul e failed');
+select is((select (title is null and body is null and ios_title is null and ios_body is null) from app.push_queue where user_id = '74000000-0000-4000-8000-0000000000c3' and data->>'type' = 'feed'),
+          true, '24c. failed la a 6-a încercare: conținutul golit');
+-- recuperarea după timeout (EF mort între claim și finish): sub prag revine queued CU conținut; la prag → failed golit
+insert into app.push_queue (user_id, title, body, ios_title, ios_body, data, status, claimed_at, attempts)
+values ('74000000-0000-4000-8000-0000000000c2', 'Q reclaim 5', 'Q corp', 'Q ios', 'Q ios corp', '{"type":"test","id":"r5"}', 'sending', now() - interval '3 minutes', 5),
+       ('74000000-0000-4000-8000-0000000000c2', 'Q reclaim 0', 'Q corp', null, null, '{"type":"test","id":"r0"}', 'sending', now() - interval '3 minutes', 0);
+select count(*) from public.claim_push_batch(1000);
+select is((select status || '|' || attempts::text || '|' || last_error || '|' || (title is null and body is null and ios_title is null and ios_body is null)::text
+             from app.push_queue where user_id = '74000000-0000-4000-8000-0000000000c2' and data->>'id' = 'r5'),
+          'failed|6|reclaimed_after_timeout|true', '24d. recuperare la prag: failed, attempts 6, conținutul golit');
+select is((select status || '|' || attempts::text || '|' || (title = 'Q reclaim 0' and body = 'Q corp')::text
+             from app.push_queue where user_id = '74000000-0000-4000-8000-0000000000c2' and data->>'id' = 'r0'),
+          'sending|1|true', '24e. recuperare sub prag: revine în coadă CU conținut (și e revendicat din nou, attempts 1)');
+-- no_tokens: utilizatorul fără niciun token → failed golit, fără rând întors EF-ului
+insert into app.push_queue (user_id, title, body, data) values ('74000000-0000-4000-8000-0000000000e4', 'Q fara token', 'Q corp', '{"type":"test","id":"nt"}');
+select is((select count(*)::int from public.claim_push_batch(1000) c join app.push_queue q on q.id = c.queue_id where q.user_id = '74000000-0000-4000-8000-0000000000e4'), 0,
+          '24f. no_tokens: claim nu întoarce rândul');
+select is((select status || '|' || last_error || '|' || (title is null and body is null)::text from app.push_queue where user_id = '74000000-0000-4000-8000-0000000000e4' and data->>'id' = 'nt'),
+          'failed|no_tokens|true', '24g. no_tokens: failed cu motivul, conținutul golit');
 -- chitanțe: biletul „trimis” cu 20 min în urmă e scadent; DeviceNotRegistered șterge tokenul lui
 update app.push_tickets set created_at = now() - interval '20 minutes' where ticket_id = 'q-ticket-1';
 -- tokenul a fost inregistrat INAINTE de trimitere (garda din finish_push_receipts: pt.updated_at < t.created_at)
@@ -209,6 +235,8 @@ select is((select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.
 select lives_ok($$select app.cleanup_push_queue()$$, '27e. cleanup_push_queue() rulează (NOTICE cu contoarele de incident)');
 select is((select http_401_6h is not null and http_errors_6h is not null from app.push_stats()), true,
           '27f. push_stats() are contoarele http_401_6h / http_errors_6h (răspunsurile kick-urilor din net._http_response)');
+select ok((select prosrc like '%interval ''48 hours''%' and prosrc not like '%7 days%' from pg_proc where oid = 'app.cleanup_push_queue()'::regprocedure),
+          '27g. cleanup_push_queue() șterge sent/failed după 48 h (retenția decisă de David), nu 7 zile');
 
 -- ── 28–30. Rapoarte și moderare (3.3) ───────────────────────────────────────────────────────────────
 select pg_temp.as_user('74000000-0000-4000-8000-0000000000e1', 'authenticated');
