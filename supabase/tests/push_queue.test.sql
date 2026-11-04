@@ -3,7 +3,7 @@
 -- Cron-ul nu rulează în test: funcțiile sunt apelate direct. Id-urile 74… nu se ciocnesc cu datele porții / celelalte teste.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(57);
+select plan(66);
 
 create function pg_temp.as_user(p_uid uuid, p_role text) returns void language plpgsql as $$
 begin
@@ -201,6 +201,34 @@ select is((select count(*)::int from public.claim_push_batch(1000) c join app.pu
           '24f. no_tokens: claim nu întoarce rândul');
 select is((select status || '|' || last_error || '|' || (title is null and body is null)::text from app.push_queue where user_id = '74000000-0000-4000-8000-0000000000e4' and data->>'id' = 'nt'),
           'failed|no_tokens|true', '24g. no_tokens: failed cu motivul, conținutul golit');
+-- expirarea (decizia lui David, 3 nov): queued mai vechi de 1 h → expired la claim, neîntors; 30 min → revendicat
+insert into app.push_queue (user_id, title, body, data, created_at, send_after)
+values ('74000000-0000-4000-8000-0000000000c2', 'Q vechi 2h', 'Q corp', '{"type":"test","id":"old"}', now() - interval '2 hours', now() - interval '2 hours'),
+       ('74000000-0000-4000-8000-0000000000c2', 'Q recent 30m', 'Q corp', '{"type":"test","id":"recent"}', now() - interval '30 minutes', now() - interval '30 minutes');
+select is((select string_agg(q.data->>'id', ',' order by q.data->>'id') from public.claim_push_batch(1000) c join app.push_queue q on q.id = c.queue_id
+             where q.user_id = '74000000-0000-4000-8000-0000000000c2' and q.data->>'id' in ('old', 'recent')),
+          'recent', '24h. claim întoarce doar rândul de 30 min; cel de 2 h nu');
+select is((select status || '|' || last_error || '|' || (title is null and body is null)::text || '|' || (claimed_at is null)::text
+             from app.push_queue where user_id = '74000000-0000-4000-8000-0000000000c2' and data->>'id' = 'old'),
+          'expired|expired|true|true', '24i. rândul de 2 h e expired, cu conținutul golit');
+select ok((select expired_24h >= 1 from app.push_stats()), '24j. push_stats().expired_24h îl numără (orice valoare > 0 = incident)');
+select ok((select prosrc like '%''expired''%' from pg_proc where oid = 'app.cleanup_push_queue()'::regprocedure),
+          '24k. cleanup_push_queue() șterge și rândurile expired după 48 h');
+-- review (c): un rând recuperat după timeout (EF mort în mijlocul lotului, pană de ore) NU pleacă la repornire — expiră
+-- în același claim; un rând `sending` cu claim viu nu e atins, oricât de vechi; un rând expirat de 49 h e șters de cleanup
+insert into app.push_queue (user_id, title, body, data, created_at, send_after, status, claimed_at, attempts)
+values ('74000000-0000-4000-8000-0000000000c2', 'Q recuperat vechi', 'Q corp', '{"type":"test","id":"stale"}', now() - interval '2 hours', now() - interval '2 hours', 'sending', now() - interval '3 minutes', 0),
+       ('74000000-0000-4000-8000-0000000000c2', 'Q claim viu', 'Q corp', '{"type":"test","id":"live"}', now() - interval '2 hours', now() - interval '2 hours', 'sending', now() - interval '10 seconds', 0),
+       ('74000000-0000-4000-8000-0000000000c2', null, null, '{"type":"test","id":"gone"}', now() - interval '49 hours', now() - interval '49 hours', 'expired', null, 0);
+select is((select count(*)::int from public.claim_push_batch(1000) c join app.push_queue q on q.id = c.queue_id where q.data->>'id' in ('stale', 'live', 'gone')), 0,
+          '24l. claim nu întoarce nici rândul recuperat vechi, nici claim-ul viu, nici cel expirat');
+select is((select status || '|' || attempts::text || '|' || last_error || '|' || (title is null)::text from app.push_queue where data->>'id' = 'stale'),
+          'expired|1|expired|true', '24m. recuperat după timeout cu created_at de 2 h → expired în același claim (nu pleacă la repornire)');
+select is((select status || '|' || (title = 'Q claim viu')::text from app.push_queue where data->>'id' = 'live'),
+          'sending|true', '24n. rândul sending cu claim viu rămâne al EF-ului, cu conținut, oricât de vechi');
+select app.cleanup_push_queue();
+select is((select count(*)::int from app.push_queue where data->>'id' = 'gone'), 0, '24o. cleanup_push_queue() șterge rândul expired de 49 h');
+select is((select count(*)::int from app.push_queue where data->>'id' in ('old', 'stale')), 2, '24p. … dar păstrează metadatele celor expirate de curând (48 h)');
 -- chitanțe: biletul „trimis” cu 20 min în urmă e scadent; DeviceNotRegistered șterge tokenul lui
 update app.push_tickets set created_at = now() - interval '20 minutes' where ticket_id = 'q-ticket-1';
 -- tokenul a fost inregistrat INAINTE de trimitere (garda din finish_push_receipts: pt.updated_at < t.created_at)
