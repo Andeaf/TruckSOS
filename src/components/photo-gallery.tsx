@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import { PhotoViewer, type ViewerPhoto } from '@/components/photo-viewer';
@@ -18,6 +19,7 @@ interface PhotoGalleryProps {
 const THUMB = 88;
 
 export function PhotoGallery({ photos }: PhotoGalleryProps) {
+  const { t } = useTranslation();
   const [openAt, setOpenAt] = useState<number | null>(null);
 
   if (photos.length === 0) return null;
@@ -35,6 +37,7 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
             style={({ pressed }) => pressed && styles.pressed}>
             <RemoteImage
               uri={photo.url}
+              accessibilityLabel={t('a11y.announcementPhoto', { n: index + 1 })}
               style={styles.thumb}
               contentFit="cover"
               transition={150}

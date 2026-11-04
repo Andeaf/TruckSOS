@@ -223,6 +223,7 @@ export function PublicProfileScreen({ role, guest = false }: { role?: Role; gues
           !isDeletedUser(profile) ? (
             <View style={styles.headerActions}>
               <Pressable
+                accessibilityRole="button"
                 onPress={handleShare}
                 hitSlop={12}
                 accessibilityLabel={t('shareContact.action')}>
@@ -230,6 +231,7 @@ export function PublicProfileScreen({ role, guest = false }: { role?: Role; gues
               </Pressable>
               {guest && isMechanic ? (
                 <Pressable
+                  accessibilityRole="button"
                   onPress={handleToggleGuestFavorite}
                   hitSlop={12}
                   accessibilityLabel={t('favorites.toggle')}>
@@ -243,12 +245,14 @@ export function PublicProfileScreen({ role, guest = false }: { role?: Role; gues
               {guest ? (
                 <>
                   <Pressable
+                    accessibilityRole="button"
                     onPress={() => requireAccount('report')}
                     hitSlop={12}
                     accessibilityLabel={t('report.title')}>
                     <MaterialIcons name="flag" size={24} color={theme.onHeader} />
                   </Pressable>
                   <Pressable
+                    accessibilityRole="button"
                     onPress={() => requireAccount('block')}
                     hitSlop={12}
                     accessibilityLabel={t('block.action')}>
@@ -258,12 +262,14 @@ export function PublicProfileScreen({ role, guest = false }: { role?: Role; gues
               ) : canReport ? (
                 <>
                   <Pressable
+                    accessibilityRole="button"
                     onPress={() => setReportVisible(true)}
                     hitSlop={12}
                     accessibilityLabel={t('report.title')}>
                     <MaterialIcons name="flag" size={24} color={theme.onHeader} />
                   </Pressable>
                   <Pressable
+                    accessibilityRole="button"
                     onPress={handleToggleBlock}
                     hitSlop={12}
                     accessibilityLabel={isBlocked ? t('block.unblockAction') : t('block.action')}>
@@ -374,6 +380,7 @@ export function PublicProfileScreen({ role, guest = false }: { role?: Role; gues
             Oaspetele vede butonul, dar el deschide pop-upul de cont. */}
         {canReport || guest ? (
           <Pressable
+            accessibilityRole="button"
             onPress={guest ? () => requireAccount('contact') : handleStartConversation}
             disabled={contacting}
             style={({ pressed }) => [

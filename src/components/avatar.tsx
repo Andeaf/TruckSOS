@@ -29,6 +29,7 @@ export function Avatar({ url, name, size = 40, color, userId }: AvatarProps) {
     return (
       <RemoteImage
         uri={url}
+        accessibilityLabel={name ?? undefined}
         style={dimensions}
         contentFit="cover"
         transition={150}

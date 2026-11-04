@@ -1271,5 +1271,26 @@
     "disableConfirmBody": "Your account will be protected by your password only. You can turn it on again at any time.",
     "loginPrompt": "Enter the code from your authenticator app to sign in.",
     "signOut": "Sign out"
+  },
+  "a11y": {
+    "back": "Back",
+    "close": "Close",
+    "cancelSelection": "Cancel selection",
+    "clearSearch": "Clear search",
+    "addTruck": "Add truck",
+    "editTruck": "Edit truck",
+    "deleteTruck": "Delete truck",
+    "delete": "Delete",
+    "deleteAll": "Delete all",
+    "dismiss": "Dismiss",
+    "report": "Report",
+    "newAnnouncement": "New announcement",
+    "newListing": "New Market listing",
+    "removePhoto": "Remove photo",
+    "changePhoto": "Change profile photo",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "starOf": "{{n}} of {{total}}",
+    "announcementPhoto": "Announcement photo {{n}}"
   }
 }

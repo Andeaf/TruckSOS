@@ -93,7 +93,12 @@ export function RatingSheet({
       <KeyboardAvoidingView
         style={styles.wrapper}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <Pressable style={styles.backdrop} onPress={onClose} />
+        <Pressable
+          style={styles.backdrop}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.close')}
+        />
         <View
           style={[
             styles.sheet,
@@ -114,7 +119,13 @@ export function RatingSheet({
 
             <View style={styles.starsRow}>
               {[1, 2, 3, 4, 5].map((i) => (
-                <Pressable key={i} onPress={() => setStars(i)} hitSlop={6}>
+                <Pressable
+                  key={i}
+                  onPress={() => setStars(i)}
+                  hitSlop={6}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('a11y.starOf', { n: i, total: 5 })}
+                  accessibilityState={{ selected: i <= stars }}>
                   <MaterialIcons
                     name={i <= stars ? 'star' : 'star-border'}
                     size={40}

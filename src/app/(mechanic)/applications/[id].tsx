@@ -12,6 +12,7 @@ import { PhotoGallery } from '@/components/photo-gallery';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { IconButton } from '@/components/ui/icon-button';
 import { Radius, Spacing } from '@/constants/theme';
 import { useSignedUrl } from '@/hooks/use-signed-urls';
 import { useTheme } from '@/hooks/use-theme';
@@ -97,9 +98,13 @@ export default function ApplicationDetailScreen() {
   if (!item || !item.announcement) {
     return (
       <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={24} color={theme.textSecondary} />
-        </Pressable>
+        <IconButton
+          label={t('a11y.back')}
+          onPress={() => router.back()}
+          style={styles.backButton}
+          hitSlop={12}
+          icon={<MaterialIcons name="arrow-back" size={24} color={theme.textSecondary} />}
+        />
       </ThemedView>
     );
   }
@@ -178,6 +183,7 @@ export default function ApplicationDetailScreen() {
                   mulți nu folosesc Apple Maps). Android: doar Google, ca înainte. */}
               <View style={styles.mapsButtonsRow}>
                 <Pressable
+                  accessibilityRole="button"
                   onPress={() => openInMaps(announcement.latitude!, announcement.longitude!)}
                   style={({ pressed }) => [
                     styles.mapsButton,
@@ -196,6 +202,7 @@ export default function ApplicationDetailScreen() {
                 </Pressable>
                 {Platform.OS === 'ios' ? (
                   <Pressable
+                    accessibilityRole="button"
                     onPress={() =>
                       openInGoogleMaps(announcement.latitude!, announcement.longitude!)
                     }
@@ -290,6 +297,7 @@ export default function ApplicationDetailScreen() {
         <View style={styles.actions}>
           {item.status === 'accepted' && conversationId ? (
             <Pressable
+              accessibilityRole="button"
               onPress={() => router.push({ pathname: '/(mechanic)/conversations/[id]' as never, params: { id: conversationId } })}
               style={({ pressed }) => [styles.chatButton, pressed && styles.pressed]}>
               <MaterialIcons name="chat" size={16} color="#22c55e" />
@@ -299,6 +307,7 @@ export default function ApplicationDetailScreen() {
 
           {isResubmittable ? (
             <Pressable
+              accessibilityRole="button"
               onPress={() => setSheetVisible(true)}
               style={({ pressed }) => [styles.resubmitButton, pressed && styles.pressed]}>
               <Text style={styles.resubmitButtonText}>{t('mechanic.apply.resubmitSheetTitle')}</Text>
@@ -307,6 +316,7 @@ export default function ApplicationDetailScreen() {
 
           {item.status === 'pending' ? (
             <Pressable
+              accessibilityRole="button"
               onPress={handleWithdraw}
               style={({ pressed }) => [styles.withdrawButton, pressed && styles.pressed]}>
               <Text style={styles.withdrawButtonText}>{t('mechanic.applications.withdrawButton')}</Text>
@@ -315,6 +325,7 @@ export default function ApplicationDetailScreen() {
 
           {isDismissable ? (
             <Pressable
+              accessibilityRole="button"
               onPress={handleDismiss}
               style={({ pressed }) => [styles.withdrawButton, pressed && styles.pressed]}>
               <Text style={styles.withdrawButtonText}>{t('mechanic.applications.dismissButton')}</Text>

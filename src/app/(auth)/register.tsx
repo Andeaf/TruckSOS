@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  TextInput,
   View,
 } from 'react-native';
 import { Link } from 'expo-router';
@@ -60,6 +61,9 @@ export default function RegisterScreen() {
   // Android, direct în aplicație). Datele formularului rămân în state pe pasul de cod,
   // deci ne putem conecta cu parola fără ca omul s-o mai tasteze.
   const silentAttempt = useRef(false);
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const confirmRef = useRef<TextInput>(null);
   const latest = useRef({ emailSent, email, password, signIn });
   useEffect(() => {
     latest.current = { emailSent, email, password, signIn };
@@ -215,6 +219,8 @@ export default function RegisterScreen() {
                   maxLength={6}
                   autoComplete="one-time-code"
                   textContentType="oneTimeCode"
+                  returnKeyType="done"
+                  onSubmitEditing={() => void guard(handleVerify)}
                   required
                 />
 
@@ -286,9 +292,12 @@ export default function RegisterScreen() {
               placeholder={t('auth.register.namePlaceholder')}
               autoCapitalize="words"
               autoComplete="name"
+              returnKeyType="next"
+              onSubmitEditing={() => emailRef.current?.focus()}
               required
             />
             <Input
+              ref={emailRef}
               label={t('auth.register.emailLabel')}
               value={email}
               onChangeText={setEmail}
@@ -296,22 +305,30 @@ export default function RegisterScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
+              returnKeyType="next"
+              onSubmitEditing={() => passwordRef.current?.focus()}
               required
             />
             <Input
+              ref={passwordRef}
               label={t('auth.register.passwordLabel')}
               value={password}
               onChangeText={setPassword}
               placeholder={t('auth.register.passwordPlaceholder')}
               secureTextEntry
+              returnKeyType="next"
+              onSubmitEditing={() => confirmRef.current?.focus()}
               required
             />
             <Input
+              ref={confirmRef}
               label={t('auth.register.confirmPasswordLabel')}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               placeholder={t('auth.register.passwordPlaceholder')}
               secureTextEntry
+              returnKeyType="done"
+              onSubmitEditing={() => void guard(handleSignUp)}
               required
             />
 

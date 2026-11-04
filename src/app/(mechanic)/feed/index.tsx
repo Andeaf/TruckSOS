@@ -363,6 +363,8 @@ export default function MechanicFeedScreen() {
 
       {/* FAB de postare direct pe feed (5 aug, rev. 2) — identic cu al șoferului. */}
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t('a11y.newAnnouncement')}
         style={({ pressed }) => [
           styles.fab,
           { bottom: insets.bottom + Spacing.three },

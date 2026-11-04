@@ -18,6 +18,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { UserPickerSheet } from '@/components/user-picker-sheet';
+import { IconButton } from '@/components/ui/icon-button';
 import { Radius, Spacing } from '@/constants/theme';
 import { displayName } from '@/lib/display-name';
 import { useAnnouncementPhotos } from '@/hooks/use-announcement-photos';
@@ -419,9 +420,13 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
               <MaterialIcons name="share" size={22} color={theme.onHeader} />
             </Pressable>
             {isOwner && announcement.status !== 'accepted' ? (
-              <Pressable onPress={handleDeletePress} hitSlop={12} disabled={deleting}>
-                <MaterialIcons name="delete" size={22} color={theme.onHeader} />
-              </Pressable>
+              <IconButton
+                label={t('a11y.delete')}
+                onPress={handleDeletePress}
+                hitSlop={12}
+                disabled={deleting}
+                icon={<MaterialIcons name="delete" size={22} color={theme.onHeader} />}
+              />
             ) : null}
           </View>
         }

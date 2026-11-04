@@ -45,6 +45,7 @@ export function MarketCard({ listing, coverUrl, onPress, horizontal = false }: M
             {coverUrl ? (
               <RemoteImage
                 uri={coverUrl}
+                accessibilityLabel={listing.title}
                 style={[styles.rowCover, { backgroundColor: theme.backgroundSelected }]}
                 contentFit="cover"
                 transition={150}
@@ -90,6 +91,7 @@ export function MarketCard({ listing, coverUrl, onPress, horizontal = false }: M
           {coverUrl ? (
             <RemoteImage
               uri={coverUrl}
+              accessibilityLabel={listing.title}
               style={[styles.cover, { backgroundColor: theme.backgroundSelected }]}
               contentFit="cover"
               transition={150}

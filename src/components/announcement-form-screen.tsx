@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -106,6 +106,13 @@ export function AnnouncementFormScreen({
   // hardware și swipe-ul. `savedRef` lasă trecerea liberă după un submit reușit.
   const navigation = useNavigation();
   const savedRef = useRef(false);
+  const latRef = useRef<TextInput>(null);
+  const lngRef = useRef<TextInput>(null);
+  const descRef = useRef<TextInput>(null);
+  const modelRef = useRef<TextInput>(null);
+  const yearRef = useRef<TextInput>(null);
+  const plateRef = useRef<TextInput>(null);
+  const chassisRef = useRef<TextInput>(null);
   const isDirty =
     description.trim() !== '' ||
     location.trim() !== '' ||
@@ -292,6 +299,8 @@ export function AnnouncementFormScreen({
             onChangeText={setLocation}
             placeholder={t('driver.announcements.locationPlaceholder')}
             autoCapitalize="sentences"
+            returnKeyType="next"
+            onSubmitEditing={() => latRef.current?.focus()}
             required
           />
 
@@ -300,22 +309,28 @@ export function AnnouncementFormScreen({
             <View style={styles.coordsRow}>
               <View style={styles.coordsField}>
                 <Input
+                  ref={latRef}
                   label={t('driver.announcements.latitudeLabel')}
                   value={latitudeStr}
                   onChangeText={setLatitudeStr}
                   placeholder={t('driver.announcements.coordsPlaceholderLat')}
                   keyboardType="numbers-and-punctuation"
                   autoCorrect={false}
+                  returnKeyType="next"
+                  onSubmitEditing={() => lngRef.current?.focus()}
                 />
               </View>
               <View style={styles.coordsField}>
                 <Input
+                  ref={lngRef}
                   label={t('driver.announcements.longitudeLabel')}
                   value={longitudeStr}
                   onChangeText={setLongitudeStr}
                   placeholder={t('driver.announcements.coordsPlaceholderLong')}
                   keyboardType="numbers-and-punctuation"
                   autoCorrect={false}
+                  returnKeyType="next"
+                  onSubmitEditing={() => descRef.current?.focus()}
                 />
               </View>
             </View>
@@ -340,6 +355,7 @@ export function AnnouncementFormScreen({
           </View>
 
           <Input
+            ref={descRef}
             label={t('driver.announcements.descriptionLabel')}
             value={description}
             onChangeText={setDescription}
@@ -402,23 +418,32 @@ export function AnnouncementFormScreen({
                 onChangeText={setTruckMake}
                 placeholder={t('truck.makePlaceholder')}
                 autoCapitalize="words"
+                returnKeyType="next"
+                onSubmitEditing={() => modelRef.current?.focus()}
               />
               <Input
+                ref={modelRef}
                 label={t('truck.modelLabel')}
                 value={truckModel}
                 onChangeText={setTruckModel}
                 placeholder={t('truck.modelPlaceholder')}
                 autoCapitalize="characters"
+                returnKeyType="next"
+                onSubmitEditing={() => yearRef.current?.focus()}
               />
               <Input
+                ref={yearRef}
                 label={t('truck.yearLabel')}
                 value={truckYearStr}
                 onChangeText={setTruckYearStr}
                 placeholder={t('truck.yearPlaceholder')}
                 keyboardType="number-pad"
                 maxLength={4}
+                returnKeyType="next"
+                onSubmitEditing={() => plateRef.current?.focus()}
               />
               <Input
+                ref={plateRef}
                 label={t('truck.plateLabel')}
                 value={plateNumber}
                 onChangeText={setPlateNumber}
@@ -426,12 +451,15 @@ export function AnnouncementFormScreen({
                 autoCapitalize="characters"
                 autoCorrect={false}
                 maxLength={12}
+                returnKeyType="next"
+                onSubmitEditing={() => chassisRef.current?.focus()}
               />
               {/* 7 aug (decizie user): seria de șasiu e atribut al CAMIONULUI — stă cu
                   restul detaliilor lui, opțională ca ele (nu mai e câmp obligatoriu de
                   anunț). Se precompletează din camionul ales și rămâne salvată PE anunț,
                   ca mecanicii s-o vadă la detalii fără acces la garajul șoferului. */}
               <Input
+                ref={chassisRef}
                 label={t('truck.chassisLabel')}
                 value={chassisNumber}
                 onChangeText={setChassisNumber}
@@ -439,6 +467,8 @@ export function AnnouncementFormScreen({
                 autoCapitalize="characters"
                 autoCorrect={false}
                 maxLength={20}
+                returnKeyType="done"
+                // „done" doar închide tastatura: publicarea (push la mecanici) rămâne pe buton (review 7.7)
               />
             </View>
           ) : null}

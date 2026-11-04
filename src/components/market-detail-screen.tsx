@@ -24,6 +24,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { UserPickerSheet } from '@/components/user-picker-sheet';
 import { formatListingPrice } from '@/components/market-card';
+import { IconButton } from '@/components/ui/icon-button';
 import { Radius, Spacing } from '@/constants/theme';
 import { useBack } from '@/hooks/use-back';
 import { useTheme } from '@/hooks/use-theme';
@@ -282,11 +283,12 @@ export function MarketDetailScreen({ role, guest = false }: MarketDetailScreenPr
               <MaterialIcons name="share" size={22} color={theme.onHeader} />
             </Pressable>
             {!isOwner ? (
-              <Pressable
+              <IconButton
+                label={t('a11y.report')}
                 onPress={() => (guest ? requireAccount('report') : setReportOpen(true))}
-                hitSlop={8}>
-                <MaterialIcons name="flag" size={22} color={theme.onHeader} />
-              </Pressable>
+                hitSlop={8}
+                icon={<MaterialIcons name="flag" size={22} color={theme.onHeader} />}
+              />
             ) : null}
           </View>
         }

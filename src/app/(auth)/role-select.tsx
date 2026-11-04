@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
+  TextInput,
   View,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -59,9 +60,13 @@ export default function RoleSelectScreen() {
   ).trim();
   const [fullName, setFullName] = useState(metaName);
   const name = metaName ? metaName.split(' ')[0] : t('common.defaultUser');
+  const phoneRef = useRef<TextInput>(null);
+  const addressRef = useRef<TextInput>(null);
+  const vatRef = useRef<TextInput>(null);
 
   async function handleContinue() {
-    if (!role) return;
+    // tasta „done" ajunge aici fără butonul dezactivat: aceeași gardă ca butonul (review 7.7)
+    if (!role || loading || leaving) return;
     if (!metaName && !fullName.trim()) {
       setError(t('auth.register.errorEmpty'));
       return;
@@ -201,35 +206,46 @@ export default function RoleSelectScreen() {
               placeholder={t('auth.register.namePlaceholder')}
               autoCapitalize="words"
               autoComplete="name"
+              returnKeyType="next"
+              onSubmitEditing={() => phoneRef.current?.focus()}
               required
             />
           ) : null}
 
           <Input
+            ref={phoneRef}
             label={t('profile.phoneLabel')}
             value={phone}
             onChangeText={setPhone}
             placeholder={t('profile.phonePlaceholder')}
             keyboardType="phone-pad"
+            returnKeyType={role === 'mechanic' ? 'next' : 'done'}
+            onSubmitEditing={() => (role === 'mechanic' ? addressRef.current?.focus() : void handleContinue())}
             required
           />
 
           {role === 'mechanic' ? (
             <>
               <Input
+                ref={addressRef}
                 label={t('profile.addressLabel')}
                 value={address}
                 onChangeText={setAddress}
                 placeholder={t('profile.addressPlaceholder')}
                 autoCapitalize="sentences"
+                returnKeyType="next"
+                onSubmitEditing={() => vatRef.current?.focus()}
               />
               <Input
+                ref={vatRef}
                 label={t('profile.vatLabel')}
                 value={vatNumber}
                 onChangeText={setVatNumber}
                 placeholder={t('profile.vatPlaceholder')}
                 autoCapitalize="characters"
                 autoCorrect={false}
+                returnKeyType="done"
+                onSubmitEditing={() => void handleContinue()}
               />
               <ThemedText themeColor="textSecondary" type="small">
                 {t('auth.roleSelect.mechanicFieldsHint')}

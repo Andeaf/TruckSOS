@@ -1274,5 +1274,26 @@
     "disableConfirmBody": "Contul va fi protejat doar de parolă. O poți activa din nou oricând.",
     "loginPrompt": "Introdu codul din aplicația de autentificare ca să intri în cont.",
     "signOut": "Deconectare"
+  },
+  "a11y": {
+    "back": "Înapoi",
+    "close": "Închide",
+    "cancelSelection": "Anulează selecția",
+    "clearSearch": "Șterge căutarea",
+    "addTruck": "Adaugă camion",
+    "editTruck": "Editează camionul",
+    "deleteTruck": "Șterge camionul",
+    "delete": "Șterge",
+    "deleteAll": "Șterge tot",
+    "dismiss": "Ascunde",
+    "report": "Raportează",
+    "newAnnouncement": "Anunț nou",
+    "newListing": "Anunț nou în Market",
+    "removePhoto": "Elimină poza",
+    "changePhoto": "Schimbă poza de profil",
+    "showPassword": "Arată parola",
+    "hidePassword": "Ascunde parola",
+    "starOf": "{{n}} din {{total}}",
+    "announcementPhoto": "Poză anunț {{n}}"
   }
 }

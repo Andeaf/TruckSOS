@@ -5,9 +5,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter, useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { Avatar } from '@/components/avatar';
 import { GuestSignInPill } from '@/components/guest-sign-in-pill';
+import { IconButton } from '@/components/ui/icon-button';
 import { HeaderGradient, HeaderGradientDirection, Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useResolvedScheme } from '@/hooks/use-settings';
@@ -67,6 +69,7 @@ export function HeaderProfileButton({ size = 34 }: { size?: number }) {
 }
 
 export function ScreenHeader({ title, subtitle, onBack, right, profileButton, children }: ScreenHeaderProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const scheme = useResolvedScheme();
   const insets = useSafeAreaInsets();
@@ -88,9 +91,12 @@ export function ScreenHeader({ title, subtitle, onBack, right, profileButton, ch
       {children ?? (
         <>
           {onBack ? (
-            <Pressable onPress={onBack} hitSlop={12}>
-              <MaterialIcons name="arrow-back" size={24} color={theme.onHeader} />
-            </Pressable>
+            <IconButton
+              label={t('a11y.back')}
+              onPress={onBack}
+              hitSlop={12}
+              icon={<MaterialIcons name="arrow-back" size={24} color={theme.onHeader} />}
+            />
           ) : null}
 
           <View style={styles.titles}>
