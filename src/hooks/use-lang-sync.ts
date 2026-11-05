@@ -34,8 +34,8 @@ export function useLangSync() {
     if (!active || active === profile.lang) return;
 
     updateProfile({ lang: active });
-    // `updateProfile` e recreat la fiecare render al providerului → îl ținem în afara
-    // dependențelor, altfel efectul s-ar relua la infinit.
+    // `updateProfile` e stabil din 1.1 (useCallback în use-auth), dar îl ținem în continuare
+    // în afara dependențelor: efectul trebuie să urmeze doar limba și profilul.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, lang, profile?.id, profile?.lang]);
 }

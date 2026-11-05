@@ -160,16 +160,17 @@ export default function MechanicChannelChatScreen() {
         })
       }
       renderSenderRole={(message) => t(`auth.roleSelect.${message.sender.role}Title`)}
-      onSend={async (content, replyToId, mentions) => {
-        const { message } = await sendChannelMessage(
-          id, session.user.id, content, null, replyToId, pendingListing, pendingMechanic,
-          mentions ?? null
+      // 1.1 (7.1): coada locală a mesajelor netrimise pentru canalul ăsta.
+      threadKey={`channel:${id}`}
+      // 1.1 (7.1): contextele vin cu mesajul (ChatScreen le scoate din banner când mesajul
+      // intră în coadă), iar rezultatul se întoarce — eroarea nu se mai înghite.
+      onSend={async ({ content, replyToId, mentions, listingId, mechanicId }) => {
+        const { message, error } = await sendChannelMessage(
+          id, session.user.id, content, null, replyToId, listingId, mechanicId, mentions
         );
-        if (message) {
-          addMessage(message);
-          if (pendingListing) setPendingListing(null);
-          if (pendingMechanic) setPendingMechanic(null);
-        }
+        if (!message) return { ok: false, error: error ?? t('common.error') };
+        addMessage(message);
+        return { ok: true, message };
       }}
       mentionCandidates={mentionCandidates}
       searchMentionUsers={searchMentionUsers}
@@ -184,8 +185,10 @@ export default function MechanicChannelChatScreen() {
       onAttachMechanic={() => setRecommendRole('mechanic')}
       onAttachDriver={() => setRecommendRole('driver')}
       onSendFile={async (file) => {
-        const { message } = await sendChannelFileMessage(id, session.user.id, file);
-        if (message) addMessage(message);
+        const { message, error } = await sendChannelFileMessage(id, session.user.id, file);
+        if (!message) return { ok: false, error: error ?? t('common.error') };
+        addMessage(message);
+        return { ok: true, message };
       }}
       onPressMechanic={(mid) =>
         router.push({
@@ -194,8 +197,10 @@ export default function MechanicChannelChatScreen() {
         })
       }
       onSendImage={async (image) => {
-        const { message } = await sendChannelImageMessage(id, session.user.id, image);
-        if (message) addMessage(message);
+        const { message, error } = await sendChannelImageMessage(id, session.user.id, image);
+        if (!message) return { ok: false, error: error ?? t('common.error') };
+        addMessage(message);
+        return { ok: true, message };
       }}
       onDeleteMessage={async (m) => {
         const err = await deleteMessage('channel_messages', m.id);
@@ -207,7 +212,10 @@ export default function MechanicChannelChatScreen() {
       }}
       onEditMessage={async (m, content) => {
         const err = await editMessage('channel_messages', m.id, content);
-        if (!err) patchMessage(m.id, { content, edited_at: new Date().toISOString() });
+        // 1.1 (7.1): eroarea ajunge la ChatScreen, care repune textul în compozitor.
+        if (err) return { ok: false, error: err };
+        patchMessage(m.id, { content, edited_at: new Date().toISOString() });
+        return { ok: true };
       }}
       canEditMessage={(m) => withinEditWindow(m.created_at)}
       messageTable="channel_messages"

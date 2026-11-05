@@ -5,8 +5,6 @@ import { translateDbError } from '@/lib/db-errors';
 import { supabase } from '@/lib/supabase';
 import {
   fetchReplyEmbed,
-  hasChatV14,
-  hasMentionsColumn,
   replyEmbed,
   type MessageMention,
   type ReplyEmbedRow,
@@ -53,10 +51,9 @@ const CHANNEL_ATTACH_EMBEDS =
 
 /** Selectul complet al unui mesaj de canal (expeditor + citat + contexte). */
 async function channelMessageSelect(): Promise<string> {
-  const v14 = await hasChatV14();
   return (
     '*, sender:profiles!sender_id(full_name,role,avatar_path,deleted_at)' +
-    (v14 ? replyEmbed() : '') +
+    replyEmbed() +
     CHANNEL_ATTACH_EMBEDS
   );
 }
@@ -285,19 +282,18 @@ export async function sendChannelMessage(
   mechanicId: string | null = null,
   mentions: MessageMention[] | null = null
 ): Promise<{ message: ChannelMessageWithSender | null; error: string | null }> {
-  const v14 = await hasChatV14();
   const row: Record<string, unknown> = {
     channel_id: channelId,
     sender_id: senderId,
     content,
     image_path: imagePath,
   };
-  if (v14) row.reply_to_id = replyToId;
+  row.reply_to_id = replyToId;
   // Faza 19.5: contextele din meniul „+" (paritate cu chatul privat).
   if (listingId) row.listing_id = listingId;
   if (mechanicId) row.recommended_mechanic_id = mechanicId;
-  // 10 sept: menționările „@Nume" — doar dacă schema are coloana (migrarea 20260910).
-  if (mentions && mentions.length > 0 && (await hasMentionsColumn())) row.mentions = mentions;
+  // 10 sept: menționările „@Nume".
+  if (mentions && mentions.length > 0) row.mentions = mentions;
   const { data, error } = await supabase
     .from('channel_messages')
     .insert(row as never)
@@ -420,8 +416,8 @@ export function useChannelUnreadCount(userId: string | undefined, channelId: str
       .select('id', { count: 'exact', head: true })
       .eq('channel_id', channelId)
       .neq('sender_id', userId);
-    // Tombstone-urile (Faza 14) nu se numără — doar dacă schema are coloana.
-    if (await hasChatV14()) query = query.is('deleted_at', null);
+    // Tombstone-urile (Faza 14) nu se numără.
+    query = query.is('deleted_at', null);
     if (read?.last_read_at) query = query.gt('created_at', read.last_read_at);
 
     const { count: c } = await query;

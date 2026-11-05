@@ -16,13 +16,16 @@ export type AnnouncementWithDriver = Announcement & {
 // Hook for driver: own announcements (all statuses)
 export function useMyAnnouncements() {
   const { session } = useAuth();
+  // 1.1 (7.4): dependența e id-ul contului, nu obiectul `session` (reîmprospătarea
+  // tokenului creează un obiect nou → `refresh` nou → reîncărcări inutile la apelanți).
+  const userId = session?.user.id;
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     // Fără sesiune încă (hidratare): nu lăsa `loading` blocat pe true —
     // pe iOS asta ținea insetul de RefreshControl inserat (gol sub antet).
-    if (!session) {
+    if (!userId) {
       setLoading(false);
       return;
     }
@@ -33,12 +36,12 @@ export function useMyAnnouncements() {
       // „Ale mele" se cere EXPLICIT, nu se deduce din RLS: pentru admin (modul
       // „ca șofer"), politica aditivă is_admin() întoarce TOATE anunțurile —
       // fără filtru, anunțurile altora apăreau drept ale adminului.
-      .eq('driver_id', session.user.id)
+      .eq('driver_id', userId)
       .order('created_at', { ascending: false })
       .limit(200);
     setAnnouncements((data as Announcement[]) ?? []);
     setLoading(false);
-  }, [session]);
+  }, [userId]);
 
   return { announcements, loading, refresh };
 }
@@ -424,13 +427,15 @@ export type ApplicationWithDetails = Application & {
 
 export function useMyApplications() {
   const { session } = useAuth();
+  // 1.1 (7.4): vezi useMyAnnouncements — dependența e id-ul contului, nu `session`.
+  const userId = session?.user.id;
   const [applications, setApplications] = useState<ApplicationWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     // Fără sesiune încă (hidratare): nu lăsa `loading` blocat pe true —
     // pe iOS asta ținea insetul de RefreshControl inserat (gol sub antet).
-    if (!session) {
+    if (!userId) {
       setLoading(false);
       return;
     }
@@ -444,13 +449,13 @@ export function useMyApplications() {
           conversations(id)
         )`
       )
-      .eq('mechanic_id', session.user.id)
+      .eq('mechanic_id', userId)
       .order('created_at', { ascending: false })
       .limit(200);
     const all = (data as unknown as ApplicationWithDetails[]) ?? [];
     setApplications(all.filter((a) => a.announcement != null));
     setLoading(false);
-  }, [session]);
+  }, [userId]);
 
   return { applications, loading, refresh };
 }

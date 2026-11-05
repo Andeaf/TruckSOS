@@ -1307,5 +1307,16 @@
     "locationTitle": "Standort für Entfernungen aktivieren",
     "locationBody": "So siehst du, wie weit jede Anzeige entfernt ist und was in deinem gewählten Umkreis liegt.",
     "enableLocation": "Standort aktivieren"
+  },
+  "outbox": {
+    "sending": "Wird gesendet…",
+    "failed": "Nicht gesendet",
+    "retry": "Erneut versuchen",
+    "discardTitle": "Nicht gesendete Nachricht löschen?",
+    "discardBody": "Die Nachricht hat den Empfänger nicht erreicht und wird von diesem Telefon gelöscht.",
+    "editFailed": "Die Änderung wurde nicht gespeichert",
+    "editFailedBody": "Prüfe deine Verbindung und versuche es erneut.",
+    "sendFailed": "Nachricht wurde nicht gesendet",
+    "attachmentMissing": "Die Datei ist nicht mehr auf dem Telefon, daher wurde die nicht gesendete Nachricht gelöscht."
   }
 }

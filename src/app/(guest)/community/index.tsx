@@ -11,8 +11,8 @@ import { displayName } from '@/lib/display-name';
  * 1.1 (B3): Comunitatea pentru OASPEȚI — canalul global doar în citire (D4): ultimele
  * 7 zile, max 50 de mesaje, din `guest_channel_messages`. Fără Realtime (reîncărcare la
  * focus), fără `markChannelRead`, fără push. Compozitorul e înlocuit de bara „Fă-ți cont”.
- * `ChatScreen` cere `currentUserId`/`onSend`: id gol (niciun mesaj nu e „al meu”) și no-op
- * (compozitorul nu există în modul `readOnly`).
+ * `ChatScreen` cere `currentUserId`/`onSend`: id gol (niciun mesaj nu e „al meu”) și un refuz
+ * (compozitorul nu există în modul `readOnly`, deci nu se apelează niciodată).
  */
 export default function GuestCommunityRoute() {
   const { t } = useTranslation();
@@ -42,7 +42,7 @@ export default function GuestCommunityRoute() {
       subtitle={t('channel.subtitle')}
       messages={messages}
       loading={loading}
-      onSend={async () => {}}
+      onSend={async () => ({ ok: false, error: 'read_only' })}
       renderSenderName={(message) => displayName(message.sender, t)}
       renderSenderAvatarPath={(message) => message.sender.avatar_path}
       renderSenderRole={(message) => t(`auth.roleSelect.${message.sender.role}Title`)}

@@ -1,4 +1,14 @@
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+  type Ref,
+} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -15,7 +25,12 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import type {
+  LayoutChangeEvent,
+  ListRenderItemInfo,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+} from 'react-native';
 import { Image } from 'expo-image';
 import * as DocumentPicker from 'expo-document-picker';
 import { File, Paths } from 'expo-file-system';
@@ -65,6 +80,10 @@ import { useVideoThumbnail } from '@/hooks/use-video-thumbnail';
 import type { MessageMention } from '@/lib/chat-schema';
 import { displayName } from '@/lib/display-name';
 import { mentionQueryAt, rankMentionCandidates, type MentionUser } from '@/lib/mention-search';
+import * as outbox from '@/lib/outbox';
+import { subscribeRetryTriggers } from '@/lib/retry-triggers';
+import type { OutboxAttachment, OutboxEntry, OutboxSendResult, OutboxSender } from '@/lib/outbox';
+import { translateDbError } from '@/lib/db-errors';
 import { shareContact } from '@/lib/share-contact';
 import { userColor } from '@/lib/user-color';
 import {
@@ -170,6 +189,27 @@ export interface ChatMessageBase {
   mentions?: MessageMention[] | null;
   /** 1.1 (B3): oaspete — mesajul are o poză pe care oaspetele n-o poate vedea (placeholder). */
   has_image?: boolean | null;
+}
+
+/**
+ * 1.1 (7.1, AUDIT E.21): rezultatul unei trimiteri. Până acum `onSend` întorcea `void`,
+ * iar eroarea insert-ului se pierdea odată cu mesajul (compozitorul era deja golit).
+ */
+export type ChatSendResult<M> = { ok: true; message: M } | { ok: false; error: string };
+export type ChatEditResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Mesajul text predat ecranului. Contextele (card de Market, persoană recomandată, anunț
+ * distribuit) vin de aici, nu din starea ecranului: o reîncercare din coada locală — și
+ * după repornire — trebuie să poarte același card ca trimiterea inițială.
+ */
+export interface ChatOutgoing {
+  content: string;
+  replyToId: string | null;
+  mentions: MessageMention[] | null;
+  listingId: string | null;
+  mechanicId: string | null;
+  announcementId: string | null;
 }
 
 /** Cover-ul unui anunț de market din embed-ul de poze (poziția minimă = cover). */
@@ -514,6 +554,10 @@ interface MessageBubbleProps<M extends ChatMessageBase> {
   flashNonce?: number;
   /** 1.1 (B3): poză invizibilă pentru oaspete → bulă-placeholder apăsabilă (pop-up de cont). */
   photoPlaceholder?: { label: string; onPress: () => void };
+  /** 1.1 (7.1): bulă din coada locală — ceas cât se trimite, „Netrimis · Reîncearcă" la eșec. */
+  localStatus?: 'sending' | 'failed';
+  /** Tap pe bula netrimisă / pe „Reîncearcă" → retrimite. */
+  onRetry?: () => void;
 }
 
 function MessageBubble<M extends ChatMessageBase>({
@@ -545,6 +589,8 @@ function MessageBubble<M extends ChatMessageBase>({
   onPressAnnouncement,
   flashNonce,
   photoPlaceholder,
+  localStatus,
+  onRetry,
 }: MessageBubbleProps<M>) {
   const theme = useTheme();
   const scheme = useResolvedScheme();
@@ -615,13 +661,30 @@ function MessageBubble<M extends ChatMessageBase>({
         ) : null}
       </Text>
     ) : null;
-  const tick = readState ? (
-    <MaterialIcons
-      name={readState === 'read' ? 'done-all' : 'check'}
-      size={14}
-      color={secondaryColor}
-    />
-  ) : null;
+  // Bifele — sau, la bulele din coada locală (1.1, 7.1), ceasul / semnul de eroare.
+  const statusIcon = (color: string) =>
+    localStatus === 'sending' ? (
+      <MaterialIcons
+        name="schedule"
+        size={14}
+        color={color}
+        accessibilityLabel={t('outbox.sending')}
+      />
+    ) : localStatus === 'failed' ? (
+      <MaterialIcons
+        name="error-outline"
+        size={14}
+        color={color}
+        accessibilityLabel={t('outbox.failed')}
+      />
+    ) : readState ? (
+      <MaterialIcons
+        name={readState === 'read' ? 'done-all' : 'check'}
+        size={14}
+        color={color}
+      />
+    ) : null;
+  const tick = statusIcon(secondaryColor);
   // Font mărit: distanțier INVIZIBIL randat în textul mesajului — rezervă lățimea orei
   // (+ „editat", + bifele) la capătul ultimului rând, ca ora absolută să nu se suprapună.
   // Spații non-breaking, ca distanțierul să nu se rupă de ultimul cuvânt.
@@ -898,7 +961,10 @@ function MessageBubble<M extends ChatMessageBase>({
         ) : null}
 
         {showBubble ? (
-        <Pressable onLongPress={onLongPress} delayLongPress={300}>
+        <Pressable
+          onPress={localStatus === 'failed' ? onRetry : undefined}
+          onLongPress={onLongPress}
+          delayLongPress={300}>
         <BubbleSurface
           isMe={isMe}
           scheme={scheme}
@@ -1282,224 +1348,317 @@ function MessageBubble<M extends ChatMessageBase>({
             <Text style={[styles.bubbleTime, { color: theme.textTertiary }]}>
               {formatTime(message.created_at)}
             </Text>
-            {readState ? (
-              <MaterialIcons
-                name={readState === 'read' ? 'done-all' : 'check'}
-                size={14}
-                color={theme.textTertiary}
-              />
-            ) : null}
+            {statusIcon(theme.textTertiary)}
           </View>
         )}
+        {/* 1.1 (7.1): sub bula netrimisă, pe fundalul conversației (roșul n-ar avea
+            contrast pe bula navy). Tap = retrimite; apăsare lungă = șterge (cu confirmare). */}
+        {localStatus === 'failed' ? (
+          <Pressable
+            onPress={onRetry}
+            onLongPress={onLongPress}
+            delayLongPress={300}
+            hitSlop={6}
+            accessibilityRole="button"
+            accessibilityLabel={`${t('outbox.failed')}, ${t('outbox.retry')}`}
+            style={({ pressed }) => [styles.failedRow, pressed && styles.pressed]}>
+            <MaterialIcons name="error-outline" size={13} color={FAILED_COLOR[scheme]} />
+            <Text style={[styles.failedText, { color: FAILED_COLOR[scheme] }]}>
+              {`${t('outbox.failed')} · ${t('outbox.retry')}`}
+            </Text>
+          </Pressable>
+        ) : null}
       </Animated.View>
     </View>
     </GestureDetector>
   );
 }
 
-/** Distanța (px) față de capătul cu mesaje noi de la care apare butonul „la ultimul mesaj". */
-const SCROLL_TO_BOTTOM_THRESHOLD = 120;
+/** „Netrimis · Reîncearcă" (1.1, 7.1): pe fundalul conversației, contrast ≥ 4,5 în ambele teme. */
+const FAILED_COLOR = { light: '#C5221F', dark: '#F28B82' } as const;
 
-interface ChatScreenProps<M extends ChatMessageBase> {
-  currentUserId: string;
-  title: string;
-  subtitle: string;
-  subtitleIcon?: keyof typeof MaterialIcons.glyphMap;
-  bannerText?: string;
-  messages: M[];
-  loading: boolean;
-  loadingMore?: boolean;
-  onLoadOlder?: () => void;
-  /** `mentions` (10 sept): persoanele menționate cu „@" care mai apar în text la trimitere. */
-  onSend: (
-    content: string,
-    replyToId?: string | null,
-    mentions?: MessageMention[] | null,
-  ) => Promise<void>;
-  /**
-   * Menționări „@" (10 sept): persoanele propuse imediat ce se tastează „@" —
-   * canal: expeditorii încărcați (cei mai recenți primii); privat: interlocutorul.
-   * Fără candidați ȘI fără căutare, „@" rămâne text simplu.
-   */
-  mentionCandidates?: MentionUser[];
-  /** Căutare în toată aplicația pentru numele care nu sunt printre candidați (≥ 2 litere). */
-  searchMentionUsers?: (query: string) => Promise<MentionUser[]>;
-  /**
-   * Trimite o poză ca mesaj propriu (o poză = o bulă). Când lipsește, butonul de
-   * atașare nu apare — așa ținem funcționalitatea oprită acolo unde n-a fost încă
-   * activată (canalele, până la Etapa 9.2.4).
-   */
-  onSendImage?: (image: PickedImage) => Promise<void>;
-  /** Chat de grup: numele + avatarul expeditorului, lângă bulele celorlalți. */
-  renderSenderName?: (message: M) => string | null;
-  /** Chat de grup: rolul expeditorului („ · Rol" după nume, în prima bulă a grupului). */
-  renderSenderRole?: (message: M) => string | null;
-  renderSenderAvatarPath?: (message: M) => string | null;
-  /** Avatarul interlocutorului, în antet (chat 1-la-1). */
-  headerAvatarPath?: string | null;
-  /** Id-ul interlocutorului din antet — pentru tap pe avatar → profil (chat 1-la-1). */
-  headerUserId?: string;
-  /** Tap pe avatar sau pe nume (antet sau bulă) → profilul acelui utilizator. Rutarea o
-   * decide ecranul; mesajul însoțește id-ul (când există) ca ecranul să poată alege ruta
-   * după rolul expeditorului. Din antet (chat 1-la-1) vine fără mesaj. */
-  onPressUser?: (userId: string, message?: M) => void;
-  /** Faza 19.4: tap pe cardul de anunț atașat unui mesaj → detaliul anunțului. */
-  onPressListing?: (listingId: string) => void;
-  /**
-   * Anunțul de market care se va atașa URMĂTORULUI mesaj trimis („Contactează
-   * vânzătorul"). Afișat ca banner deasupra casetei text; × îl scoate — mesajul
-   * devine unul obișnuit, fără card (Faza 19.4).
-   */
-  pendingListing?: { id: string; title: string; price: number; currency: string } | null;
-  /** × pe bannerul anunțului atașat. Fără handler, bannerul nu are ×. */
-  onClearPendingListing?: () => void;
-  /** Faza 19.5/19.6: utilizatorul care se va atașa următorului mesaj — rolul decide
-   * eticheta bannerului („Mecanic recomandat" vs „Transportator recomandat"). */
-  pendingMechanic?: {
-    id: string;
-    full_name: string;
-    deleted_at: string | null;
-    role?: string;
-    rating_avg: number;
-    rating_count: number;
-  } | null;
-  onClearPendingMechanic?: () => void;
-  /** Faza 19.6: anunțul de DEPANARE care se va atașa următorului mesaj (share). */
-  pendingAnnouncement?: { id: string; location: string } | null;
-  onClearPendingAnnouncement?: () => void;
-  /** Faza 19.5: meniul „+" — fiecare opțiune apare doar dacă ecranul o furnizează. */
-  onAttachListing?: () => void;
-  onAttachMechanic?: () => void;
-  /** Faza 19.6: „Recomandă un transportator" — aceleași sisteme ca la mecanic. */
-  onAttachDriver?: () => void;
-  /** Trimite fișierul ales (validat deja: mărime + blocklist). Un fișier = o bulă. */
-  onSendFile?: (file: PickedFile) => Promise<void>;
-  /** Tap pe cardul utilizatorului recomandat → profilul lui public; rolul REAL vine
-   * cu id-ul, ca ecranul să rutueze corect (mecanic vs transportator). */
-  onPressMechanic?: (mechanicId: string, role: string) => void;
-  /** Faza 19.6: tap pe cardul de anunț de depanare → detaliul lui (rutare per rol). */
-  onPressAnnouncement?: (announcementId: string) => void;
-  /** Lipsă = fără săgeata de back (ex. Comunitatea oaspetelui, care e tab rădăcină). */
-  onBack?: () => void;
-  /**
-   * 1.1 (B3): doar citire (oaspete) — compozitorul e înlocuit de o bară cu `label` și un
-   * buton care apelează `onPress`; fără swipe-to-reply și fără meniul de mesaj; pozele
-   * (`has_image`) apar ca placeholder apăsabil (`onPressPhoto`, implicit `onPress`).
-   * Ecranul care îl folosește nu marchează nimic citit și nu pornește Realtime.
-   */
-  readOnly?: { label: string; onPress: () => void; onPressPhoto?: () => void };
-  /**
-   * Acțiuni din meniul contextual (tap lung pe bulă), toate opționale — o acțiune
-   * apare doar dacă ecranul o furnizează (Faza 14). „Copiază" e intern (client-side).
-   */
-  /** Aplică editarea (RPC) după ce utilizatorul confirmă textul nou din bara de input. */
-  onEditMessage?: (m: M, newContent: string) => Promise<void> | void;
-  onDeleteMessage?: (m: M) => void;
-  /** Tabelul mesajelor („messages" privat / „channel_messages" canal) — activează raportarea. */
-  messageTable?: 'messages' | 'channel_messages';
-  /** Fereastra de editare (3 min), calculată de ecran — vezi Etapa 14.2. */
-  canEditMessage?: (m: M) => boolean;
-  /** Bife de citit — DOAR chat privat (nu are sens cu N participanți). */
-  readReceipts?: boolean;
-  /** `last_read_at` al celuilalt participant (chat privat) — decide ✓ vs ✓✓. */
-  readCursor?: string | null;
-  /** Cursorul MEU de citire, „înghețat" de ecran la deschidere (ÎNAINTE de mark-read):
-   * decide unde apare separatorul „Mesaje noi" și unde aterizează lista (cerere 7 aug).
-   * `undefined` = încă se încarcă (fără ancoră); `null` = niciodată deschisă. */
-  unreadCursor?: string | null;
-  /** Numărul interlocutorului (chat 1-la-1): dacă există, antetul arată butonul de apel
-   * (deschide dialer-ul cu numărul pretastat). Vine din get_mechanic_phone/
-   * get_driver_phone, deci simpla lui prezență = acces permis (conversație non-market,
-   * fără blocaj) — clientul nu re-verifică nimic. */
-  phoneNumber?: string | null;
-  /** Rotița de setări din antet (canalul global, 5 aug) — apare doar dacă e furnizat. */
-  onOpenSettings?: () => void;
-  /** 1.1 (G): mesajul la care derulează lista la deschidere (tap pe push-ul de mențiune/
-   * reply), cu aceeași evidențiere ca tap-ul pe citat. Doar dacă mesajul e în pagina
-   * încărcată; altfel nu se întâmplă nimic. Așteaptă `unreadCursor` (ancora „Mesaje noi"
-   * derulează prima), deci ecranul care îl dă trebuie să dea și cursorul. */
-  scrollToMessageId?: string;
-}
-
-export function ChatScreen<M extends ChatMessageBase>({
-  currentUserId,
-  title,
-  subtitle,
-  subtitleIcon,
-  bannerText,
-  messages,
-  loading,
-  loadingMore,
-  onLoadOlder,
-  onSend,
-  onSendImage,
-  renderSenderName,
-  renderSenderRole,
-  renderSenderAvatarPath,
-  headerAvatarPath,
-  headerUserId,
-  onPressUser,
-  onPressListing,
-  pendingListing,
-  onClearPendingListing,
-  pendingMechanic,
-  onClearPendingMechanic,
-  pendingAnnouncement,
-  onClearPendingAnnouncement,
-  onAttachListing,
-  onAttachMechanic,
-  onAttachDriver,
-  onSendFile,
-  onPressMechanic,
-  onPressAnnouncement,
-  onBack,
-  onEditMessage,
-  onDeleteMessage,
-  messageTable,
-  canEditMessage,
-  readReceipts,
-  readCursor,
-  unreadCursor,
-  phoneNumber,
-  onOpenSettings,
-  mentionCandidates,
-  searchMentionUsers,
-  scrollToMessageId,
-  readOnly,
-}: ChatScreenProps<M>) {
-  const { t, i18n } = useTranslation();
+/** Pastila de zi / separatorul „Mesaje noi" de deasupra unui rând. */
+function DayPill({ label, highlight }: { label: string; highlight?: boolean }) {
   const theme = useTheme();
   const scheme = useResolvedScheme();
-  const { blockedIds, block, unblock } = useBlocked();
+  return (
+    <View style={styles.dateRow}>
+      <View
+        style={[
+          styles.datePill,
+          { backgroundColor: highlight ? theme.brandSoft : theme.backgroundElement },
+          scheme === 'light' && Shadows.chip,
+        ]}>
+        <Text style={[styles.datePillText, { color: highlight ? theme.brand : theme.textTertiary }]}>
+          {label}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+interface MessageRowProps<M extends ChatMessageBase> {
+  item: M;
+  isMe: boolean;
+  isFirstOfGroup: boolean;
+  /** Pastila de zi deasupra rândului; null = fără. */
+  dateLabel: string | null;
+  isUnreadAnchor: boolean;
+  showSenderAvatar: boolean;
+  senderName: string | null;
+  senderRole: string | null;
+  senderAvatarUrl?: string;
+  imageUrl?: string;
+  mechanicAvatarUrl?: string;
+  listingCoverUrl?: string;
+  fileUrl?: string;
+  quoteImageUrl?: string;
+  quoteVideoUrl?: string;
+  quoteIsMine: boolean;
+  readState: 'sent' | 'read' | null;
+  flashNonce: number;
+  downloadingFile: boolean;
+  /** Oaspete: eticheta bulei-placeholder a pozei; null = poza obișnuită. */
+  photoPlaceholderLabel: string | null;
+  onPressPhotoPlaceholder?: () => void;
+  onOpenImage: (m: M) => void;
+  /** Absent = fără meniu (oaspete). */
+  onOpenMenu?: (m: M) => void;
+  /** Absent = fără swipe-to-reply (oaspete). */
+  onSwipeReply?: (m: M) => void;
+  onPressQuote: (m: M) => void;
+  onPressUser?: (m: M) => void;
+  onOpenFile: (m: M) => void;
+  onOpenVideo: (m: M) => void;
+  onPressListing?: (listingId: string) => void;
+  onPressMechanic?: (mechanicId: string, role: string) => void;
+  onPressAnnouncement?: (announcementId: string) => void;
+}
+
+/**
+ * 1.1 (7.4, AUDIT #32): rândul unui mesaj, memoizat — tastarea și mesajele noi nu mai
+ * redesenează toate bulele. Primește valori primitive (URL-uri deja rezolvate, etichete)
+ * și handler-e STABILE care primesc mesajul; închiderile `() => handler(message)` se fac
+ * aici. Comparația e cea implicită (superficială, pe TOATE props-urile), nu una pe câteva
+ * câmpuri: identitatea lui `message` se schimbă exact când rândul trebuie redesenat
+ * (mergeMessages păstrează obiectul neschimbat; addMessage / patchMessage / UPDATE-ul
+ * Realtime înlocuiesc doar rândul atins) — inclusiv când sosesc embed-urile (citat, card)
+ * fără ca edited_at să se schimbe, caz pe care o comparație pe id/edited_at/deleted_at
+ * l-ar rata („Mesaj indisponibil" rămas pe ecran).
+ */
+function MessageRowImpl<M extends ChatMessageBase>({
+  item,
+  isFirstOfGroup,
+  dateLabel,
+  isUnreadAnchor,
+  photoPlaceholderLabel,
+  onPressPhotoPlaceholder,
+  onOpenImage,
+  onOpenMenu,
+  onSwipeReply,
+  onPressQuote,
+  onPressUser,
+  onOpenFile,
+  onOpenVideo,
+  ...rest
+}: MessageRowProps<M>) {
+  const { t } = useTranslation();
+  return (
+    // 14px între grupuri, 3px între mesajele aceluiași grup (spațierea 7a).
+    <View style={isFirstOfGroup ? styles.groupSpacing : styles.messageSpacing}>
+      {dateLabel ? <DayPill label={dateLabel} /> : null}
+      {/* Separatorul „Mesaje noi" — deasupra primului necitit de la deschidere. */}
+      {isUnreadAnchor ? <DayPill label={t('chat.newMessages')} highlight /> : null}
+      <MessageBubble
+        {...rest}
+        message={item}
+        isFirstOfGroup={isFirstOfGroup}
+        onPressImage={() => onOpenImage(item)}
+        onLongPress={onOpenMenu ? () => onOpenMenu(item) : undefined}
+        onSwipeReply={onSwipeReply && !item.deleted_at ? () => onSwipeReply(item) : undefined}
+        photoPlaceholder={
+          photoPlaceholderLabel && onPressPhotoPlaceholder
+            ? { label: photoPlaceholderLabel, onPress: onPressPhotoPlaceholder }
+            : undefined
+        }
+        onPressQuote={item.reply_to_id ? () => onPressQuote(item) : undefined}
+        onPressAvatar={onPressUser ? () => onPressUser(item) : undefined}
+        onPressFile={!item.deleted_at && item.file_path ? () => onOpenFile(item) : undefined}
+        onPressVideo={!item.deleted_at && item.file_path ? () => onOpenVideo(item) : undefined}
+      />
+    </View>
+  );
+}
+const MessageRow = memo(MessageRowImpl) as typeof MessageRowImpl;
+
+/** Citatul unei bule locale, construit din mesajul citat încă prezent în listă. */
+function quoteFrom(m: ChatMessageBase, senderName: string): NonNullable<ChatMessageBase['reply_to']> {
+  return {
+    id: m.id,
+    content: m.content,
+    image_path: m.image_path ?? null,
+    file_name: m.file_name ?? null,
+    file_path: m.file_path ?? null,
+    file_duration: m.file_duration ?? null,
+    sender_id: m.sender_id,
+    deleted_at: m.deleted_at ?? null,
+    sender: { full_name: senderName },
+    recommended_mechanic_id: m.recommended_mechanic_id ?? null,
+    listing_id: m.listing_id ?? null,
+    announcement_id: m.announcement_id ?? null,
+    mechanic: m.mechanic
+      ? { full_name: m.mechanic.full_name, deleted_at: m.mechanic.deleted_at, role: m.mechanic.role }
+      : null,
+    listing: m.listing ? { title: m.listing.title } : null,
+    announcement: m.announcement ? { location: m.announcement.location } : null,
+  };
+}
+
+/**
+ * Bula locală a unui mesaj din coadă (1.1, 7.1). Poza / fișierul se arată din `localUri`;
+ * cardul atașat, din instantaneul de la trimitere (fără copertă / avatar — vin cu rândul
+ * de pe server). Citatul doar dacă mesajul citat e încă în listă.
+ */
+function pendingMessage(
+  entry: OutboxEntry,
+  senderId: string,
+  quote: ChatMessageBase['reply_to'],
+): ChatMessageBase {
+  const att = entry.attachments[0];
+  const preview = entry.preview;
+  return {
+    id: entry.localId,
+    content: entry.content,
+    sender_id: senderId,
+    created_at: entry.createdAt,
+    image_path: att?.kind === 'image' ? att.localUri : null,
+    file_path: att?.kind === 'file' ? att.localUri : null,
+    file_name: att?.kind === 'file' ? att.name : null,
+    file_size: att?.kind === 'file' ? att.size : null,
+    file_duration: att?.kind === 'file' ? (att.durationS ?? null) : null,
+    reply_to_id: quote ? entry.replyToId : null,
+    reply_to: quote,
+    mentions: entry.mentions,
+    listing_id: entry.listingId,
+    listing: preview?.listing ? { ...preview.listing, status: '' } : null,
+    recommended_mechanic_id: entry.mechanicId,
+    mechanic: preview?.mechanic ? { ...preview.mechanic, avatar_path: null } : null,
+    announcement_id: entry.announcementId,
+    announcement: preview?.announcement ? { ...preview.announcement, status: '' } : null,
+  };
+}
+
+interface PendingRowProps {
+  entry: OutboxEntry;
+  senderId: string;
+  quote: ChatMessageBase['reply_to'];
+  quoteImageUrl?: string;
+  quoteVideoUrl?: string;
+  quoteIsMine: boolean;
+  isFirstOfGroup: boolean;
+  dateLabel: string | null;
+  onRetry: (localId: string) => void;
+  onDiscard: (localId: string) => void;
+}
+
+function PendingRowImpl({
+  entry,
+  senderId,
+  quote,
+  quoteImageUrl,
+  quoteVideoUrl,
+  quoteIsMine,
+  isFirstOfGroup,
+  dateLabel,
+  onRetry,
+  onDiscard,
+}: PendingRowProps) {
+  const message = useMemo(() => pendingMessage(entry, senderId, quote), [entry, senderId, quote]);
+  const failed = entry.status === 'failed';
+  const retry = failed ? () => onRetry(entry.localId) : undefined;
+  const att = entry.attachments[0];
+  return (
+    <View style={isFirstOfGroup ? styles.groupSpacing : styles.messageSpacing}>
+      {dateLabel ? <DayPill label={dateLabel} /> : null}
+      <MessageBubble
+        message={message}
+        isMe
+        isFirstOfGroup={isFirstOfGroup}
+        imageUrl={att?.kind === 'image' ? att.localUri : undefined}
+        fileUrl={att?.kind === 'file' ? att.localUri : undefined}
+        quoteImageUrl={quoteImageUrl}
+        quoteVideoUrl={quoteVideoUrl}
+        quoteIsMine={quoteIsMine}
+        onPressImage={retry}
+        onPressFile={retry}
+        onPressVideo={retry}
+        onLongPress={failed ? () => onDiscard(entry.localId) : undefined}
+        localStatus={entry.status}
+        onRetry={retry}
+      />
+    </View>
+  );
+}
+const PendingRow = memo(PendingRowImpl);
+
+/** API-ul compozitorului către ecran (1.1, 7.4): textul trăiește în compozitor. */
+export interface ChatComposerHandle {
+  setText: (text: string) => void;
+  /** Golește textul + menționările alese. */
+  clear: () => void;
+  /** Golește doar dacă textul e încă cel trimis (nu șterge ce s-a tastat între timp). */
+  clearIfText: (sent: string) => void;
+  getText: () => string;
+  insertMention: (user: MentionUser) => void;
+}
+
+interface ChatComposerProps {
+  ref?: Ref<ChatComposerHandle>;
+  /** Mod editare: butonul devine bifă, atașările dispar, fără menționări. */
+  editing: boolean;
+  hasPendingAttach: boolean;
+  sending: boolean;
+  uploading: boolean;
+  /** Bara de blocare (Faza 18): înlocuiește caseta, dar compozitorul rămâne montat — textul
+   * tastat supraviețuiește blocării + deblocării, ca înainte. */
+  frozenBar: React.ReactNode;
+  showCamera: boolean;
+  onPressCamera: () => void;
+  showPlus: boolean;
+  onPressPlus: () => void;
+  mentionsEnabled: boolean;
+  /** Interogarea „@" de sub cursor (null = niciuna) — fereastra de menționări e a ecranului. */
+  onMentionQueryChange: (query: string | null) => void;
+  /** Butonul de trimitere: textul fără spații la capete + menționările rămase în text. */
+  onSubmit: (text: string, mentions: MessageMention[]) => void;
+}
+
+/**
+ * 1.1 (7.4, AUDIT #32): compozitorul, cu starea textului PROPRIE — înainte fiecare tastă
+ * re-randa tot ecranul de chat (lista cu sute de bule inclusă). Ecranul îl comandă prin
+ * `ref` (editare, golire după trimitere, inserarea unei menționări).
+ */
+function ChatComposerImpl({
+  ref,
+  editing,
+  hasPendingAttach,
+  sending,
+  uploading,
+  frozenBar,
+  showCamera,
+  onPressCamera,
+  showPlus,
+  onPressPlus,
+  mentionsEnabled,
+  onMentionQueryChange,
+  onSubmit,
+}: ChatComposerProps) {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const scheme = useResolvedScheme();
   const [text, setText] = useState('');
-  const [sending, setSending] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [viewerAt, setViewerAt] = useState<number | null>(null);
-  const [menuMessage, setMenuMessage] = useState<M | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
-  const [editTarget, setEditTarget] = useState<M | null>(null);
-  const [replyTarget, setReplyTarget] = useState<M | null>(null);
-  const [reportTarget, setReportTarget] = useState<M | null>(null);
-  // Faza 19.5: meniul „+" + descărcarea de fișiere (un singur download odată).
-  const [attachOpen, setAttachOpen] = useState(false);
-  const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
-  // Video în chat (23 aug): playerul full-screen deschis (sursa = sheet-ul de poze).
-  const [videoUrlOpen, setVideoUrlOpen] = useState<string | null>(null);
-  const listRef = useRef<FlatList<M>>(null);
-  // Butonul „la ultimul mesaj" (15 sept): apare când lista e derulată cu mai mult de
-  // SCROLL_TO_BOTTOM_THRESHOLD px de la capătul cu mesaje noi. Lista e INVERSATĂ, deci
-  // contentOffset.y = distanța față de cel mai nou mesaj (0 = jos de tot) — pe toate
-  // platformele, inclusiv web (react-native-web întoarce lista cu scaleY(-1)).
-  // Starea se scrie doar la schimbarea booleanului, nu la fiecare eveniment de scroll.
-  const [awayFromBottom, setAwayFromBottom] = useState(false);
-  const awayFromBottomRef = useRef(false);
-  const handleListScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const away = e.nativeEvent.contentOffset.y > SCROLL_TO_BOTTOM_THRESHOLD;
-    if (away !== awayFromBottomRef.current) {
-      awayFromBottomRef.current = away;
-      setAwayFromBottom(away);
-    }
-  }, []);
+  const textRef = useRef(text);
+  textRef.current = text;
 
   // Creșterea compozitorului (8 aug; iOS refăcut 11 sept), per platformă:
   //  • Android — nimic manual: inputul multiline crește nativ între minHeight și
@@ -1563,9 +1722,8 @@ export function ChatScreen<M extends ChatMessageBase>({
   const thumbTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const updateFadesRef = useRef<(() => void) | null>(null);
   // Când blocarea îngheață compozitorul, inputul se demontează — la revenire
-  // efectul trebuie să se re-lege de nodul DOM nou (peerBlocked e declarat mai
-  // jos; recalculăm aici din aceleași surse).
-  const composerFrozen = !!headerUserId && blockedIds.has(headerUserId);
+  // efectul trebuie să se re-lege de nodul DOM nou.
+  const composerFrozen = !!frozenBar;
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     const node = composerRef.current as unknown as HTMLTextAreaElement | null;
@@ -1640,6 +1798,712 @@ export function ChatScreen<M extends ChatMessageBase>({
     updateFadesRef.current?.();
   }, [text]);
 
+  // ── Menționări „@" (10 sept 2026, ca pe WhatsApp) ─────────────────────────────
+  // Cursorul: ținut în ref (sursa de adevăr) + în state (derivarea interogării
+  // trebuie să re-randeze). onSelectionChange e autoritatea; onChangeText îl
+  // avansează provizoriu (ordinea celor două evenimente diferă între platforme,
+  // iar pe web caret-ul nu emite mereu onSelectionChange) — „la coadă rămâne la coadă".
+  const selectionRef = useRef({ start: 0, end: 0 });
+  const [cursor, setCursor] = useState(0);
+  // Selecția forțată O SINGURĂ dată după inserarea unei menționări (cursorul după
+  // „@Nume "); revine la undefined la primul onSelectionChange, ca inputul să
+  // rămână necontrolat pe selecție (controlat permanent = salturi pe Android).
+  const [pendingSelection, setPendingSelection] = useState<{ start: number; end: number } | null>(
+    null,
+  );
+  // Persoanele alese în timpul compunerii (id → nume); la trimitere rămân doar cele
+  // al căror „@Nume" mai există în text (userul poate șterge o menționare manual).
+  const pickedMentions = useRef(new Map<string, string>());
+  const mention = useMemo(
+    () => (mentionsEnabled && !editing ? mentionQueryAt(text, cursor) : null),
+    [mentionsEnabled, editing, text, cursor],
+  );
+  const mentionQuery = mention?.query ?? null;
+  // Fereastra de menționări stă în zona listei (ecranul): îi spunem doar interogarea.
+  useEffect(() => {
+    onMentionQueryChange(mentionQuery);
+  }, [mentionQuery, onMentionQueryChange]);
+
+  const handleChangeText = useCallback(
+    (next: string) => {
+      const sel = selectionRef.current;
+      const atEnd = sel.end >= text.length;
+      const pos = atEnd
+        ? next.length
+        : Math.max(0, Math.min(sel.end + (next.length - text.length), next.length));
+      selectionRef.current = { start: pos, end: pos };
+      setCursor(pos);
+      setText(next);
+      // Orice tastare după o inserare = selecția forțată nu mai are rost (plasă de
+      // siguranță dacă onSelectionChange n-a apucat s-o stingă).
+      setPendingSelection((prev) => (prev ? null : prev));
+    },
+    [text],
+  );
+
+  const handleSelectionChange = useCallback(
+    (e: { nativeEvent: { selection: { start: number; end: number } } }) => {
+      selectionRef.current = e.nativeEvent.selection;
+      setCursor(e.nativeEvent.selection.end);
+      setPendingSelection((prev) => (prev ? null : prev));
+    },
+    [],
+  );
+
+  // Tap pe o persoană din fereastră: „@interogare" devine „@Nume " (cu spațiu, ca
+  // tastarea să continue natural), cursorul sare după ea, tastatura rămâne deschisă.
+  const insertMention = useCallback(
+    (user: MentionUser) => {
+      const m = mentionQueryAt(text, cursor);
+      if (!m) return;
+      const inserted = `@${user.full_name} `;
+      const next = text.slice(0, m.start) + inserted + text.slice(Math.min(cursor, text.length));
+      const pos = m.start + inserted.length;
+      pickedMentions.current.set(user.id, user.full_name);
+      selectionRef.current = { start: pos, end: pos };
+      setCursor(pos);
+      setText(next);
+      setPendingSelection({ start: pos, end: pos });
+      composerRef.current?.focus();
+    },
+    [text, cursor],
+  );
+
+  const clear = useCallback(() => {
+    pickedMentions.current.clear();
+    selectionRef.current = { start: 0, end: 0 };
+    setCursor(0);
+    setText('');
+  }, []);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      setText,
+      clear,
+      clearIfText: (sent: string) => {
+        if (textRef.current.trim() === sent) clear();
+      },
+      getText: () => textRef.current,
+      insertMention,
+    }),
+    [clear, insertMention],
+  );
+
+  const sendEnabled = (!!text.trim() || (hasPendingAttach && !editing)) && !sending;
+
+  function handleSend() {
+    if (!sendEnabled) return;
+    const trimmed = text.trim();
+    // Doar menționările care au supraviețuit în text (id + numele exact inserat).
+    const mentions = [...pickedMentions.current]
+      .filter(([, name]) => trimmed.includes(`@${name}`))
+      .map(([id, name]) => ({ id, name }));
+    onSubmit(trimmed, mentions);
+  }
+
+  if (frozenBar) return <>{frozenBar}</>;
+
+  return (
+    <View
+      style={[
+        styles.inputBar,
+        largeFont && !composerTall && styles.inputBarCentered,
+        {
+          // Fără insets.bottom: sub bara de input e TAB BAR-ul, care ocupă el zona
+          // de siguranță — adăugarea insetului dubla compensarea și lăsa un gol
+          // vizibil între input și tab-uri (feedback pe Samsung + iPhone).
+          // Cu tastatura deschisă padding-ul rămâne minim (bara stă lipită de taste).
+          paddingBottom: Spacing.one,
+          backgroundColor: theme.barBackground,
+          borderTopColor: theme.separator,
+        },
+      ]}>
+      {showCamera ? (
+        <Pressable
+          onPress={onPressCamera}
+          disabled={uploading}
+          style={[styles.attachButton, { backgroundColor: theme.brandSoft }]}
+          hitSlop={8}
+          accessibilityLabel={t('chat.attach')}>
+          {uploading ? (
+            <ActivityIndicator size="small" color={theme.brand} />
+          ) : (
+            <Feather name="camera" size={19} color={theme.brand} />
+          )}
+        </Pressable>
+      ) : null}
+      {/* TextInput-ul multiline NU stă direct în rândul flex: pe Android, când
+          crește pe verticală se re-măsoară cu lățime necontrânsă și textul se
+          întindea peste butoanele „+"/trimite — wrapper-ul îi fixează lățimea. */}
+      <View
+        style={[
+          styles.inputWrap,
+          { backgroundColor: theme.background },
+          composerTall && styles.inputWrapTall,
+        ]}>
+        <TextInput
+          ref={composerRef}
+          style={[
+            styles.input,
+            { color: theme.text },
+            largeFont && styles.inputLargeFont,
+            // Nativ (Android + iOS): creștere nativă între min și max, fără
+            // înălțime din state — vezi COMPOSER_* și nota de la composerHeight.
+            // Web: înălțimea e gestionată imperativ (efectul de mai sus).
+            Platform.OS === 'web'
+              ? null
+              : { minHeight: COMPOSER_INNER_BASE, maxHeight: COMPOSER_INNER_MAX },
+          ]}
+          value={text}
+          onChangeText={handleChangeText}
+          // Menționări: poziția cursorului decide dacă suntem după un „@";
+          // `selection` e setat DOAR o clipă după inserarea unei menționări.
+          onSelectionChange={handleSelectionChange}
+          selection={pendingSelection ?? undefined}
+          // Android: onContentSizeChange decide forma. iOS: onLayout (înălțimea
+          // așezată) decide forma și derularea — pe Fabric, iOS emite
+          // onContentSizeChange doar la schimbarea cadrului, nu la tastare.
+          onContentSizeChange={Platform.OS === 'android' ? handleComposerSize : undefined}
+          onLayout={Platform.OS === 'ios' ? handleComposerLayout : undefined}
+          // iOS: derularea pornește de la al 4-lea rând (pragul formei), adică
+          // ÎNAINTE ca textul să poată depăși plafonul — cu derularea oprită,
+          // UITextView nu aduce cursorul în vedere, iar rândul 5 ar rămâne
+          // ascuns. Sub prag stă oprită: altfel UITextView „saltă" (bounce
+          // fantomă) și când textul încape.
+          scrollEnabled={
+            Platform.OS === 'ios' ? composerHeight > COMPOSER_TALL_THRESHOLD : undefined
+          }
+          placeholder={t('chat.inputPlaceholder')}
+          placeholderTextColor={theme.textTertiary}
+          // 8 oct: la font de sistem mărit, „Scrie un mesaj…" se rupea pe două rânduri
+          // în pastila îngustă. Plafon 1,3× (ca antetele, 1,2×) — sub el, nicio schimbare.
+          maxFontSizeMultiplier={1.3}
+          multiline
+          maxLength={1000}
+          // id-ul DOM pe web (CSS-ul din public/index.html îi ascunde
+          // scrollbarul nativ și chenarul de focus); inert pe telefon.
+          nativeID="chat-composer"
+        />
+        {Platform.OS === 'web' ? (
+          <>
+            {/* Fade-urile de overflow + indicatorul plutitor (stil 9c).
+                Vizibilitatea o scriu efectele, imperativ — aici doar schelet
+                cu opacity 0, ca React să nu se atingă de ea la re-render. */}
+            <View ref={fadeTopRef} pointerEvents="none" style={styles.composerFadeTop}>
+              <LinearGradient
+                colors={[theme.background, `${theme.background}00`]}
+                style={styles.composerFadeFill}
+              />
+            </View>
+            <View ref={fadeBottomRef} pointerEvents="none" style={styles.composerFadeBottom}>
+              <LinearGradient
+                colors={[`${theme.background}00`, theme.background]}
+                style={styles.composerFadeFill}
+              />
+            </View>
+            <View
+              ref={thumbRef}
+              pointerEvents="none"
+              style={[
+                styles.composerThumb,
+                {
+                  backgroundColor:
+                    scheme === 'dark' ? 'rgba(123,167,224,0.45)' : 'rgba(14,58,125,0.35)',
+                },
+              ]}
+            />
+          </>
+        ) : null}
+      </View>
+      {/* Meniul „+" (19.5) — în DREAPTA casetei text (decizie 25 iul), doar dacă
+          ecranul furnizează măcar o opțiune de atașare; ascuns în modul editare. */}
+      {showPlus ? (
+        <Pressable
+          onPress={onPressPlus}
+          style={[styles.attachButton, { backgroundColor: theme.brandSoft }]}
+          hitSlop={8}
+          accessibilityLabel={t('attach.title')}>
+          <Feather name="plus" size={20} color={theme.brand} />
+        </Pressable>
+      ) : null}
+      <Pressable
+        onPress={handleSend}
+        disabled={!sendEnabled}
+        style={{ opacity: sendEnabled ? 1 : 0.4 }}>
+        <LinearGradient
+          colors={ActiveGradient[scheme]}
+          start={HeaderGradientDirection.start}
+          end={HeaderGradientDirection.end}
+          style={[
+            styles.sendButton,
+            // Umbra DOAR pe starea activă: elevation sub un părinte cu opacity<1 se
+            // vede PRIN suprafața translucidă ca o pată poligonală decalată (Android)
+            // — sursa „octagonului" semitransparent de pe butonul dezactivat.
+            sendEnabled &&
+              (scheme === 'light' ? styles.sendShadowLight : styles.sendShadowDark),
+          ]}>
+          {sending ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : editing ? (
+            <Feather name="check" size={20} color="#fff" />
+          ) : (
+            <Feather name="send" size={19} color="#fff" />
+          )}
+        </LinearGradient>
+      </Pressable>
+    </View>
+  );
+}
+const ChatComposer = memo(ChatComposerImpl);
+
+/** Distanța (px) față de capătul cu mesaje noi de la care apare butonul „la ultimul mesaj". */
+const SCROLL_TO_BOTTOM_THRESHOLD = 120;
+
+interface ChatScreenProps<M extends ChatMessageBase> {
+  currentUserId: string;
+  title: string;
+  subtitle: string;
+  subtitleIcon?: keyof typeof MaterialIcons.glyphMap;
+  bannerText?: string;
+  messages: M[];
+  loading: boolean;
+  loadingMore?: boolean;
+  onLoadOlder?: () => void;
+  /**
+   * Trimite un mesaj text (1.1, 7.1). `mentions` (10 sept) = persoanele menționate cu „@"
+   * care mai apar în text; contextele atașate vin tot în obiect (din coada locală). Ecranul
+   * adaugă mesajul în listă la succes și ÎNTOARCE rezultatul — eroarea nu se mai înghite.
+   */
+  onSend: (outgoing: ChatOutgoing) => Promise<ChatSendResult<M>>;
+  /**
+   * Menționări „@" (10 sept): persoanele propuse imediat ce se tastează „@" —
+   * canal: expeditorii încărcați (cei mai recenți primii); privat: interlocutorul.
+   * Fără candidați ȘI fără căutare, „@" rămâne text simplu.
+   */
+  mentionCandidates?: MentionUser[];
+  /** Căutare în toată aplicația pentru numele care nu sunt printre candidați (≥ 2 litere). */
+  searchMentionUsers?: (query: string) => Promise<MentionUser[]>;
+  /**
+   * Trimite o poză ca mesaj propriu (o poză = o bulă). Când lipsește, butonul de
+   * atașare nu apare — așa ținem funcționalitatea oprită acolo unde n-a fost încă
+   * activată (canalele, până la Etapa 9.2.4).
+   */
+  onSendImage?: (image: PickedImage) => Promise<ChatSendResult<M>>;
+  /** Chat de grup: numele + avatarul expeditorului, lângă bulele celorlalți. */
+  renderSenderName?: (message: M) => string | null;
+  /** Chat de grup: rolul expeditorului („ · Rol" după nume, în prima bulă a grupului). */
+  renderSenderRole?: (message: M) => string | null;
+  renderSenderAvatarPath?: (message: M) => string | null;
+  /** Avatarul interlocutorului, în antet (chat 1-la-1). */
+  headerAvatarPath?: string | null;
+  /** Id-ul interlocutorului din antet — pentru tap pe avatar → profil (chat 1-la-1). */
+  headerUserId?: string;
+  /** Tap pe avatar sau pe nume (antet sau bulă) → profilul acelui utilizator. Rutarea o
+   * decide ecranul; mesajul însoțește id-ul (când există) ca ecranul să poată alege ruta
+   * după rolul expeditorului. Din antet (chat 1-la-1) vine fără mesaj. */
+  onPressUser?: (userId: string, message?: M) => void;
+  /** Faza 19.4: tap pe cardul de anunț atașat unui mesaj → detaliul anunțului. */
+  onPressListing?: (listingId: string) => void;
+  /**
+   * Anunțul de market care se va atașa URMĂTORULUI mesaj trimis („Contactează
+   * vânzătorul"). Afișat ca banner deasupra casetei text; × îl scoate — mesajul
+   * devine unul obișnuit, fără card (Faza 19.4).
+   */
+  pendingListing?: { id: string; title: string; price: number; currency: string } | null;
+  /** × pe bannerul anunțului atașat. Fără handler, bannerul nu are ×. */
+  onClearPendingListing?: () => void;
+  /** Faza 19.5/19.6: utilizatorul care se va atașa următorului mesaj — rolul decide
+   * eticheta bannerului („Mecanic recomandat" vs „Transportator recomandat"). */
+  pendingMechanic?: {
+    id: string;
+    full_name: string;
+    deleted_at: string | null;
+    role?: string;
+    rating_avg: number;
+    rating_count: number;
+  } | null;
+  onClearPendingMechanic?: () => void;
+  /** Faza 19.6: anunțul de DEPANARE care se va atașa următorului mesaj (share). */
+  pendingAnnouncement?: { id: string; location: string } | null;
+  onClearPendingAnnouncement?: () => void;
+  /** Faza 19.5: meniul „+" — fiecare opțiune apare doar dacă ecranul o furnizează. */
+  onAttachListing?: () => void;
+  onAttachMechanic?: () => void;
+  /** Faza 19.6: „Recomandă un transportator" — aceleași sisteme ca la mecanic. */
+  onAttachDriver?: () => void;
+  /** Trimite fișierul ales (validat deja: mărime + blocklist). Un fișier = o bulă. */
+  onSendFile?: (file: PickedFile) => Promise<ChatSendResult<M>>;
+  /** Tap pe cardul utilizatorului recomandat → profilul lui public; rolul REAL vine
+   * cu id-ul, ca ecranul să rutueze corect (mecanic vs transportator). */
+  onPressMechanic?: (mechanicId: string, role: string) => void;
+  /** Faza 19.6: tap pe cardul de anunț de depanare → detaliul lui (rutare per rol). */
+  onPressAnnouncement?: (announcementId: string) => void;
+  /** Lipsă = fără săgeata de back (ex. Comunitatea oaspetelui, care e tab rădăcină). */
+  onBack?: () => void;
+  /**
+   * 1.1 (B3): doar citire (oaspete) — compozitorul e înlocuit de o bară cu `label` și un
+   * buton care apelează `onPress`; fără swipe-to-reply și fără meniul de mesaj; pozele
+   * (`has_image`) apar ca placeholder apăsabil (`onPressPhoto`, implicit `onPress`).
+   * Ecranul care îl folosește nu marchează nimic citit și nu pornește Realtime.
+   */
+  readOnly?: { label: string; onPress: () => void; onPressPhoto?: () => void };
+  /**
+   * Acțiuni din meniul contextual (tap lung pe bulă), toate opționale — o acțiune
+   * apare doar dacă ecranul o furnizează (Faza 14). „Copiază" e intern (client-side).
+   */
+  /** Aplică editarea (RPC) după ce utilizatorul confirmă textul nou din bara de input. */
+  onEditMessage?: (m: M, newContent: string) => Promise<ChatEditResult>;
+  onDeleteMessage?: (m: M) => void;
+  /** Tabelul mesajelor („messages" privat / „channel_messages" canal) — activează raportarea. */
+  messageTable?: 'messages' | 'channel_messages';
+  /** Fereastra de editare (3 min), calculată de ecran — vezi Etapa 14.2. */
+  canEditMessage?: (m: M) => boolean;
+  /** Bife de citit — DOAR chat privat (nu are sens cu N participanți). */
+  readReceipts?: boolean;
+  /** `last_read_at` al celuilalt participant (chat privat) — decide ✓ vs ✓✓. */
+  readCursor?: string | null;
+  /** Cursorul MEU de citire, „înghețat" de ecran la deschidere (ÎNAINTE de mark-read):
+   * decide unde apare separatorul „Mesaje noi" și unde aterizează lista (cerere 7 aug).
+   * `undefined` = încă se încarcă (fără ancoră); `null` = niciodată deschisă. */
+  unreadCursor?: string | null;
+  /** Numărul interlocutorului (chat 1-la-1): dacă există, antetul arată butonul de apel
+   * (deschide dialer-ul cu numărul pretastat). Vine din get_mechanic_phone/
+   * get_driver_phone, deci simpla lui prezență = acces permis (conversație non-market,
+   * fără blocaj) — clientul nu re-verifică nimic. */
+  phoneNumber?: string | null;
+  /** Rotița de setări din antet (canalul global, 5 aug) — apare doar dacă e furnizat. */
+  onOpenSettings?: () => void;
+  /** 1.1 (G): mesajul la care derulează lista la deschidere (tap pe push-ul de mențiune/
+   * reply), cu aceeași evidențiere ca tap-ul pe citat. Doar dacă mesajul e în pagina
+   * încărcată; altfel nu se întâmplă nimic. Așteaptă `unreadCursor` (ancora „Mesaje noi"
+   * derulează prima), deci ecranul care îl dă trebuie să dea și cursorul. */
+  scrollToMessageId?: string;
+  /**
+   * 1.1 (7.1): firul pentru coada locală a mesajelor netrimise — `conversation:<id>` sau
+   * `channel:<id>`. Lipsă (oaspete) = fără coadă.
+   */
+  threadKey?: string;
+}
+
+/** Valorile curente ale ecranului, citite la apel de handler-ele stabile (1.1, 7.4). */
+interface ChatLatest<M extends ChatMessageBase> {
+  t: Translate;
+  outboxKey: string | null;
+  editTarget: M | null;
+  replyTarget: M | null;
+  hasPendingAttach: boolean;
+  pendingListing: ChatScreenProps<M>['pendingListing'];
+  pendingMechanic: ChatScreenProps<M>['pendingMechanic'];
+  pendingAnnouncement: ChatScreenProps<M>['pendingAnnouncement'];
+  onClearPendingListing?: () => void;
+  onClearPendingMechanic?: () => void;
+  onClearPendingAnnouncement?: () => void;
+  onSend: ChatScreenProps<M>['onSend'];
+  onSendImage: ChatScreenProps<M>['onSendImage'];
+  onSendFile: ChatScreenProps<M>['onSendFile'];
+  onEditMessage: ChatScreenProps<M>['onEditMessage'];
+  onPressUser: ChatScreenProps<M>['onPressUser'];
+  onPressListing: ChatScreenProps<M>['onPressListing'];
+  onPressMechanic: ChatScreenProps<M>['onPressMechanic'];
+  onPressAnnouncement: ChatScreenProps<M>['onPressAnnouncement'];
+  readOnly: ChatScreenProps<M>['readOnly'];
+  viewerPhotos: { id: string; url: string }[];
+  scrollToQuoted: (quotedId: string) => void;
+  handleOpenFile: (m: M) => Promise<void>;
+  handleOpenVideo: (m: M) => Promise<void>;
+}
+
+/** Eroarea pentru un Alert: codurile brute („upload_failed") trec prin traducerea comună. */
+function readableError(error: string): string {
+  return /^[a-z0-9_]{3,40}$/.test(error) ? translateDbError(error) : error;
+}
+
+/** Cheia rândului — funcție de modul, ca FlatList să nu primească alta la fiecare randare. */
+function messageKey(item: ChatMessageBase): string {
+  return item.id;
+}
+
+/**
+ * Fișierul local al unui atașament mai există? Doar pentru `file://` pe telefon (cache-ul
+ * pickerului poate fi golit de sistem între o încercare și alta); altceva (`blob:` pe web,
+ * `content://`) sau o verificare eșuată = „poate", încercăm urcarea.
+ */
+function localFileExists(uri: string): boolean {
+  if (Platform.OS === 'web' || !uri.startsWith('file://')) return true;
+  try {
+    return new File(uri).exists;
+  } catch {
+    return true;
+  }
+}
+
+export function ChatScreen<M extends ChatMessageBase>({
+  currentUserId,
+  title,
+  subtitle,
+  subtitleIcon,
+  bannerText,
+  messages,
+  loading,
+  loadingMore,
+  onLoadOlder,
+  onSend,
+  onSendImage,
+  renderSenderName,
+  renderSenderRole,
+  renderSenderAvatarPath,
+  headerAvatarPath,
+  headerUserId,
+  onPressUser,
+  onPressListing,
+  pendingListing,
+  onClearPendingListing,
+  pendingMechanic,
+  onClearPendingMechanic,
+  pendingAnnouncement,
+  onClearPendingAnnouncement,
+  onAttachListing,
+  onAttachMechanic,
+  onAttachDriver,
+  onSendFile,
+  onPressMechanic,
+  onPressAnnouncement,
+  onBack,
+  onEditMessage,
+  onDeleteMessage,
+  messageTable,
+  canEditMessage,
+  readReceipts,
+  readCursor,
+  unreadCursor,
+  phoneNumber,
+  onOpenSettings,
+  mentionCandidates,
+  searchMentionUsers,
+  scrollToMessageId,
+  readOnly,
+  threadKey,
+}: ChatScreenProps<M>) {
+  const { t, i18n } = useTranslation();
+  const theme = useTheme();
+  const scheme = useResolvedScheme();
+  const { blockedIds, block, unblock } = useBlocked();
+  const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [viewerAt, setViewerAt] = useState<number | null>(null);
+  const [menuMessage, setMenuMessage] = useState<M | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [editTarget, setEditTarget] = useState<M | null>(null);
+  const [replyTarget, setReplyTarget] = useState<M | null>(null);
+  const [reportTarget, setReportTarget] = useState<M | null>(null);
+  // Faza 19.5: meniul „+" + descărcarea de fișiere (un singur download odată).
+  const [attachOpen, setAttachOpen] = useState(false);
+  const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
+  // Video în chat (23 aug): playerul full-screen deschis (sursa = sheet-ul de poze).
+  const [videoUrlOpen, setVideoUrlOpen] = useState<string | null>(null);
+  const listRef = useRef<FlatList<M>>(null);
+  // Butonul „la ultimul mesaj" (15 sept): apare când lista e derulată cu mai mult de
+  // SCROLL_TO_BOTTOM_THRESHOLD px de la capătul cu mesaje noi. Lista e INVERSATĂ, deci
+  // contentOffset.y = distanța față de cel mai nou mesaj (0 = jos de tot) — pe toate
+  // platformele, inclusiv web (react-native-web întoarce lista cu scaleY(-1)).
+  // Starea se scrie doar la schimbarea booleanului, nu la fiecare eveniment de scroll.
+  const [awayFromBottom, setAwayFromBottom] = useState(false);
+  const awayFromBottomRef = useRef(false);
+  const handleListScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const away = e.nativeEvent.contentOffset.y > SCROLL_TO_BOTTOM_THRESHOLD;
+    if (away !== awayFromBottomRef.current) {
+      awayFromBottomRef.current = away;
+      setAwayFromBottom(away);
+    }
+  }, []);
+
+  // ── 1.1 (7.4, AUDIT #32): compozitorul are starea lui; handler-ele către rânduri sunt
+  // stabile și citesc valorile curente din `latest` (setat la fiecare randare, mai jos).
+  const latest = useRef<ChatLatest<M> | null>(null);
+  const composerRef = useRef<ChatComposerHandle>(null);
+  // Garda de dublu-tap pe „Trimite" (starea `sending` ajunge în compozitor abia la randare).
+  const sendingRef = useRef(false);
+  // Interogarea „@" raportată de compozitor; fereastra de menționări e în zona listei.
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+
+  // ── 1.1 (7.1, AUDIT E.21): coada locală a mesajelor netrimise (lib/outbox.ts) ──────────
+  // Fără `client_id` pe server, potrivirea bulă locală ↔ mesaj e locală: la succes ecranul
+  // adaugă rândul de pe server (addMessage, după id — un rând deja livrat de Realtime nu se
+  // dublează), iar intrarea iese din coadă în același pas, deci bula locală dispare. Dacă
+  // Realtime livrează mesajul ÎNAINTEA răspunsului la insert, cele două bule coexistă până
+  // sosește răspunsul (atunci bula locală dispare, rândul de la Realtime rămâne). Limita
+  // rămasă (insert reușit, răspuns pierdut → reîncercare = dublură) e descrisă în outbox.ts.
+  const outboxKey = threadKey && currentUserId ? `${currentUserId}:${threadKey}` : null;
+  const [outboxEntries, setOutboxEntries] = useState<OutboxEntry[]>([]);
+  useEffect(() => {
+    setOutboxEntries([]);
+    if (!outboxKey) return;
+    return outbox.subscribe(outboxKey, setOutboxEntries);
+  }, [outboxKey]);
+
+  // Cine trimite efectiv o intrare din coadă — LEGAT de firul `key`. Ruta de conversație e
+  // refolosită la navigarea spre alt fir (se schimbă doar `id`, ChatScreen nu se remontează),
+  // iar callback-urile ecranului sunt ale firului CURENT: dacă între timp s-a schimbat firul,
+  // nu trimitem nimic — intrarea rămâne „Netrimis" în firul ei și pleacă la redeschiderea lui.
+  const senderFor = useCallback(
+    (key: string): OutboxSender =>
+      async (entry: OutboxEntry): Promise<OutboxSendResult> => {
+        const h = latest.current;
+        if (!h) return { ok: false, error: 'not_ready' };
+        if (h.outboxKey !== key) return { ok: false, error: 'thread_changed' };
+        const att = entry.attachments[0];
+        let result: ChatSendResult<M>;
+        if (att) {
+          // Doar la reîncercare (nextRetryAt > 0: a mai eșuat sau a rămas de la o rulare
+          // anterioară): fișierul din cache poate fi șters de sistem între timp.
+          if (entry.nextRetryAt > 0 && !localFileExists(att.localUri)) {
+            setToast(h.t('outbox.attachmentMissing'));
+            return { ok: false, error: 'missing_file', drop: true };
+          }
+          if (att.kind === 'image') {
+            if (!h.onSendImage) return { ok: false, error: 'unsupported', drop: true };
+            result = await h.onSendImage({ uri: att.localUri, width: att.width, height: att.height });
+          } else {
+            if (!h.onSendFile) return { ok: false, error: 'unsupported', drop: true };
+            result = await h.onSendFile({
+              uri: att.localUri,
+              name: att.name,
+              size: att.size,
+              mimeType: att.mimeType,
+              durationS: att.durationS ?? null,
+            });
+          }
+        } else {
+          result = await h.onSend({
+            content: entry.content,
+            replyToId: entry.replyToId,
+            mentions: entry.mentions,
+            listingId: entry.listingId,
+            mechanicId: entry.mechanicId,
+            announcementId: entry.announcementId,
+          });
+        }
+        return result.ok ? { ok: true } : { ok: false, error: result.error };
+      },
+    [],
+  );
+
+  // Reîncercări automate: la deschiderea firului (după încărcare), la revenirea rețelei sau
+  // a aplicației în prim-plan (retry-triggers) și pe temporizator, cu backoff și plafon de
+  // încercări (outbox.ts). Sunt aceleași cereri ca trimiterea, repetate — nimic nou.
+  useEffect(() => {
+    if (!outboxKey || loading) return;
+    const sender = senderFor(outboxKey);
+    void outbox.retryAll(outboxKey, sender);
+    return subscribeRetryTriggers(() => {
+      void outbox.retryAll(outboxKey, sender);
+    });
+  }, [outboxKey, loading, senderFor]);
+  const nextTimerRetryAt = useMemo(() => {
+    let next: number | null = null;
+    for (const e of outboxEntries) {
+      if (e.status !== 'failed' || e.attempts >= outbox.MAX_TIMER_ATTEMPTS) continue;
+      if (next === null || e.nextRetryAt < next) next = e.nextRetryAt;
+    }
+    return next;
+  }, [outboxEntries]);
+  // Când temporizatorul nimerește peste alt retryAll în curs (sărit), se reprogramează
+  // singur — altfel, fără nicio schimbare în coadă, n-ar mai porni nimic.
+  const [timerNonce, setTimerNonce] = useState(0);
+  useEffect(() => {
+    if (!outboxKey || loading || nextTimerRetryAt === null) return;
+    let active = true;
+    const timer = setTimeout(
+      () => {
+        void outbox
+          .retryAll(outboxKey, senderFor(outboxKey), { respectBackoff: true })
+          .then((ran) => {
+            if (!ran && active) setTimerNonce((n) => n + 1);
+          });
+      },
+      // După un salt, cel puțin 1 s până la următoarea încercare (nu buclă cât durează un upload).
+      Math.max(timerNonce > 0 ? 1000 : 0, nextTimerRetryAt - Date.now()),
+    );
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [outboxKey, loading, nextTimerRetryAt, senderFor, timerNonce]);
+
+  // O poză / un fișier = o bulă, tot prin coadă, în firul `ctx` (instantaneul de la începutul
+  // lotului — nu firul curent, care se poate schimba în timpul lotului). `deferred`: o
+  // trimitere anterioară din lot a eșuat (rețea căzută) sau firul s-a schimbat → intră direct
+  // ca „Netrimis", fără încercare acum; reîncercarea o preia. `true` = trimis.
+  const sendAttachment = useCallback(
+    async (att: OutboxAttachment, deferred: boolean, ctx: ChatLatest<M>): Promise<boolean> => {
+      const key = ctx.outboxKey;
+      const entry: OutboxEntry = {
+        localId: outbox.newLocalId(),
+        content: '',
+        replyToId: null,
+        mentions: null,
+        attachments: [att],
+        listingId: null,
+        mechanicId: null,
+        announcementId: null,
+        preview: null,
+        status: deferred ? 'failed' : 'sending',
+        attempts: 0,
+        createdAt: new Date().toISOString(),
+        nextRetryAt: 0,
+      };
+      if (key && (await outbox.enqueue(key, entry))) {
+        if (deferred) return false;
+        const result = await outbox.sendEntry(key, entry.localId, senderFor(key));
+        return !!result?.ok;
+      }
+      // Fără coadă (scrierea locală a eșuat): trimitere directă, ca înainte — dar eroarea se
+      // vede. Callback-urile din `ctx` sunt ale firului lotului, deci ținta e cea corectă.
+      const result =
+        att.kind === 'image'
+          ? await ctx.onSendImage?.({ uri: att.localUri, width: att.width, height: att.height })
+          : await ctx.onSendFile?.({
+              uri: att.localUri,
+              name: att.name,
+              size: att.size,
+              mimeType: att.mimeType,
+              durationS: att.durationS ?? null,
+            });
+      if (result && !result.ok) {
+        Alert.alert(ctx.t('outbox.sendFailed'), readableError(result.error));
+        return false;
+      }
+      return true;
+    },
+    [senderFor],
+  );
+
+  // Tap pe bula netrimisă = retrimite acum (încercările o iau de la capăt).
+  const retryPending = useCallback(
+    (localId: string) => {
+      const key = latest.current?.outboxKey;
+      if (key) void outbox.sendEntry(key, localId, senderFor(key), { manual: true });
+    },
+    [senderFor],
+  );
+  // Apăsare lungă pe bula netrimisă = o scoate din coadă, cu confirmare.
+  const discardPending = useCallback((localId: string) => {
+    const h = latest.current;
+    const key = h?.outboxKey;
+    if (!h || !key) return;
+    Alert.alert(h.t('outbox.discardTitle'), h.t('outbox.discardBody'), [
+      { text: h.t('photos.cancel'), style: 'cancel' },
+      {
+        text: h.t('chat.delete'),
+        style: 'destructive',
+        onPress: () => {
+          void outbox.remove(key, localId);
+        },
+      },
+    ]);
+  }, []);
+
   // Android (SDK 54, edge-to-edge): fereastra NU se redimensionează la tastatură, iar
   // KeyboardAvoidingView e defect în ambele moduri ('height' nu-și revine la închidere,
   // 'padding' lasă padding rezidual). Măsurătorile de poziție (measureInWindow) sunt și
@@ -1675,24 +2539,22 @@ export function ChatScreen<M extends ChatMessageBase>({
   const enterEditMode = useCallback((m: M) => {
     setReplyTarget(null);
     setEditTarget(m);
-    setText(m.content);
+    composerRef.current?.setText(m.content);
   }, []);
   const cancelEdit = useCallback(() => {
     setEditTarget(null);
-    setText('');
+    composerRef.current?.setText('');
   }, []);
-  const enterReplyMode = useCallback(
-    (m: M) => {
-      // Ca pe WhatsApp (cerere 7 aug): textul deja tastat SUPRAVIEȚUIEȘTE intrării în
-      // modul reply — swipe-ul pe o bulă nu-ți mai șterge mesajul din compozitor.
-      // Excepție: veneam din modul editare — acolo inputul ținea conținutul VECHIULUI
-      // mesaj, care nu trebuie să devină din greșeală mesajul nou.
-      if (editTarget) setText('');
-      setEditTarget(null);
-      setReplyTarget(m);
-    },
-    [editTarget]
-  );
+  // Stabil (1.1, 7.4): e handler-ul de swipe al fiecărui rând — citește modul curent din `latest`.
+  const enterReplyMode = useCallback((m: M) => {
+    // Ca pe WhatsApp (cerere 7 aug): textul deja tastat SUPRAVIEȚUIEȘTE intrării în
+    // modul reply — swipe-ul pe o bulă nu-ți mai șterge mesajul din compozitor.
+    // Excepție: veneam din modul editare — acolo inputul ținea conținutul VECHIULUI
+    // mesaj, care nu trebuie să devină din greșeală mesajul nou.
+    if (latest.current?.editTarget) composerRef.current?.setText('');
+    setEditTarget(null);
+    setReplyTarget(m);
+  }, []);
   const cancelReply = useCallback(() => setReplyTarget(null), []);
 
   // Partajare în afara aplicației (7 sept): cardul de persoană recomandată → sheet-ul
@@ -1980,6 +2842,10 @@ export function ChatScreen<M extends ChatMessageBase>({
   // ecranul primește fișierul deja valid și doar îl urcă în tabelul lui.
   const handlePickFile = useCallback(async () => {
     if (!onSendFile || uploading) return;
+    // Firul (cheia + callback-urile) ÎNAINTE de picker: cât e deschis, ecranul poate trece
+    // în alt fir (ruta refolosită, fără remontare) — fișierul aparține firului de acum.
+    const ctx = latest.current;
+    if (!ctx) return;
     const result = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
@@ -2008,16 +2874,27 @@ export function ChatScreen<M extends ChatMessageBase>({
       return;
     }
     setUploading(true);
-    await onSendFile({ uri: asset.uri, name: asset.name, size, mimeType: asset.mimeType });
-    setUploading(false);
-  }, [onSendFile, uploading, t]);
+    try {
+      // 1.1 (7.1): prin coada locală — la eșec rămâne bula „Netrimis", nu se pierde nimic.
+      // Firul s-a schimbat cât era deschis pickerul → intră ca „Netrimis" în firul lui
+      // (cel de dinaintea pickerului), fără să plece acum.
+      await sendAttachment(
+        { kind: 'file', localUri: asset.uri, name: asset.name, size, mimeType: asset.mimeType },
+        latest.current?.outboxKey !== ctx.outboxKey,
+        ctx,
+      );
+    } finally {
+      setUploading(false);
+    }
+  }, [onSendFile, uploading, t, sendAttachment]);
 
   // Video (23 aug): EXACT conducta de fișiere (uploadFile + mesaj cu file_path) —
   // nicio coloană nouă în DB. Compresie reală nu există în Expo Go, deci plafonul
   // de mărime E limita (50 MB, plafon propriu — cel de fișiere rămâne 10).
   // Videoclipurile sosesc din pickerul MIXT de galerie sau din „Filmează".
+  // `ctx` = firul de dinaintea pickerului (vezi handlePickFile); lipsă = firul curent.
   const sendVideos = useCallback(
-    async (videos: PickedVideo[]) => {
+    async (videos: PickedVideo[], batchCtx?: ChatLatest<M> | null) => {
       if (!onSendFile || videos.length === 0) return;
       const sendable = videos.filter((v) => v.size <= MAX_VIDEO_SIZE);
       if (sendable.length < videos.length) {
@@ -2027,22 +2904,37 @@ export function ChatScreen<M extends ChatMessageBase>({
         );
       }
       if (sendable.length === 0) return;
+      const ctx = batchCtx ?? latest.current;
+      if (!ctx) return;
       setUploading(true);
-      // Secvențial, ca pozele: fiecare videoclip devine mesajul lui, în ordine.
+      try {
+      // Secvențial, ca pozele: fiecare videoclip devine mesajul lui, în ordine (prin coadă).
+      // Dacă firul s-a schimbat (cât era deschis pickerul sau în timpul lotului), videoclipurile
+      // intră ca „Netrimis" în firul lotului, fără să plece acum.
+      let failed = false;
       for (const video of sendable) {
-        await onSendFile({
-          uri: video.uri,
-          name: video.name,
-          size: video.size,
-          mimeType: video.mimeType,
-          // Durata (secunde) pentru meta „Videoclip · 0:12" + badge-ul de pe bulă.
-          durationS:
-            video.durationMs !== null ? Math.round(video.durationMs / 1000) : null,
-        });
+        if (latest.current?.outboxKey !== ctx.outboxKey) failed = true;
+        const ok = await sendAttachment(
+          {
+            kind: 'file',
+            localUri: video.uri,
+            name: video.name,
+            size: video.size,
+            mimeType: video.mimeType,
+            // Durata (secunde) pentru meta „Videoclip · 0:12" + badge-ul de pe bulă.
+            durationS:
+              video.durationMs !== null ? Math.round(video.durationMs / 1000) : null,
+          },
+          failed,
+          ctx,
+        );
+        if (!ok) failed = true;
       }
-      setUploading(false);
+      } finally {
+        setUploading(false);
+      }
     },
-    [onSendFile, t],
+    [onSendFile, t, sendAttachment],
   );
 
   // Tap pe bula-video → playerul full-screen. URL-ul vine de regulă din batch-ul
@@ -2118,31 +3010,10 @@ export function ChatScreen<M extends ChatMessageBase>({
   // 19.6: un atașament în așteptare se poate trimite și FĂRĂ text — mesajul e doar
   // cardul (CHECK-ul din DB acceptă asta prin migrarea 196b).
   const hasPendingAttach = !!(pendingListing || pendingMechanic || pendingAnnouncement);
-  const sendEnabled = (!!text.trim() || (hasPendingAttach && !editTarget)) && !sending;
 
-  // ── Menționări „@" (10 sept 2026, ca pe WhatsApp) ─────────────────────────────
-  // Cursorul: ținut în ref (sursa de adevăr) + în state (derivarea interogării
-  // trebuie să re-randeze). onSelectionChange e autoritatea; onChangeText îl
-  // avansează provizoriu (ordinea celor două evenimente diferă între platforme,
-  // iar pe web caret-ul nu emite mereu onSelectionChange) — „la coadă rămâne la coadă".
-  const selectionRef = useRef({ start: 0, end: 0 });
-  const [cursor, setCursor] = useState(0);
-  // Selecția forțată O SINGURĂ dată după inserarea unei menționări (cursorul după
-  // „@Nume "); revine la undefined la primul onSelectionChange, ca inputul să
-  // rămână necontrolat pe selecție (controlat permanent = salturi pe Android).
-  const [pendingSelection, setPendingSelection] = useState<{ start: number; end: number } | null>(
-    null,
-  );
-  // Persoanele alese în timpul compunerii (id → nume); la trimitere rămân doar cele
-  // al căror „@Nume" mai există în text (userul poate șterge o menționare manual).
-  const pickedMentions = useRef(new Map<string, string>());
+  // ── Menționări „@" (10 sept 2026): textul și cursorul stau în ChatComposer (1.1, 7.4);
+  // aici rămân căutarea pe server și fereastra, care se desenează peste capătul listei.
   const mentionsEnabled = !!(mentionCandidates?.length || searchMentionUsers);
-  const mention = useMemo(
-    () => (mentionsEnabled && !editTarget ? mentionQueryAt(text, cursor) : null),
-    [mentionsEnabled, editTarget, text, cursor],
-  );
-  const mentionQuery = mention?.query ?? null;
-
   // Rezultatele de pe server pentru interogarea curentă (≥ 2 litere, debounce scurt —
   // lista locală răspunde instant, serverul completează numele care nu sunt în chat).
   const [remoteUsers, setRemoteUsers] = useState<MentionUser[]>([]);
@@ -2165,114 +3036,431 @@ export function ChatScreen<M extends ChatMessageBase>({
   }, [mentionQuery, searchMentionUsers]);
 
   const mentionUsers = useMemo(() => {
-    if (!mention) return [];
+    if (mentionQuery === null) return [];
     const local = mentionCandidates ?? [];
     const seen = new Set(local.map((u) => u.id));
     const merged = [
       ...local,
       ...remoteUsers.filter((u) => u.id !== currentUserId && !seen.has(u.id)),
     ];
-    return rankMentionCandidates(mention.query, merged, 10);
-  }, [mention, mentionCandidates, remoteUsers, currentUserId]);
+    return rankMentionCandidates(mentionQuery, merged, 10);
+  }, [mentionQuery, mentionCandidates, remoteUsers, currentUserId]);
 
-  const handleChangeText = useCallback(
-    (next: string) => {
-      const sel = selectionRef.current;
-      const atEnd = sel.end >= text.length;
-      const pos = atEnd
-        ? next.length
-        : Math.max(0, Math.min(sel.end + (next.length - text.length), next.length));
-      selectionRef.current = { start: pos, end: pos };
-      setCursor(pos);
-      setText(next);
-      // Orice tastare după o inserare = selecția forțată nu mai are rost (plasă de
-      // siguranță dacă onSelectionChange n-a apucat s-o stingă).
-      setPendingSelection((prev) => (prev ? null : prev));
-    },
-    [text],
-  );
 
-  const handleSelectionChange = useCallback(
-    (e: { nativeEvent: { selection: { start: number; end: number } } }) => {
-      selectionRef.current = e.nativeEvent.selection;
-      setCursor(e.nativeEvent.selection.end);
-      setPendingSelection((prev) => (prev ? null : prev));
-    },
-    [],
-  );
+  const insertMention = useCallback((user: MentionUser) => {
+    composerRef.current?.insertMention(user);
+  }, []);
 
-  // Tap pe o persoană din fereastră: „@interogare" devine „@Nume " (cu spațiu, ca
-  // tastarea să continue natural), cursorul sare după ea, tastatura rămâne deschisă.
-  const insertMention = useCallback(
-    (user: MentionUser) => {
-      const m = mentionQueryAt(text, cursor);
-      if (!m) return;
-      const inserted = `@${user.full_name} `;
-      const next = text.slice(0, m.start) + inserted + text.slice(Math.min(cursor, text.length));
-      const pos = m.start + inserted.length;
-      pickedMentions.current.set(user.id, user.full_name);
-      selectionRef.current = { start: pos, end: pos };
-      setCursor(pos);
-      setText(next);
-      setPendingSelection({ start: pos, end: pos });
-      composerRef.current?.focus();
-    },
-    [text, cursor],
-  );
+  // Mesajul a plecat (în coadă sau trimis direct): compozitorul se golește, iar reply-ul și
+  // cardul atașat sunt „consumate" — doar dacă sunt tot cele trimise.
+  const consumeComposer = useCallback((sent: ChatOutgoing) => {
+    composerRef.current?.clearIfText(sent.content);
+    setReplyTarget((current) => (current && current.id === sent.replyToId ? null : current));
+    const h = latest.current;
+    if (!h) return;
+    if (sent.listingId && h.pendingListing?.id === sent.listingId) h.onClearPendingListing?.();
+    if (sent.mechanicId && h.pendingMechanic?.id === sent.mechanicId) h.onClearPendingMechanic?.();
+    if (sent.announcementId && h.pendingAnnouncement?.id === sent.announcementId) {
+      h.onClearPendingAnnouncement?.();
+    }
+  }, []);
 
-  async function handleSend() {
-    const trimmed = text.trim();
-    if (sending) return;
-    if (editTarget && onEditMessage) {
-      // Mod editare: confirmarea de send aplică editarea în loc să trimită un mesaj nou.
-      if (!trimmed) return;
+  // 1.1 (7.1, AUDIT E.21): compozitorul se golește abia după ce mesajul e în coada locală
+  // (AsyncStorage). Înainte se golea ÎNAINTEA insert-ului, iar o eroare pierdea mesajul.
+  const handleSubmit = useCallback(
+    async (trimmed: string, mentions: MessageMention[]) => {
+      const h = latest.current;
+      if (!h || sendingRef.current) return;
+      const target = h.editTarget;
+      if (target && h.onEditMessage) {
+        // Mod editare: confirmarea de send aplică editarea în loc să trimită un mesaj nou.
+        if (!trimmed) return;
+        sendingRef.current = true;
+        setSending(true);
+        setEditTarget(null);
+        composerRef.current?.clear();
+        let result: ChatEditResult;
+        try {
+          result = await h.onEditMessage(target, trimmed);
+        } catch (e) {
+          result = { ok: false, error: e instanceof Error ? e.message : String(e) };
+        } finally {
+          sendingRef.current = false;
+          setSending(false);
+        }
+        // Firul s-a schimbat între timp: nu repunem în compozitor un mesaj din alt fir.
+        if (!result.ok && latest.current?.outboxKey === h.outboxKey) {
+          // Nimic pierdut: dacă între timp nu s-a început altceva, revenim în modul editare
+          // cu textul nou, gata de reîncercat.
+          const now = latest.current;
+          if (!composerRef.current?.getText() && !now?.editTarget && !now?.replyTarget) {
+            setEditTarget(target);
+            composerRef.current?.setText(trimmed);
+          }
+        }
+        if (!result.ok) {
+          Alert.alert(
+            h.t('outbox.editFailed'),
+            result.error ? readableError(result.error) : h.t('outbox.editFailedBody'),
+          );
+        }
+        return;
+      }
+      if (!trimmed && !h.hasPendingAttach) return;
+      const sent: ChatOutgoing = {
+        content: trimmed,
+        replyToId: h.replyTarget?.id ?? null,
+        mentions: mentions.length > 0 ? mentions : null,
+        listingId: h.pendingListing?.id ?? null,
+        mechanicId: h.pendingMechanic?.id ?? null,
+        announcementId: h.pendingAnnouncement?.id ?? null,
+      };
+      sendingRef.current = true;
       setSending(true);
-      const target = editTarget;
-      setEditTarget(null);
-      setText('');
-      await onEditMessage(target, trimmed);
-    } else {
-      if (!trimmed && !hasPendingAttach) return;
-      setSending(true);
-      const replyId = replyTarget?.id ?? null;
-      // Doar menționările care au supraviețuit în text (id + numele exact inserat).
-      const mentions = [...pickedMentions.current]
-        .filter(([, name]) => trimmed.includes(`@${name}`))
-        .map(([id, name]) => ({ id, name }));
-      pickedMentions.current.clear();
-      selectionRef.current = { start: 0, end: 0 };
-      setCursor(0);
-      setText('');
-      setReplyTarget(null);
-      await onSend(trimmed, replyId, mentions.length > 0 ? mentions : null);
-    }
-    setSending(false);
-  }
+      const key = h.outboxKey;
+      const listing = h.pendingListing;
+      const mechanic = h.pendingMechanic;
+      const announcement = h.pendingAnnouncement;
+      const entry: OutboxEntry = {
+        ...sent,
+        localId: outbox.newLocalId(),
+        attachments: [],
+        preview: {
+          listing: listing
+            ? { id: listing.id, title: listing.title, price: listing.price, currency: listing.currency }
+            : null,
+          mechanic: mechanic
+            ? {
+                id: mechanic.id,
+                full_name: mechanic.full_name,
+                deleted_at: mechanic.deleted_at,
+                role: mechanic.role,
+                rating_avg: mechanic.rating_avg,
+                rating_count: mechanic.rating_count,
+              }
+            : null,
+          announcement: announcement
+            ? { id: announcement.id, location: announcement.location }
+            : null,
+        },
+        status: 'sending',
+        attempts: 0,
+        createdAt: new Date().toISOString(),
+        nextRetryAt: 0,
+      };
+      try {
+        if (key && (await outbox.enqueue(key, entry))) {
+          // Compozitorul e al firului curent: îl golim doar dacă e tot firul mesajului.
+          if (latest.current?.outboxKey === key) consumeComposer(sent);
+          await outbox.sendEntry(key, entry.localId, senderFor(key));
+        } else {
+          // Fără coadă (scrierea locală a eșuat): trimitere directă (callback-ul firului
+          // mesajului, din instantaneul `h`); textul rămâne în compozitor până la succes.
+          const result = await h.onSend(sent);
+          if (result.ok) {
+            if (latest.current?.outboxKey === key) consumeComposer(sent);
+          } else {
+            Alert.alert(h.t('outbox.sendFailed'), readableError(result.error));
+          }
+        }
+      } finally {
+        sendingRef.current = false;
+        setSending(false);
+      }
+    },
+    [consumeComposer, senderFor],
+  );
 
-  async function sendImages(images: PickedImage[]) {
-    if (!onSendImage || images.length === 0) return;
-    // Max 10 poze deodată (Faza 14.8); pe Android pickerul poate ignora selectionLimit.
-    const capped = images.slice(0, MAX_PHOTOS);
-    if (images.length > MAX_PHOTOS) {
-      Alert.alert(t('photos.limitReachedTitle'), t('photos.limitReached', { max: MAX_PHOTOS }));
-    }
-    setUploading(true);
-    // Secvențial: fiecare poză devine mesajul ei, în ordinea aleasă.
-    for (const image of capped) {
-      await onSendImage(image);
-    }
-    setUploading(false);
-  }
+  // `batchCtx` = firul de dinaintea pickerului (vezi handlePickFile); lipsă = firul curent.
+  const sendImages = useCallback(
+    async (images: PickedImage[], batchCtx?: ChatLatest<M> | null) => {
+      if (!onSendImage || images.length === 0) return;
+      // Max 10 poze deodată (Faza 14.8); pe Android pickerul poate ignora selectionLimit.
+      const capped = images.slice(0, MAX_PHOTOS);
+      if (images.length > MAX_PHOTOS) {
+        Alert.alert(t('photos.limitReachedTitle'), t('photos.limitReached', { max: MAX_PHOTOS }));
+      }
+      const ctx = batchCtx ?? latest.current;
+      if (!ctx) return;
+      setUploading(true);
+      try {
+        // Secvențial: fiecare poză devine mesajul ei, în ordinea aleasă (prin coadă, 1.1).
+        // Dacă firul s-a schimbat (cât era deschis pickerul sau în timpul lotului), pozele
+        // intră ca „Netrimis" în firul lotului, fără să plece acum.
+        let failed = false;
+        for (const image of capped) {
+          if (latest.current?.outboxKey !== ctx.outboxKey) failed = true;
+          const ok = await sendAttachment(
+            { kind: 'image', localUri: image.uri, width: image.width, height: image.height },
+            failed,
+            ctx,
+          );
+          if (!ok) failed = true;
+        }
+      } finally {
+        setUploading(false);
+      }
+    },
+    [onSendImage, t, sendAttachment],
+  );
 
   // Sheet tematizat în locul fostului Alert.alert nativ (nestilizabil, fără
   // închidere la tap în afară); ActionSheet gestionează și amânarea pe iOS
   // (pickerul nativ nu se poate prezenta peste un Modal care încă se închide).
   const [photoSourceOpen, setPhotoSourceOpen] = useState(false);
 
-  function handleAttach() {
+  const handleAttach = useCallback(() => {
     if (uploading) return;
     setPhotoSourceOpen(true);
-  }
+  }, [uploading]);
+  const openAttachSheet = useCallback(() => setAttachOpen(true), []);
+
+  latest.current = {
+    t,
+    outboxKey,
+    editTarget,
+    replyTarget,
+    hasPendingAttach,
+    pendingListing,
+    pendingMechanic,
+    pendingAnnouncement,
+    onClearPendingListing,
+    onClearPendingMechanic,
+    onClearPendingAnnouncement,
+    onSend,
+    onSendImage,
+    onSendFile,
+    onEditMessage,
+    onPressUser,
+    onPressListing,
+    onPressMechanic,
+    onPressAnnouncement,
+    readOnly,
+    viewerPhotos,
+    scrollToQuoted,
+    handleOpenFile,
+    handleOpenVideo,
+  };
+
+  // ── 1.1 (7.4): handler-e stabile pentru rânduri (MessageRow e memoizat) ─────────────
+  const openImage = useCallback((m: M) => {
+    const index = latest.current?.viewerPhotos.findIndex((p) => p.id === m.id) ?? -1;
+    if (index >= 0) setViewerAt(index);
+  }, []);
+  const openMenu = useCallback((m: M) => setMenuMessage(m), []);
+  const pressQuote = useCallback((m: M) => {
+    if (m.reply_to_id) latest.current?.scrollToQuoted(m.reply_to_id);
+  }, []);
+  const pressUser = useCallback((m: M) => latest.current?.onPressUser?.(m.sender_id, m), []);
+  const openFile = useCallback((m: M) => {
+    void latest.current?.handleOpenFile(m);
+  }, []);
+  const openVideo = useCallback((m: M) => {
+    void latest.current?.handleOpenVideo(m);
+  }, []);
+  const pressListing = useCallback((id: string) => latest.current?.onPressListing?.(id), []);
+  const pressMechanic = useCallback(
+    (id: string, role: string) => latest.current?.onPressMechanic?.(id, role),
+    [],
+  );
+  const pressAnnouncement = useCallback(
+    (id: string) => latest.current?.onPressAnnouncement?.(id),
+    [],
+  );
+  const pressPhotoPlaceholder = useCallback(() => {
+    const ro = latest.current?.readOnly;
+    (ro?.onPressPhoto ?? ro?.onPress)?.();
+  }, []);
+  const isReadOnly = !!readOnly;
+  const hasUserPress = !!onPressUser;
+  const hasListingPress = !!onPressListing;
+  const hasMechanicPress = !!onPressMechanic;
+  const hasAnnouncementPress = !!onPressAnnouncement;
+
+  const renderItem = useCallback(
+    ({ item, index }: ListRenderItemInfo<M>) => {
+      const avatarPath = renderSenderAvatarPath?.(item) ?? null;
+      // Lista e inversată: item-ul următor din array e mesajul mai VECHI.
+      // Primul mesaj al fiecărei zile primește pastila de dată deasupra.
+      const older = reversedMessages[index + 1];
+      const showDate = !older || dayKey(older.created_at) !== dayKey(item.created_at);
+      // Grupare WhatsApp (stil 7a): mesajele consecutive de la același expeditor
+      // formează un grup; grupul se rupe la zi nouă, la alt expeditor și la
+      // separatorul „Mesaje noi" (un grup tăiat de separator ar rămâne fără nume).
+      // Intenționat FĂRĂ prag de timp (scos 9 aug): pauzele >10 min spațiau
+      // vizual mesajele aceluiași expeditor — separarea în timp o dă pastila de zi.
+      const isFirstOfGroup =
+        showDate ||
+        !older ||
+        older.sender_id !== item.sender_id ||
+        item.id === unreadAnchorId;
+      const isMe = item.sender_id === currentUserId;
+      const cover = listingCoverPath(item.listing);
+      // Miniaturile din citat (24 aug): URL-urile semnate ale media citate.
+      const rt = replyOf(item);
+      return (
+        <MessageRow
+          item={item}
+          isMe={isMe}
+          isFirstOfGroup={isFirstOfGroup}
+          dateLabel={showDate ? dateLabel(item.created_at) : null}
+          isUnreadAnchor={item.id === unreadAnchorId}
+          showSenderAvatar={!!renderSenderAvatarPath}
+          senderName={renderSenderName?.(item) ?? null}
+          senderRole={!isMe && renderSenderRole ? renderSenderRole(item) : null}
+          senderAvatarUrl={avatarPath ? urls[avatarPath] : undefined}
+          imageUrl={item.image_path ? urls[item.image_path] : undefined}
+          mechanicAvatarUrl={
+            item.mechanic?.avatar_path ? urls[item.mechanic.avatar_path] : undefined
+          }
+          listingCoverUrl={cover ? urls[cover] : undefined}
+          fileUrl={item.file_path ? urls[item.file_path] : undefined}
+          quoteImageUrl={rt?.image_path ? urls[rt.image_path] : undefined}
+          quoteVideoUrl={rt?.file_path ? urls[rt.file_path] : undefined}
+          quoteIsMine={rt?.sender_id === currentUserId}
+          readState={
+            readReceipts && isMe && !item.deleted_at
+              ? readCursor &&
+                new Date(readCursor).getTime() > new Date(item.created_at).getTime()
+                ? 'read'
+                : 'sent'
+              : null
+          }
+          flashNonce={flash?.id === item.id ? flash.nonce : 0}
+          downloadingFile={downloadingFileId === item.id}
+          photoPlaceholderLabel={
+            isReadOnly && item.has_image && !item.deleted_at ? t('guest.photoPlaceholder') : null
+          }
+          onPressPhotoPlaceholder={isReadOnly ? pressPhotoPlaceholder : undefined}
+          onOpenImage={openImage}
+          onOpenMenu={isReadOnly ? undefined : openMenu}
+          onSwipeReply={isReadOnly ? undefined : enterReplyMode}
+          onPressQuote={pressQuote}
+          onPressUser={hasUserPress ? pressUser : undefined}
+          onOpenFile={openFile}
+          onOpenVideo={openVideo}
+          onPressListing={hasListingPress ? pressListing : undefined}
+          onPressMechanic={hasMechanicPress ? pressMechanic : undefined}
+          onPressAnnouncement={hasAnnouncementPress ? pressAnnouncement : undefined}
+        />
+      );
+    },
+    [
+      reversedMessages,
+      unreadAnchorId,
+      currentUserId,
+      dateLabel,
+      renderSenderAvatarPath,
+      renderSenderName,
+      renderSenderRole,
+      urls,
+      readReceipts,
+      readCursor,
+      flash,
+      downloadingFileId,
+      isReadOnly,
+      t,
+      pressPhotoPlaceholder,
+      openImage,
+      openMenu,
+      enterReplyMode,
+      pressQuote,
+      hasUserPress,
+      pressUser,
+      openFile,
+      openVideo,
+      hasListingPress,
+      pressListing,
+      hasMechanicPress,
+      pressMechanic,
+      hasAnnouncementPress,
+      pressAnnouncement,
+    ],
+  );
+
+  // 1.1 (7.1): bulele din coada locală, sub ultimul mesaj de pe server (ListHeaderComponent
+  // = capătul de JOS al listei inversate). Gruparea și pastila de zi continuă de la el.
+  const pendingHeader = useMemo(() => {
+    if (outboxEntries.length === 0) return null;
+    const sorted = [...outboxEntries].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    let prev: { created_at: string; sender_id: string } | undefined = reversedMessages[0];
+    const rows = sorted.map((entry) => {
+      const showDate = !prev || dayKey(prev.created_at) !== dayKey(entry.createdAt);
+      const isFirstOfGroup = showDate || !prev || prev.sender_id !== currentUserId;
+      prev = { created_at: entry.createdAt, sender_id: currentUserId };
+      const quoted = entry.replyToId
+        ? messages.find((m) => m.id === entry.replyToId)
+        : undefined;
+      const quote = quoted
+        ? quoteFrom(
+            quoted,
+            renderSenderName?.(quoted) ??
+              (quoted.sender_id === currentUserId ? t('chat.you') : title),
+          )
+        : null;
+      return (
+        <PendingRow
+          key={entry.localId}
+          entry={entry}
+          senderId={currentUserId}
+          quote={quote}
+          quoteImageUrl={quote?.image_path ? urls[quote.image_path] : undefined}
+          quoteVideoUrl={quote?.file_path ? urls[quote.file_path] : undefined}
+          quoteIsMine={quote?.sender_id === currentUserId}
+          isFirstOfGroup={isFirstOfGroup}
+          dateLabel={showDate ? dateLabel(entry.createdAt) : null}
+          onRetry={retryPending}
+          onDiscard={discardPending}
+        />
+      );
+    });
+    return <View>{rows}</View>;
+  }, [
+    outboxEntries,
+    reversedMessages,
+    messages,
+    currentUserId,
+    renderSenderName,
+    t,
+    title,
+    urls,
+    dateLabel,
+    retryPending,
+    discardPending,
+  ]);
+
+  const listFooter = useMemo(
+    () =>
+      loadingMore ? (
+        <View style={styles.loadingMore}>
+          <ActivityIndicator size="small" color={theme.textSecondary} />
+        </View>
+      ) : null,
+    [loadingMore, theme.textSecondary],
+  );
+
+  // Compozitor înghețat (doar la blocker) — bara îi ține locul, compozitorul rămâne montat.
+  const blockedBar = useMemo(
+    () =>
+      peerBlocked ? (
+      <View
+        style={[
+          styles.blockedBar,
+          { backgroundColor: theme.barBackground, borderTopColor: theme.separator },
+        ]}>
+        <MaterialIcons name="block" size={16} color={theme.textSecondary} />
+        <Text style={[styles.blockedBarText, { color: theme.textSecondary }]}>
+          {t('block.bannerText')}
+        </Text>
+        <Pressable onPress={handleUnblockPeer} hitSlop={8}>
+          <Text style={[styles.blockedBarAction, { color: theme.brand }]}>
+            {t('block.unblock')}
+          </Text>
+        </Pressable>
+      </View>
+      ) : null,
+    [peerBlocked, theme, t, handleUnblockPeer],
+  );
 
   // Eticheta acoperă textul copiilor → include și subtitlul, altfel cititorul de ecran îl sare.
   const headerA11yLabel = subtitle ? `${title}, ${subtitle}` : title;
@@ -2374,7 +3562,7 @@ export function ChatScreen<M extends ChatMessageBase>({
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={theme.brand} />
           </View>
-        ) : messages.length === 0 ? (
+        ) : messages.length === 0 && outboxEntries.length === 0 ? (
           <View style={styles.centered}>
             <MaterialIcons name="chat-bubble-outline" size={48} color={theme.textSecondary} />
             <ThemedText themeColor="textSecondary" type="small" style={styles.emptyText}>
@@ -2385,7 +3573,7 @@ export function ChatScreen<M extends ChatMessageBase>({
           <FlatList
             ref={listRef}
             data={reversedMessages}
-            keyExtractor={(item) => item.id}
+            keyExtractor={messageKey}
             inverted
             // Pe web bara de scroll a browserului stă permanent peste chat — o
             // ascundem (lista rămâne derulabilă); pe telefon indicatorul nativ rămâne.
@@ -2403,136 +3591,11 @@ export function ChatScreen<M extends ChatMessageBase>({
             scrollEventThrottle={64}
             // Ținta (citat/ancoră necitite) poate fi nerandată → salt aproximativ + retry.
             onScrollToIndexFailed={handleScrollToIndexFailed}
-            ListFooterComponent={
-              loadingMore ? (
-                <View style={styles.loadingMore}>
-                  <ActivityIndicator size="small" color={theme.textSecondary} />
-                </View>
-              ) : null
-            }
-            renderItem={({ item, index }) => {
-              const avatarPath = renderSenderAvatarPath?.(item) ?? null;
-              // Lista e inversată: item-ul următor din array e mesajul mai VECHI.
-              // Primul mesaj al fiecărei zile primește pastila de dată deasupra.
-              const older = reversedMessages[index + 1];
-              const showDate = !older || dayKey(older.created_at) !== dayKey(item.created_at);
-              // Grupare WhatsApp (stil 7a): mesajele consecutive de la același expeditor
-              // formează un grup; grupul se rupe la zi nouă, la alt expeditor și la
-              // separatorul „Mesaje noi" (un grup tăiat de separator ar rămâne fără nume).
-              // Intenționat FĂRĂ prag de timp (scos 9 aug): pauzele >10 min spațiau
-              // vizual mesajele aceluiași expeditor — separarea în timp o dă pastila de zi.
-              const isFirstOfGroup =
-                showDate ||
-                !older ||
-                older.sender_id !== item.sender_id ||
-                item.id === unreadAnchorId;
-              return (
-              // 14px între grupuri, 3px între mesajele aceluiași grup (spațierea 7a).
-              <View style={isFirstOfGroup ? styles.groupSpacing : styles.messageSpacing}>
-              {showDate ? (
-                <View style={styles.dateRow}>
-                  <View
-                    style={[
-                      styles.datePill,
-                      { backgroundColor: theme.backgroundElement },
-                      scheme === 'light' && Shadows.chip,
-                    ]}>
-                    <Text style={[styles.datePillText, { color: theme.textTertiary }]}>
-                      {dateLabel(item.created_at)}
-                    </Text>
-                  </View>
-                </View>
-              ) : null}
-              {/* Separatorul „Mesaje noi" — deasupra primului necitit de la deschidere. */}
-              {item.id === unreadAnchorId ? (
-                <View style={styles.dateRow}>
-                  <View
-                    style={[
-                      styles.datePill,
-                      { backgroundColor: theme.brandSoft },
-                      scheme === 'light' && Shadows.chip,
-                    ]}>
-                    <Text style={[styles.datePillText, { color: theme.brand }]}>
-                      {t('chat.newMessages')}
-                    </Text>
-                  </View>
-                </View>
-              ) : null}
-              <MessageBubble
-                message={item}
-                isMe={item.sender_id === currentUserId}
-                isFirstOfGroup={isFirstOfGroup}
-                showSenderAvatar={!!renderSenderAvatarPath}
-                senderName={renderSenderName?.(item) ?? null}
-                senderRole={
-                  item.sender_id !== currentUserId && renderSenderRole
-                    ? renderSenderRole(item)
-                    : null
-                }
-                senderAvatarUrl={avatarPath ? urls[avatarPath] : undefined}
-                imageUrl={item.image_path ? urls[item.image_path] : undefined}
-                onPressImage={() => {
-                  const index = viewerPhotos.findIndex((p) => p.id === item.id);
-                  if (index >= 0) setViewerAt(index);
-                }}
-                onLongPress={readOnly ? undefined : () => setMenuMessage(item)}
-                onSwipeReply={
-                  !readOnly && !item.deleted_at ? () => enterReplyMode(item) : undefined
-                }
-                photoPlaceholder={
-                  readOnly && item.has_image && !item.deleted_at
-                    ? {
-                        label: t('guest.photoPlaceholder'),
-                        onPress: readOnly.onPressPhoto ?? readOnly.onPress,
-                      }
-                    : undefined
-                }
-                onPressQuote={
-                  item.reply_to_id ? () => scrollToQuoted(item.reply_to_id!) : undefined
-                }
-                onPressAvatar={
-                  onPressUser ? () => onPressUser(item.sender_id, item) : undefined
-                }
-                onPressListing={onPressListing}
-                onPressMechanic={onPressMechanic}
-                onPressAnnouncement={onPressAnnouncement}
-                mechanicAvatarUrl={
-                  item.mechanic?.avatar_path ? urls[item.mechanic.avatar_path] : undefined
-                }
-                listingCoverUrl={(() => {
-                  const cover = listingCoverPath(item.listing);
-                  return cover ? urls[cover] : undefined;
-                })()}
-                onPressFile={
-                  !item.deleted_at && item.file_path ? () => handleOpenFile(item) : undefined
-                }
-                downloadingFile={downloadingFileId === item.id}
-                fileUrl={item.file_path ? urls[item.file_path] : undefined}
-                onPressVideo={
-                  !item.deleted_at && item.file_path ? () => handleOpenVideo(item) : undefined
-                }
-                {...(() => {
-                  // Miniaturile din citat (24 aug): URL-urile semnate ale media citate.
-                  const rt = replyOf(item);
-                  return {
-                    quoteImageUrl: rt?.image_path ? urls[rt.image_path] : undefined,
-                    quoteVideoUrl: rt?.file_path ? urls[rt.file_path] : undefined,
-                    quoteIsMine: rt?.sender_id === currentUserId,
-                  };
-                })()}
-                readState={
-                  readReceipts && item.sender_id === currentUserId && !item.deleted_at
-                    ? readCursor &&
-                      new Date(readCursor).getTime() > new Date(item.created_at).getTime()
-                      ? 'read'
-                      : 'sent'
-                    : null
-                }
-                flashNonce={flash?.id === item.id ? flash.nonce : 0}
-              />
-              </View>
-              );
-            }}
+            // 1.1 (7.1): bulele din coada locală — capătul de jos al listei inversate.
+            ListHeaderComponent={pendingHeader}
+            ListFooterComponent={listFooter}
+            // 1.1 (7.4): renderItem stabil + rânduri memoizate (MessageRow).
+            renderItem={renderItem}
           />
         )}
         {/* Butonul „la ultimul mesaj" (15 sept): plutește în colțul din dreapta-jos al
@@ -2541,7 +3604,7 @@ export function ChatScreen<M extends ChatMessageBase>({
         {awayFromBottom &&
         !loading &&
         messages.length > 0 &&
-        !(mention && mentionUsers.length > 0) ? (
+        mentionUsers.length === 0 ? (
           <Pressable
             onPress={scrollToBottom}
             hitSlop={8}
@@ -2556,7 +3619,7 @@ export function ChatScreen<M extends ChatMessageBase>({
           </Pressable>
         ) : null}
         {/* Fereastra de menționări (10 sept): apare doar cu „@" activ ȘI cu rezultate. */}
-        {mention && mentionUsers.length > 0 ? (
+        {mentionUsers.length > 0 ? (
           <View style={styles.mentionAnchor} pointerEvents="box-none">
             <MentionPanel users={mentionUsers} onPick={insertMention} />
           </View>
@@ -2715,172 +3778,24 @@ export function ChatScreen<M extends ChatMessageBase>({
               </Text>
             </Pressable>
           </View>
-        ) : peerBlocked ? (
-          // Compozitor înghețat (doar la blocker): fără input, cu ieșire directă din blocare.
-          <View
-            style={[
-              styles.blockedBar,
-              { backgroundColor: theme.barBackground, borderTopColor: theme.separator },
-            ]}>
-            <MaterialIcons name="block" size={16} color={theme.textSecondary} />
-            <Text style={[styles.blockedBarText, { color: theme.textSecondary }]}>
-              {t('block.bannerText')}
-            </Text>
-            <Pressable onPress={handleUnblockPeer} hitSlop={8}>
-              <Text style={[styles.blockedBarAction, { color: theme.brand }]}>
-                {t('block.unblock')}
-              </Text>
-            </Pressable>
-          </View>
         ) : (
-        <View
-          style={[
-            styles.inputBar,
-            largeFont && !composerTall && styles.inputBarCentered,
-            {
-              // Fără insets.bottom: sub bara de input e TAB BAR-ul, care ocupă el zona
-              // de siguranță — adăugarea insetului dubla compensarea și lăsa un gol
-              // vizibil între input și tab-uri (feedback pe Samsung + iPhone).
-              // Cu tastatura deschisă padding-ul rămâne minim (bara stă lipită de taste).
-              paddingBottom: Spacing.one,
-              backgroundColor: theme.barBackground,
-              borderTopColor: theme.separator,
-            },
-          ]}>
-          {onSendImage && !editTarget ? (
-            <Pressable
-              onPress={handleAttach}
-              disabled={uploading}
-              style={[styles.attachButton, { backgroundColor: theme.brandSoft }]}
-              hitSlop={8}
-              accessibilityLabel={t('chat.attach')}>
-              {uploading ? (
-                <ActivityIndicator size="small" color={theme.brand} />
-              ) : (
-                <Feather name="camera" size={19} color={theme.brand} />
-              )}
-            </Pressable>
-          ) : null}
-          {/* TextInput-ul multiline NU stă direct în rândul flex: pe Android, când
-              crește pe verticală se re-măsoară cu lățime necontrânsă și textul se
-              întindea peste butoanele „+"/trimite — wrapper-ul îi fixează lățimea. */}
-          <View
-            style={[
-              styles.inputWrap,
-              { backgroundColor: theme.background },
-              composerTall && styles.inputWrapTall,
-            ]}>
-            <TextInput
-              ref={composerRef}
-              style={[
-                styles.input,
-                { color: theme.text },
-                largeFont && styles.inputLargeFont,
-                // Nativ (Android + iOS): creștere nativă între min și max, fără
-                // înălțime din state — vezi COMPOSER_* și nota de la composerHeight.
-                // Web: înălțimea e gestionată imperativ (efectul de mai sus).
-                Platform.OS === 'web'
-                  ? null
-                  : { minHeight: COMPOSER_INNER_BASE, maxHeight: COMPOSER_INNER_MAX },
-              ]}
-              value={text}
-              onChangeText={handleChangeText}
-              // Menționări: poziția cursorului decide dacă suntem după un „@";
-              // `selection` e setat DOAR o clipă după inserarea unei menționări.
-              onSelectionChange={handleSelectionChange}
-              selection={pendingSelection ?? undefined}
-              // Android: onContentSizeChange decide forma. iOS: onLayout (înălțimea
-              // așezată) decide forma și derularea — pe Fabric, iOS emite
-              // onContentSizeChange doar la schimbarea cadrului, nu la tastare.
-              onContentSizeChange={Platform.OS === 'android' ? handleComposerSize : undefined}
-              onLayout={Platform.OS === 'ios' ? handleComposerLayout : undefined}
-              // iOS: derularea pornește de la al 4-lea rând (pragul formei), adică
-              // ÎNAINTE ca textul să poată depăși plafonul — cu derularea oprită,
-              // UITextView nu aduce cursorul în vedere, iar rândul 5 ar rămâne
-              // ascuns. Sub prag stă oprită: altfel UITextView „saltă" (bounce
-              // fantomă) și când textul încape.
-              scrollEnabled={
-                Platform.OS === 'ios' ? composerHeight > COMPOSER_TALL_THRESHOLD : undefined
-              }
-              placeholder={t('chat.inputPlaceholder')}
-              placeholderTextColor={theme.textTertiary}
-              // 8 oct: la font de sistem mărit, „Scrie un mesaj…" se rupea pe două rânduri
-              // în pastila îngustă. Plafon 1,3× (ca antetele, 1,2×) — sub el, nicio schimbare.
-              maxFontSizeMultiplier={1.3}
-              multiline
-              maxLength={1000}
-              // id-ul DOM pe web (CSS-ul din public/index.html îi ascunde
-              // scrollbarul nativ și chenarul de focus); inert pe telefon.
-              nativeID="chat-composer"
-            />
-            {Platform.OS === 'web' ? (
-              <>
-                {/* Fade-urile de overflow + indicatorul plutitor (stil 9c).
-                    Vizibilitatea o scriu efectele, imperativ — aici doar schelet
-                    cu opacity 0, ca React să nu se atingă de ea la re-render. */}
-                <View ref={fadeTopRef} pointerEvents="none" style={styles.composerFadeTop}>
-                  <LinearGradient
-                    colors={[theme.background, `${theme.background}00`]}
-                    style={styles.composerFadeFill}
-                  />
-                </View>
-                <View ref={fadeBottomRef} pointerEvents="none" style={styles.composerFadeBottom}>
-                  <LinearGradient
-                    colors={[`${theme.background}00`, theme.background]}
-                    style={styles.composerFadeFill}
-                  />
-                </View>
-                <View
-                  ref={thumbRef}
-                  pointerEvents="none"
-                  style={[
-                    styles.composerThumb,
-                    {
-                      backgroundColor:
-                        scheme === 'dark' ? 'rgba(123,167,224,0.45)' : 'rgba(14,58,125,0.35)',
-                    },
-                  ]}
-                />
-              </>
-            ) : null}
-          </View>
-          {/* Meniul „+" (19.5) — în DREAPTA casetei text (decizie 25 iul), doar dacă
-              ecranul furnizează măcar o opțiune de atașare; ascuns în modul editare. */}
-          {(onAttachListing || onAttachMechanic || onAttachDriver || onSendFile) && !editTarget ? (
-            <Pressable
-              onPress={() => setAttachOpen(true)}
-              style={[styles.attachButton, { backgroundColor: theme.brandSoft }]}
-              hitSlop={8}
-              accessibilityLabel={t('attach.title')}>
-              <Feather name="plus" size={20} color={theme.brand} />
-            </Pressable>
-          ) : null}
-          <Pressable
-            onPress={handleSend}
-            disabled={!sendEnabled}
-            style={{ opacity: sendEnabled ? 1 : 0.4 }}>
-            <LinearGradient
-              colors={ActiveGradient[scheme]}
-              start={HeaderGradientDirection.start}
-              end={HeaderGradientDirection.end}
-              style={[
-                styles.sendButton,
-                // Umbra DOAR pe starea activă: elevation sub un părinte cu opacity<1 se
-                // vede PRIN suprafața translucidă ca o pată poligonală decalată (Android)
-                // — sursa „octagonului" semitransparent de pe butonul dezactivat.
-                sendEnabled &&
-                  (scheme === 'light' ? styles.sendShadowLight : styles.sendShadowDark),
-              ]}>
-              {sending ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : editTarget ? (
-                <Feather name="check" size={20} color="#fff" />
-              ) : (
-                <Feather name="send" size={19} color="#fff" />
-              )}
-            </LinearGradient>
-          </Pressable>
-        </View>
+          <ChatComposer
+            ref={composerRef}
+            editing={!!editTarget}
+            hasPendingAttach={hasPendingAttach}
+            sending={sending}
+            uploading={uploading}
+            frozenBar={blockedBar}
+            showCamera={!!onSendImage && !editTarget}
+            onPressCamera={handleAttach}
+            showPlus={
+              !!(onAttachListing || onAttachMechanic || onAttachDriver || onSendFile) && !editTarget
+            }
+            onPressPlus={openAttachSheet}
+            mentionsEnabled={mentionsEnabled}
+            onMentionQueryChange={setMentionQuery}
+            onSubmit={handleSubmit}
+          />
         )}
         {/* Distanțierul de tastatură (doar Android — vezi efectul kbOverlap). */}
         {Platform.OS !== 'ios' ? <View style={{ height: kbOverlap }} /> : null}
@@ -2973,15 +3888,20 @@ export function ChatScreen<M extends ChatMessageBase>({
             label: t('photos.sourceLibrary'),
             icon: 'photo-library',
             onPress: async () => {
+              // Firul de ACUM, înainte de picker (vezi handlePickFile).
+              const ctx = latest.current;
               const media = await pickMediaFromLibrary();
-              await sendImages(media.images);
-              await sendVideos(media.videos);
+              await sendImages(media.images, ctx);
+              await sendVideos(media.videos, ctx);
             },
           },
           {
             label: t('photos.sourceCamera'),
             icon: 'photo-camera',
-            onPress: async () => sendImages(await pickFromCamera()),
+            onPress: async () => {
+              const ctx = latest.current;
+              await sendImages(await pickFromCamera(), ctx);
+            },
           },
           ...(Platform.OS !== 'web'
             ? [
@@ -2989,8 +3909,9 @@ export function ChatScreen<M extends ChatMessageBase>({
                   label: t('attach.videoRecord'),
                   icon: 'videocam' as const,
                   onPress: async () => {
+                    const ctx = latest.current;
                     const video = await recordVideo();
-                    if (video) await sendVideos([video]);
+                    if (video) await sendVideos([video], ctx);
                   },
                 },
               ]
@@ -3163,6 +4084,15 @@ const styles = StyleSheet.create({
   },
   // Ancora ferestrei de menționări: jos, peste ultimele mesaje, lipită de compozitor.
   mentionAnchor: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  // 1.1 (7.1): „Netrimis · Reîncearcă" sub bula netrimisă.
+  failedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    gap: 4,
+    marginTop: 3,
+  },
+  failedText: { fontSize: 12, fontWeight: '600' },
   // Butonul „la ultimul mesaj": cerc de 40, la marginea listei (peste bulele proprii,
   // ca pe WhatsApp), cu umbra mică a chip-urilor.
   scrollToBottom: {

@@ -1,4 +1,13 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { AppState, Platform } from 'react-native';
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js';
 
@@ -12,6 +21,8 @@ import { onPushTokenRegistered, registerPushToken, unregisterPushToken } from '@
 import { buildDiagnosticEntry, flushDiagnostics, queueDiagnostic } from '@/lib/diagnostic-log';
 import { diagnoseNetwork, isNetworkError } from '@/lib/network-diagnosis';
 import { clearProfileCache, readProfileCache, writeProfileCache } from '@/lib/profile-cache';
+import { clearOutbox } from '@/lib/outbox';
+import { clearSignedUrlCache } from '@/lib/signed-url-cache';
 import { signOutSocial } from '@/lib/social-auth';
 import { readGuestMode, writeGuestMode } from '@/lib/guest';
 import { clearGuestFavorites, migrateGuestFavorites } from '@/lib/guest-favorites';
@@ -109,28 +120,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // știe când chiar n-au ce face și când trebuie să re-lege tokenul (alt cont).
   const pushOwnerRef = useRef<string | null>(null);
 
-  function cancelProfileRetry() {
+  // 1.1 (7.4, AUDIT #32): funcțiile de mai jos sunt `useCallback` și închid doar peste
+  // ref-uri și setteri, ca valoarea contextului (useMemo, la final) să rămână aceeași între
+  // randări și consumatorii lui `useAuth()` să nu se re-randeze degeaba. Ciclul
+  // fetchProfile → fallbackToOfflineProfile → scheduleProfileRetry → fetchProfile trece
+  // prin `fetchProfileRef` (un useCallback nu se poate referi la unul declarat după el).
+  const fetchProfileRef = useRef<(userId: string) => Promise<Profile | null>>(async () => null);
+
+  const cancelProfileRetry = useCallback(() => {
     const r = profileRetryRef.current;
     if (r.timer) clearTimeout(r.timer);
     r.timer = null;
     r.delayMs = 3000;
     r.userId = null;
     r.failures = 0;
-  }
+  }, []);
 
-  function scheduleProfileRetry(userId: string) {
+  const scheduleProfileRetry = useCallback((userId: string) => {
     const r = profileRetryRef.current;
     if (r.timer) clearTimeout(r.timer);
     r.userId = userId;
     r.timer = setTimeout(() => {
       r.timer = null;
-      if (r.userId === userId && sessionRef.current?.user.id === userId) void fetchProfile(userId);
+      if (r.userId === userId && sessionRef.current?.user.id === userId) {
+        void fetchProfileRef.current(userId);
+      }
     }, r.delayMs);
     r.delayMs = Math.min(r.delayMs * 2, 30000);
-  }
+  }, []);
 
   // Jurnalul de diagnostice (13 oct): ce vede telefonul când serverul pare inaccesibil.
-  async function logOffline(kind: string, error: unknown) {
+  const logOffline = useCallback(async (kind: string, error: unknown) => {
     if (offlineLoggedRef.current) return;
     offlineLoggedRef.current = true;
     try {
@@ -139,13 +159,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // doar jurnal
     }
-  }
+  }, []);
 
   // Profilul nu se poate citi acum (rețea / server): păstrăm ce avem — din memorie sau
   // din cache-ul de pe telefon — ca omul să rămână în aplicație, și reîncercăm cu pauze
   // crescătoare și la revenirea în prim-plan. Fără nimic în cache rămâne ecranul de
   // încărcare: tot mai bine decât un login sau un „alege rolul" fals.
-  async function fallbackToOfflineProfile(userId: string, reason: unknown): Promise<Profile | null> {
+  const fallbackToOfflineProfile = useCallback(async (userId: string, reason: unknown): Promise<Profile | null> => {
     // Între timp s-a delogat sau a intrat alt cont: citirea asta nu mai are obiect (altfel ar
     // reprograma la nesfârșit reîncercări pentru un user care nu mai e în aplicație).
     if (sessionRef.current?.user.id !== userId) return null;
@@ -172,10 +192,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     scheduleProfileRetry(userId);
     return cached;
-  }
+  }, [cancelProfileRetry, logOffline, scheduleProfileRetry]);
+
+  const signOut = useCallback(async () => {
+    // Întâi scoatem tokenul: altfel telefonul ar primi notificările contului vechi.
+    const token = pushTokenRef.current;
+    if (token) {
+      await unregisterPushToken(token);
+      pushTokenRef.current = null;
+    }
+    pushOwnerRef.current = null;
+    cancelProfileRetry();
+    await clearProfileCache();
+    await clearAuthEntry();
+    // 1.1 (Faza B): datele locale de oaspete nu trec la următorul cont de pe telefon.
+    await clearAnnouncementDraft();
+    await clearGuestFavorites();
+    // 1.1 (7.1/7.3): mesajele netrimise ale contului și URL-urile semnate din cache nu rămân
+    // pe telefon pentru următorul cont (date personale).
+    const signedOutUserId = sessionRef.current?.user.id;
+    if (signedOutUserId) await clearOutbox(signedOutUserId);
+    await clearSignedUrlCache();
+    // Contul Google ales rămâne memorat nativ; fără asta următorul tap pe „Continuă cu
+    // Google” ar intra direct, fără selector de cont (best-effort, doar pe telefon).
+    await signOutSocial();
+    await supabase.auth.signOut();
+  }, [cancelProfileRetry]);
 
   /** Citește profilul de pe server; întoarce profilul folosit acum (server sau cache). */
-  async function fetchProfile(userId: string): Promise<Profile | null> {
+  const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
     try {
       // Fără token valid în clipa asta (reîmprospătarea a picat pe rețea), cererea ar
       // pleca anonim și ar primi „niciun rând" — ceea ce NU înseamnă că profilul lipsește.
@@ -216,7 +261,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       return fallbackToOfflineProfile(userId, e);
     }
-  }
+  }, [cancelProfileRetry, fallbackToOfflineProfile, signOut]);
+  fetchProfileRef.current = fetchProfile;
 
   useEffect(() => {
     let cancelled = false;
@@ -338,7 +384,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function signIn(email: string, password: string): Promise<string | null> {
+  const signIn = useCallback(async (email: string, password: string): Promise<string | null> => {
     await setAuthEntry('login-password');
     // Captcha (1.8): tokenul pleacă doar când e configurat; serverul îl cere doar cu Turnstile pornit.
     const captchaToken = await getCaptchaToken();
@@ -348,13 +394,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ...(captchaToken ? { options: { captchaToken } } : {}),
     });
     return translateAuthError(error);
-  }
+  }, []);
 
-  async function signUp(
+  const signUp = useCallback(async (
     email: string,
     password: string,
     fullName: string
-  ): Promise<{ error: string | null; needsConfirmation: boolean }> {
+  ): Promise<{ error: string | null; needsConfirmation: boolean }> => {
     await setAuthEntry('signup');
     // 1.1: limba aplicației pleacă în metadatele contului (`.Data.lang` în template-ul
     // „Confirm signup" din Supabase), ca e-mailul cu codul să vină într-o singură limbă.
@@ -379,7 +425,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     // Fără sesiune = confirmarea emailului e activă → ecranul cere codul primit pe mail.
     return { error: null, needsConfirmation: !data.session };
-  }
+  }, []);
 
   // Înregistrăm tokenul de fiecare dată când avem sesiune (login sau repornire).
   // În Expo Go `registerPushToken` iese tăcut → nimic nu se schimbă acolo.
@@ -470,38 +516,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     else void migrateGuestFavorites(sessionUserId);
   }, [sessionUserId, profileId, profileRole]);
 
-  async function enterGuest() {
+  const enterGuest = useCallback(async () => {
     // Starea întâi: garda trebuie să știe că e oaspete înainte de navigarea spre (guest).
     setGuestMode(true);
     await writeGuestMode(true);
-  }
+  }, []);
 
-  async function leaveGuest() {
+  const leaveGuest = useCallback(async () => {
     setGuestMode(false);
     await writeGuestMode(false);
-  }
+  }, []);
 
-  async function signOut() {
-    // Întâi scoatem tokenul: altfel telefonul ar primi notificările contului vechi.
-    const token = pushTokenRef.current;
-    if (token) {
-      await unregisterPushToken(token);
-      pushTokenRef.current = null;
-    }
-    pushOwnerRef.current = null;
-    cancelProfileRetry();
-    await clearProfileCache();
-    await clearAuthEntry();
-    // 1.1 (Faza B): datele locale de oaspete nu trec la următorul cont de pe telefon.
-    await clearAnnouncementDraft();
-    await clearGuestFavorites();
-    // Contul Google ales rămâne memorat nativ; fără asta următorul tap pe „Continuă cu
-    // Google” ar intra direct, fără selector de cont (best-effort, doar pe telefon).
-    await signOutSocial();
-    await supabase.auth.signOut();
-  }
-
-  async function updateProfile(updates: {
+  const updateProfile = useCallback(async (updates: {
     full_name?: string;
     specialization?: string | null;
     activity_zone?: string | null;
@@ -518,8 +544,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     latitude?: number | null;
     longitude?: number | null;
     lang?: string;
-  }): Promise<string | null> {
-    const userId = session?.user.id;
+  }): Promise<string | null> => {
+    // sessionRef (nu starea): aceeași valoare, setată odată cu setSession, dar funcția
+    // rămâne stabilă între randări (1.1, 7.4).
+    const userId = sessionRef.current?.user.id;
     if (!userId) return i18n.t('common.noSession');
     // Optimist: comutatoarele din Setări răspund instant, fără să aștepte serverul.
     // Refetch-ul de după rămâne sursa adevărului — pe eroare readuce valorile reale
@@ -531,18 +559,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq('id', userId);
     await fetchProfile(userId);
     return translateDbError(error);
-  }
+  }, [fetchProfile]);
 
-  async function createProfile(
+  const createProfile = useCallback(async (
     role: 'driver' | 'mechanic',
     // Faza 18: telefonul e obligatoriu la AMBELE roluri încă de la crearea profilului;
     // adresa + TVA vin doar de la mecanici (prestatori). Validate în role-select.
     details: { phone: string; address?: string | null; vat_number?: string | null; full_name?: string | null }
-  ): Promise<string | null> {
-    const userId = session?.user.id;
+  ): Promise<string | null> => {
+    // sessionRef (nu starea), ca la updateProfile: funcția rămâne stabilă între randări.
+    const current = sessionRef.current;
+    const userId = current?.user.id;
     // Numele: cel tastat în role-select (când metadata nu-l are — ex. Apple cu numele
     // ascuns), altfel `full_name` pus la înregistrare / de Google, altfel `name` (Google).
-    const meta = session?.user.user_metadata ?? {};
+    const meta = current?.user.user_metadata ?? {};
     const fullName =
       details.full_name?.trim() ||
       (meta.full_name as string | undefined)?.trim() ||
@@ -580,33 +610,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return isNetworkError(error)
       ? i18n.t('authErrors.network')
       : i18n.t('auth.roleSelect.errorGeneric');
-  }
+  }, [fetchProfile]);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        session,
-        profile,
-        profileMissing,
-        noAccountNotice,
-        dismissNoAccountNotice,
-        loading: loading || !bootReady,
-        signIn,
-        signUp,
-        signOut,
-        createProfile,
-        updateProfile,
-        // 1.1 (Faza B4): pe web vizitatorul fără sesiune E oaspetele (site public); pe nativ
-        // doar după „Continuă fără cont". Cu sesiune, niciodată.
-        isGuest: (guestMode || Platform.OS === 'web') && !session,
-        enterGuest,
-        leaveGuest,
-        pendingDraft: hasDraft && !!session && !!profile,
-        hasDraft,
-      }}>
-      {children}
-    </AuthContext.Provider>
+  // 1.1 (7.4): valoarea contextului se recreează doar când se schimbă ceva expus.
+  const isGuest = (guestMode || Platform.OS === 'web') && !session;
+  const pendingDraft = hasDraft && !!session && !!profile;
+  const exposedLoading = loading || !bootReady;
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      session,
+      profile,
+      profileMissing,
+      noAccountNotice,
+      dismissNoAccountNotice,
+      loading: exposedLoading,
+      signIn,
+      signUp,
+      signOut,
+      createProfile,
+      updateProfile,
+      // 1.1 (Faza B4): pe web vizitatorul fără sesiune E oaspetele (site public); pe nativ
+      // doar după „Continuă fără cont". Cu sesiune, niciodată.
+      isGuest,
+      enterGuest,
+      leaveGuest,
+      pendingDraft,
+      hasDraft,
+    }),
+    [
+      session,
+      profile,
+      profileMissing,
+      noAccountNotice,
+      dismissNoAccountNotice,
+      exposedLoading,
+      signIn,
+      signUp,
+      signOut,
+      createProfile,
+      updateProfile,
+      isGuest,
+      enterGuest,
+      leaveGuest,
+      pendingDraft,
+      hasDraft,
+    ],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

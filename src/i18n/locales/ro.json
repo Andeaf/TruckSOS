@@ -1310,5 +1310,16 @@
     "locationTitle": "Activează locația pentru distanțe",
     "locationBody": "Ca să vezi cât de departe e fiecare anunț și ce intră în raza aleasă.",
     "enableLocation": "Activează locația"
+  },
+  "outbox": {
+    "sending": "Se trimite…",
+    "failed": "Netrimis",
+    "retry": "Reîncearcă",
+    "discardTitle": "Șterge mesajul netrimis?",
+    "discardBody": "Mesajul n-a ajuns la destinatar și va fi șters de pe acest telefon.",
+    "editFailed": "Modificarea nu a fost salvată",
+    "editFailedBody": "Verifică conexiunea și încearcă din nou.",
+    "sendFailed": "Mesajul nu a fost trimis",
+    "attachmentMissing": "Fișierul nu mai există pe telefon, așa că mesajul netrimis a fost șters."
   }
 }
