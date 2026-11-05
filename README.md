@@ -193,6 +193,21 @@ Maps and push notifications need a development build (`npx expo run:android` / `
 | `npm run gen:types` | Generate DB types from the linked Supabase project |
 | `powershell -File scripts/deploy-web.ps1` | Export the web build and deploy to Cloudflare Pages |
 
+### Development variant (`APP_VARIANT=development`)
+
+`app.config.js` reads `app.json` and, only when `APP_VARIANT=development`, turns the app into **TruckSOS Dev**: package / bundle id `com.andeaf.trucksos.dev` (installs next to the store app, with its own data), scheme `trucksos-dev`, no App Links / Universal Links (real `trucksos.net` links keep opening the store app). Without the variable the config is exactly `app.json`, so production builds are unchanged. The backend is the same Supabase project (there is no staging project): use the usual test accounts.
+
+EAS profiles in `eas.json`: `development` (dev client, `APP_VARIANT=development`) and `preview-dev` (installable internal build of the dev variant, no dev client). `preview` and `production` are untouched.
+
+Steps (David), once per platform:
+
+1. **Credentials for the new ids** — `eas build -p android --profile development` and `eas build -p ios --profile development` create the keystore / provisioning profile for `com.andeaf.trucksos.dev` on first run (iOS: register the bundle id in the Apple Developer account when EAS asks; no App Store listing needed).
+2. **Android push (FCM)** — in Firebase, add an Android app `com.andeaf.trucksos.dev` to the existing project, download the new `google-services.json` (it then contains both packages) and either replace the file in the repo root or point `GOOGLE_SERVICES_JSON_DEV` at it (EAS secret or local env). Without it the dev build still works, but push does not arrive on Android dev.
+3. **Google Sign-In on Android dev** — add the SHA-1 of the dev keystore (`eas credentials -p android`) to the Android OAuth client in Google Cloud; iOS uses the same client id and needs nothing.
+4. **Supabase → Authentication → URL Configuration** — add `trucksos-dev://**` to Redirect URLs (OAuth / magic links back into the dev app).
+5. **Run** — install the dev client on the phone, then `APP_VARIANT=development npx expo start --dev-client` (PowerShell: `$env:APP_VARIANT='development'; npx expo start --dev-client`). Expo Go does not need the variant.
+6. **Check** — `APP_VARIANT=development npx expo config --type public` must print `TruckSOS Dev` / `com.andeaf.trucksos.dev`; `npx expo config --type public` (no variable) must still print the production values.
+
 ## Release process
 
 1. Bump `expo.version` in `app.json`, write the store "What's new" text (EN / RO / DE)
