@@ -53,7 +53,7 @@ CREATE TABLE app.push_queue (
   send_after  timestamptz NOT NULL DEFAULT now(),
   attempts    integer NOT NULL DEFAULT 0,
   -- `expired` (decizia lui David, 3 nov): un rând `queued` mai vechi de 1 h nu se mai trimite (claim_push_batch îl
-  -- marchează); orice valoare > 0 în push_stats().expired_24h e incident (EF picat, token Expo greșit, cotă).
+  -- marchează); orice valoare > 0 în push_stats().expired_48h e incident (EF picat, token Expo greșit, cotă); contorul numără toate rândurile `expired` păstrate (retenția de 48 h e limita naturală — decizia lui David, 5 nov).
   status      text NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'sending', 'sent', 'failed', 'expired')),
   claimed_at  timestamptz,
   sent_at     timestamptz,
@@ -758,7 +758,7 @@ GRANT EXECUTE ON FUNCTION public.finish_push_receipts(jsonb) TO service_role;
 -- 401-urile străinilor nu trec prin bază: se numără din logurile EF (Logs Explorer, function_edge_logs cu
 -- status_code = 401 și function_id al celor două funcții).
 CREATE FUNCTION app.push_stats()
- RETURNS TABLE (queued bigint, sending bigint, sent_1h bigint, sent_24h bigint, failed_24h bigint, oldest_queued_at timestamptz, receipt_errors_24h bigint, channel_events_pending bigint, http_401_6h bigint, http_errors_6h bigint, expired_24h bigint)
+ RETURNS TABLE (queued bigint, sending bigint, sent_1h bigint, sent_24h bigint, failed_24h bigint, oldest_queued_at timestamptz, receipt_errors_24h bigint, channel_events_pending bigint, http_401_6h bigint, http_errors_6h bigint, expired_48h bigint)
  LANGUAGE sql
  STABLE
  SET search_path TO ''
@@ -773,10 +773,10 @@ AS $function$
          (SELECT count(*) FROM app.channel_events),
          (SELECT count(*) FROM net._http_response r WHERE r.status_code = 401 AND r.created > now() - interval '6 hours'),
          (SELECT count(*) FROM net._http_response r WHERE (r.status_code IS DISTINCT FROM 200 OR r.error_msg IS NOT NULL OR r.timed_out) AND r.created > now() - interval '6 hours'),
-         -- rândurile expirate sunt cu ≥ 1 h mai vechi decât crearea lor, deci fereastra pe created_at (25 h) ≈ „expirat în
-         -- ultimele 24 h” pentru rândurile create recent; după o pană mai lungă de ~24 h, cele mai vechi nu intră în contor
-         -- (alarma iese oricum > 0 cât timp mai vin rânduri). Alternativa „toate cele păstrate (48 h)” = decizie pentru David.
-         (SELECT count(*) FROM app.push_queue WHERE status = 'expired' AND created_at > now() - interval '25 hours');
+         -- expired_48h (decizia lui David, 5 nov): TOATE rândurile `expired` păstrate — fără filtru pe created_at; retenția
+         -- cleanup_push_queue() de 48 h e limita naturală, deci contorul = „expirate în ultimele ~48 h”, fără să scape nimic
+         -- după o pană lungă (fereastra pe created_at subnumăra).
+         (SELECT count(*) FROM app.push_queue WHERE status = 'expired');
 $function$;
 REVOKE EXECUTE ON FUNCTION app.push_stats() FROM PUBLIC, anon, authenticated, service_role;
 
@@ -803,9 +803,9 @@ BEGIN
   GET DIAGNOSTICS v_deleted = ROW_COUNT;
   BEGIN
     SELECT * INTO v_stats FROM app.push_stats();
-    -- expired_24h > 0 = incident (decizia lui David, 3 nov): EF picat, token Expo greșit, cotă.
-    RAISE NOTICE 'cleanup_push_queue: sterse=% queued=% oldest_queued_at=% expired_24h=% http_401_6h=% http_errors_6h=%',
-      v_deleted, v_stats.queued, v_stats.oldest_queued_at, v_stats.expired_24h, v_stats.http_401_6h, v_stats.http_errors_6h;
+    -- expired_48h > 0 = incident (decizia lui David, 3 nov; contor pe toate rândurile expired păstrate 48 h, 5 nov): EF picat, token Expo greșit, cotă.
+    RAISE NOTICE 'cleanup_push_queue: sterse=% queued=% oldest_queued_at=% expired_48h=% http_401_6h=% http_errors_6h=%',
+      v_deleted, v_stats.queued, v_stats.oldest_queued_at, v_stats.expired_48h, v_stats.http_401_6h, v_stats.http_errors_6h;
   EXCEPTION WHEN OTHERS THEN
     RAISE NOTICE 'cleanup_push_queue: sterse=% (push_stats indisponibil: %)', v_deleted, SQLERRM;
   END;

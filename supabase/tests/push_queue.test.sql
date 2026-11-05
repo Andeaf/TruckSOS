@@ -211,7 +211,7 @@ select is((select string_agg(q.data->>'id', ',' order by q.data->>'id') from pub
 select is((select status || '|' || last_error || '|' || (title is null and body is null)::text || '|' || (claimed_at is null)::text
              from app.push_queue where user_id = '74000000-0000-4000-8000-0000000000c2' and data->>'id' = 'old'),
           'expired|expired|true|true', '24i. rândul de 2 h e expired, cu conținutul golit');
-select ok((select expired_24h >= 1 from app.push_stats()), '24j. push_stats().expired_24h îl numără (orice valoare > 0 = incident)');
+select ok((select expired_48h >= 1 from app.push_stats()), '24j. push_stats().expired_48h îl numără — toate rândurile expired păstrate (orice valoare > 0 = incident)');
 select ok((select prosrc like '%''expired''%' from pg_proc where oid = 'app.cleanup_push_queue()'::regprocedure),
           '24k. cleanup_push_queue() șterge și rândurile expired după 48 h');
 -- review (c): un rând recuperat după timeout (EF mort în mijlocul lotului, pană de ore) NU pleacă la repornire — expiră
