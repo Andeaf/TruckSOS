@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 
+import { approxCoordinate, useAdminMechanicMask } from '@/hooks/use-admin-mask';
 import { fetchOpenAnnouncementsNear, type OpenAnnouncementNear } from '@/hooks/use-announcements';
 import { useAuth } from '@/hooks/use-auth';
 import { useRadiusFilter } from '@/hooks/use-radius-filter';
@@ -240,9 +241,36 @@ export function OpenAnnouncementsProvider({ children }: { children: ReactNode })
     if (activatedRef.current && !waitingForCoords && loadedKeyRef.current !== key) void refresh();
   }, [key, userId, waitingForCoords, refresh]);
 
+  // Admin „ca mecanic” (1.1): RPC-ul îi dă adminului coordonatele exacte; feed-ul și harta
+  // arată poziția la ~1 km, ca la un mecanic (plăcuța/VIN-ul sunt deja null aici). Mască
+  // client-side, doar pentru teste — paginarea (rowsRef, cursorul pe created_at) rămâne pe
+  // rândurile brute; mecanicii reali primesc oricum datele mascate de server.
+  const adminMask = useAdminMechanicMask();
+  const visibleAnnouncements = useMemo(
+    () =>
+      adminMask
+        ? announcements.map((a) => ({
+            ...a,
+            latitude: approxCoordinate(a.latitude),
+            longitude: approxCoordinate(a.longitude),
+            plate_number: null,
+            chassis_number: null,
+          }))
+        : announcements,
+    [adminMask, announcements],
+  );
+
   const value = useMemo<OpenAnnouncementsValue>(
-    () => ({ announcements, loading, loadingMore, hasMore, radiusApplied, refresh, loadMore }),
-    [announcements, loading, loadingMore, hasMore, radiusApplied, refresh, loadMore],
+    () => ({
+      announcements: visibleAnnouncements,
+      loading,
+      loadingMore,
+      hasMore,
+      radiusApplied,
+      refresh,
+      loadMore,
+    }),
+    [visibleAnnouncements, loading, loadingMore, hasMore, radiusApplied, refresh, loadMore],
   );
 
   return (

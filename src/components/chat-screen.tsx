@@ -2274,6 +2274,24 @@ export function ChatScreen<M extends ChatMessageBase>({
     setPhotoSourceOpen(true);
   }
 
+  // Eticheta acoperă textul copiilor → include și subtitlul, altfel cititorul de ecran îl sare.
+  const headerA11yLabel = subtitle ? `${title}, ${subtitle}` : title;
+  const headerInfoContent = (
+    <>
+      <HeaderText numberOfLines={1} style={styles.headerName}>
+        {title}
+      </HeaderText>
+      <View style={styles.locationRow}>
+        {subtitleIcon ? (
+          <MaterialIcons name={subtitleIcon} size={11} color={theme.onHeader} />
+        ) : null}
+        <Text style={[styles.headerSubtitle, { color: theme.onHeader }]} numberOfLines={1}>
+          {subtitle}
+        </Text>
+      </View>
+    </>
+  );
+
   return (
     <ThemedView style={styles.container}>
       <ScreenHeader>
@@ -2286,6 +2304,8 @@ export function ChatScreen<M extends ChatMessageBase>({
           <Pressable
             onPress={onPressUser && headerUserId ? () => onPressUser(headerUserId) : undefined}
             disabled={!onPressUser || !headerUserId}
+            accessibilityRole={onPressUser && headerUserId ? 'button' : undefined}
+            accessibilityLabel={headerA11yLabel}
             style={styles.headerAvatarRing}>
             <Avatar
               url={headerAvatarPath ? urls[headerAvatarPath] : undefined}
@@ -2295,19 +2315,18 @@ export function ChatScreen<M extends ChatMessageBase>({
             />
           </Pressable>
         ) : null}
-        <View style={styles.headerInfo}>
-          <HeaderText numberOfLines={1} style={styles.headerName}>
-            {title}
-          </HeaderText>
-          <View style={styles.locationRow}>
-            {subtitleIcon ? (
-              <MaterialIcons name={subtitleIcon} size={11} color={theme.onHeader} />
-            ) : null}
-            <Text style={[styles.headerSubtitle, { color: theme.onHeader }]} numberOfLines={1}>
-              {subtitle}
-            </Text>
-          </View>
-        </View>
+        {/* 1.1: numele + subtitlul deschid profilul, ca avatarul (doar când există profil). */}
+        {onPressUser && headerUserId ? (
+          <Pressable
+            onPress={() => onPressUser(headerUserId)}
+            accessibilityRole="button"
+            accessibilityLabel={headerA11yLabel}
+            style={({ pressed }) => [styles.headerInfo, pressed && { opacity: 0.7 }]}>
+            {headerInfoContent}
+          </Pressable>
+        ) : (
+          <View style={styles.headerInfo}>{headerInfoContent}</View>
+        )}
         {/* Butonul de apel (7 aug) — doar 1-la-1, doar când numărul e accesibil
             (RPC-ul a întors non-null) și interlocutorul nu e blocat de mine. */}
         {phoneNumber && !peerBlocked ? (

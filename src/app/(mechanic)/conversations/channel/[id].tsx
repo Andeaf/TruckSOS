@@ -153,7 +153,11 @@ export default function MechanicChannelChatScreen() {
       renderSenderName={(message) => displayName(message.sender, t)}
       renderSenderAvatarPath={(message) => message.sender.avatar_path}
       onPressUser={(userId) =>
-        router.push({ pathname: '/(mechanic)/public-profile/[id]' as never, params: { id: userId } })
+        // Profilul e alt tab: `fromChannel` îi spune back-ului unde să revină (use-back).
+        router.push({
+          pathname: '/(mechanic)/public-profile/[id]' as never,
+          params: { id: userId, fromChannel: id },
+        })
       }
       renderSenderRole={(message) => t(`auth.roleSelect.${message.sender.role}Title`)}
       onSend={async (content, replyToId, mentions) => {
@@ -184,7 +188,10 @@ export default function MechanicChannelChatScreen() {
         if (message) addMessage(message);
       }}
       onPressMechanic={(mid) =>
-        router.push({ pathname: '/(mechanic)/public-profile/[id]' as never, params: { id: mid } })
+        router.push({
+          pathname: '/(mechanic)/public-profile/[id]' as never,
+          params: { id: mid, fromChannel: id },
+        })
       }
       onSendImage={async (image) => {
         const { message } = await sendChannelImageMessage(id, session.user.id, image);

@@ -208,7 +208,8 @@ export default function DriverChatScreen() {
             other.profile.role === 'mechanic'
               ? '/(driver)/mechanic-profile/[id]'
               : '/(driver)/public-profile/[id]',
-          params: { id: userId },
+          // Profilul e alt tab: `fromConversation` îi spune back-ului unde să revină (use-back).
+          params: { id: userId, fromConversation: id },
         } as never)
       }
       subtitle={
@@ -264,7 +265,7 @@ export default function DriverChatScreen() {
             role === 'driver'
               ? '/(driver)/public-profile/[id]'
               : '/(driver)/mechanic-profile/[id]',
-          params: { id: mid },
+          params: { id: mid, fromConversation: id },
         } as never)
       }
       onSendImage={async (image) => {

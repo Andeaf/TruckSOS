@@ -200,8 +200,12 @@ export default function MechanicChatScreen() {
       headerAvatarPath={other.profile.avatar_path}
       headerUserId={other.id}
       onPressUser={(userId) =>
-        // public-profile gestionează ambele roluri (are ramuri pe profile.role).
-        router.push({ pathname: '/(mechanic)/public-profile/[id]' as never, params: { id: userId } })
+        // public-profile gestionează ambele roluri (are ramuri pe profile.role). Profilul e alt
+        // tab: `fromConversation` îi spune back-ului unde să revină (use-back).
+        router.push({
+          pathname: '/(mechanic)/public-profile/[id]' as never,
+          params: { id: userId, fromConversation: id },
+        })
       }
       subtitle={
         conv.announcement?.location ??
@@ -251,7 +255,10 @@ export default function MechanicChatScreen() {
         if (message) addMessage(message);
       }}
       onPressMechanic={(mid) =>
-        router.push({ pathname: '/(mechanic)/public-profile/[id]' as never, params: { id: mid } })
+        router.push({
+          pathname: '/(mechanic)/public-profile/[id]' as never,
+          params: { id: mid, fromConversation: id },
+        })
       }
       onSendImage={async (image) => {
         const { message } = await sendImageMessage(id, session.user.id, image);

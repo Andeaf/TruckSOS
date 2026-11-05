@@ -78,11 +78,25 @@ async function fetchGuestPublicProfile(userId: string): Promise<PublicProfile | 
  * contează doar pentru rutarea conversației, deci lipsește la oaspete.
  */
 export function PublicProfileScreen({ role, guest = false }: { role?: Role; guest?: boolean }) {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, fromConversation, fromChannel } = useLocalSearchParams<{
+    id: string;
+    fromConversation?: string;
+    fromChannel?: string;
+  }>();
   const { t } = useTranslation();
-  // Ecran mereu deschis prin push (din chat) → back-ul urcă în stivă; fallback-ul „/"
-  // (index → redirect pe grupul corect) acoperă doar cazul rar fără istoric.
-  const goBack = useBack(guest ? '/(guest)/mechanics' : '/');
+  // Fallback-ul „/" (index → redirect pe grupul corect) acoperă cazul rar fără istoric.
+  // 1.1: profilul e alt tab decât chatul (backBehavior="initialRoute"), deci back-ul simplu
+  // ducea pe tab-ul de start; deschis din chat (`fromConversation` / `fromChannel`) → înapoi acolo.
+  const goBack = useBack(
+    guest ? '/(guest)/mechanics' : '/',
+    guest || (role !== 'driver' && role !== 'mechanic')
+      ? null
+      : fromConversation
+        ? { group: role, kind: 'conversation', conversationId: fromConversation }
+        : fromChannel
+          ? { group: role, kind: 'channel', conversationId: fromChannel }
+          : null,
+  );
   const theme = useTheme();
   const router = useRouter();
   const { session } = useAuth();
