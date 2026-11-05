@@ -183,7 +183,7 @@ export function SettingsScreen({
               // Pornirea comutatorului repară și un token lipsă (ex. permisiunea de
               // notificări acordată ABIA DUPĂ login, din setările Android) — altfel
               // înregistrarea rulează doar la pornirea aplicației. În Expo Go iese tăcut.
-              if (next && session) void registerPushToken(session.user.id);
+              if (next && session) void registerPushToken(session.user.id, { prompt: true });
             }}
           />
 

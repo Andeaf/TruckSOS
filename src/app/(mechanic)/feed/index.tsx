@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { AnnouncementCard } from '@/components/announcement-card';
 import { EmptyState } from '@/components/empty-state';
+import { LocationPrimerCard } from '@/components/location-primer-card';
 import { RadiusFilterMenu } from '@/components/radius-filter-menu';
 import { ScreenHeader } from '@/components/screen-header';
 import { AnnouncementDraftBanner } from '@/components/announcement-draft-banner';
@@ -24,6 +25,7 @@ import {
   Spacing,
 } from '@/constants/theme';
 import { useExitConfirm } from '@/hooks/use-exit-confirm';
+import { useNotificationPrimerOnStart } from '@/hooks/use-notification-primer';
 import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
@@ -55,6 +57,9 @@ function hasLocation(a: { latitude: number | null; longitude: number | null }): 
 export default function MechanicFeedScreen() {
   // Tab-ul de start al mecanicului: back-ul de aici întreabă dacă închide aplicația.
   useExitConfirm();
+  // 1.1 (7.6): contul existent fără permisiunea de notificări (telefon nou / reinstalare)
+  // primește aici foaia „Află imediat când…”, o dată pe rulare.
+  useNotificationPrimerOnStart();
   const { profile, session, pendingDraft } = useAuth();
   const { t } = useTranslation();
   const theme = useTheme();
@@ -87,7 +92,10 @@ export default function MechanicFeedScreen() {
   // 26 iul: anunțurile cu candidatura mea în așteptare → badge „În așteptare".
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
   const { viewed, refresh: refreshViewed } = useViewedAnnouncements(session?.user.id);
-  const { radiusKm, coords, locationError, refreshCoords } = useRadiusFilter();
+  const { radiusKm, coords, locationError, refreshCoords, locationPermission, enableLocation } =
+    useRadiusFilter();
+  // Distanțele apar doar cu rază; fără permisiune (încă cerută) cardul ține locul bannerului.
+  const showLocationCard = radiusKm != null && locationPermission === 'askable';
 
   // Filtrul e „aplicat" doar cu rază ȘI poziție — fără poziție, lista rămâne completă.
   // Filtrarea propriu-zisă o face serverul (faza 4.3); aici doar decidem afișarea distanței.
@@ -219,9 +227,15 @@ export default function MechanicFeedScreen() {
         onChange={setStatusFilter}
       />
 
+      {/* 1.1 (7.6, AUDIT #34): raza e aleasă, dar permisiunea de locație nu e încă dată —
+          explicăm la ce folosește; dialogul de sistem apare abia la buton. */}
+      {showLocationCard ? (
+        <LocationPrimerCard onEnable={enableLocation} style={styles.locationCard} />
+      ) : null}
+
       {/* Raza e setată, dar n-avem poziția (permisiune refuzată / GPS indisponibil):
           spunem de ce lista e nefiltrată, fără să blocăm nimic. */}
-      {radiusKm != null && coords == null && locationError != null ? (
+      {!showLocationCard && radiusKm != null && coords == null && locationError != null ? (
         <ThemedView type="backgroundElement" style={styles.locationBanner}>
           <MaterialIcons name="location-off" size={14} color={theme.textSecondary} />
           <ThemedText themeColor="textSecondary" type="small" style={styles.locationBannerText}>
@@ -419,6 +433,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
   },
   locationBannerText: { flex: 1 },
+  locationCard: { marginHorizontal: Spacing.four, marginTop: Spacing.three },
   // FAB squircle 58×58 cu gradientul principal — copiat 1:1 din lista șoferului.
   fab: {
     position: 'absolute',

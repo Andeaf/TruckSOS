@@ -17,6 +17,7 @@ import { RequiredMark } from '@/components/ui/input';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { SUPPORTED_CURRENCIES, DEFAULT_CURRENCY } from '@/constants/currencies';
+import { useNotificationPrimer } from '@/hooks/use-notification-primer';
 import { useTheme } from '@/hooks/use-theme';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { applyToAnnouncement, resubmitApplication } from '@/hooks/use-announcements';
@@ -48,6 +49,7 @@ export function ApplyBottomSheet({
   const guard = useSubmitGuard();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { maybeShow: maybeShowNotificationPrimer } = useNotificationPrimer();
   const [priceType, setPriceType] = useState<PriceType>('fixed');
   const [priceAmount, setPriceAmount] = useState('');
   const [currency, setCurrency] = useState(DEFAULT_CURRENCY.code);
@@ -103,6 +105,9 @@ export function ApplyBottomSheet({
 
     reset();
     onSuccess();
+    // 1.1 (7.6): oferta e trimisă → răspunsul șoferului vine prin push. Foaia apare după
+    // închiderea acesteia (pauză în useNotificationPrimer).
+    maybeShowNotificationPrimer('application-sent');
   }
 
   return (

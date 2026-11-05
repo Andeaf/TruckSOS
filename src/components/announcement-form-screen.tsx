@@ -19,6 +19,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import type { PickedImage } from '@/lib/media';
 import { useAccountGate } from '@/hooks/use-account-gate';
 import { useAuth } from '@/hooks/use-auth';
+import { useNotificationPrimer } from '@/hooks/use-notification-primer';
 import { createAnnouncement } from '@/hooks/use-announcements';
 import {
   clearAnnouncementDraft,
@@ -50,6 +51,7 @@ export function AnnouncementFormScreen({
 }) {
   const { session } = useAuth();
   const { requireAccount } = useAccountGate();
+  const { maybeShow: maybeShowNotificationPrimer } = useNotificationPrimer();
   const { t } = useTranslation();
   const guard = useSubmitGuard();
   const theme = useTheme();
@@ -265,9 +267,11 @@ export function AnnouncementFormScreen({
 
     // Anunțul e creat; urcăm pozele (best-effort, loading-ul acoperă și upload-ul).
     // Dacă vreuna eșuează, anunțul rămâne creat, dar șoferul TREBUIE să afle.
+    let photosFailed = false;
     if (photos.length > 0) {
       const { failed } = await uploadAnnouncementPhotos(id, photos);
       if (failed > 0) {
+        photosFailed = true;
         Alert.alert(
           t('driver.announcements.photosFailedTitle'),
           t('driver.announcements.photosFailedMessage', { count: failed }),
@@ -280,6 +284,9 @@ export function AnnouncementFormScreen({
     setLoading(false);
     savedRef.current = true;
     goBack();
+    // 1.1 (7.6): primul moment cu sens pentru notificări (ofertele vin prin push). Nu peste
+    // alerta „pozele n-au urcat” — pe iOS a doua fereastră peste o alertă nu mai apare.
+    if (!photosFailed) maybeShowNotificationPrimer('announcement-published');
   }
 
   return (

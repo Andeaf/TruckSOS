@@ -17,6 +17,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
+import { useNotificationPrimer } from '@/hooks/use-notification-primer';
 import { useTheme } from '@/hooks/use-theme';
 import { isValidPhone, isValidVat, normalizePhone, normalizeVat } from '@/lib/profile-validation';
 
@@ -40,6 +41,7 @@ const ROLE_META: Record<PickedRole, { color: string; icon: 'local-shipping' | 'b
  */
 export default function RoleSelectScreen() {
   const { createProfile, session, signOut } = useAuth();
+  const { maybeShow: maybeShowNotificationPrimer } = useNotificationPrimer();
   const { t } = useTranslation();
   const theme = useTheme();
   const [role, setRole] = useState<PickedRole | null>(null);
@@ -100,8 +102,11 @@ export default function RoleSelectScreen() {
     if (err) {
       setError(err);
       setLoading(false);
+      return;
     }
-    // Pe succes, _layout.tsx redirecționează automat la home-ul rolului
+    // Pe succes, _layout.tsx redirecționează automat la home-ul rolului. 1.1 (7.6): contul nou
+    // ajunge pe ecranul principal → foaia de notificări (doar dacă permisiunea se poate cere).
+    maybeShowNotificationPrimer('role-chosen');
   }
 
   // Delogarea șterge sesiunea (și intenția de înregistrare) → garda duce la login,

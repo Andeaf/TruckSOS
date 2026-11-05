@@ -150,11 +150,53 @@ function getNotifications(): NotificationsModule {
 let permissionRefused = false;
 
 /**
- * Cere permisiunea, obține tokenul Expo și îl salvează în `push_tokens`.
- * Întoarce tokenul (ca să-l putem șterge la logout) sau `null` dacă push-ul
- * nu e disponibil ori userul a refuzat.
+ * Starea permisiunii de notificări, FĂRĂ dialog (1.1, 7.6 — AUDIT E.21):
+ * `granted` = acordată; `askable` = se mai poate cere (încă neîntrebat, sau pe Android 13+
+ * un singur refuz); `blocked` = refuz definitiv (`canAskAgain === false`) — rămâne doar
+ * comutatorul din Setări; `unavailable` = web / Expo Go / emulator.
  */
-export async function registerPushToken(userId: string): Promise<string | null> {
+export type PushPermissionState = 'granted' | 'askable' | 'blocked' | 'unavailable';
+
+export async function getPushPermissionState(): Promise<PushPermissionState> {
+  if (!pushAvailable()) return 'unavailable';
+  try {
+    const perm = await getNotifications().getPermissionsAsync();
+    if (perm.granted) return 'granted';
+    return perm.canAskAgain && !permissionRefused ? 'askable' : 'blocked';
+  } catch {
+    return 'unavailable';
+  }
+}
+
+/**
+ * Cine ține minte tokenul pentru logout (use-auth) află și de înregistrările pornite din
+ * altă parte (foaia „Continuă", comutatoarele) — altfel tokenul revendicat după acordarea
+ * permisiunii n-ar mai fi șters de pe server la deconectare.
+ */
+type TokenListener = (userId: string, token: string) => void;
+const tokenListeners = new Set<TokenListener>();
+
+export function onPushTokenRegistered(listener: TokenListener): () => void {
+  tokenListeners.add(listener);
+  return () => {
+    tokenListeners.delete(listener);
+  };
+}
+
+/**
+ * Obține tokenul Expo și îl salvează în `push_tokens`.
+ * Întoarce tokenul (ca să-l putem șterge la logout) sau `null` dacă push-ul
+ * nu e disponibil, permisiunea lipsește ori userul a refuzat.
+ *
+ * `prompt` (1.1, 7.6 — AUDIT E.21): doar cu `true` se poate afișa dialogul de sistem —
+ * după un gest explicit (comutator în Setări / canal, „Continuă" din foaia de notificări).
+ * Fluxul automat de la login / prim-plan trece `false`: înregistrează doar dacă permisiunea
+ * e DEJA acordată, altfel iese fără să întrebe (pe iOS un refuz reflex e definitiv).
+ */
+export async function registerPushToken(
+  userId: string,
+  options: { prompt: boolean }
+): Promise<string | null> {
   if (!pushAvailable() || permissionRefused) return null;
 
   try {
@@ -171,6 +213,9 @@ export async function registerPushToken(userId: string): Promise<string | null> 
     }
 
     const existing = await Notifications.getPermissionsAsync();
+    // Fără gest explicit nu cerem nimic și NU marcăm refuzul: comutatorul sau foaia
+    // „Continuă" trebuie să poată afișa dialogul mai târziu, în aceeași rulare.
+    if (!existing.granted && !options.prompt) return null;
     const granted =
       existing.granted ||
       (await Notifications.requestPermissionsAsync()).granted;
@@ -239,6 +284,7 @@ export async function registerPushToken(userId: string): Promise<string | null> 
         } catch {
           // Doar optimizare; fără ea dedupe-ul rămâne pe tokenul nativ.
         }
+        tokenListeners.forEach((listener) => listener(userId, token));
         return token;
       }
       lastError = error.message;
