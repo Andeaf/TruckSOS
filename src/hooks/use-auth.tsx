@@ -555,7 +555,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile((prev) => (prev ? ({ ...prev, ...updates } as Profile) : prev));
     const { error } = await supabase
       .from('profiles')
-      .update(updates as never)
+      .update(updates)
       .eq('id', userId);
     await fetchProfile(userId);
     return translateDbError(error);
@@ -580,10 +580,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       i18n.t('common.defaultUser');
     if (!userId) return i18n.t('common.noSession');
 
-    // 1.1 (faza 4): `profiles` e un view peste `app.profiles`, iar tipurile generate pun
-    // `never` pe coloanele mascate cu CASE (phone, address, vat_number…) pentru că
-    // generatorul nu le vede scriibile. Scrierea merge însă prin triggerul INSTEAD OF
-    // INSERT al view-ului, deci tipul real al inserării îl descriem aici, o singură dată.
+    // 1.1 (faza 4): `profiles` e un view peste `app.profiles`; scrierea merge prin triggerul
+    // INSTEAD OF INSERT, iar tipul Insert corect (phone, address, vat_number scriibile) vine
+    // din src/types/database-overrides.ts. ProfileInsert îngustează în plus rolul.
     const row: ProfileInsert = {
       id: userId,
       full_name: fullName,
@@ -592,7 +591,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       address: details.address ?? null,
       vat_number: details.vat_number ?? null,
     };
-    const { error } = await supabase.from('profiles').insert(row as never);
+    const { error } = await supabase.from('profiles').insert(row);
 
     if (!error) {
       await clearAuthEntry();

@@ -28,7 +28,7 @@ export function useHistory(driverId: string | undefined) {
       .eq('hidden_from_history', false)
       .order('created_at', { ascending: false })
       .limit(200);
-    setItems((data as unknown as HistoryAnnouncement[]) ?? []);
+    setItems((data as HistoryAnnouncement[] | null) ?? []);
     setLoading(false);
   }, [driverId]);
 

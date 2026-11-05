@@ -52,7 +52,7 @@ export type OpenAnnouncementNear = AnnouncementWithDriver & {
   distance_km: number | null;
 };
 
-/** Rândul întors de RPC-ul `open_announcements_near`. Tipurile generate există din 4.5 (Functions), dar fără `| null` pe coloanele nullable; override-ul MergeDeep peste `Database` vine în 1.1, până atunci tipul local e sursa. */
+/** Rândul întors de RPC-ul `open_announcements_near`. Tipurile generate există din 4.5 (Functions), dar fără `| null` pe coloanele nullable; override-ul din `src/types/database-overrides.ts` acoperă intenționat doar view-urile, nu Functions, deci pentru rândurile RPC tipul local rămâne sursa. */
 type OpenAnnouncementNearRow = Omit<Announcement, 'plate_number' | 'chassis_number'> & {
   lat_approx: number | string | null;
   lng_approx: number | string | null;
@@ -139,16 +139,16 @@ export async function createAnnouncement(
       chassis_number: options.chassisNumber || null,
       latitude: options.latitude ?? null,
       longitude: options.longitude ?? null,
-    } as never)
+    })
     .select('id')
     .single();
-  return { id: (data as { id: string } | null)?.id ?? null, error: translateDbError(error) };
+  return { id: data?.id ?? null, error: translateDbError(error) };
 }
 
 export async function resolveAnnouncement(id: string): Promise<string | null> {
   const { error } = await supabase
     .from('announcements')
-    .update({ status: 'resolved' } as never)
+    .update({ status: 'resolved' })
     .eq('id', id);
   return translateDbError(error);
 }
@@ -156,7 +156,7 @@ export async function resolveAnnouncement(id: string): Promise<string | null> {
 export async function cancelAnnouncement(id: string): Promise<string | null> {
   const { error } = await supabase
     .from('announcements')
-    .update({ status: 'cancelled' } as never)
+    .update({ status: 'cancelled' })
     .eq('id', id);
   return translateDbError(error);
 }
@@ -241,7 +241,7 @@ export async function fetchAnnouncementById(
     .select('*, mechanic:profiles!mechanic_id(full_name,avatar_path,deleted_at)')
     .eq('id', id)
     .single();
-  return (data as unknown as AnnouncementWithMechanic) ?? null;
+  return (data as AnnouncementWithMechanic | null) ?? null;
 }
 
 export async function acceptAnnouncement(announcementId: string): Promise<string | null> {
@@ -259,7 +259,7 @@ export async function fetchOpenAnnouncementById(
     .select('*, driver:profiles!driver_id(full_name,avatar_path,deleted_at)')
     .eq('id', id)
     .single();
-  return (data as unknown as AnnouncementWithDriver) ?? null;
+  return (data as AnnouncementWithDriver | null) ?? null;
 }
 
 export async function applyToAnnouncement(
@@ -412,7 +412,7 @@ export async function fetchApplicationsForAnnouncement(
     .eq('status', 'pending')
     .order('created_at', { ascending: true })
     .limit(200);
-  return (data as unknown as ApplicationWithMechanic[]) ?? [];
+  return (data as ApplicationWithMechanic[] | null) ?? [];
 }
 
 export type ApplicationWithDetails = Application & {
@@ -452,7 +452,7 @@ export function useMyApplications() {
       .eq('mechanic_id', userId)
       .order('created_at', { ascending: false })
       .limit(200);
-    const all = (data as unknown as ApplicationWithDetails[]) ?? [];
+    const all = (data as ApplicationWithDetails[] | null) ?? [];
     setApplications(all.filter((a) => a.announcement != null));
     setLoading(false);
   }, [userId]);
@@ -477,7 +477,7 @@ export function useApplication(id: string) {
       )
       .eq('id', id)
       .single();
-    setApplication((data as unknown as ApplicationWithDetails) ?? null);
+    setApplication((data as ApplicationWithDetails | null) ?? null);
     setLoading(false);
   }, [id]);
 

@@ -128,7 +128,7 @@ export async function fetchMessageMechanicContext(
     .select('id,full_name,avatar_path,deleted_at,role,rating_avg,rating_count,specialization,activity_zone')
     .eq('id', mechanicId)
     .maybeSingle();
-  return (data as unknown as MessageMechanicContext) ?? null;
+  return (data as MessageMechanicContext | null) ?? null;
 }
 
 /** Contextul de anunț de depanare după id — null și când RLS nu-l lasă vizibil
@@ -141,7 +141,7 @@ export async function fetchMessageAnnouncementContext(
     .select('id,location,status,description')
     .eq('id', announcementId)
     .maybeSingle();
-  return (data as unknown as MessageAnnouncementContext) ?? null;
+  return (data as MessageAnnouncementContext | null) ?? null;
 }
 
 /** Ultima activitate a conversației: ultimul mesaj (migrarea 20260811) sau, pe schema

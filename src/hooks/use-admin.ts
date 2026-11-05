@@ -1,7 +1,7 @@
 import { translateDbError } from '@/lib/db-errors';
 import { supabase } from '@/lib/supabase';
 import type { AnnouncementStatus, ReportReason, ReportStatus } from '@/types/database';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database-overrides';
 
 /**
  * Stratul de date admin (Faza 16). Toate trec prin RPC-uri SECURITY DEFINER care încep cu
