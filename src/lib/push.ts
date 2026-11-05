@@ -24,7 +24,7 @@ const LAST_TOKEN_KEY = 'push:lastRegisteredToken';
 
 /** Datele pe care le trimite serverul, ca tapul să deschidă ecranul potrivit. */
 export interface PushData {
-  type?: 'conversation' | 'announcement' | 'application' | 'feed' | 'channel' | 'listing';
+  type?: 'conversation' | 'announcement' | 'application' | 'feed' | 'channel' | 'listing' | 'report' | 'moderation';
   id?: string;
   /** 1.1 (G): mesajul la care derulează tap-ul (push de mențiune/reply în canal). */
   message_id?: string;

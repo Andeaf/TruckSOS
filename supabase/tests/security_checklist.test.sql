@@ -90,7 +90,8 @@ select is(
   (select coalesce(string_agg(fn, ', ' order by fn), '') from fns
     where (anon_x or auth_x)
       and fn in ('_purge_user_data', 'notify_push', 'notify_mechanics_new_announcement',
-                 'storage_api_delete', 'recompute_mechanic_rating', 'is_blocked_by', 'accept_announcement')),
+                 'storage_api_delete', 'recompute_mechanic_rating', 'is_blocked_by', 'accept_announcement',
+                 'claim_push_batch', 'finish_push_batch', 'pending_push_receipts', 'finish_push_receipts')),
   '', 'Funcțiile interne rămân închise');
 
 -- 5. SECURITY DEFINER fără search_path fixat

@@ -13,6 +13,16 @@ import { pushAvailable, type PushData } from '@/lib/push';
 // plină de dubluri ale aceluiași chat — back te tot întorcea pe el (bug 26 aug).
 const handledResponses = new Set<string>();
 
+/** Tipurile cu ecran propriu (switch-ul de mai jos); restul nu navighează nicăieri. */
+const NAVIGABLE_TYPES: ReadonlySet<NonNullable<PushData['type']>> = new Set<NonNullable<PushData['type']>>([
+  'conversation',
+  'announcement',
+  'feed',
+  'application',
+  'listing',
+  'channel',
+]);
+
 /**
  * Tap pe notificare → ecranul potrivit (PLAN_FAZA12.md §3.6).
  * Fără asta, notificarea doar deschide aplicația pe ultimul ecran — jumătate din
@@ -44,6 +54,21 @@ export function usePushNavigation() {
     // tot pe același ecran (bug 10 aug). navigate revine la instanța existentă.
     function open(data: PushData) {
       if (!data.id || !data.type) return;
+
+      // 1.1 (faza 3.3): tipurile noi și cele necunoscute se tratează ÎNAINTE de comutarea
+      // modului admin — altfel un admin aflat în modul admin care apasă un push nou era
+      // scos pe mecanic/șofer și nu se întâmpla nimic (review 2 nov). `report` → ecranul
+      // de rapoarte din admin (doar pentru admini, în modul admin); `moderation` → nimic de
+      // deschis (notice-ul se citește din aplicație); un tip pe care aplicația nu-l știe
+      // (server mai nou) → ignorat.
+      if (data.type === 'report') {
+        if (!isAdmin) return;
+        if (adminViewAs !== 'admin') setAdminViewAs('admin');
+        router.navigate('/(admin)/reports' as never);
+        return;
+      }
+      if (data.type === 'moderation') return;
+      if (!NAVIGABLE_TYPES.has(data.type)) return;
       const params = { id: data.id };
 
       // Fiecare tip de notificare trăiește pe o „parte" fixă a aplicației;

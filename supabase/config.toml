@@ -415,3 +415,11 @@ enabled = true
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# Faza 3 (decizia lui David, 3 nov 2026): Edge Functions de push apelate doar de pg_cron, cu header-ul
+# `x-push-secret` ca singură poartă (vezi supabase/functions/_shared/push-secret.ts); fără JWT la gateway.
+[functions.push-dispatch]
+verify_jwt = false
+
+[functions.push-receipts]
+verify_jwt = false
