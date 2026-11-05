@@ -8,7 +8,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AccountGateSheet } from '@/components/account-gate-sheet';
 import { CaptchaHost } from '@/components/captcha-host';
-import { NotificationPrimer } from '@/components/notification-primer';
 import { UpdatePrompt } from '@/components/update-prompt';
 import { AccountGateProvider } from '@/hooks/use-account-gate';
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
@@ -17,8 +16,8 @@ import { AuthProvider, useAuth } from '@/hooks/use-auth';
 import '@/lib/web-alert';
 import { BlockedProvider } from '@/hooks/use-blocked';
 import { useLangSync } from '@/hooks/use-lang-sync';
-import { NotificationPrimerProvider } from '@/hooks/use-notification-primer';
 import { usePushNavigation } from '@/hooks/use-push-navigation';
+import { PushPermissionRequestProvider } from '@/hooks/use-push-permission-request';
 import { SettingsProvider, useSettings } from '@/hooks/use-settings';
 import { isBanned } from '@/lib/ban';
 import { sessionNeedsMfa } from '@/lib/mfa';
@@ -143,10 +142,6 @@ function RootLayoutNav() {
       />
       {/* 1.1 (Faza B2): „Ai nevoie de un cont" — o deschide useAccountGate().requireAccount. */}
       <AccountGateSheet />
-      {/* 1.1 (7.6, AUDIT E.21): „Află imediat când…” înaintea dialogului de notificări — o
-          deschide useNotificationPrimer().maybeShow după alegerea rolului, publicarea unui
-          anunț sau o ofertă. Aici, nu în (driver)/(mechanic): alegerea rolului e în (auth). */}
-      <NotificationPrimer />
       {/* 1.1 (PLAN_1.1_FIX 1.8): Turnstile pe telefon — se montează doar cu cheie configurată. */}
       <CaptchaHost />
     </ThemeProvider>
@@ -166,11 +161,16 @@ export default function RootLayout() {
           <I18nextProvider i18n={i18n}>
             <AuthProvider>
               <AccountGateProvider>
-                <NotificationPrimerProvider>
+                {/* 1.1 (7.6, AUDIT E.21; 5 nov 2026: fără ecran înaintea dialogului sistemului):
+                    usePushPermissionRequest().request cere direct dialogul de notificări după
+                    alegerea rolului, publicarea unui anunț, o ofertă sau la prima intrare pe
+                    ecranul de start. Aici, la rădăcină: alegerea rolului e în (auth), iar
+                    ecranele care declanșează cererea se demontează imediat după. */}
+                <PushPermissionRequestProvider>
                   <BlockedProvider>
                     <RootLayoutNav />
                   </BlockedProvider>
-                </NotificationPrimerProvider>
+                </PushPermissionRequestProvider>
               </AccountGateProvider>
             </AuthProvider>
           </I18nextProvider>

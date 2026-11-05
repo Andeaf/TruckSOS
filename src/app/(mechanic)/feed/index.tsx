@@ -25,7 +25,7 @@ import {
   Spacing,
 } from '@/constants/theme';
 import { useExitConfirm } from '@/hooks/use-exit-confirm';
-import { useNotificationPrimerOnStart } from '@/hooks/use-notification-primer';
+import { usePushPermissionRequestOnStart } from '@/hooks/use-push-permission-request';
 import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
@@ -58,8 +58,8 @@ export default function MechanicFeedScreen() {
   // Tab-ul de start al mecanicului: back-ul de aici întreabă dacă închide aplicația.
   useExitConfirm();
   // 1.1 (7.6): contul existent fără permisiunea de notificări (telefon nou / reinstalare)
-  // primește aici foaia „Află imediat când…”, o dată pe rulare.
-  useNotificationPrimerOnStart();
+  // primește aici dialogul sistemului pentru notificări, o dată pe rulare.
+  usePushPermissionRequestOnStart();
   const { profile, session, pendingDraft } = useAuth();
   const { t } = useTranslation();
   const theme = useTheme();

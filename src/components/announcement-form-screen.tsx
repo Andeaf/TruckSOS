@@ -19,7 +19,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import type { PickedImage } from '@/lib/media';
 import { useAccountGate } from '@/hooks/use-account-gate';
 import { useAuth } from '@/hooks/use-auth';
-import { useNotificationPrimer } from '@/hooks/use-notification-primer';
+import { usePushPermissionRequest } from '@/hooks/use-push-permission-request';
 import { createAnnouncement } from '@/hooks/use-announcements';
 import {
   clearAnnouncementDraft,
@@ -51,7 +51,7 @@ export function AnnouncementFormScreen({
 }) {
   const { session } = useAuth();
   const { requireAccount } = useAccountGate();
-  const { maybeShow: maybeShowNotificationPrimer } = useNotificationPrimer();
+  const { request: requestPushPermission } = usePushPermissionRequest();
   const { t } = useTranslation();
   const guard = useSubmitGuard();
   const theme = useTheme();
@@ -284,9 +284,10 @@ export function AnnouncementFormScreen({
     setLoading(false);
     savedRef.current = true;
     goBack();
-    // 1.1 (7.6): primul moment cu sens pentru notificări (ofertele vin prin push). Nu peste
-    // alerta „pozele n-au urcat” — pe iOS a doua fereastră peste o alertă nu mai apare.
-    if (!photosFailed) maybeShowNotificationPrimer('announcement-published');
+    // 1.1 (7.6): primul moment cu sens pentru notificări (ofertele vin prin push) → dialogul
+    // sistemului, dacă încă nu s-a decis. Nu peste alerta „pozele n-au urcat”: două ferestre
+    // una peste alta, iar alerta despre poze e mai importantă.
+    if (!photosFailed) requestPushPermission('announcement-published');
   }
 
   return (

@@ -1294,16 +1294,6 @@
     "announcementPhoto": "Anzeigenfoto {{n}}"
   },
   "permissions": {
-    "notifTitle": "Sofort wissen, wenn sich etwas tut",
-    "notifBodyDriver": "Aktiviere Benachrichtigungen, damit du kein Angebot verpasst. Wir melden uns, wenn:",
-    "notifDriverOffers": "ein Mechaniker ein Angebot zu deiner Anzeige sendet",
-    "notifDriverMessages": "du eine neue Nachricht erhältst",
-    "notifBodyMechanic": "Aktiviere Benachrichtigungen, damit dir kein Auftrag entgeht. Wir melden uns, wenn:",
-    "notifMechanicNearby": "ein Fahrer eine Anzeige in deiner Nähe veröffentlicht",
-    "notifMechanicMessages": "ein Fahrer dir antwortet oder eine Nachricht schreibt",
-    "notifHint": "Du kannst sie jederzeit in den Einstellungen ausschalten.",
-    "allow": "Weiter",
-    "later": "Später",
     "locationTitle": "Standort für Entfernungen aktivieren",
     "locationBody": "So siehst du, wie weit jede Anzeige entfernt ist und was in deinem gewählten Umkreis liegt.",
     "enableLocation": "Standort aktivieren"

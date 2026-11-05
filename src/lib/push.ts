@@ -146,6 +146,24 @@ function getNotifications(): NotificationsModule {
   return notifications;
 }
 
+/**
+ * Momentul ultimei cereri de permisiune rămase fără acord, per cont (pauza de 7 zile din
+ * usePushPermissionRequest). Aici, nu în hook: use-auth o șterge la logout, iar hook-ul
+ * importă use-auth — din push.ts nu apare import circular.
+ */
+export function pushPermissionAskedAtKey(userId: string): string {
+  return `pushPermission:askedAt:${userId}`;
+}
+
+/** La logout (use-auth.signOut): pauza contului nu rămâne pe telefon. Best-effort. */
+export async function clearPushPermissionAskedAt(userId: string): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(pushPermissionAskedAtKey(userId));
+  } catch {
+    // Fără efect asupra logout-ului; cel mult pauza rămâne până expiră.
+  }
+}
+
 /** Userul a refuzat permisiunea în rularea asta → nu mai insistăm la fiecare foreground. */
 let permissionRefused = false;
 
@@ -170,7 +188,7 @@ export async function getPushPermissionState(): Promise<PushPermissionState> {
 
 /**
  * Cine ține minte tokenul pentru logout (use-auth) află și de înregistrările pornite din
- * altă parte (foaia „Continuă", comutatoarele) — altfel tokenul revendicat după acordarea
+ * altă parte (cererea directă a dialogului sistemului după rol/anunț/ofertă/prima intrare, comutatoarele) — altfel tokenul revendicat după acordarea
  * permisiunii n-ar mai fi șters de pe server la deconectare.
  */
 type TokenListener = (userId: string, token: string) => void;
@@ -189,7 +207,7 @@ export function onPushTokenRegistered(listener: TokenListener): () => void {
  * nu e disponibil, permisiunea lipsește ori userul a refuzat.
  *
  * `prompt` (1.1, 7.6 — AUDIT E.21): doar cu `true` se poate afișa dialogul de sistem —
- * după un gest explicit (comutator în Setări / canal, „Continuă" din foaia de notificări).
+ * după un gest explicit (comutator în Setări / canal; cererea directă după rol/anunț/ofertă/prima intrare — fără ecran înaintea dialogului, decizia din 5 nov).
  * Fluxul automat de la login / prim-plan trece `false`: înregistrează doar dacă permisiunea
  * e DEJA acordată, altfel iese fără să întrebe (pe iOS un refuz reflex e definitiv).
  */
@@ -213,8 +231,8 @@ export async function registerPushToken(
     }
 
     const existing = await Notifications.getPermissionsAsync();
-    // Fără gest explicit nu cerem nimic și NU marcăm refuzul: comutatorul sau foaia
-    // „Continuă" trebuie să poată afișa dialogul mai târziu, în aceeași rulare.
+    // Fără gest explicit nu cerem nimic și NU marcăm refuzul: comutatorul sau cererea
+    // directă (use-push-permission-request) trebuie să poată afișa dialogul mai târziu, în aceeași rulare.
     if (!existing.granted && !options.prompt) return null;
     const granted =
       existing.granted ||

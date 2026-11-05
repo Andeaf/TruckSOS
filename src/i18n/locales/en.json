@@ -1294,16 +1294,6 @@
     "announcementPhoto": "Announcement photo {{n}}"
   },
   "permissions": {
-    "notifTitle": "Know the moment something happens",
-    "notifBodyDriver": "Turn on notifications so you don't miss help. We'll let you know when:",
-    "notifDriverOffers": "a mechanic sends an offer for your announcement",
-    "notifDriverMessages": "you get a new message",
-    "notifBodyMechanic": "Turn on notifications so you don't miss a job. We'll let you know when:",
-    "notifMechanicNearby": "a driver posts an announcement in your area",
-    "notifMechanicMessages": "a driver replies or sends you a message",
-    "notifHint": "You can turn them off anytime in Settings.",
-    "allow": "Continue",
-    "later": "Not now",
     "locationTitle": "Turn on location for distances",
     "locationBody": "See how far away each announcement is and what falls within your chosen radius.",
     "enableLocation": "Turn on location"

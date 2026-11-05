@@ -17,7 +17,12 @@ import { getCaptchaToken } from '@/lib/captcha';
 import { readStoredSession, supabase } from '@/lib/supabase';
 import { translateDbError } from '@/lib/db-errors';
 import { sessionNeedsMfa } from '@/lib/mfa';
-import { onPushTokenRegistered, registerPushToken, unregisterPushToken } from '@/lib/push';
+import {
+  clearPushPermissionAskedAt,
+  onPushTokenRegistered,
+  registerPushToken,
+  unregisterPushToken,
+} from '@/lib/push';
 import { buildDiagnosticEntry, flushDiagnostics, queueDiagnostic } from '@/lib/diagnostic-log';
 import { diagnoseNetwork, isNetworkError } from '@/lib/network-diagnosis';
 import { clearProfileCache, readProfileCache, writeProfileCache } from '@/lib/profile-cache';
@@ -211,7 +216,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 1.1 (7.1/7.3): mesajele netrimise ale contului și URL-urile semnate din cache nu rămân
     // pe telefon pentru următorul cont (date personale).
     const signedOutUserId = sessionRef.current?.user.id;
-    if (signedOutUserId) await clearOutbox(signedOutUserId);
+    if (signedOutUserId) {
+      await clearOutbox(signedOutUserId);
+      // 5 nov 2026: și pauza de 7 zile a cererii de notificări (usePushPermissionRequest).
+      await clearPushPermissionAskedAt(signedOutUserId);
+    }
     await clearSignedUrlCache();
     // Contul Google ales rămâne memorat nativ; fără asta următorul tap pe „Continuă cu
     // Google” ar intra direct, fără selector de cont (best-effort, doar pe telefon).
@@ -458,11 +467,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (pushTokenRef.current && pushOwnerRef.current === userId) return;
       attemptsLeft -= 1;
       // 1.1 (7.6, AUDIT E.21): fluxul automat NU mai afișează dialogul de sistem — doar
-      // înregistrează dacă permisiunea e deja acordată. Cererea vine din foaia de
-      // notificări („Continuă") sau din comutatoarele din Setări / canal.
+      // înregistrează dacă permisiunea e deja acordată. Cererea vine din use-push-permission-request (dialogul
+      // sistemului după rol/anunț/ofertă/prima intrare) sau din comutatoarele din Setări / canal.
       registerPushToken(userId, { prompt: false }).then((token) => {
         if (cancelled) return;
-        // Între timp foaia „Continuă" a revendicat tokenul pentru contul ăsta (ascultătorul
+        // Între timp cererea directă a revendicat tokenul pentru contul ăsta (ascultătorul
         // de mai jos) → un rezultat gol, pornit înainte de acordare, nu-l șterge din ref.
         if (!token && pushOwnerRef.current === userId && pushTokenRef.current) return;
         pushTokenRef.current = token;
@@ -482,7 +491,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [session, profileId]);
 
-  // 1.1 (7.6): tokenul revendicat din altă parte (foaia „Continuă", comutatoarele) ajunge și
+  // 1.1 (7.6): tokenul revendicat din altă parte (cererea directă, comutatoarele) ajunge și
   // aici — altfel, cu permisiunea acordată abia după login, logout-ul nu l-ar mai șterge.
   useEffect(
     () =>

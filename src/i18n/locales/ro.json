@@ -1297,16 +1297,6 @@
     "announcementPhoto": "Poză anunț {{n}}"
   },
   "permissions": {
-    "notifTitle": "Află imediat când se întâmplă ceva",
-    "notifBodyDriver": "Pornește notificările ca să nu ratezi ajutorul. Îți scriem când:",
-    "notifDriverOffers": "un mecanic trimite o ofertă la anunțul tău",
-    "notifDriverMessages": "primești un mesaj nou",
-    "notifBodyMechanic": "Pornește notificările ca să nu ratezi o lucrare. Îți scriem când:",
-    "notifMechanicNearby": "un șofer publică un anunț în zona ta",
-    "notifMechanicMessages": "un șofer îți răspunde sau îți trimite un mesaj",
-    "notifHint": "Le poți opri oricând din Setări.",
-    "allow": "Continuă",
-    "later": "Mai târziu",
     "locationTitle": "Activează locația pentru distanțe",
     "locationBody": "Ca să vezi cât de departe e fiecare anunț și ce intră în raza aleasă.",
     "enableLocation": "Activează locația"
