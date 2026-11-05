@@ -45,6 +45,8 @@ export function MarketCard({ listing, coverUrl, onPress, horizontal = false }: M
             {coverUrl ? (
               <RemoteImage
                 uri={coverUrl}
+                // Miniatură (caseta de 96) — activă doar cu IMAGE_TRANSFORMS_ENABLED (7.3).
+                thumbnailWidth={96}
                 accessibilityLabel={listing.title}
                 style={[styles.rowCover, { backgroundColor: theme.backgroundSelected }]}
                 contentFit="cover"
@@ -91,6 +93,8 @@ export function MarketCard({ listing, coverUrl, onPress, horizontal = false }: M
           {coverUrl ? (
             <RemoteImage
               uri={coverUrl}
+              // Miniatură (~jumătate de ecran) — activă doar cu IMAGE_TRANSFORMS_ENABLED (7.3).
+              thumbnailWidth={240}
               accessibilityLabel={listing.title}
               style={[styles.cover, { backgroundColor: theme.backgroundSelected }]}
               contentFit="cover"

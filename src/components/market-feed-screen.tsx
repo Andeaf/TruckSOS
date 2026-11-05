@@ -40,6 +40,7 @@ import {
   type MarketSort,
 } from '@/hooks/use-market';
 import { dismissNotificationsOfType } from '@/lib/push';
+import { notifyRetryTriggers } from '@/lib/retry-triggers';
 import type { MarketCategory, Role } from '@/types/database';
 
 /**
@@ -124,6 +125,8 @@ export function MarketFeedScreen({ role, guest = false }: MarketFeedScreenProps)
   const onPullRefresh = useCallback(async () => {
     setPullRefreshing(true);
     await refresh();
+    // Coperțile picate se reîncarcă la gest (refresh-ul nu le mai dă URL nou — cache 7.3).
+    notifyRetryTriggers();
     setPullRefreshing(false);
   }, [refresh]);
 

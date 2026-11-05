@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { translateDbError } from '@/lib/db-errors';
 import { supabase } from '@/lib/supabase';
+import { LIST_MIN_VALIDITY_MS, signPaths } from '@/lib/signed-url-cache';
 import { uploadPhoto, deletePhotos, signedUrls } from '@/lib/storage';
 import type { PickedImage } from '@/lib/media';
 import type {
@@ -162,7 +163,9 @@ export async function fetchListingCovers(
   for (const row of rows) {
     if (!coverPaths[row.listing_id]) coverPaths[row.listing_id] = row.storage_path;
   }
-  const urls = await signedUrls(Object.values(coverPaths));
+  // Cache global (AUDIT #29): un refresh al Market-ului nu mai re-semnează copertele
+  // încă valide (o cerere de semnare în minus; același URL → cardurile nu se re-randează).
+  const urls = await signPaths(Object.values(coverPaths), { minValidityMs: LIST_MIN_VALIDITY_MS });
 
   const result: Record<string, string> = {};
   for (const [listingId, path] of Object.entries(coverPaths)) {
