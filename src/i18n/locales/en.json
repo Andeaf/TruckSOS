@@ -1271,5 +1271,42 @@
     "disableConfirmBody": "Your account will be protected by your password only. You can turn it on again at any time.",
     "loginPrompt": "Enter the code from your authenticator app to sign in.",
     "signOut": "Sign out"
+  },
+  "a11y": {
+    "back": "Back",
+    "close": "Close",
+    "cancelSelection": "Cancel selection",
+    "clearSearch": "Clear search",
+    "addTruck": "Add truck",
+    "editTruck": "Edit truck",
+    "deleteTruck": "Delete truck",
+    "delete": "Delete",
+    "deleteAll": "Delete all",
+    "dismiss": "Dismiss",
+    "report": "Report",
+    "newAnnouncement": "New announcement",
+    "newListing": "New Market listing",
+    "removePhoto": "Remove photo",
+    "changePhoto": "Change profile photo",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "starOf": "{{n}} of {{total}}",
+    "announcementPhoto": "Announcement photo {{n}}"
+  },
+  "permissions": {
+    "locationTitle": "Turn on location for distances",
+    "locationBody": "See how far away each announcement is and what falls within your chosen radius.",
+    "enableLocation": "Turn on location"
+  },
+  "outbox": {
+    "sending": "Sending…",
+    "failed": "Not sent",
+    "retry": "Retry",
+    "discardTitle": "Delete unsent message?",
+    "discardBody": "The message didn't reach the recipient and will be removed from this phone.",
+    "editFailed": "Your edit wasn't saved",
+    "editFailedBody": "Check your connection and try again.",
+    "sendFailed": "Message not sent",
+    "attachmentMissing": "The file is no longer on this phone, so the unsent message was removed."
   }
 }

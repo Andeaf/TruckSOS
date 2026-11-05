@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
@@ -40,6 +41,7 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [guestLoading, setGuestLoading] = useState(false);
+  const passwordRef = useRef<TextInput>(null);
 
   // 15 oct: Google/Apple cu o identitate fără cont → use-auth a deconectat deja; aici explicăm
   // de ce a rămas pe login și unde se face contul (alegerea rolului e DOAR prin înregistrare).
@@ -81,14 +83,19 @@ export default function LoginScreen() {
         keyboardType="email-address"
         autoCapitalize="none"
         autoComplete="email"
+        returnKeyType="next"
+        onSubmitEditing={() => passwordRef.current?.focus()}
         required
       />
       <Input
+        ref={passwordRef}
         label={t('auth.login.passwordLabel')}
         value={password}
         onChangeText={setPassword}
         placeholder={t('auth.login.passwordPlaceholder')}
         secureTextEntry
+        returnKeyType="done"
+        onSubmitEditing={() => void guard(handleSignIn)}
         required
       />
 

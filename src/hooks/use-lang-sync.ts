@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 
 import i18n from '@/i18n';
 import { useAuth } from '@/hooks/use-auth';
@@ -15,6 +16,16 @@ export function useLangSync() {
   const { profile, updateProfile } = useAuth();
   const { lang, ready } = useSettings();
 
+  // Web: atributul `lang` al paginii urmează limba activă (cititoare de ecran, SEO).
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    if (!ready) return;
+    const active = i18n.language;
+    if (active === 'ro' || active === 'en' || active === 'de') {
+      document.documentElement.lang = active;
+    }
+  }, [ready, lang]);
+
   useEffect(() => {
     if (!ready || !profile) return;
 
@@ -23,8 +34,8 @@ export function useLangSync() {
     if (!active || active === profile.lang) return;
 
     updateProfile({ lang: active });
-    // `updateProfile` e recreat la fiecare render al providerului → îl ținem în afara
-    // dependențelor, altfel efectul s-ar relua la infinit.
+    // `updateProfile` e stabil din 1.1 (useCallback în use-auth), dar îl ținem în continuare
+    // în afara dependențelor: efectul trebuie să urmeze doar limba și profilul.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, lang, profile?.id, profile?.lang]);
 }

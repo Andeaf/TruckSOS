@@ -5,8 +5,6 @@ import { translateDbError } from '@/lib/db-errors';
 import { supabase } from '@/lib/supabase';
 import {
   fetchReplyEmbed,
-  hasChatV14,
-  hasMentionsColumn,
   replyEmbed,
   type MessageMention,
   type ReplyEmbedRow,
@@ -130,7 +128,7 @@ export async function fetchMessageMechanicContext(
     .select('id,full_name,avatar_path,deleted_at,role,rating_avg,rating_count,specialization,activity_zone')
     .eq('id', mechanicId)
     .maybeSingle();
-  return (data as unknown as MessageMechanicContext) ?? null;
+  return (data as MessageMechanicContext | null) ?? null;
 }
 
 /** Contextul de anunț de depanare după id — null și când RLS nu-l lasă vizibil
@@ -143,7 +141,7 @@ export async function fetchMessageAnnouncementContext(
     .select('id,location,status,description')
     .eq('id', announcementId)
     .maybeSingle();
-  return (data as unknown as MessageAnnouncementContext) ?? null;
+  return (data as MessageAnnouncementContext | null) ?? null;
 }
 
 /** Ultima activitate a conversației: ultimul mesaj (migrarea 20260811) sau, pe schema
@@ -302,10 +300,9 @@ export function useMessages(conversationId: string) {
     const known = messagesRef.current;
     const cutoff =
       known.length > 0 ? known[Math.max(0, known.length - CATCH_UP_OVERLAP)].created_at : null;
-    const v14 = await hasChatV14();
     let query = supabase
       .from('messages')
-      .select('*' + (v14 ? replyEmbed() : '') + MESSAGE_ATTACH_EMBEDS)
+      .select('*' + replyEmbed() + MESSAGE_ATTACH_EMBEDS)
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true })
       .limit(500);
@@ -341,10 +338,9 @@ export function useMessages(conversationId: string) {
     let active = true;
 
     (async () => {
-      const v14 = await hasChatV14();
       const { data } = await supabase
         .from('messages')
-        .select('*' + (v14 ? replyEmbed() : '') + MESSAGE_ATTACH_EMBEDS)
+        .select('*' + replyEmbed() + MESSAGE_ATTACH_EMBEDS)
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: false })
         .limit(500);
@@ -507,28 +503,26 @@ export async function sendMessage(
   announcementId: string | null = null,
   mentions: MessageMention[] | null = null
 ): Promise<{ message: Message | null; error: string | null }> {
-  const v14 = await hasChatV14();
   const row: Record<string, unknown> = {
     conversation_id: conversationId,
     sender_id: senderId,
     content,
     image_path: imagePath,
   };
-  // reply_to_id doar dacă schema îl are (altfel insert-ul ar eșua pe schema veche).
-  if (v14) row.reply_to_id = replyToId;
+  row.reply_to_id = replyToId;
   // Faza 19.4: contextul de anunț („Sunt interesat" din market) — cardul de deasupra.
   if (listingId) row.listing_id = listingId;
   // Faza 19.5: mecanicul recomandat din meniul „+".
   if (mechanicId) row.recommended_mechanic_id = mechanicId;
   // Faza 19.6: anunțul de depanare distribuit (butonul de share de pe detaliu).
   if (announcementId) row.announcement_id = announcementId;
-  // 10 sept: menționările „@Nume" — doar dacă schema are coloana (migrarea 20260910).
-  if (mentions && mentions.length > 0 && (await hasMentionsColumn())) row.mentions = mentions;
+  // 10 sept: menționările „@Nume".
+  if (mentions && mentions.length > 0) row.mentions = mentions;
   const { data, error } = await supabase
     .from('messages')
     .insert(row as never)
     // Returnăm și citatul + contextele, ca bula proprie să le afișeze instant (optimist).
-    .select('*' + (v14 ? replyEmbed() : '') + MESSAGE_ATTACH_EMBEDS)
+    .select('*' + replyEmbed() + MESSAGE_ATTACH_EMBEDS)
     .single();
   return { message: (data as unknown as Message) ?? null, error: translateDbError(error) };
 }
@@ -548,7 +542,6 @@ export async function sendFileMessage(
     console.warn('[chat] upload fișier eșuat:', error);
     return { message: null, error: error ?? 'upload_failed' };
   }
-  const v14 = await hasChatV14();
   const { data, error: insertError } = await supabase
     .from('messages')
     .insert({
@@ -561,7 +554,7 @@ export async function sendFileMessage(
       // 24 aug: durata videoclipurilor (secunde) — null la fișierele obișnuite.
       file_duration: file.durationS ?? null,
     } as never)
-    .select('*' + (v14 ? replyEmbed() : '') + MESSAGE_ATTACH_EMBEDS)
+    .select('*' + replyEmbed() + MESSAGE_ATTACH_EMBEDS)
     .single();
   return { message: (data as unknown as Message) ?? null, error: translateDbError(insertError) };
 }
@@ -741,8 +734,6 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
 
   const fetchCounts = useCallback(async () => {
     if (!userId) return;
-    const v14 = await hasChatV14();
-
     // Conversațiile ȘTERSE de utilizator (Faza 5, soft-delete) NU se mai văd în listă,
     // deci nu pot fi deschise → n-ar putea fi marcate ca citite niciodată. Dacă le-am
     // număra, badge-ul ar arăta mesaje necitite imposibil de eliminat.
@@ -790,8 +781,8 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
           .select('id', { count: 'exact', head: true })
           .eq('conversation_id', id)
           .neq('sender_id', userId);
-        // Tombstone-urile (Faza 14) nu se numără — dar doar dacă schema are coloana.
-        if (v14) query = query.is('deleted_at', null);
+        // Tombstone-urile (Faza 14) nu se numără.
+        query = query.is('deleted_at', null);
         if (lastRead) query = query.gt('created_at', lastRead);
         const { count } = await query;
         result[id] = count ?? 0;

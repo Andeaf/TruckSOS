@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/empty-state';
 import { HeaderText, ScreenHeader } from '@/components/screen-header';
 import { FilterChips } from '@/components/ui/filter-chips';
 import { ThemedView } from '@/components/themed-view';
+import { IconButton } from '@/components/ui/icon-button';
 import {
   HeaderGradient,
   HeaderGradientDirection,
@@ -205,9 +206,12 @@ export function AnnouncementsListScreen() {
       {selectionMode ? (
         <ScreenHeader>
           <View style={styles.selectionHeader}>
-            <Pressable onPress={exitSelection} hitSlop={8}>
-              <MaterialIcons name="close" size={24} color={theme.onHeader} />
-            </Pressable>
+            <IconButton
+              label={t('a11y.cancelSelection')}
+              onPress={exitSelection}
+              hitSlop={8}
+              icon={<MaterialIcons name="close" size={24} color={theme.onHeader} />}
+            />
             <HeaderText>
               {t('driver.announcements.selectedCount', { count: selectedIds.size })}
             </HeaderText>
@@ -296,6 +300,8 @@ export function AnnouncementsListScreen() {
 
       {!selectionMode ? (
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.newAnnouncement')}
           style={({ pressed }) => [
             styles.fab,
             { bottom: insets.bottom + Spacing.three },

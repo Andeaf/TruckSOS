@@ -4,58 +4,7 @@ import type { MessageMention } from '@/types/database';
 export type { MessageMention };
 
 /**
- * Detecție de capabilitate pentru schema Faza 14 (coloane reply_to_id/deleted_at/
- * edited_at pe mesaje). Migrațiile sunt ADITIVE și se rulează manual în Supabase
- * Studio; până atunci codul trebuie să funcționeze cu schema veche — altfel embed-ul
- * `reply_to` și coloanele noi ar face ORICE încărcare/trimitere de mesaj să eșueze (400).
- *
- * Probăm o singură dată (rezultat cache-uit pe sesiune) o coloană nouă. Pesimist la
- * eroare: dacă proba eșuează, folosim query-urile „vechi" care merg mereu.
- *
- * NOTĂ: după ce rulezi migrațiile, repornește aplicația ca `cached` să se re-evalueze.
- */
-
-let cached: boolean | null = null;
-let inflight: Promise<boolean> | null = null;
-
-export async function hasChatV14(): Promise<boolean> {
-  if (cached !== null) return cached;
-  if (!inflight) {
-    inflight = (async () => {
-      const { error } = await supabase.from('messages').select('reply_to_id').limit(1);
-      // 42703 = „column does not exist" → schema veche. Orice altă eroare: la fel, pesimist.
-      cached = !error;
-      inflight = null;
-      return cached;
-    })();
-  }
-  return inflight;
-}
-
-/**
- * Detecție de capabilitate pentru coloana `mentions` (migrarea 20260910): până
- * la rularea ei, menționările rămân text simplu („@Nume" fără evidențiere), iar
- * INSERT-ul NU trimite coloana — altfel orice mesaj cu menționare ar eșua (400).
- * Același tipar ca hasChatV14 (probă o dată pe sesiune, pesimist la eroare).
- */
-let mentionsCached: boolean | null = null;
-let mentionsInflight: Promise<boolean> | null = null;
-
-export async function hasMentionsColumn(): Promise<boolean> {
-  if (mentionsCached !== null) return mentionsCached;
-  if (!mentionsInflight) {
-    mentionsInflight = (async () => {
-      const { error } = await supabase.from('messages').select('mentions').limit(1);
-      mentionsCached = !error;
-      mentionsInflight = null;
-      return mentionsCached;
-    })();
-  }
-  return mentionsInflight;
-}
-
-/**
- * Fragmentul de embed pentru citat, doar dacă schema îl suportă.
+ * Fragmentul de embed pentru citat.
  *
  * ⚠️ Direcția self-join-ului (bug „Mesaj indisponibil", reparat 7 aug): forma veche
  * `reply_to:<tabel>!reply_to_id(...)` era rezolvată de PostgREST ca ONE-TO-MANY

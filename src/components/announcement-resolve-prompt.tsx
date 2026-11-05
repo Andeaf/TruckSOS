@@ -43,7 +43,7 @@ export function AnnouncementResolvePrompt({
     <View style={[styles.box, busy && styles.busy]}>
       <View style={styles.titleRow}>
         <Feather name="help-circle" size={16} color={AMBER} />
-        <Text style={styles.title} maxFontSizeMultiplier={1.2}>
+        <Text style={styles.title} maxFontSizeMultiplier={1.3}>
           {t('driver.announcements.resolvePromptTitle')}
         </Text>
         <Pressable
@@ -63,7 +63,7 @@ export function AnnouncementResolvePrompt({
           disabled={busy}
           onPress={onNotNow}
           style={(s: PressState) => [styles.notNow, isActive(s) && styles.notNowActive]}>
-          <Text style={styles.notNowText} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+          <Text style={styles.notNowText} numberOfLines={1} maxFontSizeMultiplier={1.3}>
             {notNowLabel}
           </Text>
         </Pressable>
@@ -72,7 +72,7 @@ export function AnnouncementResolvePrompt({
           disabled={busy}
           onPress={onResolve}
           style={(s: PressState) => [styles.resolve, isActive(s) && styles.resolveActive]}>
-          <Text style={styles.resolveText} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+          <Text style={styles.resolveText} numberOfLines={1} maxFontSizeMultiplier={1.3}>
             {t('driver.announcements.resolveButton')}
           </Text>
         </Pressable>
@@ -89,7 +89,7 @@ export function AnnouncementResolvePrompt({
             <Text
               style={[styles.cancelText, isActive(s) && styles.cancelTextActive]}
               numberOfLines={1}
-              maxFontSizeMultiplier={1.2}>
+              maxFontSizeMultiplier={1.3}>
               {t('driver.announcements.cancelButton')}
             </Text>
           )}

@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
+  TextInput,
   View,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -16,6 +17,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
+import { usePushPermissionRequest } from '@/hooks/use-push-permission-request';
 import { useTheme } from '@/hooks/use-theme';
 import { isValidPhone, isValidVat, normalizePhone, normalizeVat } from '@/lib/profile-validation';
 
@@ -39,6 +41,7 @@ const ROLE_META: Record<PickedRole, { color: string; icon: 'local-shipping' | 'b
  */
 export default function RoleSelectScreen() {
   const { createProfile, session, signOut } = useAuth();
+  const { request: requestPushPermission } = usePushPermissionRequest();
   const { t } = useTranslation();
   const theme = useTheme();
   const [role, setRole] = useState<PickedRole | null>(null);
@@ -59,9 +62,13 @@ export default function RoleSelectScreen() {
   ).trim();
   const [fullName, setFullName] = useState(metaName);
   const name = metaName ? metaName.split(' ')[0] : t('common.defaultUser');
+  const phoneRef = useRef<TextInput>(null);
+  const addressRef = useRef<TextInput>(null);
+  const vatRef = useRef<TextInput>(null);
 
   async function handleContinue() {
-    if (!role) return;
+    // tasta „done" ajunge aici fără butonul dezactivat: aceeași gardă ca butonul (review 7.7)
+    if (!role || loading || leaving) return;
     if (!metaName && !fullName.trim()) {
       setError(t('auth.register.errorEmpty'));
       return;
@@ -95,8 +102,12 @@ export default function RoleSelectScreen() {
     if (err) {
       setError(err);
       setLoading(false);
+      return;
     }
-    // Pe succes, _layout.tsx redirecționează automat la home-ul rolului
+    // Pe succes, _layout.tsx redirecționează automat la home-ul rolului. 1.1 (7.6): contul nou
+    // ajunge pe ecranul principal → dialogul sistemului pentru notificări (doar dacă
+    // permisiunea se poate cere).
+    requestPushPermission('role-chosen');
   }
 
   // Delogarea șterge sesiunea (și intenția de înregistrare) → garda duce la login,
@@ -201,35 +212,46 @@ export default function RoleSelectScreen() {
               placeholder={t('auth.register.namePlaceholder')}
               autoCapitalize="words"
               autoComplete="name"
+              returnKeyType="next"
+              onSubmitEditing={() => phoneRef.current?.focus()}
               required
             />
           ) : null}
 
           <Input
+            ref={phoneRef}
             label={t('profile.phoneLabel')}
             value={phone}
             onChangeText={setPhone}
             placeholder={t('profile.phonePlaceholder')}
             keyboardType="phone-pad"
+            returnKeyType={role === 'mechanic' ? 'next' : 'done'}
+            onSubmitEditing={() => (role === 'mechanic' ? addressRef.current?.focus() : void handleContinue())}
             required
           />
 
           {role === 'mechanic' ? (
             <>
               <Input
+                ref={addressRef}
                 label={t('profile.addressLabel')}
                 value={address}
                 onChangeText={setAddress}
                 placeholder={t('profile.addressPlaceholder')}
                 autoCapitalize="sentences"
+                returnKeyType="next"
+                onSubmitEditing={() => vatRef.current?.focus()}
               />
               <Input
+                ref={vatRef}
                 label={t('profile.vatLabel')}
                 value={vatNumber}
                 onChangeText={setVatNumber}
                 placeholder={t('profile.vatPlaceholder')}
                 autoCapitalize="characters"
                 autoCorrect={false}
+                returnKeyType="done"
+                onSubmitEditing={() => void handleContinue()}
               />
               <ThemedText themeColor="textSecondary" type="small">
                 {t('auth.roleSelect.mechanicFieldsHint')}

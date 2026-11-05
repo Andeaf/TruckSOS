@@ -19,7 +19,7 @@ export const Colors = {
     backgroundElement: '#FFFFFF',
     backgroundSelected: '#E2E8F1',
     textSecondary: '#5B6472',
-    textTertiary: '#98A1AD',
+    textTertiary: '#6B7684',
     separator: '#EEF1F5',
     /** Accent (iconițe, link-uri, tab activ). */
     brand: '#0E3A7D',
@@ -37,7 +37,7 @@ export const Colors = {
     /** Fundal discret pentru butoane-accent (ex. camera din chat). */
     brandSoft: '#E8EEFB',
     /** Prețurile din Market (Faza 19, design 23 iul). */
-    price: '#1C9E4F',
+    price: '#15803D',
   },
   dark: {
     text: '#E8EDF4',

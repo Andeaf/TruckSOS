@@ -65,6 +65,16 @@ function stop() {
   network = null;
 }
 
+/**
+ * Declanșare manuală, pentru gesturi explicite ale userului (pull-to-refresh, 7.3):
+ * aceiași ascultători ca la prim-plan / rețea revenită, fără alt efect. Necesară
+ * fiindcă un refresh nu mai re-semnează URL-urile încă valide (cache global) — fără
+ * ea, o poză care și-a epuizat reîncercările nu s-ar mai reîncărca la refresh.
+ */
+export function notifyRetryTriggers(): void {
+  notify();
+}
+
 /** Abonare; întoarce dezabonarea. Listenerii nativi trăiesc doar cât există abonați. */
 export function subscribeRetryTriggers(listener: Listener): () => void {
   if (listeners.size === 0) start();

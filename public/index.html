@@ -50,7 +50,19 @@
     <meta property="og:image:height" content="1024" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:image" content="https://trucksos.net/logo.png" />
+    <meta property="og:locale" content="ro_RO" />
+    <meta property="og:locale:alternate" content="en_GB" />
+    <meta property="og:locale:alternate" content="de_DE" />
     <link rel="apple-touch-icon" href="/logo.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- O singură adresă pentru toate limbile: aplicația alege limba din profil /
+         dispozitiv, nu din URL. -->
+    <link rel="canonical" href="https://trucksos.net/" />
+    <link rel="alternate" hreflang="ro" href="https://trucksos.net/" />
+    <link rel="alternate" hreflang="en" href="https://trucksos.net/" />
+    <link rel="alternate" hreflang="de" href="https://trucksos.net/" />
+    <link rel="alternate" hreflang="x-default" href="https://trucksos.net/" />
 
     <!-- The `react-native-web` recommended style reset -->
     <style id="expo-reset">
@@ -100,12 +112,17 @@
         scrollbar-color: rgba(128, 144, 168, 0.45) transparent;
       }
 
-      /* Compozitorul de chat (stil 9c, 8 aug): fără chenar de focus și FĂRĂ
-         scrollbar nativ — bara ieșea peste colțurile rotunjite ale pastilei.
+      /* Compozitorul de chat (stil 9c, 8 aug): FĂRĂ scrollbar nativ — bara ieșea peste colțurile rotunjite ale pastilei.
          Derularea rămâne (rotiță/touch/tastatură); în locul barei, aplicația
          desenează fade-uri la margini + un indicator plutitor auto-ascuns. */
-      textarea:focus {
+      /* Chenarul implicit de focus dispare la click, dar focusul de la tastatură
+         rămâne vizibil (:focus-visible). */
+      textarea:focus:not(:focus-visible) {
         outline: none;
+      }
+      :focus-visible {
+        outline: 2px solid #4C8DF6;
+        outline-offset: 2px;
       }
       #chat-composer {
         scrollbar-width: none;

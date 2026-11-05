@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { translateDbError } from '@/lib/db-errors';
 import { supabase } from '@/lib/supabase';
+import { LIST_MIN_VALIDITY_MS, signPaths } from '@/lib/signed-url-cache';
 import { uploadPhoto, deletePhotos, signedUrls } from '@/lib/storage';
 import type { PickedImage } from '@/lib/media';
 import type {
@@ -54,7 +55,21 @@ export function useMarketListings(userId: string | undefined, filters: MarketFee
   const listingsRef = useRef<MarketListing[]>([]);
   listingsRef.current = listings;
 
-  const { query, category, sort, mine } = filters;
+  const { query: rawQuery, category, sort, mine } = filters;
+
+  // Debounce 300 ms DOAR pe textul de căutare (AUDIT #33: fiecare tastă declanșa o cerere);
+  // categoria, sortarea și „Ale mele" rămân imediate.
+  const [query, setQuery] = useState(rawQuery);
+  useEffect(() => {
+    if (rawQuery === query) return;
+    const timer = setTimeout(() => setQuery(rawQuery), 300);
+    return () => clearTimeout(timer);
+  }, [rawQuery, query]);
+
+  // Contor de cereri: un răspuns sosit după o cerere mai nouă (refresh sau filtre
+  // schimbate) e ignorat, ca să nu suprascrie lista curentă cu rezultate vechi.
+  const requestIdRef = useRef(0);
+
   const trimmedQuery = query.trim();
   const searching = trimmedQuery.length >= 2 && !mine;
 
@@ -95,8 +110,11 @@ export function useMarketListings(userId: string | undefined, filters: MarketFee
   }, []);
 
   const refresh = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
+    setLoadingMore(false); // un loadMore în zbor devine învechit; nu-l lăsa blocat pe true
     const page = await fetchPage(0);
+    if (requestId !== requestIdRef.current) return;
     setListings(page);
     setHasMore(page.length === MARKET_PAGE_SIZE);
     setLoading(false);
@@ -104,9 +122,13 @@ export function useMarketListings(userId: string | undefined, filters: MarketFee
   }, [fetchPage, addCovers]);
 
   const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore || listingsRef.current.length === 0) return;
+    // `loading`: cât un refresh e în zbor, lista de pe ecran e cea veche — un loadMore ar cere de la offset-ul ei (review 7.5).
+    if (loading || loadingMore || !hasMore || listingsRef.current.length === 0) return;
+    const requestId = requestIdRef.current;
     setLoadingMore(true);
     const page = await fetchPage(listingsRef.current.length);
+    // Pagina aparține unei căutări/liste vechi: nu o amesteca cu lista nouă.
+    if (requestId !== requestIdRef.current) return;
     setListings((prev) => {
       // Dedup pe id: offset-ul poate aluneca dacă apar anunțuri noi între pagini.
       const seen = new Set(prev.map((l) => l.id));
@@ -115,7 +137,7 @@ export function useMarketListings(userId: string | undefined, filters: MarketFee
     setHasMore(page.length === MARKET_PAGE_SIZE);
     setLoadingMore(false);
     addCovers(page);
-  }, [fetchPage, addCovers, hasMore, loadingMore]);
+  }, [fetchPage, addCovers, hasMore, loadingMore, loading]);
 
   useEffect(() => {
     refresh();
@@ -141,7 +163,9 @@ export async function fetchListingCovers(
   for (const row of rows) {
     if (!coverPaths[row.listing_id]) coverPaths[row.listing_id] = row.storage_path;
   }
-  const urls = await signedUrls(Object.values(coverPaths));
+  // Cache global (AUDIT #29): un refresh al Market-ului nu mai re-semnează copertele
+  // încă valide (o cerere de semnare în minus; același URL → cardurile nu se re-randează).
+  const urls = await signPaths(Object.values(coverPaths), { minValidityMs: LIST_MIN_VALIDITY_MS });
 
   const result: Record<string, string> = {};
   for (const [listingId, path] of Object.entries(coverPaths)) {

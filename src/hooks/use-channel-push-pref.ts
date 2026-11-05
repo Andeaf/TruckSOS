@@ -57,7 +57,7 @@ export function useChannelPushPref(
       }
       // Pornirea notificărilor repară și un token lipsă (permisiunea putea fi
       // acordată după login) — același gest ca la comutatorul global din Setări.
-      if (next) void registerPushToken(userId);
+      if (next) void registerPushToken(userId, { prompt: true });
     },
     [channelId, userId]
   );

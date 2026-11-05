@@ -1,6 +1,15 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Platform,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -28,6 +37,7 @@ import { useAnnouncementPhotos } from '@/hooks/use-announcement-photos';
 import { useAnnouncementTranslation } from '@/hooks/use-announcement-translation';
 import { markAnnouncementViewed } from '@/hooks/use-viewed-announcements';
 import { useAuth } from '@/hooks/use-auth';
+import { approxCoordinate, useAdminMechanicMask } from '@/hooks/use-admin-mask';
 import { useSignedUrl } from '@/hooks/use-signed-urls';
 import { openInGoogleMaps, openInMaps } from '@/lib/location';
 import type { Application } from '@/types/database';
@@ -141,6 +151,7 @@ export default function MechanicAnnouncementDetailScreen() {
     });
   };
   const insets = useSafeAreaInsets();
+  const adminMask = useAdminMechanicMask();
 
   const [announcement, setAnnouncement] = useState<AnnouncementWithDriver | null>(null);
   const [myApplication, setMyApplication] = useState<Application | null>(null);
@@ -184,32 +195,85 @@ export default function MechanicAnnouncementDetailScreen() {
     });
   };
 
-  async function load() {
-    setLoading(true);
-    try {
-      const [ann, app] = await Promise.all([
-        fetchOpenAnnouncementById(id),
-        fetchMyApplicationForAnnouncement(id),
-      ]);
-      // Anunțul PROPRIU (mecanicii pot posta, 5 aug — ex. deschis dintr-un share):
-      // vederea de candidat n-are sens pe el → sări la detaliul de proprietar.
-      if (ann && session?.user.id && ann.driver_id === session.user.id) {
-        router.replace({
-          pathname: '/(mechanic)/feed/mine/[id]' as never,
-          params: { id },
-        });
-        return;
-      }
-      setAnnouncement(ann);
-      setMyApplication(app);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const userId = session?.user.id;
+  // 1.1: detaliul se reîncarcă la FIECARE focus (întoarcerea din chat, din candidatură, din
+  // notificare) și la pull-to-refresh — statusul candidaturii/acceptarea apar fără ieșire din
+  // ecran. Ales în locul Realtime (mai ieftin, fără abonamente noi): sunt aceleași două cereri
+  // de până acum, doar repetate. Primul load arată spinner-ul pe tot ecranul; reîncărcările nu.
+  const [refreshing, setRefreshing] = useState(false);
+  // Încărcarea în zbor (id + promisiune): focus + pull-to-refresh + onSuccess nu dublează
+  // cererile. O cerere venită între timp NU se aruncă: răspunsul în zbor poate fi plecat
+  // ÎNAINTE de schimbare (ex. candidatura abia trimisă → ar aduce încă „Candidează”), deci
+  // `pendingReloadRef` repornește încărcarea o dată după el, iar apelantul o așteaptă.
+  const inFlightRef = useRef<{ id: string; promise: Promise<void> } | null>(null);
+  const pendingReloadRef = useRef(false);
+  // id-ul deja afișat (reîncărcare „tăcută”) și cel redirecționat (anunțul propriu).
+  const loadedIdRef = useRef<string | null>(null);
+  const redirectedIdRef = useRef<string | null>(null);
 
-  // Reîncărcăm doar la schimbarea id-ului; `load` se recreează la fiecare render.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, [id]);
+  const load = useCallback((): Promise<void> => {
+    if (!id) {
+      setLoading(false);
+      return Promise.resolve();
+    }
+    if (redirectedIdRef.current === id) return Promise.resolve();
+    if (inFlightRef.current?.id === id) {
+      pendingReloadRef.current = true;
+      return inFlightRef.current.promise;
+    }
+    pendingReloadRef.current = false;
+    const promise = (async () => {
+      try {
+        do {
+          pendingReloadRef.current = false;
+          const silent = loadedIdRef.current === id;
+          if (!silent) setLoading(true);
+          const [ann, app] = await Promise.all([
+            fetchOpenAnnouncementById(id),
+            fetchMyApplicationForAnnouncement(id),
+          ]);
+          // Anunțul PROPRIU (mecanicii pot posta, 5 aug — ex. deschis dintr-un share): vederea
+          // de candidat n-are sens pe el → sări la detaliul de proprietar (o singură dată).
+          if (ann && userId && ann.driver_id === userId) {
+            redirectedIdRef.current = id;
+            router.replace({
+              pathname: '/(mechanic)/feed/mine/[id]' as never,
+              params: { id },
+            });
+            return;
+          }
+          // Cererea nu întoarce eroarea (null și pe rețea slabă): la o reîncărcare păstrăm ce
+          // e pe ecran, în loc să afișăm „indisponibil” din cauza unei erori trecătoare.
+          if (ann || !silent) {
+            setAnnouncement(ann);
+            setMyApplication(app);
+          }
+          loadedIdRef.current = id;
+        } while (pendingReloadRef.current);
+      } finally {
+        if (inFlightRef.current?.id === id) inFlightRef.current = null;
+        setLoading(false);
+      }
+    })();
+    inFlightRef.current = { id, promise };
+    return promise;
+  }, [id, userId, router]);
+
+  // Focusul vine și la montare → înlocuiește vechiul useEffect pe [id] (fără cerere dublă).
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load])
+  );
+
+  const onPullRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await load();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [load]);
 
   // Deschiderea detaliului = anunțul nu mai e „Nou" în feed.
   useEffect(() => {
@@ -251,6 +315,13 @@ export default function MechanicAnnouncementDetailScreen() {
   const announcementTaken = announcement.status !== 'open';
   const isResubmittable = myApplication?.status === 'rejected' && !announcementTaken;
   const truckInfo = formatTruck(announcement);
+  // Admin „ca mecanic” (1.1): ce vede un mecanic care NU e cel acceptat — fără plăcuță/VIN,
+  // poziția la ~1 km. Mască client-side, doar pentru teste (vezi use-admin-mask).
+  const masked = adminMask && announcement.mechanic_id !== userId;
+  const plateNumber = masked ? null : announcement.plate_number;
+  const chassisNumber = masked ? null : announcement.chassis_number;
+  const latitude = masked ? approxCoordinate(announcement.latitude) : announcement.latitude;
+  const longitude = masked ? approxCoordinate(announcement.longitude) : announcement.longitude;
 
   return (
     <ThemedView style={styles.container}>
@@ -268,7 +339,16 @@ export default function MechanicAnnouncementDetailScreen() {
         }
       />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onPullRefresh}
+            tintColor={theme.brand}
+            colors={[theme.brand]}
+          />
+        }>
         <ThemedText themeColor="textSecondary" type="small" style={styles.date}>
           {formatDate(announcement.created_at, i18n.language)}
         </ThemedText>
@@ -310,14 +390,14 @@ export default function MechanicAnnouncementDetailScreen() {
           {/* 15 sept: textele detaliului sunt selectabile — locația scrisă doar ca text
               se copiază în Google Maps / Waze. */}
           <ThemedText selectable>{announcement.location}</ThemedText>
-          {announcement.latitude != null && announcement.longitude != null ? (
+          {latitude != null && longitude != null ? (
             <>
-              <MiniMap latitude={announcement.latitude} longitude={announcement.longitude} />
+              <MiniMap latitude={latitude} longitude={longitude} />
               {/* iOS: două butoane EGALE, unul lângă altul (Apple + Google Maps —
                   mulți nu folosesc Apple Maps). Android: doar Google, ca înainte. */}
               <View style={styles.mapsButtonsRow}>
                 <Pressable
-                  onPress={() => openInMaps(announcement.latitude!, announcement.longitude!)}
+                  onPress={() => openInMaps(latitude, longitude)}
                   style={({ pressed }) => [
                     styles.mapsButton,
                     Platform.OS === 'ios' && styles.mapsButtonHalf,
@@ -336,7 +416,7 @@ export default function MechanicAnnouncementDetailScreen() {
                 {Platform.OS === 'ios' ? (
                   <Pressable
                     onPress={() =>
-                      openInGoogleMaps(announcement.latitude!, announcement.longitude!)
+                      openInGoogleMaps(latitude, longitude)
                     }
                     style={({ pressed }) => [
                       styles.mapsButton,
@@ -355,21 +435,21 @@ export default function MechanicAnnouncementDetailScreen() {
           ) : null}
         </ThemedView>
 
-        {truckInfo || announcement.plate_number || announcement.chassis_number ? (
+        {truckInfo || plateNumber || chassisNumber ? (
           <ThemedView type="backgroundElement" style={styles.section}>
             <View style={styles.sectionHeader}>
               <MaterialIcons name="local-shipping" size={16} color="#22c55e" />
               <ThemedText type="smallBold">{t('truck.sectionTitle')}</ThemedText>
             </View>
             {truckInfo ? <ThemedText selectable>{truckInfo}</ThemedText> : null}
-            {announcement.plate_number ? (
+            {plateNumber ? (
               <ThemedText themeColor="textSecondary" type="small" selectable>
-                {t('truck.plateLabel')}: {announcement.plate_number}
+                {t('truck.plateLabel')}: {plateNumber}
               </ThemedText>
             ) : null}
-            {announcement.chassis_number ? (
+            {chassisNumber ? (
               <ThemedText themeColor="textSecondary" type="small" selectable>
-                {t('truck.chassisLabel')}: {announcement.chassis_number}
+                {t('truck.chassisLabel')}: {chassisNumber}
               </ThemedText>
             ) : null}
           </ThemedView>

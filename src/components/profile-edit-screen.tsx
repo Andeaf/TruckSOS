@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 
@@ -39,6 +39,13 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
 
   // După salvare lăsăm navigarea să treacă fără să mai întrebăm.
   const savedRef = useRef(false);
+  const companyRef = useRef<TextInput>(null);
+  const specRef = useRef<TextInput>(null);
+  const zoneRef = useRef<TextInput>(null);
+  const addressRef = useRef<TextInput>(null);
+  const vatRef = useRef<TextInput>(null);
+  const phoneRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInput>(null);
 
   const isDirty =
     fullName !== (profile?.full_name ?? '') ||
@@ -67,6 +74,7 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
   });
 
   async function handleSave() {
+    if (saving) return; // tasta „done" ocolea butonul dezactivat (review 7.7)
     if (!fullName.trim()) {
       setError(t('profile.errorNameRequired'));
       return;
@@ -136,20 +144,26 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
             onChangeText={setFullName}
             placeholder={t('profile.namePlaceholder')}
             autoCapitalize="words"
+            returnKeyType="next"
+            onSubmitEditing={() => companyRef.current?.focus()}
             required
           />
 
           <Input
+            ref={companyRef}
             label={t('profile.companyLabel')}
             value={companyName}
             onChangeText={setCompanyName}
             placeholder={t('profile.companyPlaceholder')}
             autoCapitalize="words"
+            returnKeyType="next"
+            onSubmitEditing={() => (isMechanic ? specRef : addressRef).current?.focus()}
           />
 
           {isMechanic ? (
             <>
               <Input
+                ref={specRef}
                 label={t('profile.specializationLabel')}
                 value={specialization}
                 onChangeText={setSpecialization}
@@ -160,11 +174,14 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
                 style={styles.textarea}
               />
               <Input
+                ref={zoneRef}
                 label={t('profile.activityZoneLabel')}
                 value={activityZone}
                 onChangeText={setActivityZone}
                 placeholder={t('profile.activityZonePlaceholder')}
                 autoCapitalize="sentences"
+                returnKeyType="next"
+                onSubmitEditing={() => addressRef.current?.focus()}
               />
             </>
           ) : null}
@@ -173,11 +190,14 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
               rămâne doar sugestia că sunt publice și cresc încrederea. */}
           <View>
             <Input
+              ref={addressRef}
               label={t('profile.addressLabel')}
               value={address}
               onChangeText={setAddress}
               placeholder={t('profile.addressPlaceholder')}
               autoCapitalize="sentences"
+              returnKeyType="next"
+              onSubmitEditing={() => vatRef.current?.focus()}
             />
             {isMechanic ? (
               <ThemedText themeColor="textSecondary" type="small" style={styles.phoneHint}>
@@ -187,21 +207,27 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
           </View>
 
           <Input
+            ref={vatRef}
             label={t('profile.vatLabel')}
             value={vatNumber}
             onChangeText={setVatNumber}
             placeholder={t('profile.vatPlaceholder')}
             autoCapitalize="characters"
             autoCorrect={false}
+            returnKeyType="next"
+            onSubmitEditing={() => phoneRef.current?.focus()}
           />
 
           <View>
             <Input
+              ref={phoneRef}
               label={t('profile.phoneLabel')}
               value={phone}
               onChangeText={setPhone}
               placeholder={t('profile.phonePlaceholder')}
               keyboardType="phone-pad"
+              returnKeyType="next"
+              onSubmitEditing={() => emailRef.current?.focus()}
               required
             />
             <ThemedText themeColor="textSecondary" type="small" style={styles.phoneHint}>
@@ -211,6 +237,7 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
 
           <View>
             <Input
+              ref={emailRef}
               label={t('profile.emailLabel')}
               value={contactEmail}
               onChangeText={setContactEmail}
@@ -218,6 +245,8 @@ export function ProfileEditScreen({ backPath }: { backPath: string }) {
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              returnKeyType="done"
+              onSubmitEditing={handleSave}
             />
             <ThemedText themeColor="textSecondary" type="small" style={styles.phoneHint}>
               {t('profile.emailHint')}

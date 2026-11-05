@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/empty-state';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { IconButton } from '@/components/ui/icon-button';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useMyApplications, withdrawApplication, dismissApplication, type ApplicationWithDetails } from '@/hooks/use-announcements';
@@ -82,9 +83,12 @@ function ApplicationCard({
           <View style={styles.headerRight}>
             <ApplicationStatusBadge status={item.status} />
             {isDismissable ? (
-              <Pressable onPress={() => onDismiss(item.id)} hitSlop={8}>
-                <MaterialIcons name="close" size={18} color={theme.textSecondary} />
-              </Pressable>
+              <IconButton
+                label={t('a11y.dismiss')}
+                onPress={() => onDismiss(item.id)}
+                hitSlop={8}
+                icon={<MaterialIcons name="close" size={18} color={theme.textSecondary} />}
+              />
             ) : null}
           </View>
         </View>

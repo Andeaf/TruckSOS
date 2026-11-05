@@ -1,0 +1,14 @@
+{
+  "name": "TruckSOS",
+  "short_name": "TruckSOS",
+  "description": "Ajutor rapid pentru camioane în pană: anunțuri cu poziție GPS, mecanici în apropiere, chat direct și Market.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "lang": "ro",
+  "background_color": "#081729",
+  "theme_color": "#0E3A7D",
+  "icons": [
+    { "src": "/logo.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }
+  ]
+}

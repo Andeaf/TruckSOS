@@ -28,7 +28,7 @@ export async function uploadAnnouncementPhotos(
     }
     const { error: insertError } = await supabase
       .from('announcement_photos')
-      .insert({ announcement_id: announcementId, storage_path: path } as never);
+      .insert({ announcement_id: announcementId, storage_path: path });
     if (insertError) {
       failed++;
       console.warn('[photos] insert rând eșuat:', insertError.message);
