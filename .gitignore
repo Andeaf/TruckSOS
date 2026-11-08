@@ -100,3 +100,6 @@ supabase/.temp/
 !README.md
 !SECURITY.md
 .claude/
+
+# deno.lock: generat de deno la rădăcină (deno test/check pe supabase/functions), cuprinde workspace-ul npm al aplicației; EF-urile își fixează versiunile în importuri — nu se comite.
+/deno.lock
