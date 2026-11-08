@@ -12,15 +12,108 @@
           "package_name": "com.andeaf.trucksos"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "889090807475-5dha077g72go0vp0rff17inplcvrloif.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.andeaf.trucksos",
+            "certificate_hash": "0878651ff19620323ccb0d4b25665ede0d450117"
+          }
+        },
+        {
+          "client_id": "889090807475-79paa9sutgcaegm64mnrcfj4kce4j6ii.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.andeaf.trucksos",
+            "certificate_hash": "f2af61cf84df1e046aa02c939bdd8b0e82312229"
+          }
+        },
+        {
+          "client_id": "889090807475-i50qs2j7lp3ndq13v3dnorfrcce0st8o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.andeaf.trucksos",
+            "certificate_hash": "371022a6c46bb5ef1e9ece1a4755d962d306ad62"
+          }
+        },
+        {
+          "client_id": "889090807475-sr6eatjprchgqn6ppomddjnnb4po2e2o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.andeaf.trucksos",
+            "certificate_hash": "020d1eb8df82f005dcb4dd2bff8e4b92ffa4d8f1"
+          }
+        },
+        {
+          "client_id": "889090807475-701gc75s54jufec4od106v0s38mqj0pb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCJQ0J-eY5VUFCZbbMHgX5f308YjubNWvI"
+        },
+        {
+          "current_key": "AIzaSyBZKwK7yVyM9rK4jKaTNwYWrfWT_9tISMY"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "889090807475-701gc75s54jufec4od106v0s38mqj0pb.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "889090807475-fisli4ip7u82iidmrbjpduavj3i2u0ed.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.andeaf.trucksos",
+                "app_store_id": "6801003473"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:889090807475:android:a157d91fe482418fb382c6",
+        "android_client_info": {
+          "package_name": "com.andeaf.trucksos.dev"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "889090807475-701gc75s54jufec4od106v0s38mqj0pb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJQ0J-eY5VUFCZbbMHgX5f308YjubNWvI"
+        },
+        {
+          "current_key": "AIzaSyBZKwK7yVyM9rK4jKaTNwYWrfWT_9tISMY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "889090807475-701gc75s54jufec4od106v0s38mqj0pb.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "889090807475-fisli4ip7u82iidmrbjpduavj3i2u0ed.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.andeaf.trucksos",
+                "app_store_id": "6801003473"
+              }
+            }
+          ]
         }
       }
     }
