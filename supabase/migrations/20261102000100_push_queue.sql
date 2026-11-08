@@ -825,6 +825,8 @@ REVOKE EXECUTE ON FUNCTION app.cleanup_push_queue() FROM PUBLIC, anon, authentic
 -- false` din config.toml; până la migrare nimic nu le apelează); (4) `SELECT vault.create_secret('<secret>',
 -- 'push_kick_secret');`. Rotația: `secrets set` + `vault.update_secret(...)`. Lipsa oricărui pas = kick-urile primesc
 -- 401/404, nimic nu se pierde (rândurile rămân `queued`), dar push-urile nu pleacă.
+-- Documentul de operare al fazei (ordinea completă a primei setări, inclusiv EXPO_ACCESS_TOKEN și Enhanced push
+-- security, rotația, coloanele push_stats(), 401-urile străine, rollback-ul): supabase/functions/push-dispatch/README.md.
 CREATE FUNCTION app.kick_push_dispatch()
  RETURNS void
  LANGUAGE plpgsql
