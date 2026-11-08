@@ -84,7 +84,12 @@ export function AvatarPicker({ size = 96 }: { size?: number }) {
 
   return (
     <>
-      <Pressable onPress={() => setSheetVisible(true)} disabled={busy}>
+      <Pressable
+        onPress={() => setSheetVisible(true)}
+        disabled={busy}
+        accessibilityRole="button"
+        accessibilityLabel={t('a11y.changePhoto')}
+        accessibilityState={{ disabled: busy, busy }}>
         <Avatar url={url} name={profile?.full_name} size={size} userId={profile?.id} />
 
         {busy ? (

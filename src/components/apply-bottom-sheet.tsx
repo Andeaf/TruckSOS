@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -17,6 +17,7 @@ import { RequiredMark } from '@/components/ui/input';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { SUPPORTED_CURRENCIES, DEFAULT_CURRENCY } from '@/constants/currencies';
+import { usePushPermissionRequest } from '@/hooks/use-push-permission-request';
 import { useTheme } from '@/hooks/use-theme';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { applyToAnnouncement, resubmitApplication } from '@/hooks/use-announcements';
@@ -48,10 +49,12 @@ export function ApplyBottomSheet({
   const guard = useSubmitGuard();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { request: requestPushPermission } = usePushPermissionRequest();
   const [priceType, setPriceType] = useState<PriceType>('fixed');
   const [priceAmount, setPriceAmount] = useState('');
   const [currency, setCurrency] = useState(DEFAULT_CURRENCY.code);
   const [message, setMessage] = useState('');
+  const messageRef = useRef<TextInput>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -102,6 +105,10 @@ export function ApplyBottomSheet({
 
     reset();
     onSuccess();
+    // 1.1 (7.6): oferta e trimisă → răspunsul șoferului vine prin push. Dialogul sistemului
+    // (dacă încă nu s-a decis) se cere după închiderea foii — pauza scurtă e în
+    // usePushPermissionRequest, doar pentru 'application-sent'.
+    requestPushPermission('application-sent');
   }
 
   return (
@@ -180,6 +187,8 @@ export function ApplyBottomSheet({
                   placeholder={t('mechanic.apply.priceAmountPlaceholder')}
                   placeholderTextColor={theme.textSecondary}
                   keyboardType="decimal-pad"
+                  returnKeyType="next"
+                  onSubmitEditing={() => messageRef.current?.focus()}
                 />
                 {/* Selector monedă */}
                 <View style={styles.currencyRow}>
@@ -211,6 +220,7 @@ export function ApplyBottomSheet({
                 {t('mechanic.apply.messageLabel')}
               </ThemedText>
               <TextInput
+                ref={messageRef}
                 style={[
                   styles.amountInput,
                   styles.messageInput,

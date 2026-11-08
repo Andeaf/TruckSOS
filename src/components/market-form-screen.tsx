@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  TextInput,
   View,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
@@ -21,6 +22,7 @@ import { RemoteImage } from '@/components/remote-image';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { IconButton } from '@/components/ui/icon-button';
 import { Radius, Spacing } from '@/constants/theme';
 import { DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from '@/constants/currencies';
 import { useBack } from '@/hooks/use-back';
@@ -114,6 +116,8 @@ export function MarketFormScreen({ role, listingId: listingIdProp }: MarketFormS
   // Guard „modificări nesalvate" — modelul din formularul de anunț (Faza 8).
   const navigation = useNavigation();
   const savedRef = useRef(false);
+  const priceRef = useRef<TextInput>(null);
+  const descRef = useRef<TextInput>(null);
   const isDirty = editing
     ? dirty
     : title.trim() !== '' || description.trim() !== '' || priceStr.trim() !== '' ||
@@ -272,6 +276,8 @@ export function MarketFormScreen({ role, listingId: listingIdProp }: MarketFormS
             placeholder={t('market.titlePlaceholder')}
             autoCapitalize="sentences"
             maxLength={80}
+            returnKeyType="next"
+            onSubmitEditing={() => priceRef.current?.focus()}
             required
           />
 
@@ -298,6 +304,7 @@ export function MarketFormScreen({ role, listingId: listingIdProp }: MarketFormS
           <View style={styles.priceRow}>
             <View style={styles.priceField}>
               <Input
+                ref={priceRef}
                 label={t('market.priceLabel')}
                 value={priceStr}
                 onChangeText={(v) => {
@@ -306,6 +313,8 @@ export function MarketFormScreen({ role, listingId: listingIdProp }: MarketFormS
                 }}
                 placeholder="0"
                 keyboardType="decimal-pad"
+                returnKeyType="next"
+                onSubmitEditing={() => descRef.current?.focus()}
                 required
               />
             </View>
@@ -336,6 +345,7 @@ export function MarketFormScreen({ role, listingId: listingIdProp }: MarketFormS
           </View>
 
           <Input
+            ref={descRef}
             label={t('market.descriptionFieldLabel')}
             value={description}
             onChangeText={(v) => {
@@ -376,12 +386,13 @@ export function MarketFormScreen({ role, listingId: listingIdProp }: MarketFormS
                       <ThemedText style={styles.coverBadgeText}>{t('market.coverBadge')}</ThemedText>
                     </View>
                   ) : null}
-                  <Pressable
+                  <IconButton
+                    label={t('a11y.removePhoto')}
                     onPress={() => handleRemovePhoto(index)}
                     style={styles.removeBtn}
-                    hitSlop={8}>
-                    <MaterialIcons name="close" size={14} color="#fff" />
-                  </Pressable>
+                    hitSlop={8}
+                    icon={<MaterialIcons name="close" size={14} color="#fff" />}
+                  />
                 </Pressable>
               ))}
 

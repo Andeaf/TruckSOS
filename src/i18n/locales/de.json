@@ -1271,5 +1271,42 @@
     "disableConfirmBody": "Dein Konto ist dann nur noch durch das Passwort geschützt. Du kannst sie jederzeit wieder aktivieren.",
     "loginPrompt": "Gib den Code aus deiner Authenticator-App ein, um dich anzumelden.",
     "signOut": "Abmelden"
+  },
+  "a11y": {
+    "back": "Zurück",
+    "close": "Schließen",
+    "cancelSelection": "Auswahl abbrechen",
+    "clearSearch": "Suche löschen",
+    "addTruck": "Lkw hinzufügen",
+    "editTruck": "Lkw bearbeiten",
+    "deleteTruck": "Lkw löschen",
+    "delete": "Löschen",
+    "deleteAll": "Alle löschen",
+    "dismiss": "Ausblenden",
+    "report": "Melden",
+    "newAnnouncement": "Neue Anzeige",
+    "newListing": "Neue Markt-Anzeige",
+    "removePhoto": "Foto entfernen",
+    "changePhoto": "Profilfoto ändern",
+    "showPassword": "Passwort anzeigen",
+    "hidePassword": "Passwort verbergen",
+    "starOf": "{{n}} von {{total}}",
+    "announcementPhoto": "Anzeigenfoto {{n}}"
+  },
+  "permissions": {
+    "locationTitle": "Standort für Entfernungen aktivieren",
+    "locationBody": "So siehst du, wie weit jede Anzeige entfernt ist und was in deinem gewählten Umkreis liegt.",
+    "enableLocation": "Standort aktivieren"
+  },
+  "outbox": {
+    "sending": "Wird gesendet…",
+    "failed": "Nicht gesendet",
+    "retry": "Erneut versuchen",
+    "discardTitle": "Nicht gesendete Nachricht löschen?",
+    "discardBody": "Die Nachricht hat den Empfänger nicht erreicht und wird von diesem Telefon gelöscht.",
+    "editFailed": "Die Änderung wurde nicht gespeichert",
+    "editFailedBody": "Prüfe deine Verbindung und versuche es erneut.",
+    "sendFailed": "Nachricht wurde nicht gesendet",
+    "attachmentMissing": "Die Datei ist nicht mehr auf dem Telefon, daher wurde die nicht gesendete Nachricht gelöscht."
   }
 }

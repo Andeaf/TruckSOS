@@ -8,8 +8,15 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { AppState, Platform } from 'react-native';
 
-import { distanceKm, getCurrentCoords } from '@/lib/location';
+import {
+  distanceKm,
+  getCurrentCoords,
+  getLocationPermissionState,
+  requestLocationPermission,
+  type LocationPermissionState,
+} from '@/lib/location';
 import { loadRadiusPref, saveRadiusPref } from '@/lib/preferences';
 
 /**
@@ -33,6 +40,16 @@ const COORDS_TTL_MS = 2 * 60 * 1000;
 
 export type Coords = { latitude: number; longitude: number };
 type LocationError = 'denied' | 'unavailable';
+/** `unknown` = încă neverificată — și mereu pe web, unde nu există cardul (vezi mai jos). */
+export type LocationPermission = LocationPermissionState | 'unknown';
+
+/**
+ * 1.1 (7.6, AUDIT #34): pe telefon permisiunea de locație nu se mai cere singură (la
+ * pornirea cu rază salvată, la focus pe feed/hartă) — doar se verifică; dialogul vine la
+ * alegerea razei sau din cardul „Activează locația”. Pe web rămâne ca înainte: browserul
+ * își cere acordul la prima citire, iar harta web n-are cardul.
+ */
+const SILENT_PERMISSION = Platform.OS !== 'web';
 
 interface RadiusFilterValue {
   radiusKm: number | null;
@@ -41,8 +58,12 @@ interface RadiusFilterValue {
   coords: Coords | null;
   /** Setat când ultima cerere de poziție a eșuat; `coords` vechi rămân valabile. */
   locationError: LocationError | null;
-  /** De apelat la focus pe feed/hartă: re-cere poziția, cu throttle intern. */
+  /** De apelat la focus pe feed/hartă: re-cere poziția, cu throttle intern. Fără dialog. */
   refreshCoords: () => void;
+  /** Starea permisiunii (verificată fără dialog); `askable` → feed-ul și harta arată cardul. */
+  locationPermission: LocationPermission;
+  /** Butonul din card: dialogul de sistem, apoi poziția (dacă raza e aleasă). */
+  enableLocation: () => Promise<boolean>;
 }
 
 const RadiusFilterContext = createContext<RadiusFilterValue | null>(null);
@@ -51,49 +72,137 @@ export function RadiusFilterProvider({ children }: { children: ReactNode }) {
   const [radiusKm, setRadiusState] = useState<number | null>(null);
   const [coords, setCoords] = useState<Coords | null>(null);
   const [locationError, setLocationError] = useState<LocationError | null>(null);
+  const [locationPermission, setLocationPermission] = useState<LocationPermission>('unknown');
   const lastFetchRef = useRef(0);
   const fetchingRef = useRef(false);
+  // Citite sincron din ascultătorul AppState și din `enableLocation` (starea React ar fi în urmă).
+  const permissionRef = useRef<LocationPermission>('unknown');
+  const radiusRef = useRef<number | null>(null);
+  useEffect(() => {
+    radiusRef.current = radiusKm;
+  }, [radiusKm]);
 
-  const fetchCoords = useCallback(async () => {
-    const now = Date.now();
-    if (fetchingRef.current || now - lastFetchRef.current < COORDS_TTL_MS) return;
-    fetchingRef.current = true;
-    lastFetchRef.current = now;
-    const result = await getCurrentCoords();
-    fetchingRef.current = false;
-    if ('latitude' in result) {
-      setCoords({ latitude: result.latitude, longitude: result.longitude });
-      setLocationError(null);
-    } else {
-      setLocationError(result.error);
-    }
+  const updatePermission = useCallback((state: LocationPermission) => {
+    permissionRef.current = state;
+    setLocationPermission(state);
   }, []);
 
-  // Poziția se cere LAZY: doar dacă filtrul era activ la ultima sesiune…
+  /**
+   * `prompt`: doar după un gest (alegerea razei) poate apărea dialogul de sistem; altfel se
+   * verifică întâi permisiunea și, fără ea, nu se cere nimic. `force` trece peste throttle
+   * (poziția imediat după ce userul a acordat permisiunea din card).
+   */
+  const fetchCoords = useCallback(
+    async (options: { prompt: boolean; force?: boolean }) => {
+      const now = Date.now();
+      if (!options.force && (fetchingRef.current || now - lastFetchRef.current < COORDS_TTL_MS)) {
+        return;
+      }
+      fetchingRef.current = true;
+      try {
+        if (SILENT_PERMISSION && !options.prompt) {
+          const state = await getLocationPermissionState();
+          updatePermission(state);
+          if (state !== 'granted') {
+            // Fără permisiune și fără gest: nu cerem. `denied` deblochează lista (altfel ar
+            // aștepta poziția la nesfârșit) și nu consumă throttle-ul — următorul focus sau
+            // alegerea razei verifică din nou.
+            setLocationError('denied');
+            return;
+          }
+        }
+        lastFetchRef.current = now;
+        // Cu permisiunea deja acordată, cererea din getCurrentCoords nu afișează nimic.
+        const result = await getCurrentCoords();
+        if ('latitude' in result) {
+          setCoords({ latitude: result.latitude, longitude: result.longitude });
+          setLocationError(null);
+          if (SILENT_PERMISSION) updatePermission('granted');
+        } else {
+          setLocationError(result.error);
+          if (SILENT_PERMISSION && result.error === 'denied') {
+            updatePermission(await getLocationPermissionState());
+          }
+        }
+      } finally {
+        fetchingRef.current = false;
+      }
+    },
+    [updatePermission]
+  );
+
+  // Poziția se cere LAZY: doar dacă filtrul era activ la ultima sesiune (pe telefon, doar
+  // cu permisiunea deja acordată)…
   useEffect(() => {
+    if (SILENT_PERMISSION) void getLocationPermissionState().then(updatePermission);
     loadRadiusPref().then((stored) => {
       setRadiusState(stored);
-      if (stored != null) void fetchCoords();
+      radiusRef.current = stored;
+      if (stored != null) void fetchCoords({ prompt: !SILENT_PERMISSION });
     });
-  }, [fetchCoords]);
+  }, [fetchCoords, updatePermission]);
 
-  // …sau când mecanicul îl activează acum. Cine nu-l folosește nu vede dialogul GPS.
+  // Permisiunea acordată din setările telefonului (sau „Doar de data asta” expirată): la
+  // revenirea în aplicație re-verificăm — fără dialog și doar cât timp nu e acordată, deci
+  // cine o are deja nu pornește GPS-ul la fiecare prim-plan (ca până acum).
+  useEffect(() => {
+    if (!SILENT_PERMISSION) return;
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next !== 'active' || permissionRef.current === 'granted') return;
+      void getLocationPermissionState().then((state) => {
+        updatePermission(state);
+        if (state === 'granted' && radiusRef.current != null) {
+          void fetchCoords({ prompt: false, force: true });
+        }
+      });
+    });
+    return () => sub.remove();
+  }, [fetchCoords, updatePermission]);
+
+  // …sau când mecanicul îl activează acum (gest explicit → aici poate apărea dialogul).
+  // Cine nu-l folosește nu vede dialogul GPS.
   const setRadiusKm = useCallback(
     (km: number | null) => {
       setRadiusState(km);
+      radiusRef.current = km;
       void saveRadiusPref(km);
-      if (km != null) void fetchCoords();
+      if (km != null) void fetchCoords({ prompt: true });
     },
     [fetchCoords]
   );
 
   const refreshCoords = useCallback(() => {
-    if (radiusKm != null) void fetchCoords();
-  }, [radiusKm, fetchCoords]);
+    if (radiusKm != null) {
+      void fetchCoords({ prompt: !SILENT_PERMISSION });
+    } else if (SILENT_PERMISSION && permissionRef.current !== 'granted') {
+      // Fără rază poziția nu trebuie, dar harta își arată cardul după starea asta.
+      void getLocationPermissionState().then(updatePermission);
+    }
+  }, [radiusKm, fetchCoords, updatePermission]);
+
+  const enableLocation = useCallback(async () => {
+    const state = await requestLocationPermission();
+    updatePermission(state);
+    if (state !== 'granted') return false;
+    if (radiusRef.current != null) {
+      // Lista așteaptă poziția (nu mai pleacă fără rază), iar poziția o cerem imediat.
+      setLocationError(null);
+      void fetchCoords({ prompt: false, force: true });
+    }
+    return true;
+  }, [fetchCoords, updatePermission]);
 
   const value = useMemo<RadiusFilterValue>(
-    () => ({ radiusKm, setRadiusKm, coords, locationError, refreshCoords }),
-    [radiusKm, setRadiusKm, coords, locationError, refreshCoords]
+    () => ({
+      radiusKm,
+      setRadiusKm,
+      coords,
+      locationError,
+      refreshCoords,
+      locationPermission,
+      enableLocation,
+    }),
+    [radiusKm, setRadiusKm, coords, locationError, refreshCoords, locationPermission, enableLocation]
   );
 
   return <RadiusFilterContext.Provider value={value}>{children}</RadiusFilterContext.Provider>;

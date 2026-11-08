@@ -16,8 +16,9 @@
 // google-services.json: fișierul din repo e pentru pachetul de producție; Firebase respinge pachetul `.dev`
 // la build dacă nu are și el un client în fișier → push-ul pe Android dev merge doar cu un fișier care conține
 // AMBELE pachete (GOOGLE_SERVICES_JSON_DEV = calea lui, sau același fișier descărcat din nou din Firebase după
-// adăugarea aplicației Android `com.andeaf.trucksos.dev`). Fără el, build-ul dev folosește fișierul de producție
-// (build-ul reușește, push-ul nu ajunge pe Android dev).
+// adăugarea aplicației Android `com.andeaf.trucksos.dev`). Fără el build-ul dev PICĂ la Gradle
+// (`processReleaseGoogleServices`: „No matching client found for package name 'com.andeaf.trucksos.dev'” —
+// verificat pe EAS build 95a75013, 7 nov 2026), nu doar push-ul.
 
 const IS_DEV = process.env.APP_VARIANT === 'development';
 

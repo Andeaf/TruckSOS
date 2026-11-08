@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { type Ref, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, type TextInputProps, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -10,6 +11,8 @@ interface InputProps extends TextInputProps {
   error?: string;
   /** Câmp obligatoriu — adaugă „*" roșu după etichetă (convenția din toată aplicația). */
   required?: boolean;
+  /** React 19: `ref` e prop obișnuit; ajunge la TextInput (focus pe câmpul următor). */
+  ref?: Ref<TextInput>;
 }
 
 /**
@@ -21,10 +24,11 @@ export function RequiredMark() {
   return <Text style={styles.requiredMark}> *</Text>;
 }
 
-export function Input({ label, error, required, style, secureTextEntry, ...rest }: InputProps) {
+export function Input({ label, error, required, style, secureTextEntry, ref, ...rest }: InputProps) {
   // `useTheme` (nu `useColorScheme`): culorile trebuie să urmeze preferința din
   // Setări, nu tema sistemului — altfel câmpurile rămân negre pe temă deschisă.
   const colors = useTheme();
+  const { t } = useTranslation();
   // Câmpurile secure primesc automat un „ochi" de afișare/ascundere a parolei.
   const [hidden, setHidden] = useState(true);
 
@@ -38,6 +42,7 @@ export function Input({ label, error, required, style, secureTextEntry, ...rest 
       ) : null}
       <View>
         <TextInput
+          ref={ref}
           style={[
             styles.input,
             {
@@ -58,7 +63,8 @@ export function Input({ label, error, required, style, secureTextEntry, ...rest 
             style={styles.eye}
             hitSlop={8}
             onPress={() => setHidden((h) => !h)}
-            accessibilityRole="button">
+            accessibilityRole="button"
+            accessibilityLabel={hidden ? t('a11y.showPassword') : t('a11y.hidePassword')}>
             <MaterialIcons
               name={hidden ? 'visibility' : 'visibility-off'}
               size={22}

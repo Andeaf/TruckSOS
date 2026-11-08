@@ -17,6 +17,7 @@ import '@/lib/web-alert';
 import { BlockedProvider } from '@/hooks/use-blocked';
 import { useLangSync } from '@/hooks/use-lang-sync';
 import { usePushNavigation } from '@/hooks/use-push-navigation';
+import { PushPermissionRequestProvider } from '@/hooks/use-push-permission-request';
 import { SettingsProvider, useSettings } from '@/hooks/use-settings';
 import { isBanned } from '@/lib/ban';
 import { sessionNeedsMfa } from '@/lib/mfa';
@@ -160,9 +161,16 @@ export default function RootLayout() {
           <I18nextProvider i18n={i18n}>
             <AuthProvider>
               <AccountGateProvider>
-                <BlockedProvider>
-                  <RootLayoutNav />
-                </BlockedProvider>
+                {/* 1.1 (7.6, AUDIT E.21; 5 nov 2026: fără ecran înaintea dialogului sistemului):
+                    usePushPermissionRequest().request cere direct dialogul de notificări după
+                    alegerea rolului, publicarea unui anunț, o ofertă sau la prima intrare pe
+                    ecranul de start. Aici, la rădăcină: alegerea rolului e în (auth), iar
+                    ecranele care declanșează cererea se demontează imediat după. */}
+                <PushPermissionRequestProvider>
+                  <BlockedProvider>
+                    <RootLayoutNav />
+                  </BlockedProvider>
+                </PushPermissionRequestProvider>
               </AccountGateProvider>
             </AuthProvider>
           </I18nextProvider>

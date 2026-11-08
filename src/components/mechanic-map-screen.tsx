@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import MapView, { Circle, Marker, type Region } from 'react-native-maps';
 
+import { LocationPrimerCard } from '@/components/location-primer-card';
 import { RadiusFilterMenu, type RadiusFilterMenuHandle } from '@/components/radius-filter-menu';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
@@ -26,7 +27,7 @@ import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { useTimeAgo } from '@/hooks/use-time-ago';
 import { useViewedAnnouncements } from '@/hooks/use-viewed-announcements';
-import { getCurrentCoords, getLastKnownCoords } from '@/lib/location';
+import { getCurrentCoords, getLastKnownCoords, getLocationPermissionState } from '@/lib/location';
 
 /**
  * Harta mecanicului (PLAN_FAZA11.md §2): un pin per anunț deschis CU coordonate.
@@ -42,6 +43,15 @@ type Located = AnnouncementWithDriver & { latitude: number; longitude: number };
 
 function hasCoords(a: AnnouncementWithDriver): a is Located {
   return a.latitude != null && a.longitude != null;
+}
+
+function coordsToRegion(c: { latitude: number; longitude: number }): Region {
+  return {
+    latitude: c.latitude,
+    longitude: c.longitude,
+    latitudeDelta: USER_REGION_DELTA,
+    longitudeDelta: USER_REGION_DELTA,
+  };
 }
 
 function regionToViewport(r: Region): MapViewport {
@@ -133,7 +143,15 @@ export default function MechanicMapScreen({ guest = false }: { guest?: boolean }
   }, [guest, memberAnnouncements, memberHasMore, memberLoadingMore, memberLoadMore]);
   const { requireAccount } = useAccountGate();
   const { viewed, refresh: refreshViewed } = useViewedAnnouncements(session?.user.id);
-  const { radiusKm, coords, locationError, refreshCoords } = useRadiusFilter();
+  const { radiusKm, coords, locationError, refreshCoords, locationPermission, enableLocation } =
+    useRadiusFilter();
+  // 1.1 (7.6, AUDIT #34): harta nu mai cere permisiunea la deschidere. Fără ea pornește pe
+  // România, fără punctul albastru, cu cardul „Activează locația” (dialogul doar la buton).
+  // Pe lângă starea comună, ținem minte verificarea proprie de la montare: harta se randează
+  // abia după ea, deci cine are deja permisiunea vede punctul albastru din primul cadru.
+  const [mapLocationGranted, setMapLocationGranted] = useState(false);
+  const locationGranted = mapLocationGranted || locationPermission === 'granted';
+  const showLocationCard = !locationGranted && locationPermission === 'askable';
 
   // `initialRegion` se aplică o singură dată, la montare → randăm harta abia după ce
   // știm de unde pornim (poziția mecanicului sau, la refuz/eroare, centrul României).
@@ -149,14 +167,19 @@ export default function MechanicMapScreen({ guest = false }: { guest?: boolean }
 
   useEffect(() => {
     let active = true;
-    const toRegion = (c: { latitude: number; longitude: number }): Region => ({
-      latitude: c.latitude,
-      longitude: c.longitude,
-      latitudeDelta: USER_REGION_DELTA,
-      longitudeDelta: USER_REGION_DELTA,
-    });
+    const toRegion = coordsToRegion;
 
     (async () => {
+      // 0) Permisiunea, FĂRĂ dialog (7.6): neacordată → România, cardul o cere la buton.
+      //    Acordată → exact ca până acum (cererea din getLastKnownCoords nu mai afișează nimic).
+      const permission = await getLocationPermissionState();
+      if (!active) return;
+      if (permission !== 'granted') {
+        setRegion(ROMANIA_REGION);
+        return;
+      }
+      setMapLocationGranted(true);
+
       // 1) Cache-ul OS (getLastKnownPositionAsync) — instant, fără pornirea GPS-ului.
       //    Pentru CENTRARE e suficient: poziția exactă o arată oricum punctul albastru
       //    (showsUserLocation), iar butonul nativ de localizare recentrează la nevoie.
@@ -250,6 +273,21 @@ export default function MechanicMapScreen({ guest = false }: { guest?: boolean }
     } as never);
   }
 
+  // Butonul din cardul de locație: abia aici apare dialogul de sistem; acordată → centrăm
+  // pe poziție (întâi cache-ul OS, instant; altfel un fix real) și o păstrăm ca regiune de
+  // pornire, ca remontarea la schimbarea temei să nu revină pe România.
+  async function handleEnableLocation() {
+    const granted = await enableLocation();
+    if (!granted) return;
+    setMapLocationGranted(true);
+    const cached = await getLastKnownCoords();
+    const found = cached && 'latitude' in cached ? cached : await getCurrentCoords();
+    if (!('latitude' in found)) return;
+    const next = coordsToRegion(found);
+    setRegion(next);
+    mapRef.current?.animateToRegion(next, 600);
+  }
+
   // „Anunțuri în rază": încadrează harta pe anunțurile din raza aleasă, ca mecanicul
   // să vadă dintr-o privire toți șoferii cu probleme din jur.
   function handleFitRange() {
@@ -298,8 +336,11 @@ export default function MechanicMapScreen({ guest = false }: { guest?: boolean }
             ref={mapRef}
             style={StyleSheet.absoluteFill}
             initialRegion={region}
-            showsUserLocation
-            showsMyLocationButton
+            // Doar cu permisiunea deja acordată (7.6): fără ea nu cerem nimic de la hartă.
+            // Trecerea false → true după „Permite” repornește punctul albastru (Android
+            // verifică permisiunea la fiecare setare a prop-ului).
+            showsUserLocation={locationGranted}
+            showsMyLocationButton={locationGranted}
             toolbarEnabled={false}
             customMapStyle={scheme === 'dark' ? DARK_MAP_STYLE : undefined}
             // customMapStyle e Google-only (ignorat de Apple Maps); pe iOS tema hărții
@@ -345,6 +386,9 @@ export default function MechanicMapScreen({ guest = false }: { guest?: boolean }
 
           {/* box-none: bula „fără locație" primește tap-uri, restul zonei lasă harta. */}
           <View style={styles.banners} pointerEvents="box-none">
+            {showLocationCard ? (
+              <LocationPrimerCard floating onEnable={handleEnableLocation} />
+            ) : null}
             {missingCount > 0 ? (
               <Pressable
                 onPress={openMissing}
@@ -360,7 +404,7 @@ export default function MechanicMapScreen({ guest = false }: { guest?: boolean }
                 </ThemedView>
               </Pressable>
             ) : null}
-            {radiusKm != null && coords == null && locationError != null ? (
+            {!showLocationCard && radiusKm != null && coords == null && locationError != null ? (
               <ThemedView type="backgroundElement" style={styles.missingBanner}>
                 <MaterialIcons name="location-off" size={14} color={theme.textSecondary} />
                 <ThemedText themeColor="textSecondary" type="small">

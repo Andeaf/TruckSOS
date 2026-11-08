@@ -29,6 +29,9 @@ export function Avatar({ url, name, size = 40, color, userId }: AvatarProps) {
     return (
       <RemoteImage
         uri={url}
+        // Miniatură la mărimea cercului — activă doar cu IMAGE_TRANSFORMS_ENABLED (7.3).
+        thumbnailWidth={size}
+        accessibilityLabel={name ?? undefined}
         style={dimensions}
         contentFit="cover"
         transition={150}

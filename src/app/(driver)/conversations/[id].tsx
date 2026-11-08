@@ -208,7 +208,8 @@ export default function DriverChatScreen() {
             other.profile.role === 'mechanic'
               ? '/(driver)/mechanic-profile/[id]'
               : '/(driver)/public-profile/[id]',
-          params: { id: userId },
+          // Profilul e alt tab: `fromConversation` îi spune back-ului unde să revină (use-back).
+          params: { id: userId, fromConversation: id },
         } as never)
       }
       subtitle={
@@ -225,17 +226,18 @@ export default function DriverChatScreen() {
       }
       messages={messages}
       loading={loading}
-      onSend={async (content, replyToId, mentions) => {
-        const { message } = await sendMessage(
+      // 1.1 (7.1): coada locală a mesajelor netrimise pentru conversația asta.
+      threadKey={`conversation:${id}`}
+      // 1.1 (7.1): contextele vin cu mesajul (ChatScreen le scoate din banner când mesajul
+      // intră în coadă), iar rezultatul se întoarce — eroarea nu se mai înghite.
+      onSend={async ({ content, replyToId, mentions, listingId, mechanicId, announcementId }) => {
+        const { message, error } = await sendMessage(
           id, session.user.id, content, null, replyToId,
-          pendingListing, pendingMechanic, pendingAnnouncement, mentions ?? null
+          listingId, mechanicId, announcementId, mentions
         );
-        if (message) {
-          addMessage(message);
-          if (pendingListing) setPendingListing(null);
-          if (pendingMechanic) setPendingMechanic(null);
-          if (pendingAnnouncement) setPendingAnnouncement(null);
-        }
+        if (!message) return { ok: false, error: error ?? t('common.error') };
+        addMessage(message);
+        return { ok: true, message };
       }}
       mentionCandidates={mentionCandidates}
       searchMentionUsers={searchMentionUsers}
@@ -255,8 +257,10 @@ export default function DriverChatScreen() {
       onAttachMechanic={() => setRecommendRole('mechanic')}
       onAttachDriver={() => setRecommendRole('driver')}
       onSendFile={async (file) => {
-        const { message } = await sendFileMessage(id, session.user.id, file);
-        if (message) addMessage(message);
+        const { message, error } = await sendFileMessage(id, session.user.id, file);
+        if (!message) return { ok: false, error: error ?? t('common.error') };
+        addMessage(message);
+        return { ok: true, message };
       }}
       onPressMechanic={(mid, role) =>
         router.push({
@@ -264,12 +268,14 @@ export default function DriverChatScreen() {
             role === 'driver'
               ? '/(driver)/public-profile/[id]'
               : '/(driver)/mechanic-profile/[id]',
-          params: { id: mid },
+          params: { id: mid, fromConversation: id },
         } as never)
       }
       onSendImage={async (image) => {
-        const { message } = await sendImageMessage(id, session.user.id, image);
-        if (message) addMessage(message);
+        const { message, error } = await sendImageMessage(id, session.user.id, image);
+        if (!message) return { ok: false, error: error ?? t('common.error') };
+        addMessage(message);
+        return { ok: true, message };
       }}
       onDeleteMessage={async (m) => {
         const err = await deleteMessage('messages', m.id);
@@ -282,7 +288,10 @@ export default function DriverChatScreen() {
       }}
       onEditMessage={async (m, content) => {
         const err = await editMessage('messages', m.id, content);
-        if (!err) patchMessage(m.id, { content, edited_at: new Date().toISOString() });
+        // 1.1 (7.1): eroarea ajunge la ChatScreen, care repune textul în compozitor.
+        if (err) return { ok: false, error: err };
+        patchMessage(m.id, { content, edited_at: new Date().toISOString() });
+        return { ok: true };
       }}
       canEditMessage={(m) => withinEditWindow(m.created_at)}
       messageTable="messages"

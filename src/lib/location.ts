@@ -33,6 +33,35 @@ export async function getCurrentCoords(): Promise<CoordsResult> {
 }
 
 /**
+ * Starea permisiunii de locație, FĂRĂ dialog (1.1, 7.6 — AUDIT #34): harta și filtrul de
+ * rază nu mai cer permisiunea singure, la deschidere, ci arată cardul „Activează locația”.
+ * `askable` = se mai poate cere (neîntrebat încă / un refuz pe Android); `blocked` = refuz
+ * definitiv (`canAskAgain === false`), rămâne textul „Fără acces la locație”.
+ */
+export type LocationPermissionState = 'granted' | 'askable' | 'blocked';
+
+export async function getLocationPermissionState(): Promise<LocationPermissionState> {
+  try {
+    const perm = await Location.getForegroundPermissionsAsync();
+    if (perm.granted) return 'granted';
+    return perm.canAskAgain ? 'askable' : 'blocked';
+  } catch {
+    return 'blocked';
+  }
+}
+
+/** Dialogul de sistem — DOAR după un gest al userului (butonul din card). */
+export async function requestLocationPermission(): Promise<LocationPermissionState> {
+  try {
+    const perm = await Location.requestForegroundPermissionsAsync();
+    if (perm.granted) return 'granted';
+    return perm.canAskAgain ? 'askable' : 'blocked';
+  } catch {
+    return 'blocked';
+  }
+}
+
+/**
  * Ultima poziție cunoscută de OS — se întoarce INSTANT, fără a porni GPS-ul.
  * Poate fi veche de câteva minute (maxAge mai jos), deci e potrivită DOAR pentru
  * centrarea inițială a hărții — NU pentru coordonate de anunț sau poziția de

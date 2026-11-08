@@ -21,6 +21,7 @@ import { MarketCard } from '@/components/market-card';
 import { HeaderProfileButton, ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { IconButton } from '@/components/ui/icon-button';
 import {
   HeaderGradient,
   HeaderGradientDirection,
@@ -39,6 +40,7 @@ import {
   type MarketSort,
 } from '@/hooks/use-market';
 import { dismissNotificationsOfType } from '@/lib/push';
+import { notifyRetryTriggers } from '@/lib/retry-triggers';
 import type { MarketCategory, Role } from '@/types/database';
 
 /**
@@ -123,6 +125,8 @@ export function MarketFeedScreen({ role, guest = false }: MarketFeedScreenProps)
   const onPullRefresh = useCallback(async () => {
     setPullRefreshing(true);
     await refresh();
+    // Coperțile picate se reîncarcă la gest (refresh-ul nu le mai dă URL nou — cache 7.3).
+    notifyRetryTriggers();
     setPullRefreshing(false);
   }, [refresh]);
 
@@ -216,9 +220,12 @@ export function MarketFeedScreen({ role, guest = false }: MarketFeedScreenProps)
               returnKeyType="search"
             />
             {query.length > 0 ? (
-              <Pressable onPress={() => setQuery('')} hitSlop={10}>
-                <Feather name="x" size={16} color="rgba(255,255,255,0.75)" />
-              </Pressable>
+              <IconButton
+                label={t('a11y.clearSearch')}
+                onPress={() => setQuery('')}
+                hitSlop={10}
+                icon={<Feather name="x" size={16} color="rgba(255,255,255,0.75)" />}
+              />
             ) : null}
           </View>
         </View>
@@ -350,6 +357,8 @@ export function MarketFeedScreen({ role, guest = false }: MarketFeedScreenProps)
       />
 
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t('a11y.newListing')}
         style={({ pressed }) => [
           styles.fab,
           { bottom: insets.bottom + Spacing.three },

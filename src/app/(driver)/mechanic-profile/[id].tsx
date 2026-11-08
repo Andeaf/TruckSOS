@@ -48,12 +48,24 @@ async function fetchMechanicPhone(mechanicId: string): Promise<string | null> {
 }
 
 export default function MechanicProfileScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, fromConversation, fromChannel } = useLocalSearchParams<{
+    id: string;
+    fromConversation?: string;
+    fromChannel?: string;
+  }>();
   const { t } = useTranslation();
   const theme = useTheme();
   // Fallback explicit (7 sept): deschis printr-un link partajat (trucksos.net/p/<id>),
   // ecranul poate fi PRIMUL din stivă — fără istoric, back-ul cade pe rădăcină.
-  const goBack = useBack('/');
+  // 1.1: deschis din chat (`fromConversation` / `fromChannel`) → back-ul întoarce acolo (use-back).
+  const goBack = useBack(
+    '/',
+    fromConversation
+      ? { group: 'driver', kind: 'conversation', conversationId: fromConversation }
+      : fromChannel
+        ? { group: 'driver', kind: 'channel', conversationId: fromChannel }
+        : null,
+  );
 
   const router = useRouter();
   const { session } = useAuth();

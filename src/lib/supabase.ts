@@ -3,7 +3,7 @@ import { createClient, type Session } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
 
 import { secureSessionStorage, sessionStorageAdapter } from '@/lib/secure-session-storage';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/types/database-overrides';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;

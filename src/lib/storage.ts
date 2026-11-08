@@ -24,8 +24,29 @@ async function readUriBytes(uri: string): Promise<ArrayBuffer> {
  */
 
 const BUCKET = 'photos';
-/** Valabilitate URL semnat: 1h. Cache-uit apoi de `expo-image` per ecran. */
-const SIGNED_URL_TTL = 3600;
+/** Valabilitate URL semnat: 1h (secunde). URL-urile se refolosesc din `lib/signed-url-cache`. */
+export const SIGNED_URL_TTL = 3600;
+
+/**
+ * Miniaturi prin Supabase Image Transformations (AUDIT #29, pas 7.3). OPRIT până
+ * când David pornește funcția în Dashboard → Storage: cu `false`, orice `transform`
+ * cerut e ignorat și cererile sunt identice cu cele de dinainte.
+ * Cu `true` apare o FORMĂ NOUĂ de cerere: `createSignedUrls` (batch) nu acceptă
+ * `transform` în storage-js 2.108, deci miniaturile se semnează câte una
+ * (`createSignedUrl`), iar URL-ul servit e `/render/image/sign/...`.
+ */
+export const IMAGE_TRANSFORMS_ENABLED = false;
+
+/** Miniatura cerută: lățimea în pixeli (înălțimea urmează proporția). */
+export interface ImageTransform {
+  width: number;
+  resize?: 'cover' | 'contain';
+}
+
+/** Transformarea care chiar se aplică: niciuna cât timp flag-ul e oprit. */
+export function activeTransform(transform?: ImageTransform | null): ImageTransform | undefined {
+  return IMAGE_TRANSFORMS_ENABLED && transform ? transform : undefined;
+}
 
 export type PhotoFolder = 'announcements' | 'chat' | 'channel' | 'avatars' | 'market';
 
@@ -173,9 +194,30 @@ export async function uploadAvatar(
 /**
  * URL-uri semnate pentru afișare, în batch (un singur apel/ecran).
  * Întoarce o mapare path → signedUrl; path-urile inaccesibile (RLS) lipsesc.
+ * Pentru afișare folosește `signPaths` din `lib/signed-url-cache` (refolosește URL-urile încă valide).
  */
-export async function signedUrls(paths: string[]): Promise<Record<string, string>> {
+export async function signedUrls(
+  paths: string[],
+  options?: { transform?: ImageTransform },
+): Promise<Record<string, string>> {
   if (paths.length === 0) return {};
+  const transform = activeTransform(options?.transform);
+  if (transform) {
+    // Batch-ul nu știe `transform` → câte o semnare per path (doar cu flag-ul pornit).
+    const results = await Promise.all(
+      paths.map(async (path) => {
+        const { data } = await supabase.storage
+          .from(BUCKET)
+          .createSignedUrl(path, SIGNED_URL_TTL, { transform });
+        return [path, data?.signedUrl ?? null] as const;
+      }),
+    );
+    const map: Record<string, string> = {};
+    results.forEach(([path, url]) => {
+      if (url) map[path] = url;
+    });
+    return map;
+  }
   const { data } = await supabase.storage.from(BUCKET).createSignedUrls(paths, SIGNED_URL_TTL);
   const map: Record<string, string> = {};
   (data ?? []).forEach((item) => {

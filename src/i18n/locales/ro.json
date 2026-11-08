@@ -1274,5 +1274,42 @@
     "disableConfirmBody": "Contul va fi protejat doar de parolă. O poți activa din nou oricând.",
     "loginPrompt": "Introdu codul din aplicația de autentificare ca să intri în cont.",
     "signOut": "Deconectare"
+  },
+  "a11y": {
+    "back": "Înapoi",
+    "close": "Închide",
+    "cancelSelection": "Anulează selecția",
+    "clearSearch": "Șterge căutarea",
+    "addTruck": "Adaugă camion",
+    "editTruck": "Editează camionul",
+    "deleteTruck": "Șterge camionul",
+    "delete": "Șterge",
+    "deleteAll": "Șterge tot",
+    "dismiss": "Ascunde",
+    "report": "Raportează",
+    "newAnnouncement": "Anunț nou",
+    "newListing": "Anunț nou în Market",
+    "removePhoto": "Elimină poza",
+    "changePhoto": "Schimbă poza de profil",
+    "showPassword": "Arată parola",
+    "hidePassword": "Ascunde parola",
+    "starOf": "{{n}} din {{total}}",
+    "announcementPhoto": "Poză anunț {{n}}"
+  },
+  "permissions": {
+    "locationTitle": "Activează locația pentru distanțe",
+    "locationBody": "Ca să vezi cât de departe e fiecare anunț și ce intră în raza aleasă.",
+    "enableLocation": "Activează locația"
+  },
+  "outbox": {
+    "sending": "Se trimite…",
+    "failed": "Netrimis",
+    "retry": "Reîncearcă",
+    "discardTitle": "Șterge mesajul netrimis?",
+    "discardBody": "Mesajul n-a ajuns la destinatar și va fi șters de pe acest telefon.",
+    "editFailed": "Modificarea nu a fost salvată",
+    "editFailedBody": "Verifică conexiunea și încearcă din nou.",
+    "sendFailed": "Mesajul nu a fost trimis",
+    "attachmentMissing": "Fișierul nu mai există pe telefon, așa că mesajul netrimis a fost șters."
   }
 }

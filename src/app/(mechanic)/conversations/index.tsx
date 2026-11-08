@@ -15,6 +15,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { UserPickerSheet } from '@/components/user-picker-sheet';
+import { IconButton } from '@/components/ui/icon-button';
 import { HeaderGradient, HeaderGradientDirection, Radius, Shadows, Spacing } from '@/constants/theme';
 import { useResolvedScheme } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
@@ -44,7 +45,7 @@ function ChannelCard({
   const theme = useTheme();
   const { count: unreadCount } = useChannelUnreadCount(userId, channel.id);
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView type="backgroundElement" style={[styles.card, styles.channelCard]}>
         <View style={styles.cardRow}>
           <View style={styles.channelIcon}>
@@ -70,6 +71,7 @@ function ChannelCard({
             </View>
           ) : null}
           <Pressable
+            accessibilityRole="button"
             onPress={onOpenSettings}
             hitSlop={12}
             accessibilityLabel={t('channelSettings.title')}>
@@ -108,6 +110,7 @@ function ConversationCard({
   const timeAgo = useTimeAgo();
   return (
     <Pressable
+      accessibilityRole="button"
       onPress={selectionMode ? onToggleSelect : onPress}
       onLongPress={onLongPress}
       style={({ pressed }) => pressed && styles.pressed}>
@@ -307,13 +310,16 @@ export default function MechanicConversationsScreen() {
       {selectionMode ? (
         <ScreenHeader>
           <View style={styles.selectionHeader}>
-            <Pressable onPress={exitSelection} hitSlop={8}>
-              <MaterialIcons name="close" size={24} color={theme.onHeader} />
-            </Pressable>
+            <IconButton
+              label={t('a11y.cancelSelection')}
+              onPress={exitSelection}
+              hitSlop={8}
+              icon={<MaterialIcons name="close" size={24} color={theme.onHeader} />}
+            />
             <HeaderText>
               {t('conversations.selectedCount', { count: selectedIds.size })}
             </HeaderText>
-            <Pressable onPress={handleDeleteSelected} disabled={selectedIds.size === 0} hitSlop={8}>
+            <Pressable accessibilityRole="button" onPress={handleDeleteSelected} disabled={selectedIds.size === 0} hitSlop={8}>
               <HeaderText style={selectedIds.size === 0 && styles.deleteTextDisabled}>
                 {t('conversations.deleteButton')}
               </HeaderText>
@@ -325,7 +331,7 @@ export default function MechanicConversationsScreen() {
           title={t('mechanic.conversations.title')}
           profileButton
           right={
-            <Pressable onPress={toggleSearch} hitSlop={12} accessibilityLabel={t('conversations.searchToggle')}>
+            <Pressable accessibilityRole="button" onPress={toggleSearch} hitSlop={12} accessibilityLabel={t('conversations.searchToggle')}>
               <MaterialIcons name="search" size={24} color={theme.onHeader} />
             </Pressable>
           }
@@ -344,7 +350,7 @@ export default function MechanicConversationsScreen() {
               autoCorrect={false}
             />
           </View>
-          <Pressable onPress={toggleSearch} hitSlop={12} accessibilityLabel={t('conversations.searchClose')}>
+          <Pressable accessibilityRole="button" onPress={toggleSearch} hitSlop={12} accessibilityLabel={t('conversations.searchClose')}>
             <MaterialIcons name="close" size={22} color={theme.textSecondary} />
           </Pressable>
         </View>
@@ -422,6 +428,7 @@ export default function MechanicConversationsScreen() {
       {/* Faza 19.6: FAB „Începe o conversație nouă" (dreapta jos, stilul Market). */}
       {!selectionMode ? (
         <Pressable
+          accessibilityRole="button"
           style={({ pressed }) => [
             styles.fab,
             { bottom: insets.bottom + Spacing.three },

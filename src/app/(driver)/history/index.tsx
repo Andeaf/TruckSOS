@@ -9,6 +9,7 @@ import { RatingSheet } from '@/components/rating-sheet';
 import { HeaderText, ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { IconButton } from '@/components/ui/icon-button';
 import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
@@ -170,9 +171,12 @@ export default function DriverHistoryScreen() {
       {selectionMode ? (
         <ScreenHeader>
           <View style={styles.selectionHeader}>
-            <Pressable onPress={exitSelection} hitSlop={12}>
-              <MaterialIcons name="close" size={24} color={theme.onHeader} />
-            </Pressable>
+            <IconButton
+              label={t('a11y.cancelSelection')}
+              onPress={exitSelection}
+              hitSlop={12}
+              icon={<MaterialIcons name="close" size={24} color={theme.onHeader} />}
+            />
             <HeaderText>
               {t('driver.history.selectedCount', { count: selectedIds.size })}
             </HeaderText>
@@ -192,11 +196,12 @@ export default function DriverHistoryScreen() {
           onBack={goBack}
           right={
             items.length > 0 ? (
-              <Pressable
+              <IconButton
+                label={t('a11y.deleteAll')}
                 onPress={() => confirmHide(undefined, 'driver.history.deleteAllConfirmTitle')}
-                hitSlop={12}>
-                <MaterialIcons name="delete-sweep" size={22} color={theme.onHeader} />
-              </Pressable>
+                hitSlop={12}
+                icon={<MaterialIcons name="delete-sweep" size={22} color={theme.onHeader} />}
+              />
             ) : null
           }
         />

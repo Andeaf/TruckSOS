@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Linking, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TruckFormSheet } from '@/components/truck-form-sheet';
 import { ListRow, RowGroup, SectionLabel } from '@/components/ui/list-row';
+import { IconButton } from '@/components/ui/icon-button';
 import { Radius, Spacing } from '@/constants/theme';
 import { useBack } from '@/hooks/use-back';
 import { useTheme } from '@/hooks/use-theme';
@@ -128,9 +129,12 @@ export default function DriverProfileScreen() {
         <ThemedView type="backgroundElement" style={styles.trucksCard}>
           <View style={styles.trucksHeader}>
             <ThemedText type="smallBold">{t('truck.savedTitle')}</ThemedText>
-            <Pressable onPress={handleAddTruck} hitSlop={12}>
-              <MaterialIcons name="add" size={24} color={theme.brand} />
-            </Pressable>
+            <IconButton
+              label={t('a11y.addTruck')}
+              onPress={handleAddTruck}
+              hitSlop={12}
+              icon={<MaterialIcons name="add" size={24} color={theme.brand} />}
+            />
           </View>
 
           {trucks.length === 0 ? (
@@ -154,12 +158,18 @@ export default function DriverProfileScreen() {
                   ) : null}
                 </View>
                 <View style={styles.truckActions}>
-                  <Pressable onPress={() => handleEditTruck(truck)} hitSlop={10}>
-                    <MaterialIcons name="edit" size={18} color={theme.textSecondary} />
-                  </Pressable>
-                  <Pressable onPress={() => handleDeleteTruck(truck.id)} hitSlop={10}>
-                    <MaterialIcons name="delete" size={18} color={theme.textSecondary} />
-                  </Pressable>
+                  <IconButton
+                    label={t('a11y.editTruck')}
+                    onPress={() => handleEditTruck(truck)}
+                    hitSlop={10}
+                    icon={<MaterialIcons name="edit" size={18} color={theme.textSecondary} />}
+                  />
+                  <IconButton
+                    label={t('a11y.deleteTruck')}
+                    onPress={() => handleDeleteTruck(truck.id)}
+                    hitSlop={10}
+                    icon={<MaterialIcons name="delete" size={18} color={theme.textSecondary} />}
+                  />
                 </View>
               </View>
             ))

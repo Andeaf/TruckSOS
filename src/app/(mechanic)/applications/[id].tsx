@@ -1,6 +1,16 @@
-import { useState } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import {
+  ActivityIndicator,
+  Alert,
+  Platform,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -12,7 +22,9 @@ import { PhotoGallery } from '@/components/photo-gallery';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { IconButton } from '@/components/ui/icon-button';
 import { Radius, Spacing } from '@/constants/theme';
+import { approxCoordinate, useAdminMechanicMask } from '@/hooks/use-admin-mask';
 import { useSignedUrl } from '@/hooks/use-signed-urls';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -69,12 +81,66 @@ function InfoRow({ icon, text }: { icon: React.ComponentProps<typeof MaterialIco
 
 export default function ApplicationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { application: item, loading, refresh } = useApplication(id);
+  const { application: fetched, loading, refresh } = useApplication(id);
+  // Hook-ul pune `null` și când cererea pică (rețea slabă): la o reîncărcare păstrăm ultima
+  // candidatură afișată (a ACESTUI id), în loc să golim ecranul din cauza unei erori trecătoare.
+  const [lastItem, setLastItem] = useState(fetched);
+  if (fetched && fetched !== lastItem) setLastItem(fetched);
+  const item = fetched ?? (lastItem?.id === id ? lastItem : null);
   const { t } = useTranslation();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const adminMask = useAdminMechanicMask();
   const [sheetVisible, setSheetVisible] = useState(false);
+
+  // 1.1: reîncărcare la fiecare REVENIRE pe ecran (din chat, din notificare) și la
+  // pull-to-refresh — statusul (acceptată/respinsă) apare fără ieșire din ecran. Ales în locul
+  // Realtime (mai ieftin, fără abonamente noi): aceeași cerere de până acum, doar repetată.
+  // Primul focus al unui id se sare: `useApplication` încarcă deja la montare.
+  const firstFocusIdRef = useRef<string | null>(null);
+  // Reîncărcarea în zbor: o cerere venită între timp (focus, pull, onSuccess după editare) NU
+  // se aruncă — răspunsul în zbor poate fi plecat înainte de schimbare (prețul vechi), deci
+  // `pendingReloadRef` repornește încărcarea o dată după el, iar apelantul o așteaptă.
+  const reloadPromiseRef = useRef<Promise<void> | null>(null);
+  const pendingReloadRef = useRef(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const reload = useCallback((): Promise<void> => {
+    if (reloadPromiseRef.current) {
+      pendingReloadRef.current = true;
+      return reloadPromiseRef.current;
+    }
+    pendingReloadRef.current = false;
+    const promise = (async () => {
+      try {
+        do {
+          pendingReloadRef.current = false;
+          await refresh();
+        } while (pendingReloadRef.current);
+      } finally {
+        reloadPromiseRef.current = null;
+      }
+    })();
+    reloadPromiseRef.current = promise;
+    return promise;
+  }, [refresh]);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocusIdRef.current !== id) {
+        firstFocusIdRef.current = id;
+        return;
+      }
+      void reload();
+    }, [id, reload])
+  );
+  const onPullRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await reload();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [reload]);
   // `id` din rută e al APLICAȚIEI; anunțul (deci pozele) se știe abia după load.
   const { photos } = useAnnouncementPhotos(item?.announcement?.id ?? '');
   const driverAvatarUrl = useSignedUrl(item?.announcement?.driver?.avatar_path);
@@ -86,7 +152,8 @@ export default function ApplicationDetailScreen() {
     translation.translate();
   };
 
-  if (loading) {
+  // Spinner pe tot ecranul doar până la prima încărcare; reîncărcările păstrează conținutul.
+  if (loading && !item) {
     return (
       <ThemedView style={[styles.container, styles.centered, { paddingTop: insets.top }]}>
         <ActivityIndicator color={theme.textSecondary} />
@@ -97,9 +164,13 @@ export default function ApplicationDetailScreen() {
   if (!item || !item.announcement) {
     return (
       <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-          <MaterialIcons name="arrow-back" size={24} color={theme.textSecondary} />
-        </Pressable>
+        <IconButton
+          label={t('a11y.back')}
+          onPress={() => router.back()}
+          style={styles.backButton}
+          hitSlop={12}
+          icon={<MaterialIcons name="arrow-back" size={24} color={theme.textSecondary} />}
+        />
       </ThemedView>
     );
   }
@@ -108,6 +179,13 @@ export default function ApplicationDetailScreen() {
   const conversationId = announcement.conversations?.[0]?.id ?? null;
   const isResubmittable = item.status === 'rejected' && announcement.status === 'open';
   const isDismissable = !isResubmittable && (item.status === 'rejected' || announcement.status === 'cancelled');
+  // Admin „ca mecanic” (1.1): cât candidatura nu e acceptată, vede ce vede un mecanic —
+  // fără plăcuță/VIN, poziția la ~1 km. Mască client-side, doar pentru teste (use-admin-mask).
+  const masked = adminMask && item.status !== 'accepted';
+  const plateNumber = masked ? null : announcement.plate_number;
+  const chassisNumber = masked ? null : announcement.chassis_number;
+  const latitude = masked ? approxCoordinate(announcement.latitude) : announcement.latitude;
+  const longitude = masked ? approxCoordinate(announcement.longitude) : announcement.longitude;
 
   const truckLine = announcement.truck_make || announcement.truck_model
     ? [announcement.truck_make, announcement.truck_model, announcement.truck_year].filter(Boolean).join(' ')
@@ -158,7 +236,16 @@ export default function ApplicationDetailScreen() {
         right={<StatusBadge status={item.status} />}
       />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onPullRefresh}
+            tintColor={theme.brand}
+            colors={[theme.brand]}
+          />
+        }>
         <SectionTitle label={t('mechanic.applications.sectionAnnouncement')} />
         <ThemedView type="backgroundElement" style={styles.section}>
           <View style={styles.personRow}>
@@ -171,14 +258,15 @@ export default function ApplicationDetailScreen() {
             <ThemedText>{announcement.driver?.full_name ?? t('common.defaultUser')}</ThemedText>
           </View>
           <InfoRow icon="location-on" text={announcement.location} />
-          {announcement.latitude != null && announcement.longitude != null ? (
+          {latitude != null && longitude != null ? (
             <>
-              <MiniMap latitude={announcement.latitude} longitude={announcement.longitude} />
+              <MiniMap latitude={latitude} longitude={longitude} />
               {/* iOS: două butoane EGALE, unul lângă altul (Apple + Google Maps —
                   mulți nu folosesc Apple Maps). Android: doar Google, ca înainte. */}
               <View style={styles.mapsButtonsRow}>
                 <Pressable
-                  onPress={() => openInMaps(announcement.latitude!, announcement.longitude!)}
+                  accessibilityRole="button"
+                  onPress={() => openInMaps(latitude, longitude)}
                   style={({ pressed }) => [
                     styles.mapsButton,
                     Platform.OS === 'ios' && styles.mapsButtonHalf,
@@ -196,8 +284,9 @@ export default function ApplicationDetailScreen() {
                 </Pressable>
                 {Platform.OS === 'ios' ? (
                   <Pressable
+                    accessibilityRole="button"
                     onPress={() =>
-                      openInGoogleMaps(announcement.latitude!, announcement.longitude!)
+                      openInGoogleMaps(latitude, longitude)
                     }
                     style={({ pressed }) => [
                       styles.mapsButton,
@@ -261,8 +350,11 @@ export default function ApplicationDetailScreen() {
             </>
           ) : null}
           {truckLine ? <InfoRow icon="local-shipping" text={truckLine} /> : null}
-          {announcement.chassis_number ? (
-            <InfoRow icon="tag" text={`${t('truck.chassisLabel')}: ${announcement.chassis_number}`} />
+          {plateNumber ? (
+            <InfoRow icon="badge" text={`${t('truck.plateLabel')}: ${plateNumber}`} />
+          ) : null}
+          {chassisNumber ? (
+            <InfoRow icon="tag" text={`${t('truck.chassisLabel')}: ${chassisNumber}`} />
           ) : null}
         </ThemedView>
 
@@ -290,6 +382,7 @@ export default function ApplicationDetailScreen() {
         <View style={styles.actions}>
           {item.status === 'accepted' && conversationId ? (
             <Pressable
+              accessibilityRole="button"
               onPress={() => router.push({ pathname: '/(mechanic)/conversations/[id]' as never, params: { id: conversationId } })}
               style={({ pressed }) => [styles.chatButton, pressed && styles.pressed]}>
               <MaterialIcons name="chat" size={16} color="#22c55e" />
@@ -299,6 +392,7 @@ export default function ApplicationDetailScreen() {
 
           {isResubmittable ? (
             <Pressable
+              accessibilityRole="button"
               onPress={() => setSheetVisible(true)}
               style={({ pressed }) => [styles.resubmitButton, pressed && styles.pressed]}>
               <Text style={styles.resubmitButtonText}>{t('mechanic.apply.resubmitSheetTitle')}</Text>
@@ -307,6 +401,7 @@ export default function ApplicationDetailScreen() {
 
           {item.status === 'pending' ? (
             <Pressable
+              accessibilityRole="button"
               onPress={handleWithdraw}
               style={({ pressed }) => [styles.withdrawButton, pressed && styles.pressed]}>
               <Text style={styles.withdrawButtonText}>{t('mechanic.applications.withdrawButton')}</Text>
@@ -315,6 +410,7 @@ export default function ApplicationDetailScreen() {
 
           {isDismissable ? (
             <Pressable
+              accessibilityRole="button"
               onPress={handleDismiss}
               style={({ pressed }) => [styles.withdrawButton, pressed && styles.pressed]}>
               <Text style={styles.withdrawButtonText}>{t('mechanic.applications.dismissButton')}</Text>
@@ -327,7 +423,7 @@ export default function ApplicationDetailScreen() {
         visible={sheetVisible}
         announcementId={announcement.id}
         onClose={() => setSheetVisible(false)}
-        onSuccess={() => { setSheetVisible(false); refresh(); }}
+        onSuccess={() => { setSheetVisible(false); void reload(); }}
         applicationId={item.id}
         initialData={{
           priceType: item.price_type,
