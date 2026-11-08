@@ -204,6 +204,30 @@ jobs:
           echo "diff applied vs re-applied (trebuie gol):"
           diff -u /tmp/fp/applied.txt /tmp/fp/reapplied.txt
 
+      - name: "Faza 3: măsurători la scară (10 000 membri în canal; raportate, nu asserturi)"
+        # Condiția lui David din 25 oct (PLAN_1.1_FIX §3 „Teste”): INSERT în channel_messages ≤ 50 ms și
+        # build_channel_digests() < 2 s, măsurate cu \timing pe baza din CI cu toate migrările aplicate (după
+        # rehearsal starea e „re-aplicat”). O singură tranzacție cu ROLLBACK, nimic nu rămâne pentru pgTAP.
+        # Fără faza 3 în migrări pasul doar scrie „sărit”. Depășirea țintei = ::warning:: în log, NU eșec (David decide).
+        if: ${{ !cancelled() && steps.start.outcome == 'success' && steps.apply.outcome == 'success' }}
+        env:
+          PGCLIENTENCODING: UTF8
+        run: |
+          set -o pipefail
+          DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+          psql "$DB" -X -v ON_ERROR_STOP=1 -f supabase/bench/channel_push_timing.sql | tr -d '\r' | tee /tmp/bench.out
+          if grep -q 'masuratoarea e sarita' /tmp/bench.out; then exit 0; fi
+          # Liniile „Time: N ms” apar în ordinea măsurătorilor: 1 = INSERT channel_messages, 2 = build_channel_digests().
+          insert_ms=$(grep -E '^Time: ' /tmp/bench.out | sed -n '1p' | awk '{print $2}')
+          digest_ms=$(grep -E '^Time: ' /tmp/bench.out | sed -n '2p' | awk '{print $2}')
+          members=$(grep -A2 'bench_members_with_push' /tmp/bench.out | tail -1 | tr -d ' ')
+          digest_rows=$(grep -A2 'bench_digest_rows' /tmp/bench.out | tail -1 | tr -d ' ')
+          echo "FAZA 3 MĂSURĂTORI: membri cu push=$members | INSERT channel_messages=${insert_ms} ms (țintă ≤ 50) | build_channel_digests=${digest_ms} ms (țintă < 2000), rânduri în coadă=$digest_rows"
+          [ -n "$insert_ms" ] && [ -n "$digest_ms" ] || { echo "::warning::bench: nu am găsit ambele linii Time: în ieșire"; exit 0; }
+          awk -v v="$insert_ms" 'BEGIN { exit !(v > 50) }' && echo "::warning::Faza 3: INSERT channel_messages ${insert_ms} ms > ținta de 50 ms (de raportat lui David, nu se repară aici)"
+          awk -v v="$digest_ms" 'BEGIN { exit !(v > 2000) }' && echo "::warning::Faza 3: build_channel_digests ${digest_ms} ms > ținta de 2000 ms (de raportat lui David)"
+          exit 0
+
       - name: Upload fingerprints
         # Amprentele și diferența așteptată (baseline → applied): referința cu care se compară repetiția BEGIN … ROLLBACK pe producție.
         if: ${{ !cancelled() && steps.apply.outcome == 'success' }}
