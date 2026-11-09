@@ -13,6 +13,21 @@ import { useAuth } from '@/hooks/use-auth';
 import { usePushPermissionRequest } from '@/hooks/use-push-permission-request';
 import { useTheme } from '@/hooks/use-theme';
 
+/**
+ * 7.10 (decizia lui David, 9 nov 2026): foaia se arată DOAR conturilor create după aplicarea migrării
+ * 20261109000200 pe producție. Conturile de dinainte au avut push-ul Market pornit implicit — dacă azi e oprit,
+ * utilizatorul a ales singur din Setări și a spus deja „nu”. Valoarea se setează la aplicarea fazei 6 (documentul de
+ * aplicare, pasul „constanta 7.10”) ÎNAINTE de build-ul 1.1; până atunci e în viitor → foaia nu apare nimănui
+ * (fail closed). Comparația e pe instant (Date.parse), nu pe text.
+ */
+export const MARKET_PUSH_OPTIN_SINCE = '2026-12-31T23:59:59Z';
+
+function createdAfterOptInMigration(createdAt: string | null | undefined): boolean {
+  if (!createdAt) return false;
+  const t = Date.parse(createdAt);
+  return Number.isFinite(t) && t >= Date.parse(MARKET_PUSH_OPTIN_SINCE);
+}
+
 /** O singură întrebare per cont, pe instalarea asta (cheia rămâne și după logout). Scrisă și de comutatorul
  *  „Notificări Market” din Setări: cine a ales singur nu mai e întrebat. */
 export function marketPushPromptKey(userId: string): string {
@@ -43,7 +58,11 @@ export function MarketPushOptInSheet({ enabled }: { enabled: boolean }) {
   const { request } = usePushPermissionRequest();
   const userId = session?.user.id ?? null;
   // Doar profilul contului curent (la schimbarea contului profilul vechi poate rămâne un moment).
-  const marketPushOff = profile != null && profile.id === userId && profile.market_push_enabled === false;
+  const marketPushOff =
+    profile != null &&
+    profile.id === userId &&
+    profile.market_push_enabled === false &&
+    createdAfterOptInMigration(profile.created_at);
   const [visible, setVisible] = useState(false);
   // Contul pentru care foaia a fost deja arătată în montarea asta: actualizarea optimistă a
   // profilului sau un refetch nu o redeschid.
