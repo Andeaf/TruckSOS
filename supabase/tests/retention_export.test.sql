@@ -3,7 +3,7 @@
 -- Id-urile 78… .
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(34);
+select plan(35);
 
 create function pg_temp.as_user(p_uid uuid, p_role text) returns void language plpgsql as $$
 begin
@@ -133,7 +133,8 @@ select is((select string_agg(x->>'content', ',') from exp, jsonb_array_elements(
           '24. DOAR mesajele trimise de mine (nu „R activ M” al mecanicului; cele vechi au fost șterse de retenție)');
 select is((select (j->'messages_sent'->>'truncated')::boolean from exp), false, '25. fără trunchiere la volum mic');
 select is((select j ? 'push_devices' and j ? 'moderation_notices' and j ? 'ratings_given' and j ? 'blocked_users' from exp), true, '26. secțiunile există și goale');
-select throws_ok($$ select public.export_my_data() $$, 'P0001', 'rate_limited', '27. al doilea apel în 24 h → rate_limited');
+select is((select (public.export_my_data()->>'user_id')::uuid), '78000000-0000-4000-8000-0000000000a1', '27. al doilea apel în 24 h merge (cota e 2/24 h — decizia din 9 nov)');
+select throws_ok($$ select public.export_my_data() $$, 'P0001', 'rate_limited', '27b. al treilea apel în 24 h → rate_limited');
 select pg_temp.as_user('78000000-0000-4000-8000-0000000000c1', 'authenticated');
 select is((select jsonb_array_length(public.export_my_data()->'applications')), 0, '28. alt utilizator primește exportul LUI (fără camioanele lui A)');
 select pg_temp.as_postgres();

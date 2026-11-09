@@ -1080,7 +1080,7 @@
     "blockedUsers": "Utilizatori blocați",
     "exportData": "Descarcă datele mele",
     "exportLoading": "Se pregătește…",
-    "exportRateLimited": "Poți descărca datele o dată pe zi.",
+    "exportRateLimited": "Poți descărca datele de două ori pe zi.",
     "exportError": "Datele nu au putut fi descărcate. Încearcă din nou.",
     "exportDialogTitle": "Datele mele TruckSOS",
     "exportSavedTitle": "Partajarea nu s-a putut deschide",

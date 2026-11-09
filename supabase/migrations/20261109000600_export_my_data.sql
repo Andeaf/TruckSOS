@@ -1,5 +1,5 @@
 -- Faza 6.4 (PLAN_1.1_FIX #45, art. 20 GDPR; plan: .claude/wip/faza6/PLAN-faza6.md): RPC `export_my_data()` — tot ce e AL
--- utilizatorului, ca jsonb, o dată pe zi (app.rate_limit_ok 'export', 24 h, 1 → altfel `rate_limited` cu DETAIL `export`).
+-- utilizatorului, ca jsonb, de două ori pe zi (app.rate_limit_ok 'export', 24 h, 2 → altfel `rate_limited` cu DETAIL `export`).
 -- Clientul 1.1 îl salvează ca `trucksos-export-<data>.json` și îl oferă prin foaia de partajare (expo-sharing) / download pe web.
 --
 -- Ce intră: profilul propriu (toate coloanele, inclusiv cele private — sunt ale lui), camioanele, anunțurile de depanare
@@ -39,7 +39,8 @@ DECLARE
   v_cmsgs_total bigint;
 BEGIN
   IF v_uid IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
-  IF NOT app.rate_limit_ok('export', interval '24 hours', 1) THEN
+  -- 2 cereri / 24 h (decizia lui David, 9 nov: un răspuns pierdut pe rețea slabă nu trebuie să blocheze o cerere GDPR o zi)
+  IF NOT app.rate_limit_ok('export', interval '24 hours', 2) THEN
     RAISE EXCEPTION 'rate_limited' USING DETAIL = 'export';
   END IF;
 

@@ -1077,7 +1077,7 @@
     "blockedUsers": "Blocked users",
     "exportData": "Download my data",
     "exportLoading": "Preparing…",
-    "exportRateLimited": "You can download your data once a day.",
+    "exportRateLimited": "You can download your data twice a day.",
     "exportError": "Your data could not be downloaded. Please try again.",
     "exportDialogTitle": "My TruckSOS data",
     "exportSavedTitle": "Sharing could not be opened",
