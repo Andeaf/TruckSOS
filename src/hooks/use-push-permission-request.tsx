@@ -47,7 +47,9 @@ export type PushPermissionRequestReason =
   | 'role-chosen'
   | 'announcement-published'
   | 'application-sent'
-  | 'session-start';
+  | 'session-start'
+  // 1.1 (7.10): „Da, anunță-mă” din foaia de opt-in a Market-ului (aceleași gărzi ca restul).
+  | 'market-opt-in';
 
 const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
 /**

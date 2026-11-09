@@ -377,6 +377,8 @@
       "photosHint": "Atașează poze cu defecțiunea — vizibile mecanicilor.",
       "photosFailedTitle": "Poze neurcate",
       "photosFailedMessage": "Anunțul a fost publicat, dar {{count}} poză/poze nu s-au putut urca.",
+      "publishFailedTitle": "Anunțul nu a fost publicat",
+      "publishRetry": "Reîncearcă",
       "errorDescription": "Descrie problema tehnicã.",
       "errorLocation": "Introdu locația.",
       "coordsSectionTitle": "Coordonate GPS",
@@ -757,6 +759,7 @@
     "announcementBanner": "Anunț de depanare",
     "announcementRemove": "Elimină anunțul din mesaj",
     "status": {
+      "draft": "Ciornă",
       "open": "Deschis",
       "accepted": "Acceptat",
       "resolved": "Rezolvat",
@@ -843,7 +846,13 @@
     "saveButton": "Salvează modificările",
     "discardTitle": "Renunți la modificări?",
     "discardMessage": "Ce ai completat se va pierde.",
-    "discardOk": "Renunță"
+    "discardOk": "Renunță",
+    "pushOptIn": {
+      "title": "Vrei notificări la anunțuri noi pe Market?",
+      "body": "Îți trimitem o notificare când apare un anunț nou pe Market. Poți schimba oricând din Setări.",
+      "accept": "Da, anunță-mă",
+      "later": "Nu acum"
+    }
   },
   "moderation": {
     "title": "Notificări de moderare",
@@ -1069,6 +1078,13 @@
     "privacySection": "Confidențialitate",
     "moderationNotices": "Notificări de moderare",
     "blockedUsers": "Utilizatori blocați",
+    "exportData": "Descarcă datele mele",
+    "exportLoading": "Se pregătește…",
+    "exportRateLimited": "Poți descărca datele de două ori pe zi.",
+    "exportError": "Datele nu au putut fi descărcate. Încearcă din nou.",
+    "exportDialogTitle": "Datele mele TruckSOS",
+    "exportSavedTitle": "Partajarea nu s-a putut deschide",
+    "exportSavedMessage": "Fișierul cu datele tale a fost pregătit, dar foaia de partajare nu s-a putut deschide. Încearcă din nou mai târziu.",
     "deleteAccount": "Șterge contul",
     "deleteAccountScreen": {
       "title": "Șterge contul",

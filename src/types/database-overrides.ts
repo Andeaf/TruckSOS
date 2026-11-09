@@ -41,8 +41,12 @@
  * `†` = coloană GENERATED în tabel: rămâne `never` în `Insert`/`Update` (triggerul n-o scrie).
  * `created_at` / `updated_at` au DEFAULT now() dar NU sunt NOT NULL în tabel → `| null` în `Row`.
  * `status` / `role` rămân `string` (text + CHECK în baza de date), ca la generator.
+ *
+ * Funcții încă negenerate (migrări din repo neaplicate pe proiectul legat; după aplicare, la
+ * următorul `npm run gen:types`, intrarea de aici se poate scoate — forma generată e aceeași):
+ * - export_my_data (faza 6.4, 20261109000600): fără argumente → jsonb.
  */
-import type { Database as GeneratedDatabase } from './supabase';
+import type { Database as GeneratedDatabase, Json } from './supabase';
 
 /**
  * Îmbinare recursivă de tipuri obiect: cheile din B câștigă, cheile doar din A rămân neatinse.
@@ -247,6 +251,10 @@ type DatabaseOverrides = {
         Update: { read_at?: string | null };
         Relationships: [];
       };
+    };
+    Functions: {
+      // Forma generatorului pentru funcțiile fără argumente (`Args: never`, ca admin_dashboard_stats).
+      export_my_data: { Args: never; Returns: Json };
     };
   };
 };

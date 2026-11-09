@@ -26,6 +26,8 @@ export function useHistory(driverId: string | undefined) {
       .select('*, mechanic:profiles!mechanic_id(id, full_name, avatar_path)')
       .eq('driver_id', driverId)
       .eq('hidden_from_history', false)
+      // 7.2: ciornele (publicare eșuată, șterse de retenție după 24 h) nu sunt istoric.
+      .neq('status', 'draft')
       .order('created_at', { ascending: false })
       .limit(200);
     setItems((data as HistoryAnnouncement[] | null) ?? []);

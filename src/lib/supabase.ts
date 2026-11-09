@@ -8,9 +8,23 @@ import type { Database } from '@/types/database-overrides';
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 
+// 1.1 (faza 6, review 9 nov): 10 s e prea puțin pentru două cereri care cară mult pe rețea slabă —
+// upload-urile în Storage (pozele anunțului, 2 în paralel) și exportul datelor (JSON de câțiva MB; serverul
+// consumă cota de 1/zi chiar dacă clientul abandonează). Restul cererilor rămân la 10 s.
+const DEFAULT_TIMEOUT_MS = 10000;
+const STORAGE_UPLOAD_TIMEOUT_MS = 30000;
+const EXPORT_TIMEOUT_MS = 60000;
+
+function timeoutFor(url: RequestInfo | URL): number {
+  const href = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
+  if (href.includes('/storage/v1/object/')) return STORAGE_UPLOAD_TIMEOUT_MS;
+  if (href.includes('/rest/v1/rpc/export_my_data')) return EXPORT_TIMEOUT_MS;
+  return DEFAULT_TIMEOUT_MS;
+}
+
 function fetchWithTimeout(url: RequestInfo | URL, options?: RequestInit) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10000);
+  const timer = setTimeout(() => controller.abort(), timeoutFor(url));
   return fetch(url as string, { ...options, signal: controller.signal })
     .finally(() => clearTimeout(timer));
 }

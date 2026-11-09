@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import i18n from '@/i18n';
 import { translateDbError } from '@/lib/db-errors';
+import { deletePhotos } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import type { Announcement, Application, Profile, PriceType, PublicUser } from '@/types/database';
 import { useAuth } from '@/hooks/use-auth';
@@ -13,7 +15,7 @@ export type AnnouncementWithDriver = Announcement & {
   driver: PublicUser | null;
 };
 
-// Hook for driver: own announcements (all statuses)
+// Hook for driver: own announcements (all statuses, fără ciorne — 7.2)
 export function useMyAnnouncements() {
   const { session } = useAuth();
   // 1.1 (7.4): dependența e id-ul contului, nu obiectul `session` (reîmprospătarea
@@ -37,6 +39,9 @@ export function useMyAnnouncements() {
       // „ca șofer"), politica aditivă is_admin() întoarce TOATE anunțurile —
       // fără filtru, anunțurile altora apăreau drept ale adminului.
       .eq('driver_id', userId)
+      // 1.1 (7.2): ciornele sunt tranzitorii (create → poze → publicare, în câteva secunde);
+      // una rămasă după o publicare eșuată o șterge retenția după 24 h — nu se arată în listă.
+      .neq('status', 'draft')
       .order('created_at', { ascending: false })
       .limit(200);
     setAnnouncements((data as Announcement[]) ?? []);
@@ -119,19 +124,25 @@ export interface CreateAnnouncementOptions {
   longitude?: number | null;
 }
 
+/**
+ * 1.1 (7.2): anunțul se creează ca CIORNĂ (`status: 'draft'`): pozele se urcă înainte ca mecanicii
+ * să-l vadă și să primească push-ul, iar `publishAnnouncement` îl deschide. `status` întors e cel
+ * real de pe server: serverul de dinainte de faza 6 forțează `open` la INSERT (garda scrierilor
+ * de client) → apelantul sare peste publicare (fluxul vechi: anunț + push la INSERT).
+ */
 export async function createAnnouncement(
   driverId: string,
   description: string,
   location: string,
   options: CreateAnnouncementOptions = {},
-): Promise<{ id: string | null; error: string | null }> {
+): Promise<{ id: string | null; status: string | null; error: string | null }> {
   const { data, error } = await supabase
     .from('announcements')
     .insert({
       driver_id: driverId,
       description,
       location,
-      status: 'open',
+      status: 'draft',
       truck_make: options.truckMake || null,
       truck_model: options.truckModel || null,
       truck_year: options.truckYear ?? null,
@@ -140,9 +151,35 @@ export async function createAnnouncement(
       latitude: options.latitude ?? null,
       longitude: options.longitude ?? null,
     })
-    .select('id')
+    .select('id, status')
     .single();
-  return { id: data?.id ?? null, error: translateDbError(error) };
+  return { id: data?.id ?? null, status: data?.status ?? null, error: translateDbError(error) };
+}
+
+/**
+ * 1.1 (7.2): publicarea ciornei (`draft → open`): serverul verifică plafonul de anunțuri deschise
+ * (`rate_limited` / `announcements_open` → text propriu în translateDbError) și trimite push-ul
+ * către mecanici. Filtrul pe `draft` face reîncercarea sigură: dacă prima cerere a ajuns pe server
+ * dar răspunsul s-a pierdut (rețea slabă), a doua nu mai potrivește niciun rând și nu întoarce
+ * eroare — anunțul e deja publicat, deci „0 rânduri, fără eroare” = succes.
+ */
+export async function publishAnnouncement(
+  id: string,
+): Promise<{ error: string | null; gone?: boolean }> {
+  const { data, error } = await supabase
+    .from('announcements')
+    .update({ status: 'open' })
+    .eq('id', id)
+    .eq('status', 'draft')
+    .select('id');
+  if (!error && (data?.length ?? 0) === 0) {
+    // 0 rânduri potrivite nu înseamnă neapărat „deja publicat” (review 9 nov): ciorna poate fi ștearsă
+    // (retenția după 24 h, rollback) sau UPDATE-ul refuzat în tăcere de RLS. Verificăm starea reală.
+    const { data: row } = await supabase.from('announcements').select('status').eq('id', id).maybeSingle();
+    if (row?.status === 'open') return { error: null };
+    return { error: i18n.t('common.error'), gone: true };
+  }
+  return { error: translateDbError(error) };
 }
 
 export async function resolveAnnouncement(id: string): Promise<string | null> {
@@ -217,13 +254,26 @@ export function recordAnnouncementView(id: string): void {
     .then(() => {}, () => {});
 }
 
+/**
+ * Ștergerea anunțului propriu. 1.1 (7.2): fără fostul `PATCH applications` (status → rejected) —
+ * politicile din 25 oct îl refuză (403 în jurnal la fiecare ștergere), iar candidaturile cad oricum
+ * prin `ON DELETE CASCADE`. Pozele se șterg din Storage ÎNAINTE de rând: politica de DELETE pe
+ * Storage cere ca rândul anunțului să existe încă; rândurile `announcement_photos` cad prin cascadă.
+ * Eșecul la poze nu blochează ștergerea (rămân orfane, doar logate).
+ */
 export async function deleteAnnouncement(id: string): Promise<string | null> {
-  // Reject pending applications so mechanics see "Respins" instead of a disappeared entry
-  await supabase
-    .from('applications')
-    .update({ status: 'rejected' } as never)
+  const { data: photoRows, error: photosReadError } = await supabase
+    .from('announcement_photos')
+    .select('storage_path')
     .eq('announcement_id', id)
-    .eq('status', 'pending');
+    .limit(20);
+  if (photosReadError) {
+    console.warn('[announcements] citirea pozelor înainte de ștergere a eșuat:', photosReadError.message);
+  } else {
+    const paths = (photoRows ?? []).map((r) => r.storage_path);
+    const photosError = await deletePhotos(paths);
+    if (photosError) console.warn('[announcements] ștergerea pozelor din Storage a eșuat:', photosError);
+  }
 
   const { error } = await supabase
     .from('announcements')
