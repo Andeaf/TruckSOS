@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { ActionSheet, type SheetAction } from '@/components/action-sheet';
 import { EmptyState } from '@/components/empty-state';
 import { MarketCard } from '@/components/market-card';
+import { MarketPushOptInSheet } from '@/components/market-push-optin-sheet';
 import { HeaderProfileButton, ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -386,6 +387,9 @@ export function MarketFeedScreen({ role, guest = false }: MarketFeedScreenProps)
         actions={sortActions}
         onClose={() => setSortOpen(false)}
       />
+
+      {/* 1.1 (7.10): o singură întrebare per cont pentru push-ul Market (doar cu cont). */}
+      <MarketPushOptInSheet enabled={!guest} />
     </ThemedView>
   );
 }

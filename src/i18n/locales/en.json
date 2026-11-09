@@ -377,6 +377,8 @@
       "photosHint": "Attach photos of the problem — visible to mechanics.",
       "photosFailedTitle": "Photos not uploaded",
       "photosFailedMessage": "The announcement was posted, but {{count}} photo(s) could not be uploaded.",
+      "publishFailedTitle": "The announcement was not posted",
+      "publishRetry": "Retry",
       "errorDescription": "Please describe the problem.",
       "errorLocation": "Please enter your location.",
       "coordsSectionTitle": "GPS coordinates",
@@ -840,6 +842,7 @@
     "announcementBanner": "Breakdown announcement",
     "announcementRemove": "Remove announcement from message",
     "status": {
+      "draft": "Draft",
       "open": "Open",
       "accepted": "Accepted",
       "resolved": "Resolved",
@@ -926,7 +929,13 @@
     "saveButton": "Save changes",
     "discardTitle": "Discard changes?",
     "discardMessage": "What you've entered will be lost.",
-    "discardOk": "Discard"
+    "discardOk": "Discard",
+    "pushOptIn": {
+      "title": "Get notified about new listings on Market?",
+      "body": "We'll send you a notification when a new listing appears on Market. You can change this anytime in Settings.",
+      "accept": "Yes, notify me",
+      "later": "Not now"
+    }
   },
   "conversations": {
     "selectedCount": "{{count}} selected",
@@ -1052,6 +1061,13 @@
     "radiusNeedsPosition": "You set a radius but not your position — until you do, you will not get notifications for new announcements.",
     "privacySection": "Privacy",
     "blockedUsers": "Blocked users",
+    "exportData": "Download my data",
+    "exportLoading": "Preparing…",
+    "exportRateLimited": "You can download your data once a day.",
+    "exportError": "Your data could not be downloaded. Please try again.",
+    "exportDialogTitle": "My TruckSOS data",
+    "exportSavedTitle": "Sharing could not be opened",
+    "exportSavedMessage": "Your data file was prepared, but the share sheet could not be opened. Please try again later.",
     "deleteAccount": "Delete account",
     "deleteAccountScreen": {
       "title": "Delete account",

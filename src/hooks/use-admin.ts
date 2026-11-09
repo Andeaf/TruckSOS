@@ -310,6 +310,8 @@ export function fetchAnnouncementsSeries(since: string) {
       .from('announcements')
       .select('created_at, status')
       .gte('created_at', since)
+      // 7.2: ciornele nu sunt „anunțuri postate” (dispar în 24 h fără publicare).
+      .neq('status', 'draft')
       .order('created_at', { ascending: true })
       .range(from, to)
   );

@@ -5,12 +5,39 @@ import { uploadPhoto, deletePhotos, signedUrls } from '@/lib/storage';
 import type { PickedImage } from '@/lib/media';
 import type { AnnouncementPhoto } from '@/types/database';
 
+/** Câte poze urcă în paralel (1.1, 7.2): destul ca publicarea să nu mai aștepte poză cu poză,
+ * puțin cât să nu sufoce o rețea slabă de pe drum. */
+// 2, nu 3 (review 9 nov): banda se împarte între upload-uri; pe rețea slabă la marginea drumului 3 în paralel
+// ar fi picat toate la timeout. Upload-urile Storage au 30 s în fetchWithTimeout (lib/supabase.ts).
+const UPLOAD_CONCURRENCY = 2;
+
+/** O poză: `uploadPhoto` în Storage → rândul în announcement_photos. Nu aruncă. */
+async function uploadOneAnnouncementPhoto(
+  announcementId: string,
+  photo: PickedImage,
+): Promise<boolean> {
+  const { path, error } = await uploadPhoto('announcements', announcementId, photo);
+  if (error || !path) {
+    console.warn('[photos] upload eșuat:', error);
+    return false;
+  }
+  const { error: insertError } = await supabase
+    .from('announcement_photos')
+    .insert({ announcement_id: announcementId, storage_path: path });
+  if (insertError) {
+    console.warn('[photos] insert rând eșuat:', insertError.message);
+    await deletePhotos([path]); // best-effort, evită orfani
+    return false;
+  }
+  return true;
+}
+
 /**
- * Upload poze pentru un anunț DEJA creat (PLAN_FAZA9.md Etapa 9.1.3):
- * pt. fiecare poză → `uploadPhoto` în Storage → inserează rândul în
- * announcement_photos. Secvențial (stil Faza 5). Best-effort: pozele care
- * eșuează se sar, anunțul rămâne creat. Dacă upload-ul reușește dar inserarea
- * rândului eșuează, ștergem obiectul urcat (evită orfani în Storage — R2).
+ * Upload poze pentru un anunț DEJA creat (PLAN_FAZA9.md Etapa 9.1.3; din 1.1 — 7.2 — anunțul e
+ * încă ciornă, se publică după poze): pt. fiecare poză → `uploadPhoto` în Storage → inserează
+ * rândul în announcement_photos. Loturi de câte 3 în paralel (`Promise.allSettled`; înainte:
+ * secvențial). Best-effort: pozele care eșuează se sar, anunțul rămâne creat. Dacă upload-ul
+ * reușește dar inserarea rândului eșuează, ștergem obiectul urcat (evită orfani în Storage — R2).
  */
 export async function uploadAnnouncementPhotos(
   announcementId: string,
@@ -19,22 +46,18 @@ export async function uploadAnnouncementPhotos(
   let uploaded = 0;
   let failed = 0;
 
-  for (const photo of photos) {
-    const { path, error } = await uploadPhoto('announcements', announcementId, photo);
-    if (error || !path) {
-      failed++;
-      console.warn('[photos] upload eșuat:', error);
-      continue;
-    }
-    const { error: insertError } = await supabase
-      .from('announcement_photos')
-      .insert({ announcement_id: announcementId, storage_path: path });
-    if (insertError) {
-      failed++;
-      console.warn('[photos] insert rând eșuat:', insertError.message);
-      await deletePhotos([path]); // best-effort, evită orfani
-    } else {
-      uploaded++;
+  for (let i = 0; i < photos.length; i += UPLOAD_CONCURRENCY) {
+    const batch = photos.slice(i, i + UPLOAD_CONCURRENCY);
+    const results = await Promise.allSettled(
+      batch.map((photo) => uploadOneAnnouncementPhoto(announcementId, photo)),
+    );
+    for (const result of results) {
+      if (result.status === 'fulfilled' && result.value) {
+        uploaded++;
+      } else {
+        failed++;
+        if (result.status === 'rejected') console.warn('[photos] upload eșuat:', result.reason);
+      }
     }
   }
 

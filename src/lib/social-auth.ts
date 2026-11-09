@@ -219,6 +219,21 @@ export async function signInWithApple(): Promise<SocialResult> {
     });
     if (error) return { error: translateSocialError(error) };
 
+    // 1.1 (6.1): codul de autorizare Apple (valabil 5 min, o singură folosire) merge imediat la EF
+    // `apple-link`, care îl schimbă pe un refresh token păstrat criptat pe server — la ștergerea
+    // contului serverul îl revocă la Apple (App Store Review Guideline 5.1.1(v)). Fire-and-forget:
+    // conectarea nu depinde de el (serverul de dinainte de faza 6 n-are funcția → 404, doar logat).
+    if (credential.authorizationCode) {
+      supabase.functions
+        .invoke('apple-link', { body: { authorization_code: credential.authorizationCode } })
+        .then(
+          ({ error: linkErr }) => {
+            if (linkErr) console.warn('[social] apple-link:', linkErr.message);
+          },
+          (e: unknown) => console.warn('[social] apple-link:', e),
+        );
+    }
+
     // Apple trimite numele DOAR la prima conectare (token-ul nu-l conține) → îl punem
     // acum în metadata, de unde îl citește `role-select`/`createProfile`. La conectările
     // următoare `fullName` vine gol și nu atingem nimic.

@@ -20,7 +20,7 @@ import type { PickedImage } from '@/lib/media';
 import { useAccountGate } from '@/hooks/use-account-gate';
 import { useAuth } from '@/hooks/use-auth';
 import { usePushPermissionRequest } from '@/hooks/use-push-permission-request';
-import { createAnnouncement } from '@/hooks/use-announcements';
+import { createAnnouncement, publishAnnouncement } from '@/hooks/use-announcements';
 import {
   clearAnnouncementDraft,
   loadAnnouncementDraft,
@@ -127,6 +127,16 @@ export function AnnouncementFormScreen({
     longitudeStr.trim() !== '' ||
     photos.length > 0;
 
+  // 1.1 (7.2): ciorna creată la un submit a cărui publicare a eșuat (și pe care omul a lăsat-o
+  // cu „Anulează”). Un nou „Publică” fără nicio modificare reia DOAR publicarea — fără o a doua
+  // ciornă și fără să urce pozele din nou (iar dacă prima publicare a ajuns totuși pe server,
+  // reluarea e un no-op, nu un al doilea anunț). Orice modificare în formular o abandonează:
+  // următorul submit creează o ciornă nouă, cea veche o șterge retenția după 24 h.
+  const pendingDraftRef = useRef<{ id: string; photosFailed: number } | null>(null);
+  useEffect(() => {
+    pendingDraftRef.current = null;
+  }, [description, location, truckMake, truckModel, truckYearStr, plateNumber, chassisNumber, latitudeStr, longitudeStr, photos]);
+
   usePreventRemove(isDirty, ({ data }) => {
     if (savedRef.current) {
       navigation.dispatch(data.action);
@@ -184,6 +194,43 @@ export function AnnouncementFormScreen({
 
   function handleRemovePhoto(index: number) {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  /**
+   * 1.1 (7.2): `draft → open`. La eroare (plafonul de anunțuri deschise, rețea): alertă cu
+   * „Reîncearcă” / „Anulează”, așteptată AICI — butonul rămâne în `loading` și garda de dublu-tap
+   * rămâne ocupată până la alegere. `true` = publicat; `false` = omul a renunțat (ciorna rămâne pe
+   * server, invizibilă altora; o reia următorul „Publică” sau o șterge retenția după 24 h).
+   */
+  async function publishDraft(id: string): Promise<boolean> {
+    for (;;) {
+      const { error: publishErr, gone } = await publishAnnouncement(id);
+      if (!publishErr) return true;
+      if (gone) {
+        // Ciorna nu mai există pe server (retenție după 24 h, rollback) sau nu mai e a noastră: nu are sens
+        // reîncercarea pe același id — următorul „Publică” creează o ciornă nouă (review 9 nov).
+        pendingDraftRef.current = null;
+        setError(publishErr);
+        return false;
+      }
+      const retry = await new Promise<boolean>((resolve) => {
+        Alert.alert(
+          t('driver.announcements.publishFailedTitle'),
+          publishErr,
+          [
+            { text: t('common.cancel'), style: 'cancel', onPress: () => resolve(false) },
+            // Web (shim-ul din web-alert): OK din window.confirm = primul buton non-cancel = reîncercarea.
+            { text: t('driver.announcements.publishRetry'), onPress: () => resolve(true) },
+          ],
+          // Android: fără închidere la tap în afară — altfel promisiunea n-ar primi răspuns.
+          { cancelable: false },
+        );
+      });
+      if (!retry) {
+        setError(publishErr);
+        return false;
+      }
+    }
   }
 
   async function handleSubmit() {
@@ -244,39 +291,67 @@ export function AnnouncementFormScreen({
 
     setLoading(true);
     setError('');
-    const { id, error: createErr } = await createAnnouncement(
-      session.user.id,
-      description.trim(),
-      location.trim(),
-      {
-        truckMake: truckMake.trim() || undefined,
-        truckModel: truckModel.trim() || undefined,
-        truckYear,
-        plateNumber: plateNumber.trim().toUpperCase() || undefined,
-        chassisNumber: chassisNumber.trim().toUpperCase() || undefined,
-        latitude,
-        longitude,
-      },
-    );
 
-    if (createErr || !id) {
-      setLoading(false);
-      setError(createErr ?? t('common.error'));
-      return;
+    let draftId: string;
+    let photosFailedCount: number;
+    let needsPublish: boolean;
+    const pending = pendingDraftRef.current;
+    if (pending) {
+      // Ciorna de la submit-ul anterior (publicare eșuată, formular neatins): doar publicarea.
+      draftId = pending.id;
+      photosFailedCount = pending.photosFailed;
+      needsPublish = true;
+    } else {
+      const { id, status, error: createErr } = await createAnnouncement(
+        session.user.id,
+        description.trim(),
+        location.trim(),
+        {
+          truckMake: truckMake.trim() || undefined,
+          truckModel: truckModel.trim() || undefined,
+          truckYear,
+          plateNumber: plateNumber.trim().toUpperCase() || undefined,
+          chassisNumber: chassisNumber.trim().toUpperCase() || undefined,
+          latitude,
+          longitude,
+        },
+      );
+
+      if (createErr || !id) {
+        setLoading(false);
+        setError(createErr ?? t('common.error'));
+        return;
+      }
+
+      // Anunțul e creat (ciornă); urcăm pozele ÎNAINTE de publicare (best-effort, loading-ul
+      // acoperă și upload-ul). Dacă vreuna eșuează, anunțul se publică fără ea, dar șoferul
+      // TREBUIE să afle (alerta de mai jos, după publicare).
+      photosFailedCount = photos.length > 0 ? (await uploadAnnouncementPhotos(id, photos)).failed : 0;
+      draftId = id;
+
+      // Serverul de dinainte de faza 6 (garda de INSERT forțează `open`) a publicat deja anunțul
+      // și a trimis push-ul la INSERT → fluxul vechi, fără pasul de publicare.
+      needsPublish = status === 'draft';
+      pendingDraftRef.current = needsPublish ? { id, photosFailed: photosFailedCount } : null;
     }
 
-    // Anunțul e creat; urcăm pozele (best-effort, loading-ul acoperă și upload-ul).
-    // Dacă vreuna eșuează, anunțul rămâne creat, dar șoferul TREBUIE să afle.
-    let photosFailed = false;
-    if (photos.length > 0) {
-      const { failed } = await uploadAnnouncementPhotos(id, photos);
-      if (failed > 0) {
-        photosFailed = true;
-        Alert.alert(
-          t('driver.announcements.photosFailedTitle'),
-          t('driver.announcements.photosFailedMessage', { count: failed }),
-        );
+    // 1.1 (7.2): publicarea, cu pozele deja urcate — abia acum văd mecanicii anunțul și pleacă push-ul.
+    if (needsPublish) {
+      const published = await publishDraft(draftId);
+      if (!published) {
+        // Rămânem în formular (nicio navigare); ciorna e ținută minte pentru următorul „Publică”.
+        setLoading(false);
+        return;
       }
+      pendingDraftRef.current = null;
+    }
+
+    const photosFailed = photosFailedCount > 0;
+    if (photosFailed) {
+      Alert.alert(
+        t('driver.announcements.photosFailedTitle'),
+        t('driver.announcements.photosFailedMessage', { count: photosFailedCount }),
+      );
     }
 
     // Anunțul început ca oaspete e publicat → draftul (și pozele copiate) dispar.

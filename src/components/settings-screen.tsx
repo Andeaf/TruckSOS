@@ -13,6 +13,10 @@ import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
 import { useSettings } from '@/hooks/use-settings';
+import { useSubmitGuard } from '@/hooks/use-submit-guard';
+import { exportMyData } from '@/lib/export-data';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { marketPushPromptKey } from '@/components/market-push-optin-sheet';
 import { getCurrentCoords } from '@/lib/location';
 import { registerPushToken } from '@/lib/push';
 import { hasPasswordIdentity, socialProviderLabel } from '@/lib/social-auth';
@@ -52,6 +56,8 @@ export function SettingsScreen({
   const { session, profile, updateProfile } = useAuth();
   const [sheet, setSheet] = useState<'lang' | 'theme' | 'radius' | null>(null);
   const [locating, setLocating] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const exportGuard = useSubmitGuard();
 
   const isMechanic = profile?.role === 'mechanic';
   // 1.1 (G): `fetchProfile` citește `select('*')`, deci cheia lipsește din profil cât timp
@@ -69,6 +75,17 @@ export function SettingsScreen({
     if (error) Alert.alert(t('common.error'), t('settings.saveError'));
   }
   const hasPosition = profile?.latitude != null && profile?.longitude != null;
+
+  // 1.1 (6.4): „Descarcă datele mele” — garda sincronă oprește dublul tap înainte de re-randare
+  // (serverul dă exportul o dată pe zi; al doilea apel ar consuma doar mesajul „o dată pe zi”).
+  function handleExport() {
+    void exportGuard(async () => {
+      setExporting(true);
+      const { error } = await exportMyData();
+      setExporting(false);
+      if (error) Alert.alert(t('common.error'), error);
+    });
+  }
 
   function radiusLabel(km: number | null): string {
     return km == null ? t('settings.radiusOff') : t('settings.radiusKm', { km });
@@ -194,8 +211,14 @@ export function SettingsScreen({
             <SwitchRow
               icon="storefront"
               label={t('settings.marketPushEnabled')}
-              value={profile?.market_push_enabled ?? true}
-              onValueChange={(next) => updateProfile({ market_push_enabled: next })}
+              value={profile?.market_push_enabled ?? false}
+              onValueChange={(next) => {
+                // 7.10: cine alege singur nu mai e întrebat de foaia de opt-in din Market (review 9 nov).
+                if (session?.user.id) {
+                  AsyncStorage.setItem(marketPushPromptKey(session.user.id), next ? 'accepted' : 'declined').catch(() => {});
+                }
+                void updateProfile({ market_push_enabled: next });
+              }}
             />
           ) : null}
 
@@ -254,6 +277,15 @@ export function SettingsScreen({
             icon="block"
             label={t('settings.blockedUsers')}
             onPress={() => router.push(blockedPath as never)}
+          />
+          {/* 1.1 (6.4, GDPR art. 20). ListRow n-are loc de spinner: cât durează, textul din dreapta
+              arată „Se pregătește…” și rândul e dezactivat (fără onPress), ca la poziția de mai sus. */}
+          <ListRow
+            icon="download"
+            label={t('settings.exportData')}
+            value={exporting ? t('settings.exportLoading') : undefined}
+            chevron={!exporting}
+            onPress={exporting ? undefined : handleExport}
           />
         </RowGroup>
 

@@ -377,6 +377,8 @@
       "photosHint": "Füge Fotos des Problems hinzu — für Mechaniker sichtbar.",
       "photosFailedTitle": "Fotos nicht hochgeladen",
       "photosFailedMessage": "Die Anzeige wurde veröffentlicht, aber {{count}} Foto(s) konnten nicht hochgeladen werden.",
+      "publishFailedTitle": "Die Anzeige wurde nicht veröffentlicht",
+      "publishRetry": "Erneut versuchen",
       "errorDescription": "Bitte das Problem beschreiben.",
       "errorLocation": "Bitte Standort eingeben.",
       "coordsSectionTitle": "GPS-Koordinaten",
@@ -854,6 +856,7 @@
     "announcementBanner": "Pannenmeldung",
     "announcementRemove": "Meldung aus der Nachricht entfernen",
     "status": {
+      "draft": "Entwurf",
       "open": "Offen",
       "accepted": "Angenommen",
       "resolved": "Gelöst",
@@ -940,7 +943,13 @@
     "saveButton": "Änderungen speichern",
     "discardTitle": "Änderungen verwerfen?",
     "discardMessage": "Deine Eingaben gehen verloren.",
-    "discardOk": "Verwerfen"
+    "discardOk": "Verwerfen",
+    "pushOptIn": {
+      "title": "Benachrichtigungen bei neuen Anzeigen im Markt?",
+      "body": "Wir senden dir eine Benachrichtigung, wenn eine neue Anzeige im Markt erscheint. Du kannst das jederzeit in den Einstellungen ändern.",
+      "accept": "Ja, benachrichtige mich",
+      "later": "Nicht jetzt"
+    }
   },
   "status": {
     "open": "Offen",
@@ -1052,6 +1061,13 @@
     "radiusNeedsPosition": "Du hast einen Radius, aber keinen Standort festgelegt — bis dahin erhältst du keine Benachrichtigungen für neue Anzeigen.",
     "privacySection": "Datenschutz",
     "blockedUsers": "Blockierte Nutzer",
+    "exportData": "Meine Daten herunterladen",
+    "exportLoading": "Wird vorbereitet …",
+    "exportRateLimited": "Du kannst deine Daten einmal pro Tag herunterladen.",
+    "exportError": "Deine Daten konnten nicht heruntergeladen werden. Bitte versuche es erneut.",
+    "exportDialogTitle": "Meine TruckSOS-Daten",
+    "exportSavedTitle": "Teilen konnte nicht geöffnet werden",
+    "exportSavedMessage": "Deine Datendatei wurde vorbereitet, aber das Teilen-Menü konnte nicht geöffnet werden. Bitte versuche es später erneut.",
     "deleteAccount": "Konto löschen",
     "deleteAccountScreen": {
       "title": "Konto löschen",
