@@ -15,6 +15,7 @@ begin
   reset role;
   perform set_config('request.jwt.claims', '', true);
 end $$;
+grant execute on function pg_temp.as_user(uuid, text), pg_temp.as_postgres() to authenticated, anon;
 
 -- ── Fixture ──────────────────────────────────────────────────────────────────────────────────────────
 insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
@@ -32,8 +33,8 @@ insert into app.profiles (id, full_name, role, phone, address, lang, created_at)
   ('78000000-0000-4000-8000-0000000000a1', 'R Driver A', 'driver',   '+40700000001', 'Str. A 1', 'ro', now() - interval '3 years'),
   ('78000000-0000-4000-8000-0000000000c1', 'R Mech M',   'mechanic', '+40700000011', null,       'ro', now() - interval '3 years'),
   ('78000000-0000-4000-8000-0000000000d1', 'R Admin',    'admin',    '+40700000099', null,       'ro', now() - interval '3 years');
-insert into public.trucks (id, driver_id, make, model, plate_number) values
-  ('78555555-0000-4000-8000-000000000001', '78000000-0000-4000-8000-0000000000a1', 'MAN', 'TGX', 'B-77-RRR');
+insert into public.trucks (id, driver_id, make, model, year, plate_number) values
+  ('78555555-0000-4000-8000-000000000001', '78000000-0000-4000-8000-0000000000a1', 'MAN', 'TGX', 2020, 'B-77-RRR');
 
 -- anunțuri: închis vechi cu date (de anonimizat), închis recent (păstrat), ciornă veche cu poză (de șters), ciornă nouă (păstrată)
 insert into app.announcements (id, driver_id, description, location, status, created_at, updated_at, plate_number, chassis_number, latitude, longitude) values

@@ -16,6 +16,7 @@ begin
   reset role;
   perform set_config('request.jwt.claims', '', true);
 end $$;
+grant execute on function pg_temp.as_user(uuid, text), pg_temp.as_postgres() to authenticated, anon;
 
 -- ── Fixture ──────────────────────────────────────────────────────────────────────────────────────────
 -- push_tokens are FK către auth.users → cont minimal pentru mecanic (ca în push_queue.test.sql)
@@ -40,6 +41,8 @@ insert into public.push_tokens (token, user_id, platform) values ('ExponentPushT
 -- SECURITY DEFINER (owner postgres): e apelată și cât rolul e `authenticated`, care n-are SELECT pe app.push_queue.
 create function pg_temp.pushes_for_mech() returns int language sql security definer as $$
   select count(*)::int from app.push_queue where user_id = '76000000-0000-4000-8000-0000000000c1' $$;
+-- CI (9 nov): "permission denied for function pushes_for_mech" ca authenticated — default-ul de EXECUTE nu acoperă pg_temp aici.
+grant execute on function pg_temp.pushes_for_mech() to authenticated, anon;
 
 -- ── 1–4. Ciorna: invizibilă, fără push ───────────────────────────────────────────────────────────────
 select pg_temp.as_user('76000000-0000-4000-8000-0000000000a1', 'authenticated');

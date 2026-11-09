@@ -15,6 +15,7 @@ begin
   reset role;
   perform set_config('request.jwt.claims', '', true);
 end $$;
+grant execute on function pg_temp.as_user(uuid, text), pg_temp.as_postgres() to authenticated, anon;
 
 -- ── Fixture ──────────────────────────────────────────────────────────────────────────────────────────
 insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
