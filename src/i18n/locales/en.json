@@ -928,6 +928,19 @@
     "discardMessage": "What you've entered will be lost.",
     "discardOk": "Discard"
   },
+  "moderation": {
+    "title": "Moderation notices",
+    "empty": "No moderation actions on your content.",
+    "noReason": "No reason given",
+    "unread": "Unread",
+    "kind": {
+      "message_deleted": "Message removed by a moderator",
+      "announcement_deleted": "Announcement removed by a moderator",
+      "listing_deleted": "Market listing removed by a moderator",
+      "review_deleted": "Review removed by a moderator",
+      "banned": "Account suspended"
+    }
+  },
   "conversations": {
     "selectedCount": "{{count}} selected",
     "deleteButton": "Delete",
@@ -1051,6 +1064,7 @@
     "positionError": "The position could not be set.",
     "radiusNeedsPosition": "You set a radius but not your position — until you do, you will not get notifications for new announcements.",
     "privacySection": "Privacy",
+    "moderationNotices": "Moderation notices",
     "blockedUsers": "Blocked users",
     "deleteAccount": "Delete account",
     "deleteAccountScreen": {
