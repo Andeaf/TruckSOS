@@ -854,6 +854,19 @@
       "later": "Nu acum"
     }
   },
+  "moderation": {
+    "title": "Notificări de moderare",
+    "empty": "Nicio acțiune de moderare asupra conținutului tău.",
+    "noReason": "Fără motiv indicat",
+    "unread": "Necitit",
+    "kind": {
+      "message_deleted": "Mesaj șters de moderator",
+      "announcement_deleted": "Anunț șters de moderator",
+      "listing_deleted": "Anunț Market șters de moderator",
+      "review_deleted": "Recenzie ștearsă de moderator",
+      "banned": "Cont suspendat"
+    }
+  },
   "profile": {
     "viewProfile": "Vezi profilul",
     "tabTitle": "Profil",
@@ -1063,6 +1076,7 @@
     "positionError": "Poziția nu a putut fi setată.",
     "radiusNeedsPosition": "Ai setat o rază, dar nu și poziția ta — până o setezi, nu primești notificări pentru anunțuri noi.",
     "privacySection": "Confidențialitate",
+    "moderationNotices": "Notificări de moderare",
     "blockedUsers": "Utilizatori blocați",
     "exportData": "Descarcă datele mele",
     "exportLoading": "Se pregătește…",

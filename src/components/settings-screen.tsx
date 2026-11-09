@@ -12,6 +12,7 @@ import { ListRow, RowGroup, SectionLabel, SwitchRow } from '@/components/ui/list
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { useBack } from '@/hooks/use-back';
+import { useModerationNotices } from '@/hooks/use-moderation-notices';
 import { useSettings } from '@/hooks/use-settings';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { exportMyData } from '@/lib/export-data';
@@ -37,6 +38,7 @@ export function SettingsScreen({
   backPath,
   deletePath,
   blockedPath,
+  moderationPath,
   changePasswordPath,
   changeEmailPath,
   twoFactorPath,
@@ -45,6 +47,7 @@ export function SettingsScreen({
   backPath: string;
   deletePath: string;
   blockedPath: string;
+  moderationPath: string;
   changePasswordPath: string;
   changeEmailPath: string;
   twoFactorPath: string;
@@ -58,6 +61,8 @@ export function SettingsScreen({
   const [locating, setLocating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const exportGuard = useSubmitGuard();
+  // PLAN_1.1_FIX 7.9: necititele de moderare (un SELECT la montare; fără view pe server → 0).
+  const { unreadCount: moderationUnread } = useModerationNotices();
 
   const isMechanic = profile?.role === 'mechanic';
   // 1.1 (G): `fetchProfile` citește `select('*')`, deci cheia lipsește din profil cât timp
@@ -273,6 +278,13 @@ export function SettingsScreen({
         {/* Faza 18: gestionarea blocărilor — cerință Apple (Guideline 1.2 UGC). */}
         <SectionLabel>{t('settings.privacySection')}</SectionLabel>
         <RowGroup>
+          {/* PLAN_1.1_FIX 7.9 (DSA art. 17): motivarea acțiunilor de moderare asupra conținutului tău. */}
+          <ListRow
+            icon="gavel"
+            label={t('settings.moderationNotices')}
+            value={moderationUnread > 0 ? String(moderationUnread) : undefined}
+            onPress={() => router.push(moderationPath as never)}
+          />
           <ListRow
             icon="block"
             label={t('settings.blockedUsers')}

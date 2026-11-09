@@ -951,6 +951,19 @@
       "later": "Nicht jetzt"
     }
   },
+  "moderation": {
+    "title": "Moderationshinweise",
+    "empty": "Keine Moderationsmaßnahmen zu deinen Inhalten.",
+    "noReason": "Kein Grund angegeben",
+    "unread": "Ungelesen",
+    "kind": {
+      "message_deleted": "Nachricht von einem Moderator entfernt",
+      "announcement_deleted": "Anzeige von einem Moderator entfernt",
+      "listing_deleted": "Marktplatz-Anzeige von einem Moderator entfernt",
+      "review_deleted": "Bewertung von einem Moderator entfernt",
+      "banned": "Konto gesperrt"
+    }
+  },
   "status": {
     "open": "Offen",
     "accepted": "Angenommen",
@@ -1060,6 +1073,7 @@
     "positionError": "Der Standort konnte nicht festgelegt werden.",
     "radiusNeedsPosition": "Du hast einen Radius, aber keinen Standort festgelegt — bis dahin erhältst du keine Benachrichtigungen für neue Anzeigen.",
     "privacySection": "Datenschutz",
+    "moderationNotices": "Moderationshinweise",
     "blockedUsers": "Blockierte Nutzer",
     "exportData": "Meine Daten herunterladen",
     "exportLoading": "Wird vorbereitet …",
