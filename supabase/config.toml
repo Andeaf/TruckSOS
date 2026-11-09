@@ -423,3 +423,8 @@ verify_jwt = false
 
 [functions.push-receipts]
 verify_jwt = false
+
+# Faza 6.2 (decizia D4): `storage-gc` e apelată doar de pg_cron (app.kick_storage_gc), cu același header și același
+# secret ca faza 3 (`x-push-secret` / Vault `push_kick_secret`); fără JWT la gateway.
+[functions.storage-gc]
+verify_jwt = false
