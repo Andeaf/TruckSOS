@@ -26,6 +26,14 @@
  *   longitude*, lang*, deleted_at, company_name, contact_email*, banned_at*, banned_until*,
  *   ban_reason*, address*, vat_number*, market_push_enabled*, mention_push_enabled*.
  * - guest_announcements: doar Relationships (driver_id → profiles).
+ * - moderation_notices (8, PLAN_1.1_FIX 7.9; migrarea 20261102000200_reports_moderation.sql):
+ *   id, user_id, kind (uniunea literală din CHECK-ul tabelului), reason, target_type, target_id,
+ *   created_at, read_at; Insert `never`, Update doar `read_at` (singura coloană cu GRANT UPDATE),
+ *   Relationships []. View-ul nu există încă în `supabase.ts` generat — se compară la primul
+ *   gen:types de după aplicarea 3.3 pe producție (atunci `kind` vine `string | null` și toate
+ *   coloanele `| null`). ATENȚIE la acel moment: MergeDeep îmbină în adâncime, deci `Update` va
+ *   primi și coloanele generate (nu doar `read_at`), iar `Insert: never` peste un obiect generat
+ *   trebuie re-verificat (probă de tipuri: `insert(...)` și `update({ reason })` trebuie să pice).
  *
  * `*` = coloană mascată cu CASE în view: rămâne `| null` în `Row` chiar dacă e NOT NULL în tabel
  * (push_enabled, lang, market_push_enabled, mention_push_enabled), pentru că view-ul o întoarce
@@ -156,6 +164,25 @@ type ProfileWrite = {
   mention_push_enabled?: boolean;
 };
 
+/** Valorile din CHECK-ul `app.moderation_notices.kind` (faza 3.3). */
+export type ModerationNoticeKind =
+  | 'message_deleted'
+  | 'announcement_deleted'
+  | 'listing_deleted'
+  | 'review_deleted'
+  | 'banned';
+
+type ModerationNoticeRow = {
+  id: string;
+  user_id: string;
+  kind: ModerationNoticeKind;
+  reason: string | null;
+  target_type: string | null;
+  target_id: string | null;
+  created_at: string;
+  read_at: string | null;
+};
+
 type DatabaseOverrides = {
   public: {
     Views: {
@@ -212,6 +239,13 @@ type DatabaseOverrides = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      // Cheie nouă (lipsește din tipul generat): MergeDeep o adaugă neschimbată (`B[K]`).
+      moderation_notices: {
+        Row: ModerationNoticeRow;
+        Insert: never;
+        Update: { read_at?: string | null };
+        Relationships: [];
       };
     };
   };

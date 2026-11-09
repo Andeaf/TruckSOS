@@ -7,6 +7,7 @@ export default function Settings() {
       backPath="/(driver)/profile"
       deletePath="/(driver)/profile/delete-account"
       blockedPath="/(driver)/profile/blocked"
+      moderationPath="/(driver)/profile/moderation"
       changePasswordPath="/(driver)/profile/change-password"
       changeEmailPath="/(driver)/profile/change-email"
       twoFactorPath="/(driver)/profile/two-factor"

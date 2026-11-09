@@ -58,16 +58,23 @@ export function usePushNavigation() {
       // 1.1 (faza 3.3): tipurile noi și cele necunoscute se tratează ÎNAINTE de comutarea
       // modului admin — altfel un admin aflat în modul admin care apasă un push nou era
       // scos pe mecanic/șofer și nu se întâmpla nimic (review 2 nov). `report` → ecranul
-      // de rapoarte din admin (doar pentru admini, în modul admin); `moderation` → nimic de
-      // deschis (notice-ul se citește din aplicație); un tip pe care aplicația nu-l știe
-      // (server mai nou) → ignorat.
+      // de rapoarte din admin (doar pentru admini, în modul admin); `moderation` (7.9) →
+      // ecranul „Notificări de moderare" din Setări, pe partea curentă (`chatSide`; adminul
+      // din modul admin cade pe mecanic și e comutat întâi, ca la chat — altfel garda din
+      // root ricoșează navigarea); un tip pe care aplicația nu-l știe (server mai nou) → ignorat.
       if (data.type === 'report') {
         if (!isAdmin) return;
         if (adminViewAs !== 'admin') setAdminViewAs('admin');
         router.navigate('/(admin)/reports' as never);
         return;
       }
-      if (data.type === 'moderation') return;
+      if (data.type === 'moderation') {
+        if (isAdmin && adminViewAs !== chatSide) setAdminViewAs(chatSide);
+        // withAnchor: la pornirea la rece stiva Profil se montează cu `index` dedesubt (unstable_settings din
+        // profile/_layout), ca back-ul și tab-ul Profil să nu rămână blocate pe ecranul de moderare (review 9 nov).
+        router.navigate(`/(${chatSide})/profile/moderation` as never, { withAnchor: true });
+        return;
+      }
       if (!NAVIGABLE_TYPES.has(data.type)) return;
       const params = { id: data.id };
 
