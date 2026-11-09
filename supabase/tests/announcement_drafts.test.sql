@@ -108,9 +108,10 @@ select throws_ok(
 -- ── 14–15. Repostul (cancelled → open) nu trece prin trigger-ul de publicare ────────────────────────
 select pg_temp.as_postgres();
 update app.announcements set status = 'cancelled' where id = '76111111-0000-4000-8000-000000000002';
-select is(pg_temp.pushes_for_mech(), 2, '14. anularea nu trimite nimic');
+-- până aici: 001 publicat, 002 și 003 inserate open, 004 și 005 publicate = 5 push-uri către mecanic
+select is(pg_temp.pushes_for_mech(), 5, '14. anularea nu trimite nimic');
 update app.announcements set status = 'open' where id = '76111111-0000-4000-8000-000000000002';
-select is(pg_temp.pushes_for_mech(), 2,
+select is(pg_temp.pushes_for_mech(), 5,
           '15. cancelled → open (repost; ca postgres, fără notify explicit) NU declanșează trigger-ul de publicare (WHEN OLD.status = draft)');
 
 -- ── 16–17. CHECK-ul și ștergerea ciornei ────────────────────────────────────────────────────────────

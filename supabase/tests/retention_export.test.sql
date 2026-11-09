@@ -59,9 +59,10 @@ insert into public.admin_audit_log (admin_id, action, target_type, target_id, de
   ('78000000-0000-4000-8000-0000000000d1', 'r_old', 'user', '78000000-0000-4000-8000-0000000000a1', '{}', now() - interval '13 months'),
   ('78000000-0000-4000-8000-0000000000d1', 'r_new', 'user', '78000000-0000-4000-8000-0000000000a1', '{}', now() - interval '1 month');
 -- conversații: veche inactivă cu atașament (de șters), activă (păstrată)
-insert into public.conversations (id, driver_id, mechanic_id, is_direct, created_at) values
-  ('78333333-0000-4000-8000-000000000001', '78000000-0000-4000-8000-0000000000a1', '78000000-0000-4000-8000-0000000000c1', true, now() - interval '30 months'),
-  ('78333333-0000-4000-8000-000000000002', '78000000-0000-4000-8000-0000000000a1', '78000000-0000-4000-8000-0000000000c1', true, now() - interval '30 months');
+-- a doua conversație nu poate fi tot directă (idx_conversations_direct_pair: o singură conversație directă per pereche) → legată de anunțul 002
+insert into public.conversations (id, driver_id, mechanic_id, is_direct, announcement_id, created_at) values
+  ('78333333-0000-4000-8000-000000000001', '78000000-0000-4000-8000-0000000000a1', '78000000-0000-4000-8000-0000000000c1', true,  null, now() - interval '30 months'),
+  ('78333333-0000-4000-8000-000000000002', '78000000-0000-4000-8000-0000000000a1', '78000000-0000-4000-8000-0000000000c1', false, '78111111-0000-4000-8000-000000000002', now() - interval '30 months');
 insert into public.messages (id, conversation_id, sender_id, content, created_at, image_path) values
   ('78444444-0000-4000-8000-000000000001', '78333333-0000-4000-8000-000000000001', '78000000-0000-4000-8000-0000000000a1', 'R vechi A', now() - interval '29 months', 'chat/78333333-0000-4000-8000-000000000001/old.jpg'),
   ('78444444-0000-4000-8000-000000000002', '78333333-0000-4000-8000-000000000001', '78000000-0000-4000-8000-0000000000c1', 'R vechi M', now() - interval '28 months', null),
