@@ -150,7 +150,10 @@ select throws_ok($$insert into public.reports (reporter_id, reported_user_id, re
 select pg_temp.as_postgres();
 
 -- ── 27–28. Retenția șterge raportul public închis > 12 luni (cu e-mail); cron-ul pe IP există ────────
-select ok((select (r->>'reports_deleted')::int >= 1 from app.apply_retention(false) r)
+-- Două instrucțiuni: într-una singură `not exists` ar citi cu instantaneul de dinaintea ștergerii făcute de funcție
+-- (CI 42829440029: reports_deleted = 1, dar rândul era încă „văzut” de aceeași interogare).
+create temp table t_ret on commit drop as select app.apply_retention(false) as r;
+select ok((select (r->>'reports_deleted')::int >= 1 from t_ret)
           and not exists (select 1 from public.reports where reporter_email = 'old-public@example.com'),
           '27. retenția șterge raportul public închis > 12 luni, cu e-mailul reclamantului');
 select is((select count(*)::int from cron.job where jobname = 'cleanup-report-ip-events-hourly' and command like '%app.report_ip_events%' and active), 1,
