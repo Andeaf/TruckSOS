@@ -45,6 +45,9 @@
  * Funcții încă negenerate (migrări din repo neaplicate pe proiectul legat; după aplicare, la
  * următorul `npm run gen:types`, intrarea de aici se poate scoate — forma generată e aceeași):
  * - export_my_data (faza 6.4, 20261109000600): fără argumente → jsonb.
+ * - report_client_error (faza 9.1, 20261111000100): 7 argumente text → jsonb `{ ok }`.
+ * - admin_client_errors (faza 9.1, 20261111000100): p_hours?, p_limit? (integer) → jsonb.
+ * - admin_health (faza 9.4, 20261111000300): fără argumente → jsonb.
  */
 import type { Database as GeneratedDatabase, Json } from './supabase';
 
@@ -255,6 +258,20 @@ type DatabaseOverrides = {
     Functions: {
       // Forma generatorului pentru funcțiile fără argumente (`Args: never`, ca admin_dashboard_stats).
       export_my_data: { Args: never; Returns: Json };
+      report_client_error: {
+        Args: {
+          p_app_build: string;
+          p_error_type: string;
+          p_message: string;
+          p_os_version: string;
+          p_platform: string;
+          p_screen: string;
+          p_stack: string;
+        };
+        Returns: Json;
+      };
+      admin_client_errors: { Args: { p_hours?: number; p_limit?: number }; Returns: Json };
+      admin_health: { Args: never; Returns: Json };
     };
   };
 };

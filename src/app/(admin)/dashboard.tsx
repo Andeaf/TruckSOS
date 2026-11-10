@@ -14,7 +14,14 @@ import { useAuth } from '@/hooks/use-auth';
 import { useSettings, type AdminViewAs } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { useWideLayout } from '@/components/web-sidebar';
-import { fetchDashboardStats, type DashboardStats } from '@/hooks/use-admin';
+import {
+  fetchAdminHealth,
+  fetchClientErrors,
+  fetchDashboardStats,
+  type AdminHealth,
+  type ClientErrorsSummary,
+  type DashboardStats,
+} from '@/hooks/use-admin';
 import { StatsChartModal, type StatsChartKind } from '@/components/admin/stats-chart-modal';
 
 /** Roșul/ambra din design-ul 10b — folosite doar ca accente pe valori. */
@@ -45,11 +52,24 @@ export default function AdminDashboard() {
     router.push('/(admin)/purge-accounts' as never);
   }
 
+  function openClientErrors() {
+    router.push('/(admin)/client-errors' as never);
+  }
+
+  // Faza 9.1 / 9.4: `null` = RPC-ul lipsește pe server sau a dat eroare → cardul nu apare.
+  const [clientErrors, setClientErrors] = useState<ClientErrorsSummary | null>(null);
+  const [health, setHealth] = useState<AdminHealth | null>(null);
+
   const loadStats = useCallback(
     () =>
-      fetchDashboardStats().then(({ data }) => {
-        if (data) setStats(data);
-      }),
+      Promise.all([
+        fetchDashboardStats().then(({ data }) => {
+          if (data) setStats(data);
+        }),
+        // Doar agregatul pe card: lista vine pe ecranul ei (p_limit minim = 1 la server).
+        fetchClientErrors(168, 1).then(setClientErrors),
+        fetchAdminHealth().then(setHealth),
+      ]).then(() => undefined),
     []
   );
 
@@ -168,6 +188,28 @@ export default function AdminDashboard() {
             </View>
           </View>
 
+          {clientErrors ? (
+            <View style={w.section}>
+              <ThemedText themeColor="textTertiary" style={w.sectionLabel}>
+                {t('admin.clientErrors.title')}
+              </ThemedText>
+              <View style={[w.card, w.listCard, { backgroundColor: theme.backgroundElement }]}>
+                <ClientErrorsRows summary={clientErrors} onPress={openClientErrors} />
+              </View>
+            </View>
+          ) : null}
+
+          {health ? (
+            <View style={w.section}>
+              <ThemedText themeColor="textTertiary" style={w.sectionLabel}>
+                {t('admin.health.title')}
+              </ThemedText>
+              <View style={[w.card, w.listCard, { backgroundColor: theme.backgroundElement }]}>
+                <HealthRows health={health} />
+              </View>
+            </View>
+          ) : null}
+
           <View style={w.section}>
             <ThemedText themeColor="textTertiary" style={w.sectionLabel}>
               {t('admin.dashboard.sectionUserMode')}
@@ -241,6 +283,18 @@ export default function AdminDashboard() {
           <Stat label={t('admin.dashboard.conversations')} value={stats?.conversations} />
           <Stat label={t('admin.dashboard.messages')} value={stats?.messages} />
         </Section>
+
+        {clientErrors ? (
+          <Section title={t('admin.clientErrors.title')}>
+            <ClientErrorsRows summary={clientErrors} onPress={openClientErrors} />
+          </Section>
+        ) : null}
+
+        {health ? (
+          <Section title={t('admin.health.title')}>
+            <HealthRows health={health} />
+          </Section>
+        ) : null}
 
         <View style={styles.userMode}>
           <ThemedText themeColor="textSecondary" type="small" style={styles.sectionTitle}>
@@ -388,6 +442,147 @@ function IconStat({
   );
 }
 
+// ── Erori client + Sănătate (faza 9.1 / 9.4) ─────────────────────────────────
+
+const LOCALE_MAP: Record<string, string> = { ro: 'ro-RO', en: 'en-GB', de: 'de-DE' };
+const NONE = '—';
+
+function fmtShort(iso: string | null | undefined, lang: string): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(LOCALE_MAP[lang] ?? 'ro-RO', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+/** Număr din jsonb → text; orice altceva (lipsă, null) → „—”. */
+function num(value: unknown): string {
+  return typeof value === 'number' ? String(value) : NONE;
+}
+
+function positive(value: unknown): boolean {
+  return typeof value === 'number' && value > 0;
+}
+
+/** Rând cheie–valoare; `alert` = valoarea în roșu. */
+function KeyValueRow({ label, value, alert }: { label: string; value: string; alert?: boolean }) {
+  const theme = useTheme();
+  return (
+    <View style={[styles.row, { borderColor: theme.background }]}>
+      <ThemedText style={styles.rowLabel}>{label}</ThemedText>
+      <ThemedText style={[styles.value, styles.rowValue, alert ? { color: DANGER } : null]}>{value}</ThemedText>
+    </View>
+  );
+}
+
+/** Cardul „Erori client (7 zile)”: total, utilizatori afectați, primele 3 tipuri; apăsare → lista. */
+function ClientErrorsRows({ summary, onPress }: { summary: ClientErrorsSummary; onPress: () => void }) {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const top = (summary.by_type ?? []).slice(0, 3);
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={t('admin.clientErrors.open')}
+      style={({ pressed }) => (pressed ? styles.pressed : null)}>
+      <KeyValueRow label={t('admin.clientErrors.total')} value={num(summary.total)} />
+      <KeyValueRow label={t('admin.clientErrors.users')} value={num(summary.users)} />
+      {top.map((row) => (
+        <KeyValueRow key={row.error_type} label={row.error_type} value={num(row.count)} />
+      ))}
+      <View style={[styles.row, { borderColor: theme.background }]}>
+        <ThemedText themeColor="brand">{t('admin.clientErrors.open')}</ThemedText>
+        <Feather name="chevron-right" size={18} color={theme.brand} />
+      </View>
+    </Pressable>
+  );
+}
+
+/** Cardul „Sănătate” (admin_health): roșu la semnele de incident; secțiune lipsă / null → „—”. */
+function HealthRows({ health }: { health: AdminHealth }) {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const push = health.push ?? null;
+  const gc = health.storage_gc ?? null;
+  const retention = health.retention_last ?? null;
+  const cron = Array.isArray(health.cron_failed_24h) ? health.cron_failed_24h : null;
+  const sectionErrors = Object.entries(health).filter(
+    (entry): entry is [string, string] => entry[0].endsWith('_error') && typeof entry[1] === 'string' && !!entry[1]
+  );
+
+  function withOldest(count: unknown, oldest: string | null | undefined): string {
+    const time = fmtShort(oldest, lang);
+    return time ? t('admin.health.withOldest', { count: num(count), time }) : num(count);
+  }
+
+  const clientErrors = 'client_errors' in health ? (health.client_errors ?? null) : undefined;
+  const hasPublicReports = 'public_reports_pending' in health;
+
+  return (
+    <>
+      <KeyValueRow label={t('admin.health.pushQueued')} value={push ? withOldest(push.queued, push.oldest_queued_at) : NONE} />
+      <KeyValueRow
+        label={t('admin.health.pushExpired48h')}
+        value={push ? num(push.expired_48h) : NONE}
+        alert={positive(push?.expired_48h)}
+      />
+      <KeyValueRow
+        label={t('admin.health.push401')}
+        value={push ? num(push.http_401_6h) : NONE}
+        alert={positive(push?.http_401_6h)}
+      />
+      <KeyValueRow label={t('admin.health.storageQueue')} value={gc ? withOldest(gc.queued, gc.oldest_at) : NONE} />
+      <KeyValueRow
+        label={t('admin.health.storageStale')}
+        value={gc ? num(gc.stale_48h) : NONE}
+        alert={positive(gc?.stale_48h)}
+      />
+      <KeyValueRow
+        label={t('admin.health.retentionLast')}
+        value={
+          retention
+            ? `${retention.status ?? NONE} · ${fmtShort(retention.end_time, lang) ?? NONE}`
+            : NONE
+        }
+        alert={retention?.status === 'failed'}
+      />
+      <KeyValueRow
+        label={t('admin.health.cronFailed')}
+        value={
+          cron
+            ? cron.length > 0
+              ? `${cron.length}: ${cron.map((job) => job.jobname).join(', ')}`
+              : '0'
+            : NONE
+        }
+        alert={!!cron && cron.length > 0}
+      />
+      {clientErrors !== undefined ? (
+        <KeyValueRow
+          label={t('admin.health.clientErrors')}
+          value={clientErrors ? `${num(clientErrors.h24)} / ${num(clientErrors.d7)}` : NONE}
+        />
+      ) : null}
+      {hasPublicReports ? (
+        <KeyValueRow label={t('admin.health.publicReports')} value={num(health.public_reports_pending)} />
+      ) : null}
+      {sectionErrors.map(([key, message]) => (
+        <KeyValueRow
+          key={key}
+          label={t('admin.health.sectionError', { section: key.replace(/_error$/, '') })}
+          value={message}
+          alert
+        />
+      ))}
+    </>
+  );
+}
+
 const styles = StyleSheet.create({
   scroll: { padding: Spacing.three, gap: Spacing.four },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.four },
@@ -406,6 +601,8 @@ const styles = StyleSheet.create({
   value: { fontWeight: '700', fontSize: 16 },
   valueWrap: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   pressed: { opacity: 0.8 },
+  rowLabel: { flexShrink: 1, marginRight: Spacing.two },
+  rowValue: { flexShrink: 1, textAlign: 'right' },
 });
 
 /** Stilurile variantei late (design 10b). */
@@ -437,6 +634,7 @@ const w = StyleSheet.create({
     justifyContent: 'center',
   },
   iconValue: { fontSize: 24, fontWeight: '800', lineHeight: 30 },
+  listCard: { paddingVertical: 4, maxWidth: 720 },
   userModeRow: { flexDirection: 'row', gap: 12, maxWidth: 520 },
   userModeButton: { flex: 1 },
 });

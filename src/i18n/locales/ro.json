@@ -169,6 +169,34 @@
         "nelogat_dupa_inscriere": "Profil gol, nicio conectare după înscriere",
         "profil_gol_fara_activitate": "Profil gol, fără nicio activitate"
       }
+    },
+    "clientErrors": {
+      "title": "Erori client (7 zile)",
+      "listTitle": "Erori client",
+      "total": "Total",
+      "users": "Utilizatori afectați",
+      "open": "Vezi lista",
+      "back": "Înapoi",
+      "screen": "Ecran: {{screen}}",
+      "meta": "{{platform}} {{os}} · versiunea {{build}}",
+      "showStack": "Arată stiva",
+      "hideStack": "Ascunde stiva",
+      "empty": "Nicio eroare în ultimele 7 zile.",
+      "unavailable": "Lista nu e disponibilă (funcția nu există încă pe server sau conexiunea a picat)."
+    },
+    "health": {
+      "title": "Sănătate",
+      "withOldest": "{{count}} (cel mai vechi: {{time}})",
+      "pushQueued": "Push în coadă",
+      "pushExpired48h": "Push expirate (48 h)",
+      "push401": "Kick-uri HTTP 401 (6 h)",
+      "storageQueue": "Coada Storage",
+      "storageStale": "Coada Storage mai veche de 48 h",
+      "retentionLast": "Ultima retenție",
+      "cronFailed": "Joburi cron eșuate (24 h)",
+      "clientErrors": "Erori client 24 h / 7 z",
+      "publicReports": "Sesizări publice în așteptare",
+      "sectionError": "Eroare la citire: {{section}}"
     }
   },
   "auth": {
@@ -1341,5 +1369,21 @@
     "editFailedBody": "Verifică conexiunea și încearcă din nou.",
     "sendFailed": "Mesajul nu a fost trimis",
     "attachmentMissing": "Fișierul nu mai există pe telefon, așa că mesajul netrimis a fost șters."
+  },
+  "errorBoundary": {
+    "title": "Ceva n-a mers",
+    "body": "Pe acest ecran a apărut o eroare. Încearcă din nou; dacă se repetă, ne poți trimite un raport ca s-o reparăm.",
+    "retry": "Încearcă din nou",
+    "send": "Trimite raportul",
+    "sending": "Se trimite…",
+    "sent": "Mulțumim, raportul a fost trimis.",
+    "whatIsSent": "Ce se trimite",
+    "type": "Tipul erorii",
+    "message": "Mesajul tehnic",
+    "screen": "Ecranul",
+    "version": "Versiunea aplicației",
+    "noPersonalData": "Se mai trimit urma tehnică a erorii, platforma, versiunea sistemului și un cod scurt derivat din contul tău (ca să numărăm câți utilizatori sunt afectați). Adresele de e-mail, numerele de telefon și identificatorii sunt eliminate automat înainte de trimitere. Raportul se șterge după 30 de zile.",
+    "rateLimited": "Ai trimis deja multe rapoarte în ultima oră. Încearcă mai târziu.",
+    "failed": "Raportul nu a putut fi trimis. Verifică conexiunea și încearcă din nou."
   }
 }
