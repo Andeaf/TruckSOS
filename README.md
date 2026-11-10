@@ -215,6 +215,24 @@ Steps (David), once per platform:
 3. Android and iOS are released together; the web build is deployed the same day
 4. Update the `app_versions` table so older clients see the "new version available" prompt
 
+## Legal pages
+
+The privacy policy, terms, account-deletion and reports pages live in `public/legal/` (one file per
+language: `privacy.ro.html`, `privacy.en.html`, `privacy.de.html`, plus `privacy.html` = Romanian with
+`hreflang` alternates) and are served as static files at `https://trucksos.net/legal/…` by the regular web
+deploy (Cloudflare Pages serves `public/` before the SPA fallback). `web/legal/` holds the same files for the
+GitHub Pages mirror. The in-app texts (`legal.*` in `src/i18n/locales/*.json`) are generated from the same
+source as the pages, so they never drift apart. Public reports without an account: `https://trucksos.net/report`.
+
+## Trademark and logo
+
+**TruckSOS** (name and logo) is an unregistered mark owned by Breană David Eduard. The logo was created
+by Breană David Eduard with the help of an AI assistant (Claude), before the public launch of the app: the
+app icon first appears in the repository on 13 July 2026 (commit `e501ad3`), and the current logo used in
+the app, on the website and on the legal pages on 24 August 2026 (commit `76d6201`). All rights reserved;
+the mark and the logo may not be used without written permission (see LICENSE). A trademark search
+(TMview / OSIM / EUIPO) and filing are planned before any monetisation.
+
 ## License
 
 Source-available, **all rights reserved** — the code is published for reference and portfolio
