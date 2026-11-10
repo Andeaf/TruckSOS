@@ -63,7 +63,9 @@ export async function submitReport(
     message_id: params.messageId ?? null,
     message_table: params.messageTable ?? null,
     listing_id: params.listingId ?? null,
-    announcement_id: params.announcementId ?? null,
+    // Coloana există abia după migrarea 20261110000200 (faza 8.3): o trimitem DOAR la raportul pe anunț de depanare,
+    // ca rapoartele pe mesaj / listing / utilizator să nu depindă de ea (PostgREST refuză o coloană necunoscută).
+    ...(params.announcementId ? { announcement_id: params.announcementId } : {}),
     reason: params.reason,
     details: params.details?.trim() || null,
     content_snapshot: params.contentSnapshot ?? null,

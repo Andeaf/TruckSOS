@@ -3,7 +3,8 @@
 //
 // Primește sesizările trimise FĂRĂ cont de pe trucksos.net/report (și din aplicație, de la oaspeți) și le scrie în `public.reports`
 // prin RPC-ul `insert_public_report` (service_role; reporter_id NULL, source 'public'). Ordinea cererii:
-//   OPTIONS (CORS) → 405 fără POST → 400 body invalid (tip, id uuid, motiv, e-mail, declarația de bună-credință obligatorie) →
+//   OPTIONS (CORS) → 405 fără POST → 413 body peste 16 KB → 400 body invalid (tip, id uuid, motiv, e-mail, declarația de
+//   bună-credință obligatorie) →
 //   500 `not_configured` fără TURNSTILE_SECRET / REPORT_IP_SALT → 403 `captcha_failed` (siteverify Cloudflare) →
 //   RPC: `rate_limited` → 429, `target_not_found` → 404, `bad_input` → 400, altceva → 500 → 200 `{ ok, id }`.
 // IP-ul nu ajunge în bază: trimitem SHA-256(sare + '|' + ip) (hex), iar RPC-ul ține limita 10/oră/hash cu retenție 24 h.
@@ -86,13 +87,26 @@ export function parseBody(raw: unknown): { body: ReportBody } | { error: string 
   return { body: { token, type: type as TargetType, id: id.toLowerCase(), reason: reason as ReportBody['reason'], details, email, lang } };
 }
 
-/** IP-ul clientului după Cloudflare / proxy-ul Supabase; `unknown` dacă lipsește (toți cei fără IP împart o singură limită). */
+/** Dimensiunea maximă a body-ului (explicația are cel mult 2 000 de caractere; restul câmpurilor sunt scurte). */
+export const BODY_MAX_BYTES = 16 * 1024;
+
+/**
+ * IP-ul clientului și sursa lui (sursa apare în log, IP-ul nu). `cf-connecting-ip` e pus de Cloudflare și nu poate fi
+ * trimis de client (Cloudflare îl suprascrie). Din `x-forwarded-for` luăm ULTIMUL element: primele le poate scrie chiar
+ * clientul (proxy-urile doar adaugă la coadă), deci primul element ar fi lăsat limita pe IP să fie ocolită cu un header
+ * inventat (review 10 nov). Dacă ultimul element e un proxy intern, toți împart o limită — strict, dar neocolibil.
+ * `unknown` dacă nu există niciun header (toți cei fără IP împart o singură limită).
+ */
+export function clientIpInfo(headers: Headers): { ip: string; source: 'cf' | 'xff' | 'none' } {
+  const cf = headers.get('cf-connecting-ip')?.trim();
+  if (cf) return { ip: cf, source: 'cf' };
+  const parts = (headers.get('x-forwarded-for') ?? '').split(',').map((p) => p.trim()).filter(Boolean);
+  if (parts.length > 0) return { ip: parts[parts.length - 1], source: 'xff' };
+  return { ip: 'unknown', source: 'none' };
+}
+
 export function clientIp(headers: Headers): string {
-  const cf = headers.get('cf-connecting-ip');
-  if (cf) return cf.trim();
-  const xff = headers.get('x-forwarded-for');
-  if (xff) return xff.split(',')[0].trim() || 'unknown';
-  return 'unknown';
+  return clientIpInfo(headers).ip;
 }
 
 export async function hashIp(salt: string, ip: string): Promise<string> {
@@ -125,9 +139,14 @@ export function makeReportPublicHandler(deps: ReportPublicDeps): (req: Request) 
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(origin) });
     if (req.method !== 'POST') return json(405, { error: 'method_not_allowed' }, origin);
 
+    // Body mic, cu limită: întâi după content-length (fără să citim nimic), apoi după ce am citit efectiv.
+    const declared = Number(req.headers.get('content-length') ?? '0');
+    if (Number.isFinite(declared) && declared > BODY_MAX_BYTES) return json(413, { error: 'too_large' }, origin);
     let raw: unknown;
     try {
-      raw = await req.json();
+      const text = await req.text();
+      if (new TextEncoder().encode(text).byteLength > BODY_MAX_BYTES) return json(413, { error: 'too_large' }, origin);
+      raw = JSON.parse(text);
     } catch {
       return json(400, { error: 'bad_request', field: 'body' }, origin);
     }
@@ -145,7 +164,7 @@ export function makeReportPublicHandler(deps: ReportPublicDeps): (req: Request) 
     }
 
     // Turnstile: verificarea tokenului la Cloudflare, cu IP-ul clientului (remoteip e opțional, dar întărește verificarea).
-    const ip = clientIp(req.headers);
+    const { ip, source: ipSource } = clientIpInfo(req.headers);
     let captchaOk = false;
     try {
       const form = new URLSearchParams({ secret: turnstileSecret, response: body.token });
@@ -182,7 +201,9 @@ export function makeReportPublicHandler(deps: ReportPublicDeps): (req: Request) 
       console.log(`report-public: ${mapped.status} ${mapped.error}`);
       return json(mapped.status, { error: mapped.error }, origin);
     }
-    console.log('report-public: 200');
+    // `ip_src` = de unde a venit IP-ul (cf / xff / none), fără IP: după primul test pe producție se vede dacă limita pe IP
+    // chiar distinge clienții (`none` sau un `xff` comun = toți împart aceeași limită).
+    console.log(`report-public: 200 ip_src=${ipSource}`);
     return json(200, { ok: true, id: outcome.id }, origin);
   };
 }

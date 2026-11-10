@@ -34,6 +34,8 @@ export interface AdminReport {
    *  Lipsesc până la aplicarea migrării 20261110000200 pe producție (admin_list_reports vechi). */
   source?: ReportSource;
   reporter_email?: string | null;
+  /** Limba în care a fost trimisă sesizarea publică (ro / en / de) = limba răspunsului manual. */
+  reporter_lang?: string | null;
 }
 
 export interface AdminUserRow {

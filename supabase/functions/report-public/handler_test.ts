@@ -2,7 +2,7 @@
 // Rulare: deno test supabase/functions/report-public
 
 import { assertEquals, assertMatch } from 'jsr:@std/assert';
-import { type AdminLike, hashIp, makeReportPublicHandler, parseBody, type ReportPublicDeps } from './handler.ts';
+import { type AdminLike, BODY_MAX_BYTES, clientIpInfo, hashIp, makeReportPublicHandler, parseBody, type ReportPublicDeps } from './handler.ts';
 
 const ID = '81111111-0000-4000-8000-000000000001';
 const SALT = 'S'.repeat(32);
@@ -157,12 +157,36 @@ Deno.test('fluxul nominal: siteverify cu remoteip, RPC cu hash-ul IP-ului (nu IP
   assertEquals(JSON.stringify(args).includes('203.0.113.9'), false);
 });
 
-Deno.test('fără header de IP → hash-ul lui „unknown”; x-forwarded-for ia primul IP', async () => {
+Deno.test('fără header de IP → hash-ul lui „unknown”; x-forwarded-for ia ULTIMUL IP (primele le poate scrie clientul)', async () => {
   const { handler, rpcCalls } = setup();
   await handler(post(goodBody()));
   assertEquals(rpcCalls[0].args!.p_ip_hash, await hashIp(SALT, 'unknown'));
-  await handler(post(goodBody(), { 'x-forwarded-for': '198.51.100.7, 10.0.0.1' }));
+  // primul element e inventat de client; ultimul e cel adăugat de proxy
+  await handler(post(goodBody(), { 'x-forwarded-for': '1.2.3.4, 198.51.100.7' }));
   assertEquals(rpcCalls[1].args!.p_ip_hash, await hashIp(SALT, '198.51.100.7'));
+  await handler(post(goodBody(), { 'x-forwarded-for': '9.9.9.9, 198.51.100.7' }));
+  assertEquals(rpcCalls[2].args!.p_ip_hash, rpcCalls[1].args!.p_ip_hash, 'un prim element diferit nu schimbă hash-ul');
+  // cf-connecting-ip are prioritate față de x-forwarded-for
+  await handler(post(goodBody(), { 'cf-connecting-ip': '203.0.113.9', 'x-forwarded-for': '1.2.3.4, 198.51.100.7' }));
+  assertEquals(rpcCalls[3].args!.p_ip_hash, await hashIp(SALT, '203.0.113.9'));
+});
+
+Deno.test('clientIpInfo: sursa IP-ului (cf / xff / none), pentru log', () => {
+  assertEquals(clientIpInfo(new Headers({ 'cf-connecting-ip': ' 203.0.113.9 ' })), { ip: '203.0.113.9', source: 'cf' });
+  assertEquals(clientIpInfo(new Headers({ 'x-forwarded-for': '1.2.3.4 , 198.51.100.7 ,' })), { ip: '198.51.100.7', source: 'xff' });
+  assertEquals(clientIpInfo(new Headers({ 'x-forwarded-for': ' , ' })), { ip: 'unknown', source: 'none' });
+  assertEquals(clientIpInfo(new Headers()), { ip: 'unknown', source: 'none' });
+});
+
+Deno.test('body peste 16 KB → 413, fără Turnstile și fără RPC', async () => {
+  const { handler, fetchCalls, rpcCalls } = setup();
+  const big = await handler(post(goodBody({ details: 'x'.repeat(BODY_MAX_BYTES) })));
+  assertEquals(big.status, 413);
+  assertEquals((await big.json()).error, 'too_large');
+  const declared = await handler(post(goodBody(), { 'content-length': String(BODY_MAX_BYTES + 1) }));
+  assertEquals(declared.status, 413);
+  assertEquals(fetchCalls.length, 0);
+  assertEquals(rpcCalls.length, 0);
 });
 
 Deno.test('erorile RPC-ului (excepții) → 400 / 500', async () => {

@@ -33,6 +33,7 @@ const DETAILS_MAX = 2000;
 const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const ENDPOINT = `${process.env.EXPO_PUBLIC_SUPABASE_URL ?? ''}/functions/v1/report-public`;
+const REQUEST_TIMEOUT_MS = 15000;
 
 /** Uuid-ul din ce a lipit omul: id gol, link `/p/<id>`, `/market/<id>`, `?id=<id>` etc. */
 export function extractTargetId(raw: string): string | null {
@@ -72,6 +73,9 @@ export function PublicReportScreen() {
     if (!declared) return setError(t('publicReport.errorDeclaration'));
     if (!captchaConfigured()) return setError(t('publicReport.errorCaptcha'));
     setLoading(true);
+    // Fără timeout, pe o rețea care atârnă butonul ar rămâne în „loading” la nesfârșit (review 10 nov).
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), REQUEST_TIMEOUT_MS);
     try {
       const token = await getCaptchaToken();
       if (!token) {
@@ -80,6 +84,7 @@ export function PublicReportScreen() {
       }
       const res = await fetch(ENDPOINT, {
         method: 'POST',
+        signal: abort.signal,
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           token,
@@ -103,6 +108,7 @@ export function PublicReportScreen() {
     } catch {
       setError(t('report.errorGeneric'));
     } finally {
+      clearTimeout(timer);
       setLoading(false);
     }
   }
@@ -127,7 +133,7 @@ export function PublicReportScreen() {
   return (
     <ThemedView style={styles.container}>
       <ScreenHeader title={t('publicReport.title')} onBack={goBack} />
-      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
           <ThemedText themeColor="textSecondary">{t('publicReport.intro')}</ThemedText>
           <ThemedText themeColor="textSecondary" type="small">
@@ -209,7 +215,7 @@ export function PublicReportScreen() {
             label={t('publicReport.emailLabel')}
             value={email}
             onChangeText={setEmail}
-            placeholder="nume@exemplu.ro"
+            placeholder={t('publicReport.emailPlaceholder')}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}

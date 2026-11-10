@@ -244,7 +244,8 @@ function ReportCard({
 
       {isPublic ? (
         <ThemedText type="small" themeColor="textSecondary" selectable>
-          {t('admin.reports.publicReporter')}: {report.reporter_email ?? '—'} → {report.reported_name ?? '—'}
+          {t('admin.reports.publicReporter')}: {report.reporter_email ?? '—'}
+          {report.reporter_lang ? ` (${report.reporter_lang.toUpperCase()})` : ''} → {report.reported_name ?? '—'}
         </ThemedText>
       ) : (
         <ThemedText type="small" themeColor="textSecondary">

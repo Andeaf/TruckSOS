@@ -20,7 +20,9 @@ import { Avatar } from '@/components/avatar';
 import { MiniMap } from '@/components/mini-map';
 import { Button } from '@/components/ui/button';
 import { PhotoGallery } from '@/components/photo-gallery';
+import { ReportSheet } from '@/components/report-sheet';
 import { ScreenHeader } from '@/components/screen-header';
+import { IconButton } from '@/components/ui/icon-button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { UserPickerSheet } from '@/components/user-picker-sheet';
@@ -130,6 +132,8 @@ export default function MechanicAnnouncementDetailScreen() {
   const theme = useTheme();
   // Faza 19.6: share — trimite anunțul unui alt utilizator (card pe primul mesaj).
   const [shareOpen, setShareOpen] = useState(false);
+  // Faza 8.3 (D8.5): „Raportează” pe anunțul de depanare → reports.announcement_id.
+  const [reportOpen, setReportOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
   const handleShareTo = async (targetId: string) => {
     if (sharing) return;
@@ -329,13 +333,25 @@ export default function MechanicAnnouncementDetailScreen() {
         title={t('mechanic.feed.detailTitle')}
         onBack={goBack}
         right={
-          // Faza 19.6: share — trimite anunțul unui mecanic sau șofer.
-          <Pressable
-            onPress={() => setShareOpen(true)}
-            hitSlop={12}
-            accessibilityLabel={t('attach.shareTitle')}>
-            <MaterialIcons name="share" size={22} color={theme.onHeader} />
-          </Pressable>
+          <View style={styles.headerActions}>
+            {/* Faza 19.6: share — trimite anunțul unui mecanic sau șofer. */}
+            <Pressable
+              onPress={() => setShareOpen(true)}
+              hitSlop={12}
+              accessibilityLabel={t('attach.shareTitle')}>
+              <MaterialIcons name="share" size={22} color={theme.onHeader} />
+            </Pressable>
+            {/* Faza 8.3 (D8.5): aici vede mecanicul anunțurile ALTORA (feed, hartă, push) — locul firesc al
+                butonului „Raportează”; anunțul propriu e redirecționat la detaliul de proprietar. */}
+            {session && announcement.driver_id !== userId ? (
+              <IconButton
+                label={t('a11y.report')}
+                onPress={() => setReportOpen(true)}
+                hitSlop={12}
+                icon={<MaterialIcons name="flag" size={22} color={theme.onHeader} />}
+              />
+            ) : null}
+          </View>
         }
       />
 
@@ -573,12 +589,27 @@ export default function MechanicAnnouncementDetailScreen() {
           onPick={(user) => handleShareTo(user.id)}
         />
       ) : null}
+
+      {/* Faza 8.3 (D8.5): raport pe anunțul de depanare (snapshot = descrierea, prima poză). */}
+      <ReportSheet
+        visible={reportOpen}
+        reportedUserId={announcement.driver_id}
+        announcementId={announcement.id}
+        contentSnapshot={announcement.description}
+        imagePathSnapshot={photos[0]?.storage_path ?? null}
+        onClose={() => setReportOpen(false)}
+        onSubmitted={() => {
+          setReportOpen(false);
+          Alert.alert(t('report.submittedTitle'), t('report.submitted'));
+        }}
+      />
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.four },
   centered: {
     flex: 1,
     justifyContent: 'center',
