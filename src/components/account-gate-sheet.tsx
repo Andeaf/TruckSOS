@@ -59,6 +59,13 @@ export function AccountGateSheet() {
     router.push(target);
   }
 
+  // 8.2 (C8.2): politica și termenii, pentru oaspeți. Nu ține minte ecranul (nu e un drum spre
+  // cont); back-ul de pe politică revine aici.
+  function openPrivacy() {
+    close();
+    router.push('/(auth)/privacy' as never);
+  }
+
   const laterLabel = t('accountGate.later');
 
   return (
@@ -116,6 +123,19 @@ export function AccountGateSheet() {
                 {laterLabel}
               </ThemedText>
             </Pressable>
+            <Pressable
+              onPress={openPrivacy}
+              style={styles.privacy}
+              accessibilityRole="link"
+              hitSlop={8}>
+              <ThemedText
+                type="small"
+                themeColor="textSecondary"
+                style={styles.privacyText}
+                maxFontSizeMultiplier={1.3}>
+                {t('consent.guestPrivacyLink')}
+              </ThemedText>
+            </Pressable>
           </View>
         </View>
       </View>
@@ -158,4 +178,6 @@ const styles = StyleSheet.create({
   },
   later: { alignSelf: 'center', paddingVertical: Spacing.two },
   laterText: { fontWeight: '600' },
+  privacy: { alignSelf: 'center', paddingBottom: Spacing.one },
+  privacyText: { textDecorationLine: 'underline' },
 });

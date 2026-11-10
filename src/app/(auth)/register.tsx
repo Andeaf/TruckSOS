@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { NetworkTroubleshoot } from '@/components/network-troubleshoot';
 import { Input } from '@/components/ui/input';
 import { SocialSignIn } from '@/components/social-sign-in';
+import { ConsentNotice } from '@/components/terms-update-screen';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -348,6 +349,9 @@ export default function RegisterScreen() {
             {/* 6 oct: cont nou direct cu Google/Apple — fără parolă și fără cod pe email
                 (emailul vine verificat de furnizor); rolul și telefonul se cer apoi. */}
             <SocialSignIn origin="register" />
+
+            {/* 8.2 (C8.2): „Continuând, accepți Termenii și Politica” — sub înscriere și sub Google/Apple. */}
+            <ConsentNotice />
           </View>
 
           <View style={styles.footer}>

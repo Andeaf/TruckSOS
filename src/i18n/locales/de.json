@@ -1255,6 +1255,24 @@
       ]
     }
   },
+  "consent": {
+    "continueAccept": "Wenn du fortfährst, akzeptierst du die {{terms}} und die {{privacy}}.",
+    "termsLink": "Nutzungsbedingungen",
+    "privacyLink": "Datenschutzerklärung",
+    "ageCheckbox": "Ich bestätige, dass ich mindestens 18 Jahre alt bin und TruckSOS beruflich nutze.",
+    "ageRequired": "Um fortzufahren, musst du bestätigen, dass du mindestens 18 Jahre alt bist.",
+    "updatedTitle": "Die Bedingungen wurden aktualisiert",
+    "updatedBody": "Wir haben die Nutzungsbedingungen und die Datenschutzerklärung aktualisiert (Version {{version}}). Kurz gesagt: Der Betreiber ist mit Name und Kontaktdaten angegeben; die vollständige Liste der Dienstleister; wie lange wir jede Datenart aufbewahren; wie du eine Meldung einreichst und eine Entscheidung anfechtest; du kannst alle deine Daten in den Einstellungen herunterladen. Um fortzufahren, lies sie bitte und bestätige.",
+    "updatedRead": "Nutzungsbedingungen lesen · Datenschutzerklärung lesen",
+    "readTerms": "Nutzungsbedingungen lesen",
+    "readPrivacy": "Datenschutzerklärung lesen",
+    "updatedAccept": "Gelesen und akzeptiert",
+    "guestPrivacyLink": "Datenschutz und Bedingungen",
+    "signOut": "Abmelden",
+    "exportData": "Meine Daten herunterladen",
+    "deleteAccount": "Konto löschen",
+    "exportDone": "Die Datei mit deinen Daten ist bereit."
+  },
   "shareContact": {
     "action": "Kontakt teilen",
     "actionMine": "Meinen Kontakt teilen",

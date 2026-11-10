@@ -45,6 +45,7 @@
  * Funcții încă negenerate (migrări din repo neaplicate pe proiectul legat; după aplicare, la
  * următorul `npm run gen:types`, intrarea de aici se poate scoate — forma generată e aceeași):
  * - export_my_data (faza 6.4, 20261109000600): fără argumente → jsonb.
+ * - accept_terms / my_terms_status (faza 8.2, 20261110000100): (p_version, p_source?) → jsonb; fără argumente → jsonb.
  */
 import type { Database as GeneratedDatabase, Json } from './supabase';
 
@@ -255,6 +256,9 @@ type DatabaseOverrides = {
     Functions: {
       // Forma generatorului pentru funcțiile fără argumente (`Args: never`, ca admin_dashboard_stats).
       export_my_data: { Args: never; Returns: Json };
+      // Faza 8.2 (C8.2): consimțământul la Termeni; p_source = 'signup' | 'update' (DEFAULT 'update').
+      accept_terms: { Args: { p_version: string; p_source?: string }; Returns: Json };
+      my_terms_status: { Args: never; Returns: Json };
     };
   };
 };

@@ -165,7 +165,7 @@ select is(
   (select string_agg(c.relname || '=' || (select coalesce(string_agg(priv, '/' order by priv), '-') from unnest(array['DELETE', 'INSERT', 'SELECT', 'UPDATE']) priv
                                             where has_table_privilege('anon', c.oid, priv)), ', ' order by c.relname)
      from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'app' and c.relkind = 'r'),
-  'announcements=SELECT, apple_tokens=-, channel_events=-, moderation_notices=-, profiles=SELECT, push_queue=-, push_tickets=-, rate_events=-, storage_gc_queue=-',
+  'announcements=SELECT, apple_tokens=-, channel_events=-, consent_log=-, moderation_notices=-, profiles=SELECT, push_queue=-, push_tickets=-, rate_events=-, storage_gc_queue=-',
   '37. anon pe tabelele din app: doar SELECT pe cele două de sub view-uri (security_invoker), nimic altceva');
 select is(
   (select coalesce(string_agg(n.nspname || '.' || p.proname, ', ' order by 1), '')

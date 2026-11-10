@@ -1258,6 +1258,24 @@
       ]
     }
   },
+  "consent": {
+    "continueAccept": "Continuând, accepți {{terms}} și {{privacy}}.",
+    "termsLink": "Termenii și condițiile",
+    "privacyLink": "Politica de confidențialitate",
+    "ageCheckbox": "Confirm că am cel puțin 18 ani și folosesc TruckSOS în scop profesional.",
+    "ageRequired": "Pentru a continua trebuie să confirmi că ai cel puțin 18 ani.",
+    "updatedTitle": "Termenii s-au actualizat",
+    "updatedBody": "Am actualizat Termenii și Politica de confidențialitate (versiunea {{version}}). Pe scurt: operatorul este indicat cu nume și contact; lista completă a furnizorilor; cât timp păstrăm fiecare tip de date; cum trimiți o sesizare și cum contești o decizie; poți descărca toate datele tale din Setări. Pentru a continua, citește-le și confirmă.",
+    "updatedRead": "Citește Termenii · Citește Politica",
+    "readTerms": "Citește Termenii",
+    "readPrivacy": "Citește Politica",
+    "updatedAccept": "Am citit și accept",
+    "guestPrivacyLink": "Confidențialitate și termeni",
+    "signOut": "Deconectare",
+    "exportData": "Descarcă datele mele",
+    "deleteAccount": "Șterge contul",
+    "exportDone": "Fișierul cu datele tale este gata."
+  },
   "shareContact": {
     "action": "Partajează contactul",
     "actionMine": "Partajează contactul meu",

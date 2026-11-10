@@ -21,6 +21,7 @@ insert into allowlist values
   ('record_announcement_view'), ('get_own_profile'),
   ('open_announcements_near'), ('open_announcements_near_count'), ('rate_mechanic'),  -- 20261101000300 (faza 4.3)
   ('export_my_data'),                                             -- 20261109000600 (faza 6.4)
+  ('accept_terms'), ('my_terms_status'),                          -- 20261110000100 (faza 8.2)
   ('admin_purge_accounts'),                                       -- 20261031000100 (faza 2)
   ('admin_ban_user'), ('admin_dashboard_stats'), ('admin_delete_announcement'),
   ('admin_delete_listing'), ('admin_delete_message'), ('admin_delete_review'),
