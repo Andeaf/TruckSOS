@@ -229,6 +229,9 @@ function ReportCard({
   const { t, i18n } = useTranslation();
   const theme = useTheme();
   const isMessage = !!report.message_id;
+  // Faza 8.3: sesizare publică (fără cont) — reporterul e un e-mail, nu un utilizator; răspunsul se
+  // trimite manual (D8.4). Conversația raportor↔raportat nu există (reporter_id NULL).
+  const isPublic = report.source === 'public';
 
   return (
     <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
@@ -239,9 +242,20 @@ function ReportCard({
         </ThemedText>
       </View>
 
-      <ThemedText type="small" themeColor="textSecondary">
-        {t('admin.reports.reporter')}: {report.reporter_name ?? '—'} → {report.reported_name ?? '—'}
-      </ThemedText>
+      {isPublic ? (
+        <ThemedText type="small" themeColor="textSecondary" selectable>
+          {t('admin.reports.publicReporter')}: {report.reporter_email ?? '—'} → {report.reported_name ?? '—'}
+        </ThemedText>
+      ) : (
+        <ThemedText type="small" themeColor="textSecondary">
+          {t('admin.reports.reporter')}: {report.reporter_name ?? '—'} → {report.reported_name ?? '—'}
+        </ThemedText>
+      )}
+      {report.announcement_id || report.announcement_text ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          {t('admin.reports.onAnnouncement')}: {report.announcement_text ?? t('admin.reports.announcementGone')}
+        </ThemedText>
+      ) : null}
 
       {report.details ? <ThemedText style={styles.details}>{report.details}</ThemedText> : null}
 
@@ -268,9 +282,9 @@ function ReportCard({
             <ActionBtn label={t('admin.reports.actionViewContext')} onPress={onContext} />
             <ActionBtn label={t('admin.reports.actionDeleteMsg')} onPress={onDeleteMsg} danger />
           </>
-        ) : (
+        ) : isPublic ? null : (
           // Raport pe UTILIZATOR: fără mesaj de ancorat → conversația raportor↔raportat
-          // (RPC mărginit + auditat; principiul din privacy policy §5).
+          // (RPC mărginit + auditat; principiul din privacy policy §5). La sesizările publice nu există raportor.
           <ActionBtn label={t('admin.reports.actionViewConversation')} onPress={onConversation} />
         )}
         <ActionBtn label={t('admin.reports.actionViewUser')} onPress={onUser} />

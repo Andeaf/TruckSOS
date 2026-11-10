@@ -94,7 +94,8 @@ select is(
       and fn in ('_purge_user_data', 'notify_push', 'notify_mechanics_new_announcement',
                  'storage_api_delete', 'recompute_mechanic_rating', 'is_blocked_by', 'accept_announcement',
                  'claim_push_batch', 'finish_push_batch', 'pending_push_receipts', 'finish_push_receipts',
-                 'store_apple_token', 'read_apple_token', 'record_account_deletion', 'storage_gc_claim', 'storage_gc_finish')),
+                 'store_apple_token', 'read_apple_token', 'record_account_deletion', 'storage_gc_claim', 'storage_gc_finish',
+                 'insert_public_report')),
   '', 'Funcțiile interne rămân închise');
 
 -- 5. SECURITY DEFINER fără search_path fixat

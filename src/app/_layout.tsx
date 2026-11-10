@@ -67,6 +67,8 @@ function RootLayoutNav() {
     // sesiune, nici cu sesiunea nou creată fără profil (altfel „Cont activat" ar sări direct
     // la alegerea rolului înainte ca omul să-l vadă).
     const inAuthLink = seg[0] === 'auth';
+    // 8.3 (DSA art. 16): trucksos.net/report — sesizare fără cont; ecranul merge cu sau fără sesiune. Garda NU-l ricoșează.
+    const inReport = seg[0] === 'report';
     // 1.1 (Faza B): grupul oaspeților. Cu sesiune nu are ce căuta acolo (vezi ramurile de jos).
     const inGuest = seg[0] === '(guest)';
 
@@ -77,10 +79,10 @@ function RootLayoutNav() {
         // Oaspetele („Continuă fără cont"): (guest), linkurile partajate / de activare și
         // ecranele de autentificare (foaia „Fă-ți cont" duce acolo). Orice altceva — pornirea
         // fără rută sau un grup de cont, de ex. (driver) — ajunge pe anunțurile oaspeților.
-        if (!inGuest && !inAuth && !inSharedLink && !inAuthLink) {
+        if (!inGuest && !inAuth && !inSharedLink && !inAuthLink && !inReport) {
           router.replace('/(guest)/announcements' as never);
         }
-      } else if (!inAuth && !inSharedLink && !inAuthLink) {
+      } else if (!inAuth && !inSharedLink && !inAuthLink && !inReport) {
         router.replace('/(auth)/login');
       }
     } else if (sessionNeedsMfa(session)) {
@@ -109,10 +111,10 @@ function RootLayoutNav() {
       // Adminul poate „intra ca" șofer/mecanic (Faza 16), altfel stă în (admin).
       // Ramura e ÎNAINTEA check-ului de ban — adminii nu ajung pe ecranul de ban.
       if (adminViewAs === 'driver') {
-        if (!inDriver && !inSharedLink && !inAuthLink) router.replace('/(driver)/announcements');
+        if (!inDriver && !inSharedLink && !inAuthLink && !inReport) router.replace('/(driver)/announcements');
       } else if (adminViewAs === 'mechanic') {
-        if (!inMechanic && !inSharedLink && !inAuthLink) router.replace('/(mechanic)/feed');
-      } else if (!inAdmin && !inSharedLink && !inAuthLink) {
+        if (!inMechanic && !inSharedLink && !inAuthLink && !inReport) router.replace('/(mechanic)/feed');
+      } else if (!inAdmin && !inSharedLink && !inAuthLink && !inReport) {
         // Un link amânat de pe un ecran de oaspete nu are echivalent în grupul (admin).
         const pending = takePendingLink();
         const target = pending && !pending.startsWith('/(guest)') ? pending : null;

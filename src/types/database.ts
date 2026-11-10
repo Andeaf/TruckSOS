@@ -201,19 +201,37 @@ export interface Truck {
   created_at: string;
 }
 
-export type ReportReason = 'spam' | 'harassment' | 'inappropriate' | 'scam' | 'other';
+/** Motivele din CHECK-ul `reports_reason_check` (faza 8.3 a adăugat cele 4 motive DSA). */
+export type ReportReason =
+  | 'spam'
+  | 'harassment'
+  | 'inappropriate'
+  | 'scam'
+  | 'other'
+  | 'illegal'
+  | 'rights'
+  | 'personal_data'
+  | 'sexual_violent';
 export type ReportStatus = 'pending' | 'reviewed' | 'dismissed';
+/** Faza 8.3: `app` = din aplicație, cu cont; `public` = de pe trucksos.net/report, fără cont. */
+export type ReportSource = 'app' | 'public';
 
-/** Raport pe mesaj (cu snapshot), pe utilizator (message_id null) sau pe anunț de market
- * (listing_id, Faza 19). Faza 14.5. */
+/** Raport pe mesaj (cu snapshot), pe utilizator (message_id null), pe anunț de market
+ * (listing_id, Faza 19) sau pe anunț de depanare (announcement_id, faza 8.3). Faza 14.5. */
 export interface Report {
   id: string;
-  reporter_id: string;
+  /** NULL la sesizările publice fără cont (faza 8.3). */
+  reporter_id: string | null;
   reported_user_id: string;
   message_id: string | null;
   message_table: 'messages' | 'channel_messages' | null;
   /** Faza 19: raport pe anunț de market; SET NULL dacă anunțul dispare (snapshot-ul rămâne). */
   listing_id: string | null;
+  /** Faza 8.3 (D8.5): raport pe anunț de depanare; SET NULL dacă anunțul dispare. */
+  announcement_id: string | null;
+  source: ReportSource;
+  /** E-mailul reclamantului fără cont (doar `source = 'public'`); vizibil doar adminului. */
+  reporter_email: string | null;
   reason: ReportReason;
   details: string | null;
   content_snapshot: string | null;

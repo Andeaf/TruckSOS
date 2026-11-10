@@ -188,8 +188,37 @@ type ModerationNoticeRow = {
   read_at: string | null;
 };
 
+/** Faza 8.3 (20261110000200): `reports.reporter_id` devine nullable (sesizări publice) și apar 4 coloane noi; tipul generat
+ *  le va avea după `gen:types` de după aplicarea migrării pe producție — atunci intrarea de aici se scoate. */
+type ReportsOverride = {
+  Row: {
+    reporter_id: string | null;
+    announcement_id: string | null;
+    source: string;
+    reporter_email: string | null;
+    reporter_lang: string | null;
+  };
+  Insert: {
+    reporter_id?: string | null;
+    announcement_id?: string | null;
+    source?: string;
+    reporter_email?: string | null;
+    reporter_lang?: string | null;
+  };
+  Update: {
+    reporter_id?: string | null;
+    announcement_id?: string | null;
+    source?: string;
+    reporter_email?: string | null;
+    reporter_lang?: string | null;
+  };
+};
+
 type DatabaseOverrides = {
   public: {
+    Tables: {
+      reports: ReportsOverride;
+    };
     Views: {
       announcements: {
         Row: AnnouncementRow;
