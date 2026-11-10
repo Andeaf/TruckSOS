@@ -79,6 +79,7 @@ select is(pg_temp.report_pushes(), 0, '5. nicio notificare de raport înainte (f
 create temp table t_pub as
   select (public.insert_public_report(pg_temp.ip(1), 'announcement', '81111111-0000-4000-8000-000000000001', 'illegal',
                                       '  Conținut ilegal, vezi linkul  ', 'Reporter@Example.com', 'de')->>'id')::uuid as id;
+grant select on t_pub to authenticated;  -- citit și cât rolul e `authenticated` (testele 21–22); CI 42828016579: permission denied
 select is((select source || '|' || (reporter_id is null)::text || '|' || reported_user_id::text || '|' || announcement_id::text || '|' || reporter_email || '|' || reporter_lang || '|' || reason || '|' || details
              from public.reports where id = (select id from t_pub)),
           'public|true|81000000-0000-4000-8000-0000000000a1|81111111-0000-4000-8000-000000000001|reporter@example.com|de|illegal|Conținut ilegal, vezi linkul',
@@ -104,8 +105,11 @@ select throws_ok($$select public.insert_public_report(pg_temp.ip(2), 'user', '81
                  'P0001', 'bad_input', '14. e-mail invalid → bad_input');
 select throws_ok($$select public.insert_public_report(pg_temp.ip(2), 'message', '81111111-0000-4000-8000-000000000001', 'spam', null, 'a@b.ro')$$,
                  'P0001', 'bad_input', '15. mesajele private nu se pot raporta de pe pagina publică → bad_input');
-select is((select count(*) filter (where r ? 'id')::int from generate_series(1, 9) g,
-             lateral (select public.insert_public_report(pg_temp.ip(2), 'listing', '81444444-0000-4000-8000-000000000001', 'scam', 'x', 'r@example.com') r) x),
+-- Apelul stă în lista SELECT a lui generate_series (evaluat pe fiecare rând). Varianta cu `lateral (select f() …)` necorelat
+-- era evaluată O SINGURĂ dată și rezultatul refolosit de 9 ori (CI 42828016579: testele 17 și 19 picau din cauza testului).
+select is((select count(*) filter (where x.r ? 'id')::int
+             from (select public.insert_public_report(pg_temp.ip(2), 'listing', '81444444-0000-4000-8000-000000000001', 'scam', 'x', 'r@example.com') as r
+                     from generate_series(1, 9)) x),
           9, '16. 9 sesizări reușite pe listing (10 încercări pe același IP, cu cea respinsă)');
 select is((select public.insert_public_report(pg_temp.ip(2), 'listing', '81444444-0000-4000-8000-000000000001', 'scam', 'x', 'r@example.com')),
           '{"error": "rate_limited"}'::jsonb, '17. a 11-a încercare în oră pe același IP → {error: rate_limited}');

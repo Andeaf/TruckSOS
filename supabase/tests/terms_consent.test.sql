@@ -1,9 +1,10 @@
 -- pgTAP: faza 8.2 (migrarea 20261110000100_terms_consent): consimțământul la termeni + 18+ cu dovadă pe server,
--- jurnalul app.consent_log (fără FK, 3 ani), RPC-urile accept_terms / my_terms_status, drepturile.
+-- starea în app.profile_terms (tabel separat — app.profiles rămâne neatins, altfel scrierile prin view-ul public.profiles
+-- ar pica), jurnalul app.consent_log (fără FK, 3 ani), RPC-urile accept_terms / my_terms_status, drepturile.
 -- Id-urile 80… .
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(22);
+select plan(27);
 
 create function pg_temp.as_user(p_uid uuid, p_role text) returns void language plpgsql as $$
 begin
@@ -39,10 +40,21 @@ insert into app.consent_log (user_id, version, accepted_at, age_confirmed, sourc
   ('80000000-0000-4000-8000-0000000000f9', '1.0.0', now() - interval '2 months', true, 'signup');
 
 -- ── 1–3. Catalog ───────────────────────────────────────────────────────────────────────────────────────
+select ok(
+  (select relrowsecurity from pg_class where oid = 'app.profile_terms'::regclass)
+  and not has_table_privilege('anon', 'app.profile_terms', 'SELECT, INSERT, UPDATE, DELETE')
+  and not has_table_privilege('authenticated', 'app.profile_terms', 'SELECT, INSERT, UPDATE, DELETE'),
+  '1. app.profile_terms: RLS activ, fără drepturi pentru anon/authenticated');
+-- Garda lecției din 10 nov (poarta 4.1): triggerele INSTEAD OF ale view-urilor întorc rândul tabelului (`RETURNING * INTO NEW`),
+-- deci tabelul și view-ul trebuie să aibă același număr de coloane; o coloană nouă pe tabel rupe TOATE scrierile prin view.
 select is(
-  (select string_agg(attname, ',' order by attname) from pg_attribute
-    where attrelid = 'app.profiles'::regclass and attname in ('terms_accepted_at', 'terms_version', 'age_confirmed_at') and not attisdropped),
-  'age_confirmed_at,terms_accepted_at,terms_version', '1. cele 3 coloane există pe app.profiles');
+  (select count(*)::int from pg_attribute where attrelid = 'app.profiles'::regclass and attnum > 0 and not attisdropped),
+  (select count(*)::int from pg_attribute where attrelid = 'public.profiles'::regclass and attnum > 0 and not attisdropped),
+  '1b. app.profiles are exact coloanele view-ului public.profiles (nicio coloană adăugată pe tabel)');
+select is(
+  (select count(*)::int from pg_attribute where attrelid = 'app.announcements'::regclass and attnum > 0 and not attisdropped),
+  (select count(*)::int from pg_attribute where attrelid = 'public.announcements'::regclass and attnum > 0 and not attisdropped),
+  '1c. app.announcements are exact coloanele view-ului public.announcements');
 select is(
   (select count(*)::int from pg_constraint where conrelid = 'app.consent_log'::regclass and contype = 'f'),
   0, '2. app.consent_log nu are FK (dovada supraviețuiește ștergerii contului, D8.2)');
@@ -62,10 +74,15 @@ select throws_ok($$select public.accept_terms('1.1.0', 'web')$$, 'P0001', 'bad_s
 -- ── 7–11. Acceptarea ─────────────────────────────────────────────────────────────────────────────────
 select is((select (public.accept_terms('1.1.0', 'signup'))->>'terms_version'), '1.1.0', '7. accept_terms întoarce versiunea');
 select is((select (public.my_terms_status())->>'terms_version'), '1.1.0', '8. my_terms_status vede versiunea acceptată');
-select ok((select terms_accepted_at is not null and age_confirmed_at is not null and terms_version = '1.1.0'
-             from app.profiles where id = '80000000-0000-4000-8000-0000000000a1'),
-          '9. cele 3 coloane scrise pe profil') ;
+-- Regresia prinsă de poarta 4.1: după migrare, scrierea prin view-ul public.profiles (drumul clienților 1.0.x) merge.
+select lives_ok($$update public.profiles set full_name = 'T Driver A2' where id = '80000000-0000-4000-8000-0000000000a1'$$,
+                '9. UPDATE prin view-ul public.profiles merge după migrare (clienții 1.0.x)');
 select pg_temp.as_postgres();
+select is((select full_name from app.profiles where id = '80000000-0000-4000-8000-0000000000a1'), 'T Driver A2',
+          '9b. … și a ajuns în app.profiles');
+select ok((select terms_accepted_at is not null and age_confirmed_at is not null and terms_version = '1.1.0'
+             from app.profile_terms where user_id = '80000000-0000-4000-8000-0000000000a1'),
+          '9c. starea e scrisă în app.profile_terms');
 select is((select count(*)::int from app.consent_log where user_id = '80000000-0000-4000-8000-0000000000a1' and version = '1.1.0' and source = 'signup' and age_confirmed),
           1, '10. un rând în jurnal (signup, 18+)');
 select pg_temp.as_user('80000000-0000-4000-8000-0000000000a1', 'authenticated');
@@ -73,6 +90,8 @@ select lives_ok($$select public.accept_terms('1.1.0', 'update')$$, '11. a doua a
 select pg_temp.as_postgres();
 select is((select count(*)::int from app.consent_log where user_id = '80000000-0000-4000-8000-0000000000a1' and version = '1.1.0'),
           2, '12. fiecare acceptare = un rând (istoric, nu doar ultima)');
+select is((select count(*)::int from app.profile_terms where user_id = '80000000-0000-4000-8000-0000000000a1'), 1,
+          '12b. … iar starea rămâne un singur rând per cont (upsert)');
 
 -- ── 13–15. Izolare: alt utilizator, anon, cont șters ─────────────────────────────────────────────────
 select pg_temp.as_user('80000000-0000-4000-8000-0000000000b1', 'authenticated');
@@ -99,9 +118,8 @@ select is((select r->>'consent_log_deleted' from app.apply_retention(false) r), 
 select is((select count(*)::int from app.consent_log where user_id = '80000000-0000-4000-8000-0000000000f9'), 1,
           '21. rândul contului care nu mai există rămâne (sub 3 ani)');
 
--- ── 22. Fără accept_terms reușit coloanele rămân NULL (starea conturilor 1.0.x) ─────────────────────────
-select is((select terms_version is null and terms_accepted_at is null and age_confirmed_at is null
-             from app.profiles where id = '80000000-0000-4000-8000-0000000000e1'), true,
-          '22. profil fără accept_terms reușit → coloanele rămân NULL (ca la clienții 1.0.x)');
+-- ── 22. Fără accept_terms reușit nu există rând de stare (starea conturilor 1.0.x) ──────────────────────
+select is((select count(*)::int from app.profile_terms where user_id = '80000000-0000-4000-8000-0000000000e1'), 0,
+          '22. profil fără accept_terms reușit → niciun rând în app.profile_terms (ca la clienții 1.0.x)');
 select * from finish();
 rollback;

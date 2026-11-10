@@ -1,4 +1,4 @@
--- Rollback pentru 20261110000100_terms_consent (faza 8): coloanele de consimțământ, app.consent_log și RPC-urile dispar; apply_retention revine la textul fazei 6. ATENȚIE: dovezile de acceptare SE PIERD (export înainte: SELECT * FROM app.consent_log).
+-- Rollback pentru 20261110000100_terms_consent (faza 8): app.profile_terms, app.consent_log și RPC-urile dispar; apply_retention revine la textul fazei 6. ATENȚIE: dovezile de acceptare SE PIERD (export înainte: SELECT * FROM app.consent_log).
 -- Generat de .claude/wip/faza8/gen-sql.mjs; funcțiile restaurate sunt copiate byte cu byte din migrările originale.
 -- RULARE: într-o singură tranzacție (BEGIN; + fișier + COMMIT;). Ordinea rollback-urilor fazei 8: 200 → 100.
 SET LOCAL lock_timeout = '5s';
@@ -14,10 +14,7 @@ END $$;
 DROP FUNCTION IF EXISTS public.accept_terms(text, text);
 DROP FUNCTION IF EXISTS public.my_terms_status();
 DROP TABLE IF EXISTS app.consent_log;
-ALTER TABLE app.profiles
-  DROP COLUMN IF EXISTS terms_accepted_at,
-  DROP COLUMN IF EXISTS terms_version,
-  DROP COLUMN IF EXISTS age_confirmed_at;
+DROP TABLE IF EXISTS app.profile_terms;
 
 -- app.apply_retention: textul din 20261109000500 (faza 6)
 CREATE OR REPLACE FUNCTION app.apply_retention(p_dry_run boolean DEFAULT false)

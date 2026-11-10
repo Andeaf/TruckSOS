@@ -201,8 +201,13 @@ jobs:
             echo "re-apply $f: $(( ($(date +%s%N) - start) / 1000000 )) ms (o singură tranzacție psql -1)"
           done
           fp /tmp/fp/reapplied.txt
-          echo "diff applied vs re-applied (trebuie gol):"
-          diff -u /tmp/fp/applied.txt /tmp/fp/reapplied.txt
+          # Poziția fizică a coloanei (attnum) e scoasă DOAR din această comparație: o coloană adăugată cu ALTER TABLE,
+          # scoasă de rollback și adăugată din nou primește alt număr (coloanele șterse își păstrează locul în catalog),
+          # deci diferența e un artefact al repetiției, nu al migrării (CI 42828016579, faza 8: reports.source 15 → 19).
+          # Numele, tipul, NOT NULL și default-ul coloanei rămân comparate; amprentele brute sunt în artefact.
+          noattnum() { sed -E 's/^(column \| [^|]+ \| )[0-9]+\|/\1/' "$1"; }
+          echo "diff applied vs re-applied, fără attnum (trebuie gol):"
+          diff -u <(noattnum /tmp/fp/applied.txt) <(noattnum /tmp/fp/reapplied.txt)
 
       - name: "Faza 3: măsurători la scară (10 000 membri în canal; raportate, nu asserturi)"
         # Condiția lui David din 25 oct (PLAN_1.1_FIX §3 „Teste”): INSERT în channel_messages ≤ 50 ms și
