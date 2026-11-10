@@ -3,16 +3,21 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TruckSOS — Politica de confidențialitate / Privacy Policy</title>
+  <title>TruckSOS — Politica de confidențialitate</title>
+  <link rel="canonical" href="https://trucksos.net/legal/privacy.ro.html" />
+  <link rel="alternate" hreflang="ro" href="https://trucksos.net/legal/privacy.ro.html" />
+  <link rel="alternate" hreflang="en" href="https://trucksos.net/legal/privacy.en.html" />
+  <link rel="alternate" hreflang="de" href="https://trucksos.net/legal/privacy.de.html" />
+  <link rel="alternate" hreflang="x-default" href="https://trucksos.net/legal/privacy.ro.html" />
   <style>
     :root {
       --bg: #ffffff; --card: #f4f6f8; --text: #14181d; --muted: #5b6673;
-      --brand: #208aef; --border: #e2e6ea;
+      --brand: #0E3A7D; --border: #e2e6ea;
     }
     @media (prefers-color-scheme: dark) {
       :root {
         --bg: #0f1317; --card: #171c22; --text: #e6eaee; --muted: #9aa5b1;
-        --brand: #4aa3ff; --border: #262d35;
+        --brand: #7BA7E0; --border: #262d35;
       }
     }
     * { box-sizing: border-box; }
@@ -21,13 +26,22 @@
       font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       padding: 24px;
     }
-    main { max-width: 720px; margin: 0 auto; }
+    main { max-width: 760px; margin: 0 auto; }
     h1 { font-size: 1.6rem; margin: 0 0 4px; }
     h2 { font-size: 1.1rem; margin: 28px 0 8px; }
     .sub { color: var(--muted); margin: 0 0 24px; }
     a { color: var(--brand); }
-    .email { font-weight: 600; }
-    .lang-sep { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+    nav.langs { font-size: 0.9rem; color: var(--muted); margin: 0 0 16px; }
+    nav.langs a { margin-right: 10px; }
+    nav.langs strong { margin-right: 10px; }
+    ul { margin: 8px 0; padding-left: 20px; }
+    li { margin: 6px 0; }
+    table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 0.95rem; }
+    th, td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; vertical-align: top; }
+    th { background: var(--card); }
+    code { background: var(--card); padding: 1px 4px; border-radius: 4px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin: 12px 0; }
+    .button { display: inline-block; background: var(--brand); color: #fff; padding: 10px 16px; border-radius: 10px; text-decoration: none; font-weight: 600; }
     footer { color: var(--muted); font-size: 0.85rem; margin-top: 40px; }
     .logo { width: 56px; height: 56px; border-radius: 14px; display: block; margin: 0 0 16px; }
   </style>
@@ -35,79 +49,88 @@
 <body>
   <main>
     <img class="logo" src="https://trucksos.net/logo.png" alt="TruckSOS" width="56" height="56" />
-    <!-- ═══════════════ ROMÂNĂ ═══════════════ -->
+    <nav class="langs" aria-label="Alte limbi"><strong>Română</strong><a href="./privacy.en.html" hreflang="en">English</a><a href="./privacy.de.html" hreflang="de">Deutsch</a></nav>
     <h1>TruckSOS — Politica de confidențialitate</h1>
-    <p class="sub">Ultima actualizare: 1 noiembrie 2026</p>
-
-    <h2>1. Cine suntem</h2>
-    <p>TruckSOS este o aplicație mobilă care pune în legătură transportatori de camioane aflate în pană cu mecanici disponibili și care include o secțiune de anunțuri de vânzare (Market) între utilizatori. Operatorul datelor este dezvoltatorul aplicației TruckSOS; ne poți contacta oricând la <a class="email" href="mailto:trucksos.support@gmail.com">trucksos.support@gmail.com</a>.</p>
-
-    <h2>2. Ce date colectăm</h2>
-    <p><strong>Date de cont:</strong> adresa de e-mail și parola (parola este gestionată criptat de furnizorul de autentificare; nu o vedem niciodată). Dacă alegi să te conectezi cu Google sau cu Apple, primim de la aceștia doar adresa de e-mail și numele contului (sau adresa de releu, dacă la Apple alegi „Ascunde-mi e-mailul”); nu primim niciodată parola contului tău Google sau Apple. <strong>Date de profil:</strong> nume, rol, număr de telefon, firmă, e-mail de contact, adresă, număr TVA/CUI, specializare, zonă de activitate, poză de profil și limba aleasă. <strong>Conținut publicat:</strong> anunțuri de depanare (descriere, locație, detalii camion, număr de înmatriculare, poze și — doar dacă alegi să o atașezi — poziția GPS), anunțuri de vânzare în Market (titlu, descriere, preț, categorie, poze), mesaje private, mesaje în canalul public, pozele și fișierele pe care le atașezi în conversații, evaluări și rapoarte. <strong>Date tehnice:</strong> token-ul de notificări push al dispozitivului, istoricul căutărilor tale de mecanici (păstrat în contul tău, ca să îți putem afișa căutările recente) și, la mecanici, poziția de referință dacă e setată pentru filtrul de rază. Dacă aplicația nu reușește să contacteze serverul, păstrează pe telefon un scurt jurnal tehnic al verificării (rezultatul, tipul rețelei, modelul și versiunea sistemului, versiunea aplicației, fără conținut personal) și îl trimite la următoarea conectare reușită, ca să putem îmbunătăți conexiunea; se șterge după 90 de zile. Dacă apeși „Tradu” pe un anunț, textul descrierii este trimis către Google Cloud Translation API (Google Ireland Ltd.) doar ca să fie tradus în limba aplicației; traducerea se păstrează în contul nostru ca să nu fie cerută de mai multe ori; Google nu folosește textul în alte scopuri.</p>
-
+    <p class="sub">Versiunea 1.1.0 · În vigoare de la data lansării versiunii 1.1.0 a aplicației · Înlocuiește versiunea din 1 noiembrie 2026.</p>
+    <h2>1. Cine suntem (operatorul)</h2>
+    <p>TruckSOS este o aplicație mobilă și web care pune în legătură transportatori de camioane aflate în pană cu mecanici disponibili, include o secțiune de anunțuri de vânzare (Market) între utilizatori și un canal public de discuții al comunității.</p>
+    <p>Operatorul datelor cu caracter personal este <strong>Breană David Eduard, persoană fizică, România</strong>, e-mail <strong><a href="mailto:support@trucksos.net">support@trucksos.net</a></strong>. Nu am desemnat un responsabil cu protecția datelor; orice cerere privind datele tale se trimite la adresa de mai sus.</p>
+    <h2>2. Ce date prelucrăm</h2>
+    <ul>
+      <li><strong>Date de cont:</strong> adresa de e-mail și parola (parola e gestionată criptat de furnizorul de autentificare, Supabase; nu o vedem niciodată). La conectarea cu Google sau Apple primim doar adresa de e-mail (sau adresa de releu Apple, dacă alegi „Ascunde-mi e-mailul”) și numele contului; nu primim parola contului Google/Apple. Dacă te conectezi cu Apple din aplicația iOS, păstrăm criptat un token tehnic emis de Apple, folosit <strong>exclusiv</strong> pentru a revoca autorizarea la Apple când îți ștergi contul (cerință Apple); nu îl folosim în alt scop.</li>
+      <li><strong>Date de profil:</strong> nume, rol (transportator / mecanic), poză de profil, limbă; pentru mecanici: specializare, zonă de activitate, firmă, adresă, număr TVA, e-mail de contact; număr de telefon (ambele roluri); poziție GPS aproximativă, dacă o setezi pentru distanțe.</li>
+      <li><strong>Sesizări fără cont (pagina trucksos.net/report):</strong> adresa de e-mail pe care o indici și conținutul sesizării, folosite doar pentru a o trata și a-ți răspunde (vezi §7); nu ai nevoie de cont.</li>
+      <li><strong>Conținut:</strong> anunțurile de depanare (descriere, locație, coordonate, marca/modelul camionului, numărul de înmatriculare și seria de șasiu — date pe care le furnizezi tu), camioanele salvate, candidaturile mecanicilor (ofertă de preț neobligatorie, mesaj), anunțurile din Market (titlu, descriere, preț, poze), mesajele private și din canal (text, poze, videoclipuri, fișiere), evaluările, favoriții, blocările, istoricul căutărilor de mecanici.</li>
+      <li><strong>Date tehnice:</strong> token-ul de notificări push al dispozitivului (platformă, versiunea aplicației), ora ultimei citiri a conversațiilor/canalului, preferințele de notificare, jurnalul de diagnostic al conexiunii (ora, tipul erorii de rețea, versiunea aplicației — <strong>fără</strong> conținut de mesaje; se încarcă doar după conectare), rapoartele de eroare ale aplicației pe care alegi să le trimiți din ecranul „Ceva n-a mers” (tipul erorii, ecranul, versiunea aplicației și a sistemului de operare; fără e-mail, telefon sau conținut de mesaje; se șterg după 30 de zile).</li>
+      <li><strong>Stocare locală pe dispozitiv / în browser:</strong> sesiunea de autentificare (criptat pe telefon), preferințe (limbă, temă, filtre), mesajele netrimise încă (coada locală), cache-ul pozelor. Pe web folosim doar stocarea strict necesară funcționării; nu folosim cookie-uri de urmărire sau publicitate, de aceea nu afișăm un banner de cookie-uri. Harta de pe web încarcă Google Maps la deschiderea ecranului cu hartă (Google poate seta propriile cookie-uri; vezi politica Google).</li>
+    </ul>
     <h2>3. Cine vede ce</h2>
-    <p>Numărul de telefon NU este public: îl vede doar utilizatorul cu care ai o conversație deschisă. Numele, poza de profil și firma sunt vizibile utilizatorilor autentificați (la mecanici, și oaspeților, în profilul public), iar e-mailul de contact doar utilizatorilor autentificați. Adresa și numărul TVA ale mecanicilor sunt afișate în profilul lor public, ca informații de prestator, doar utilizatorilor autentificați. Mesajele private se văd doar de participanții conversației; mesajele din canalul public se văd de utilizatorii autentificați (și, în forma de mai jos, de oaspeți) — fiecare utilizator vede mesajele trimise după crearea contului său, iar administratorii văd întregul canal, pentru moderare. Anunțurile deschise sunt vizibile mecanicilor, cu poziția exactă; oaspeții văd doar varianta de mai jos. Anunțurile de vânzare active din Market sunt vizibile tuturor, inclusiv oaspeților, împreună cu numele și poza ta de profil; contactul dintre cumpărător și vânzător se face exclusiv prin chatul din aplicație, iar noi nu intermediem plăți și nu colectăm date de plată. Pozele și fișierele atașate într-o conversație sunt vizibile doar participanților la ea, iar cele trimise în canalul public — tuturor utilizatorilor autentificați. Când distribui într-o conversație un anunț de depanare, un produs din Market sau profilul unui mecanic, cardul trimis conține datele publice ale acestora. Istoricul căutărilor tale este vizibil doar ție. Fără cont (ca oaspete) se pot vedea: anunțurile de depanare deschise cu poziția aproximativă (rotunjită la ~1 km), fără număr de înmatriculare, serie de șasiu sau date de contact; profilurile publice (nume, poză, firmă; la mecanici și specializare, zonă, evaluare), fără adresă, număr TVA/CUI, e-mail sau telefon; anunțurile active din Market; mesajele din ultimele 7 zile ale canalului public, fără poze și fișiere. Oaspeții nu pot scrie, nu primesc notificări și nu au cont, deci nu colectăm date de cont sau de profil despre ei (serverele păstrează doar jurnalele tehnice obișnuite de acces).</p>
-
-    <h2>4. Unde sunt stocate datele</h2>
-    <p>Datele sunt stocate pe infrastructura Supabase, în Uniunea Europeană (Irlanda, regiunea AWS eu-west-1). Subprocesatori: Supabase (bază de date, autentificare, stocare fișiere), Expo (livrarea notificărilor push), Google (afișarea hărților pe Android și, dacă o alegi, conectarea cu contul Google), Google Cloud Translation (traducerea la cerere a descrierilor de anunțuri; Google Ireland Ltd.), Apple (conectarea cu Apple ID, dacă o alegi) și Brevo (trimiterea emailurilor de autentificare — coduri de confirmare și de resetare a parolei; companie din UE).</p>
-
-    <h2>5. Moderare și acces administrativ</h2>
-    <p>Poți raporta mesaje sau utilizatori și poți bloca orice utilizator. Administratorii NU au acces general la conversațiile tale private: pot vedea doar o fereastră limitată de mesaje din jurul unui mesaj raportat sau, în cazul unui raport împotriva unui utilizator, o fereastră limitată din conversațiile dintre raportor și utilizatorul raportat. Fiecare astfel de acces este înregistrat într-un jurnal de audit. Conturile care încalcă regulile pot fi suspendate.</p>
-
-    <h2>6. Cât păstrăm datele și cum îți ștergi contul</h2>
-    <p>Datele se păstrează cât timp contul tău este activ. Îți poți șterge contul direct din aplicație (Profil → Setări → Șterge contul) sau prin e-mail; ștergerea este imediată și ireversibilă. Mesajele text trimise în conversațiile altora rămân vizibile anonimizat, marcate ca provenind de la un utilizator șters — restul datelor (profil, anunțuri de depanare, anunțuri de vânzare din Market, poze, fișiere atașate, evaluări, favorite și istoricul căutărilor) se șterg definitiv. Detalii: <a href="./account-deletion.html">pagina de ștergere a contului</a>.</p>
-
-    <h2>7. Temeiurile legale</h2>
-    <p>Prelucrăm datele pentru executarea contractului (furnizarea serviciului oferit de aplicație) și în interes legitim (moderare, siguranța utilizatorilor, prevenirea abuzurilor).</p>
-
+    <ul>
+      <li><strong>Număr de telefon:</strong> NU este public. Îl vede doar utilizatorul cu care ai o conversație deschisă (după o candidatură acceptată sau o conversație pornită de tine).</li>
+      <li><strong>Numărul de înmatriculare, seria de șasiu și poziția exactă</strong> ale unui anunț de depanare: le văd doar tu, mecanicul acceptat și administratorii. Ceilalți mecanici văd anunțul cu poziția rotunjită la aproximativ 1 km și fără plăcuță/șasiu.</li>
+      <li><strong>Nume, poză, firmă, specializare, zonă, evaluări:</strong> vizibile utilizatorilor autentificați; la mecanici, și vizitatorilor fără cont (profil public de prestator). Adresa și numărul TVA ale mecanicilor sunt afișate în profilul public, ca informații de prestator de servicii.</li>
+      <li><strong>Vizitatorii fără cont (oaspeți)</strong> pot vedea: lista mecanicilor (profil public), anunțurile Market active, anunțurile de depanare deschise (fără plăcuță/șasiu, cu poziție aproximativă, cu numele autorului) și mesajele din canalul public al comunității, dar nu pot scrie, contacta sau vedea date de contact.</li>
+      <li><strong>Mesajele private</strong> sunt vizibile doar participanților; <strong>mesajele din canal</strong> sunt vizibile tuturor utilizatorilor și vizitatorilor.</li>
+      <li><strong>Notificările push</strong> pot conține titlul și un fragment din mesaj sau din anunț; ele trec prin serviciile Expo, Google (Android) și Apple (iOS) — vezi §5.</li>
+    </ul>
+    <h2>4. Scopuri și temeiuri legale</h2>
+    <ul>
+      <li>Furnizarea serviciului (cont, anunțuri, candidaturi, chat, Market, notificări): <strong>executarea contractului</strong> (art. 6(1)(b) GDPR).</li>
+      <li>Siguranța, moderarea, prevenirea abuzurilor, limitele de ritm, jurnalul de diagnostic, rapoartele de eroare pe care le trimiți tu: <strong>interes legitim</strong> (art. 6(1)(f)) — să menținem un serviciu funcțional și sigur pentru profesioniști.</li>
+      <li>Obligații legale (sesizări DSA, cereri ale autorităților, evidența acțiunilor de moderare): <strong>obligație legală</strong> (art. 6(1)(c)).</li>
+      <li>Notificările opționale (anunțuri noi pe Market, mențiuni) și locația: <strong>consimțământ</strong> (art. 6(1)(a)), retractabil oricând din Setări.</li>
+    </ul>
+    <h2>5. Unde sunt datele și cine le prelucrează pentru noi</h2>
+    <p>Datele sunt stocate pe infrastructura <strong>Supabase</strong> în Uniunea Europeană (Irlanda, AWS eu-west-1). Folosim următorii împuterniciți (subprocesatori); pentru cei din afara Spațiului Economic European transferul se bazează pe decizia de adecvare UE–SUA (Data Privacy Framework, DPF) și/sau pe Clauzele Contractuale Standard (SCC):</p>
+    <table>
+      <thead><tr><th>Furnizor</th><th>Pentru ce</th><th>Țara</th><th>Garanția</th></tr></thead>
+      <tbody>
+        <tr><td>Supabase Inc. (pe AWS)</td><td>bază de date, autentificare, stocare fișiere, funcții server</td><td>UE (Irlanda)</td><td>în SEE</td></tr>
+        <tr><td>Brevo (Sendinblue SAS)</td><td>e-mailurile de cont (confirmare, parolă, schimbare e-mail)</td><td>UE (Franța)</td><td>în SEE</td></tr>
+        <tr><td>Expo (650 Industries Inc.)</td><td>livrarea notificărilor push către dispozitiv</td><td>SUA</td><td>SCC</td></tr>
+        <tr><td>Google LLC / Google Ireland Ltd.</td><td>hărți (Android, web), conectare cu Google (opțional), livrarea push pe Android (Firebase Cloud Messaging), traducerea la cerere a anunțurilor (Cloud Translation)</td><td>SUA / Irlanda</td><td>DPF + SCC</td></tr>
+        <tr><td>Apple Inc.</td><td>conectare cu Apple (opțional), livrarea push pe iOS (APNs), hărți pe iOS</td><td>SUA</td><td>DPF</td></tr>
+        <tr><td>Cloudflare Inc.</td><td>găzduirea aplicației web (trucksos.net), protecția anti-roboți (Turnstile) la înscriere și sesizări</td><td>SUA (rețea globală)</td><td>DPF</td></tr>
+        <tr><td>GitHub Inc. (Microsoft)</td><td>găzduirea oglinzii paginilor legale</td><td>SUA</td><td>DPF</td></tr>
+      </tbody>
+    </table>
+    <p>Nu vindem și nu partajăm datele tale cu terți în scopuri proprii ale acestora. Traducerea anunțurilor trimite către Google doar textul descrierii, la cererea cititorului.</p>
+    <h2>6. Cât păstrăm datele</h2>
+    <table>
+      <thead><tr><th>Date</th><th>Termen</th></tr></thead>
+      <tbody>
+        <tr><td>Cont, profil, conținut</td><td>cât timp contul e activ</td></tr>
+        <tr><td>Număr de înmatriculare, serie de șasiu, coordonate exacte ale unui anunț de depanare închis (rezolvat/anulat)</td><td>șterse automat la <strong>90 de zile</strong> după închidere; textul anunțului rămâne în istoricul tău</td></tr>
+        <tr><td>Ciorne de anunț nepublicate</td><td><strong>24 de ore</strong></td></tr>
+        <tr><td>Anunțuri de depanare deschise</td><td>devin „anulate” după <strong>30 de ore</strong> fără acceptare (pozele lor se șterg)</td></tr>
+        <tr><td>Cine a deschis un anunț (vizualizări, doar pentru administratori)</td><td><strong>90 de zile</strong></td></tr>
+        <tr><td>Conversații private fără niciun mesaj nou</td><td><strong>24 de luni</strong>, apoi ștergere completă cu atașamente</td></tr>
+        <tr><td>Sesizări închise (cu captura mesajului raportat și, la sesizările fără cont, e-mailul reclamantului)</td><td><strong>12 luni</strong>; sesizările deschise, până la soluționare</td></tr>
+        <tr><td>Jurnalul acțiunilor administrative</td><td><strong>12 luni</strong> (fără date personale în clar)</td></tr>
+        <tr><td>Notificări push în coadă</td><td><strong>48 de ore</strong> (conținutul se șterge imediat după trimitere)</td></tr>
+        <tr><td>Jurnalul de diagnostic al conexiunii</td><td><strong>90 de zile</strong></td></tr>
+        <tr><td>Rapoarte de eroare ale aplicației (trimise de tine)</td><td><strong>30 de zile</strong></td></tr>
+        <tr><td>Token-ul Apple pentru revocare</td><td>până la ștergerea contului</td></tr>
+        <tr><td>Jurnalul acceptării termenilor (data, versiunea)</td><td>3 ani de la acceptare (și după ștergerea contului; doar identificator tehnic, versiune, dată)</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Ștergerea contului:</strong> din aplicație (Profil → Setări → Șterge contul) sau prin e-mail. Este imediată și ireversibilă: profilul, anunțurile, camioanele, candidaturile, evaluările, favoriții, pozele și fișierele tale se șterg; dacă te-ai conectat cu Apple, revocăm autorizarea la Apple. Rămân, <strong>pseudonimizate</strong> (fără nume, fără contact, marcate „utilizator șters”): mesajele text pe care le-ai trimis în conversațiile altora și în canal (ca ceilalți să-și păstreze conversațiile), evaluările primite de mecanici (media rămâne), și — fără date personale — jurnalul de moderare/sesizări unde legea o cere. Detalii: pagina „Ștergerea contului”.</p>
+    <h2>7. Moderare, sesizări și acces administrativ (DSA)</h2>
+    <ul>
+      <li>Poți raporta conținut sau utilizatori din aplicație și poți bloca orice utilizator. Oricine (și fără cont) poate trimite o sesizare la <strong><a href="mailto:abuse@trucksos.net">abuse@trucksos.net</a></strong> sau prin formularul <strong><a href="https://trucksos.net/report">https://trucksos.net/report</a></strong>. Confirmăm primirea și decidem în <strong>48 de ore</strong> pentru conținut vădit ilegal, respectiv <strong>7 zile</strong> în rest; autorul conținutului primește o notificare cu motivarea deciziei (în aplicație, secțiunea „Notificări de moderare”, și prin push) și poate contesta în <strong>14 zile</strong> la aceeași adresă. Acțiunile posibile: ștergerea conținutului, suspendarea temporară sau permanentă a contului.</li>
+      <li>Administratorii NU au acces general la conversațiile private: pot vedea doar o fereastră limitată de mesaje în jurul unui mesaj raportat sau, la un raport împotriva unui utilizator, ultimele mesaje dintre raportor și cel raportat. Fiecare acces e înregistrat în jurnalul administrativ. Conturile de administrator folosesc autentificare în doi pași.</li>
+    </ul>
     <h2>8. Drepturile tale</h2>
-    <p>Ai dreptul de acces, rectificare (direct din aplicație), ștergere, restricționare, opoziție și portabilitate. Pentru orice cerere scrie-ne la <a class="email" href="mailto:trucksos.support@gmail.com">trucksos.support@gmail.com</a>. Poți depune oricând o plângere la autoritatea de supraveghere — în România, ANSPDCP (<a href="https://www.dataprotection.ro">www.dataprotection.ro</a>).</p>
-
+    <p>Acces, rectificare (direct din aplicație), ștergere (din aplicație), restricționare, opoziție, portabilitate (<strong>„Descarcă datele mele”</strong> din Setări îți dă un fișier cu toate datele tale, de două ori pe zi), retragerea consimțământului (comutatoarele din Setări). Răspundem în cel mult 30 de zile la <strong><a href="mailto:support@trucksos.net">support@trucksos.net</a></strong>. Poți depune plângere la autoritatea de supraveghere — în România, ANSPDCP (www.dataprotection.ro) — sau la autoritatea din țara ta.</p>
     <h2>9. Cui se adresează serviciul</h2>
-    <p>TruckSOS este destinat profesioniștilor din transportul rutier. Serviciul nu se adresează minorilor.</p>
-
-    <h2>10. Modificări</h2>
-    <p>Putem actualiza această politică; la schimbări importante te vom anunța în aplicație. Data ultimei actualizări este afișată mai sus.</p>
-
-    <hr class="lang-sep" />
-
-    <!-- ═══════════════ ENGLISH ═══════════════ -->
-    <h1>TruckSOS — Privacy Policy</h1>
-    <p class="sub">Last updated: 1 November 2026</p>
-
-    <h2>1. Who we are</h2>
-    <p>TruckSOS is a mobile app that connects carriers with broken-down trucks to available mechanics, and that includes a classified-ads section (Market) between users. The data controller is the developer of TruckSOS; you can contact us any time at <a class="email" href="mailto:trucksos.support@gmail.com">trucksos.support@gmail.com</a>.</p>
-
-    <h2>2. What data we collect</h2>
-    <p><strong>Account data:</strong> your email address and password (the password is handled encrypted by our authentication provider; we never see it). If you choose to sign in with Google or Apple, we receive from them only your account's email address and name (or a relay address, if you choose "Hide My Email" with Apple); we never receive your Google or Apple password. <strong>Profile data:</strong> name, role, phone number, company, contact email, address, VAT number, specialisation, activity zone, profile photo and chosen language. <strong>Published content:</strong> breakdown announcements (description, location, truck details, plate number, photos and — only if you choose to attach it — the GPS position), Market sale listings (title, description, price, category, photos), private messages, public-channel messages, the photos and files you attach in conversations, reviews and reports. <strong>Technical data:</strong> your device's push notification token, your mechanic-search history (kept in your account so we can show you your recent searches) and, for mechanics, the reference position if set for the radius filter. If the app cannot reach our server, it keeps a short technical log of the check on your device (the result, network type, device model and OS version, app version, no personal content) and sends it at the next successful sign-in so we can improve connectivity; it is deleted after 90 days. If you tap “Translate” on an announcement, the text of the description is sent to the Google Cloud Translation API (Google Ireland Ltd.) only to be translated into the app's language; the translation is kept in our account so it does not have to be requested again; Google does not use the text for any other purpose.</p>
-
-    <h2>3. Who sees what</h2>
-    <p>Your phone number is NOT public: only the user you have an open conversation with can see it. Your name, profile photo and company are visible to signed-in users (for mechanics, also to guests, on the public profile); your contact email is visible only to signed-in users. Mechanics' address and VAT number are shown on their public profile as provider information, to signed-in users only. Private messages are visible only to the conversation participants; public-channel messages are visible to signed-in users (and, as described below, to guests) — each user sees the messages sent after their account was created, and administrators can view the entire channel for moderation. Open announcements are visible to mechanics. Active Market sale listings are visible to all signed-in users, together with your name and profile photo; buyer and seller contact each other exclusively through the in-app chat, and we neither process payments nor collect payment data. Photos and files attached in a conversation are visible only to that conversation's participants, and those sent in the public channel to all signed-in users. When you share a breakdown announcement, a Market listing or a mechanic's profile inside a conversation, the card you send contains their public details. Your search history is visible only to you. Without an account (as a guest) the following can be seen: open breakdown announcements with the approximate position (rounded to ~1 km), without plate number, chassis number or contact details; public profiles (name, photo, company; for mechanics also specialisation, zone, rating), without address, VAT number, email or phone; active Market listings; messages from the last 7 days of the public channel, without photos and files. Guests cannot write, do not receive notifications and have no account, so we collect no account or profile data about them (our servers keep only the usual technical access logs).</p>
-
-    <h2>4. Where the data is stored</h2>
-    <p>Data is stored on Supabase infrastructure, in the European Union (Ireland, AWS region eu-west-1). Sub-processors: Supabase (database, authentication, file storage), Expo (push notification delivery), Google (map display on Android and, if you choose it, sign-in with your Google account), Apple (Sign in with Apple, if you choose it) and Brevo (sending authentication emails — confirmation and password-reset codes; EU-based company).</p>
-
-    <h2>5. Moderation and administrative access</h2>
-    <p>You can report messages or users and you can block any user. Administrators do NOT have general access to your private conversations: they can only see a limited window of messages around a reported message or, for a report against a user, a limited window of the conversations between the reporter and the reported user. Every such access is recorded in an audit log. Accounts that break the rules may be suspended.</p>
-
-    <h2>6. Retention and deleting your account</h2>
-    <p>Data is kept while your account is active. You can delete your account directly from the app (Profile → Settings → Delete account) or by email; deletion is immediate and irreversible. Text messages you sent in other people's conversations remain visible anonymised, marked as coming from a deleted user — everything else (profile, breakdown announcements, Market sale listings, photos, attached files, reviews, favourites and search history) is permanently deleted. Details: <a href="./account-deletion.html">account deletion page</a>.</p>
-
-    <h2>7. Legal bases</h2>
-    <p>We process data to perform the contract (providing the service the app offers) and on the basis of legitimate interest (moderation, user safety, abuse prevention).</p>
-
-    <h2>8. Your rights</h2>
-    <p>You have the right of access, rectification (directly in the app), erasure, restriction, objection and portability. For any request write to us at <a class="email" href="mailto:trucksos.support@gmail.com">trucksos.support@gmail.com</a>. You can also lodge a complaint with your supervisory authority — in Romania, ANSPDCP (<a href="https://www.dataprotection.ro">www.dataprotection.ro</a>).</p>
-
-    <h2>9. Who the service is for</h2>
-    <p>TruckSOS is intended for road transport professionals. The service is not directed at minors.</p>
-
-    <h2>10. Changes</h2>
-    <p>We may update this policy; we will notify you in the app about important changes. The date of the last update is shown above.</p>
-
-    <footer>
-      TruckSOS · <a href="./index.html">Suport / Support</a> · <a href="./terms.html">Termeni / Terms</a> · <a href="./account-deletion.html">Ștergerea contului / Account deletion</a>
-    </footer>
+    <p>TruckSOS este destinat profesioniștilor din transportul rutier și service-urilor. Serviciul este rezervat persoanelor de <strong>cel puțin 18 ani</strong>; la înscriere confirmi acest lucru. Nu prelucrăm cu bună știință date ale minorilor; dacă aflăm de un astfel de cont, îl ștergem.</p>
+    <h2>10. Securitate</h2>
+    <p>Conexiuni criptate (TLS), parole gestionate de furnizorul de autentificare, sesiune stocată criptat pe telefon, acces la date pe bază de reguli la nivel de rând (RLS), token-ul Apple criptat în baza de date, administratori cu autentificare în doi pași. Nicio metodă nu e absolut sigură; dacă apare un incident care te privește, te anunțăm conform legii.</p>
+    <h2>11. Modificări</h2>
+    <p>Putem actualiza această politică. La schimbări importante îți cerem să o confirmi din nou la următoarea deschidere a aplicației; versiunea și data sunt afișate mai sus. Versiunile anterioare sunt disponibile la cerere.</p>
+    <h2>12. Contact</h2>
+    <p><strong>Breană David Eduard, persoană fizică, România</strong>, <strong><a href="mailto:support@trucksos.net">support@trucksos.net</a></strong> · sesizări: <strong><a href="mailto:abuse@trucksos.net">abuse@trucksos.net</a></strong> · <a href="https://trucksos.net/legal">https://trucksos.net/legal</a></p>
+    <footer><a href="./terms.ro.html">Termeni și condiții</a> · <a href="./account-deletion.ro.html">Ștergerea contului</a> · <a href="./report.ro.html">Sesizări</a> · <a href="./index.html">TruckSOS — Documente legale</a> · <a href="https://trucksos.net/">Aplicația</a></footer>
   </main>
 </body>
 </html>
