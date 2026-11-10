@@ -11,6 +11,8 @@
 --   2. app.consent_log: fiecare acceptare (uid, versiune, dată, vârstă confirmată, sursă). FĂRĂ FK către profiles / auth.users:
 --      dovada supraviețuiește ștergerii contului (D8.2) și se șterge la 3 ani de la acceptare (pas nou în app.apply_retention).
 --   3. RPC-uri: accept_terms(p_version, p_source) scrie starea + jurnalul; my_terms_status() întoarce starea proprie.
+--   4. apply_retention: pasul 7 (consent_log > 3 ani) și pasul 8 (starea din profile_terms a conturilor șterse — profilul rămâne
+--      piatră funerară, deci cascada FK nu se declanșează; dovada rămâne în consent_log). export_my_data: + `terms`, `consent_log`.
 -- Clienții 1.0.6–1.0.8: nimic nou (tabele și funcții noi, neapelate; nimic schimbat pe app.profiles).
 -- Rollback: supabase/rollback/20261110000100_terms_consent.sql (tabelele și RPC-urile dispar; apply_retention revine la
 -- textul fazei 6; DOVEZILE DE ACCEPTARE SE PIERD — export înainte cu SELECT * FROM app.consent_log).
@@ -22,6 +24,7 @@ BEGIN
   IF to_regclass('app.profiles') IS NULL THEN RAISE EXCEPTION 'cere faza 4 (app.profiles)'; END IF;
   IF to_regprocedure('app.apply_retention(boolean)') IS NULL THEN RAISE EXCEPTION 'cere 20261109000500_retention (faza 6)'; END IF;
   IF to_regprocedure('app.rate_limit_ok(text, interval, integer)') IS NULL THEN RAISE EXCEPTION 'cere app.rate_limit_ok'; END IF;
+  IF to_regprocedure('public.export_my_data()') IS NULL THEN RAISE EXCEPTION 'cere 20261109000600_export_my_data (faza 6)'; END IF;
   IF to_regclass('app.profile_terms') IS NOT NULL THEN RAISE EXCEPTION 'app.profile_terms exista deja: migrarea a fost aplicata?'; END IF;
   IF to_regclass('app.consent_log') IS NOT NULL THEN RAISE EXCEPTION 'app.consent_log exista deja'; END IF;
 END $$;
@@ -244,6 +247,21 @@ BEGIN
     v_out := v_out || jsonb_build_object('consent_log_error', SQLERRM);
   END;
 
+  -- 8. starea de consimțământ a conturilor șterse (faza 8.2): profilul rămâne piatră funerară, deci cascada FK a lui
+  --    app.profile_terms nu se declanșează; rândul de stare se șterge aici (cel târziu a doua zi), dovada rămâne în
+  --    app.consent_log până la 3 ani (D8.2)
+  BEGIN
+    IF p_dry_run THEN
+      SELECT count(*) INTO v_n FROM app.profile_terms t JOIN app.profiles p ON p.id = t.user_id WHERE p.deleted_at IS NOT NULL;
+    ELSE
+      DELETE FROM app.profile_terms t USING app.profiles p WHERE p.id = t.user_id AND p.deleted_at IS NOT NULL;
+      GET DIAGNOSTICS v_n = ROW_COUNT;
+    END IF;
+    v_out := v_out || jsonb_build_object('deleted_profile_terms', v_n);
+  EXCEPTION WHEN OTHERS THEN
+    v_out := v_out || jsonb_build_object('deleted_profile_terms_error', SQLERRM);
+  END;
+
   RAISE NOTICE 'apply_retention: %', v_out::text;
   RETURN v_out;
 END;
@@ -251,9 +269,105 @@ $function$;
 REVOKE EXECUTE ON FUNCTION app.apply_retention(boolean) FROM PUBLIC, anon, authenticated, service_role;
 -- <<< apply_retention
 
--- ── 5. Verificări + PostgREST ──────────────────────────────────────────────────────────────────────────────────
+-- ── 5. Exportul GDPR („Descarcă datele mele”) include consimțământul ──────────────────────────────────────────
+-- Textul din 20261109000600 (faza 6.4), neschimbat, + cheile `terms` (starea din app.profile_terms) și `consent_log`
+-- (istoricul acceptărilor). Politica promite „un fișier cu toate datele tale”; cu starea într-un tabel separat ea nu mai
+-- vine odată cu `profile` (review 10 nov).
+-- >>> export_my_data (generat de .claude/wip/faza8/gen-sql.mjs din 20261109000600_export_my_data.sql)
+CREATE OR REPLACE FUNCTION public.export_my_data()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+DECLARE
+  v_uid uuid := auth.uid();
+  c_msg_cap constant integer := 10000;
+  v_msgs jsonb;
+  v_msgs_total bigint;
+  v_cmsgs jsonb;
+  v_cmsgs_total bigint;
+BEGIN
+  IF v_uid IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
+  -- 2 cereri / 24 h (decizia lui David, 9 nov: un răspuns pierdut pe rețea slabă nu trebuie să blocheze o cerere GDPR o zi)
+  IF NOT app.rate_limit_ok('export', interval '24 hours', 2) THEN
+    RAISE EXCEPTION 'rate_limited' USING DETAIL = 'export';
+  END IF;
+
+  SELECT count(*) INTO v_msgs_total FROM public.messages m WHERE m.sender_id = v_uid;
+  SELECT COALESCE(jsonb_agg(x ORDER BY x.created_at DESC), '[]'::jsonb) INTO v_msgs
+    FROM (SELECT m.id, m.conversation_id, m.content, m.created_at, m.edited_at, m.deleted_at, m.reply_to_id,
+                 m.image_path, m.file_path, m.file_name, m.file_size, m.listing_id, m.announcement_id
+            FROM public.messages m WHERE m.sender_id = v_uid ORDER BY m.created_at DESC LIMIT c_msg_cap) x;
+
+  SELECT count(*) INTO v_cmsgs_total FROM public.channel_messages cm WHERE cm.sender_id = v_uid;
+  SELECT COALESCE(jsonb_agg(x ORDER BY x.created_at DESC), '[]'::jsonb) INTO v_cmsgs
+    FROM (SELECT cm.id, cm.channel_id, cm.content, cm.created_at, cm.edited_at, cm.deleted_at, cm.reply_to_id,
+                 cm.image_path, cm.file_path, cm.file_name, cm.listing_id, cm.announcement_id
+            FROM public.channel_messages cm WHERE cm.sender_id = v_uid ORDER BY cm.created_at DESC LIMIT c_msg_cap) x;
+
+  RETURN jsonb_build_object(
+    'exported_at', now(),
+    'user_id', v_uid,
+    'profile', (SELECT to_jsonb(p) FROM app.profiles p WHERE p.id = v_uid),
+    -- faza 8.2: starea consimțământului (tabel separat de profil) și istoricul acceptărilor
+    'terms', (SELECT to_jsonb(t) - 'user_id' FROM app.profile_terms t WHERE t.user_id = v_uid),
+    'consent_log', (SELECT COALESCE(jsonb_agg(jsonb_build_object('version', l.version, 'accepted_at', l.accepted_at,
+                             'age_confirmed', l.age_confirmed, 'source', l.source) ORDER BY l.accepted_at), '[]'::jsonb)
+                      FROM app.consent_log l WHERE l.user_id = v_uid),
+    'trucks', (SELECT COALESCE(jsonb_agg(to_jsonb(t) ORDER BY t.created_at), '[]'::jsonb) FROM public.trucks t WHERE t.driver_id = v_uid),
+    'announcements', (
+      SELECT COALESCE(jsonb_agg(
+               to_jsonb(a) - 'lat_approx' - 'lng_approx'
+               || jsonb_build_object('photos', (SELECT COALESCE(jsonb_agg(ap.storage_path ORDER BY ap.created_at), '[]'::jsonb)
+                                                   FROM public.announcement_photos ap WHERE ap.announcement_id = a.id))
+               ORDER BY a.created_at), '[]'::jsonb)
+        FROM app.announcements a WHERE a.driver_id = v_uid),
+    'applications', (
+      SELECT COALESCE(jsonb_agg(jsonb_build_object('id', ap.id, 'announcement_id', ap.announcement_id, 'price_type', ap.price_type,
+               'price_amount', ap.price_amount, 'currency', ap.currency, 'message', ap.message, 'status', ap.status,
+               'created_at', ap.created_at, 'updated_at', ap.updated_at) ORDER BY ap.created_at), '[]'::jsonb)
+        FROM public.applications ap WHERE ap.mechanic_id = v_uid),
+    'market_listings', (
+      SELECT COALESCE(jsonb_agg(
+               to_jsonb(l) || jsonb_build_object('photos', (SELECT COALESCE(jsonb_agg(mp.storage_path ORDER BY mp.position), '[]'::jsonb)
+                                                              FROM public.market_listing_photos mp WHERE mp.listing_id = l.id))
+               ORDER BY l.created_at), '[]'::jsonb)
+        FROM public.market_listings l WHERE l.seller_id = v_uid),
+    'messages_sent', jsonb_build_object('total', v_msgs_total, 'truncated', v_msgs_total > c_msg_cap, 'items', v_msgs),
+    'channel_messages_sent', jsonb_build_object('total', v_cmsgs_total, 'truncated', v_cmsgs_total > c_msg_cap, 'items', v_cmsgs),
+    'ratings_given', (
+      SELECT COALESCE(jsonb_agg(jsonb_build_object('mechanic_id', r.mechanic_id, 'stars', r.stars, 'comment', r.comment,
+               'created_at', r.created_at, 'updated_at', r.updated_at) ORDER BY r.created_at), '[]'::jsonb)
+        FROM public.ratings r WHERE r.driver_id = v_uid),
+    'favorite_mechanics', (SELECT COALESCE(jsonb_agg(jsonb_build_object('mechanic_id', f.mechanic_id, 'created_at', f.created_at) ORDER BY f.created_at), '[]'::jsonb)
+                             FROM public.favorite_mechanics f WHERE f.driver_id = v_uid),
+    'blocked_users', (SELECT COALESCE(jsonb_agg(jsonb_build_object('blocked_id', b.blocked_id, 'created_at', b.created_at) ORDER BY b.created_at), '[]'::jsonb)
+                        FROM public.blocked_users b WHERE b.blocker_id = v_uid),
+    'search_history', (SELECT COALESCE(jsonb_agg(jsonb_build_object('mechanic_id', s.mechanic_id, 'searched_at', s.searched_at) ORDER BY s.searched_at), '[]'::jsonb)
+                         FROM public.search_history s WHERE s.driver_id = v_uid),
+    'channel_push_prefs', (SELECT COALESCE(jsonb_agg(jsonb_build_object('channel_id', c.channel_id, 'enabled', c.enabled, 'updated_at', c.updated_at)), '[]'::jsonb)
+                             FROM public.channel_push_prefs c WHERE c.user_id = v_uid),
+    'moderation_notices', (SELECT COALESCE(jsonb_agg(to_jsonb(n) ORDER BY n.created_at), '[]'::jsonb) FROM app.moderation_notices n WHERE n.user_id = v_uid),
+    'push_devices', (SELECT COALESCE(jsonb_agg(jsonb_build_object('platform', pt.platform, 'app_build', pt.app_build, 'updated_at', pt.updated_at)), '[]'::jsonb)
+                       FROM public.push_tokens pt WHERE pt.user_id = v_uid)
+  );
+END;
+$function$;
+REVOKE EXECUTE ON FUNCTION public.export_my_data() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.export_my_data() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.export_my_data() TO service_role;
+-- <<< export_my_data
+
+-- ── 6. Verificări + PostgREST ──────────────────────────────────────────────────────────────────────────────────
 DO $$
 BEGIN
+  IF (SELECT prosrc FROM pg_proc WHERE oid = 'public.export_my_data()'::regprocedure) NOT LIKE '%app.profile_terms%' THEN
+    RAISE EXCEPTION 'export_my_data: cheile de consimtamant lipsesc';
+  END IF;
+  IF (SELECT prosrc FROM pg_proc WHERE oid = 'app.apply_retention(boolean)'::regprocedure) NOT LIKE '%deleted_profile_terms%' THEN
+    RAISE EXCEPTION 'apply_retention: pasul profile_terms lipseste';
+  END IF;
   IF has_table_privilege('anon', 'app.consent_log', 'SELECT') OR has_table_privilege('authenticated', 'app.consent_log', 'SELECT') THEN
     RAISE EXCEPTION 'consent_log: anon/authenticated nu trebuie sa aiba drepturi';
   END IF;

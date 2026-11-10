@@ -4,7 +4,7 @@
 -- Id-urile 80… .
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(27);
+select plan(30);
 
 create function pg_temp.as_user(p_uid uuid, p_role text) returns void language plpgsql as $$
 begin
@@ -92,6 +92,18 @@ select is((select count(*)::int from app.consent_log where user_id = '80000000-0
           2, '12. fiecare acceptare = un rând (istoric, nu doar ultima)');
 select is((select count(*)::int from app.profile_terms where user_id = '80000000-0000-4000-8000-0000000000a1'), 1,
           '12b. … iar starea rămâne un singur rând per cont (upsert)');
+-- Exportul GDPR („Descarcă datele mele”) conține starea și istoricul consimțământului (starea nu mai vine odată cu `profile`).
+create temp table t_exp (j jsonb) on commit drop;
+grant all on t_exp to authenticated;
+select pg_temp.as_user('80000000-0000-4000-8000-0000000000a1', 'authenticated');
+insert into t_exp select public.export_my_data();
+select pg_temp.as_postgres();
+select ok((select (j->'terms'->>'terms_version') = '1.1.0' and (j->'terms'->>'age_confirmed_at') is not null and not (j->'terms') ? 'user_id' from t_exp),
+          '12c. export_my_data: cheia terms (versiunea, datele; fără user_id)');
+-- (cele două acceptări 1.1.0 au același accepted_at — now() al tranzacției — deci se verifică doar primul rând, cel vechi)
+select is((select jsonb_array_length(j->'consent_log')::text || '|' || (j->'consent_log'->0->>'version') || '|' || ((j->'consent_log'->0) ? 'user_id')::text
+             from t_exp),
+          '3|1.0.0|false', '12d. export_my_data: istoricul acceptărilor (3 rânduri, cel mai vechi primul, fără user_id)');
 
 -- ── 13–15. Izolare: alt utilizator, anon, cont șters ─────────────────────────────────────────────────
 select pg_temp.as_user('80000000-0000-4000-8000-0000000000b1', 'authenticated');
@@ -112,14 +124,22 @@ select pg_temp.as_postgres();
 select is((select count(*)::int from app.rate_events where user_id = '80000000-0000-4000-8000-0000000000b1' and kind = 'accept_terms'),
           20, '18. evidența ratei în app.rate_events');
 
--- ── 19–21. Retenția: 3 ani; jurnalul contului dispărut rămâne ────────────────────────────────────────
-select is((select r->>'consent_log_deleted' from app.apply_retention(true) r), '1', '19. dry-run: un rând > 3 ani de șters');
-select is((select r->>'consent_log_deleted' from app.apply_retention(false) r), '1', '20. rularea reală șterge rândul vechi');
-select is((select count(*)::int from app.consent_log where user_id = '80000000-0000-4000-8000-0000000000f9'), 1,
-          '21. rândul contului care nu mai există rămâne (sub 3 ani)');
-
 -- ── 22. Fără accept_terms reușit nu există rând de stare (starea conturilor 1.0.x) ──────────────────────
 select is((select count(*)::int from app.profile_terms where user_id = '80000000-0000-4000-8000-0000000000e1'), 0,
           '22. profil fără accept_terms reușit → niciun rând în app.profile_terms (ca la clienții 1.0.x)');
+
+-- ── 19–21. Retenția: jurnalul > 3 ani; starea conturilor șterse; jurnalul contului dispărut rămâne ───
+-- cont care acceptase și apoi a fost șters: profilul e piatră funerară (cascada FK nu se declanșează), starea o șterge retenția
+insert into app.profile_terms (user_id, terms_version, terms_accepted_at, age_confirmed_at)
+values ('80000000-0000-4000-8000-0000000000e1', '1.0.0', now() - interval '2 months', now() - interval '2 months');
+select is((select (r->>'consent_log_deleted') || '|' || (r->>'deleted_profile_terms') from app.apply_retention(true) r), '1|1',
+          '19. dry-run: un rând de jurnal > 3 ani și o stare de cont șters, de șters');
+select is((select (r->>'consent_log_deleted') || '|' || (r->>'deleted_profile_terms') from app.apply_retention(false) r), '1|1',
+          '20. rularea reală le șterge');
+select is((select count(*)::int from app.consent_log where user_id = '80000000-0000-4000-8000-0000000000f9'), 1,
+          '21. rândul contului care nu mai există rămâne (sub 3 ani)');
+select is((select string_agg(user_id::text, ',' order by user_id) from app.profile_terms
+            where user_id in ('80000000-0000-4000-8000-0000000000a1', '80000000-0000-4000-8000-0000000000e1')),
+          '80000000-0000-4000-8000-0000000000a1', '21b. starea contului șters a dispărut; a contului activ rămâne');
 select * from finish();
 rollback;
