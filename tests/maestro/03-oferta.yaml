@@ -5,15 +5,19 @@
 # !!! SIGURANȚĂ (baza de date REALĂ): fluxul se folosește DOAR între cele două conturi de TEST (șofer + mecanic) create
 # pentru asta. Niciodată către un utilizator real. Fluxul deschide numai anunțul care conține TEST_TEXT și verifică,
 # ÎNAINTE de a trimite oferta, că autorul e DRIVER_NAME; dacă nu se potrivește, pică fără să trimită nimic.
+# TRIMITEREA ofertei e sub ALLOW_SEND=true (implicit „false”): fără el fluxul completează suma și mesajul, face captură
+# și închide foaia fără să trimită. DRIVER_NAME trebuie să fie un nume UNIC, greu de confundat (ex. „Sofer Test 7Q4X”).
 # Oferta trimite o notificare șoferului de TEST. Nu se scrie nimic în canalul Comunității.
 #
 # Precondiții: un anunț DESCHIS al șoferului de test cu textul TEST_TEXT (creat manual sau cu 02-publicare-anunt
 # rulat cu ALLOW_PUBLISH=true, dar fără pasul de curățare — vezi README), iar contul de mecanic de test are acces la el
 # (raza / locația mecanicului; DE VERIFICAT).
-# Variabile: APP_ID, MECHANIC_EMAIL, MECHANIC_PASSWORD, MECHANIC_NAME, DRIVER_NAME, TEST_TEXT (implicit „TEST — de șters”).
+# Variabile: APP_ID, MECHANIC_EMAIL, MECHANIC_PASSWORD, MECHANIC_NAME, DRIVER_NAME, TEST_TEXT (implicit „TEST — de șters”),
+#            ALLOW_SEND (implicit „false”).
 appId: ${APP_ID}
 env:
   TEST_TEXT: 'TEST — de șters'
+  ALLOW_SEND: 'false'
 ---
 - launchApp:
     clearState: true
@@ -55,21 +59,34 @@ env:
 - hideKeyboard
 - takeScreenshot: 03-oferta-completata
 
-# DE VERIFICAT: ordinea elementelor — butonul de trimitere e al doilea „Trimite candidatura” (index 1);
-# dacă foaia nu are titlu separat, se folosește index 0. Propunere: testID „apply-submit”.
-- tapOn:
-    text: 'Trimite candidatura'
-    index: 1
-- extendedWaitUntil:
-    visible: 'Candidatură trimisă.*'
-    timeout: 30000
-- takeScreenshot: 03-oferta-trimisa
+# Fără ALLOW_SEND=true: se închide foaia, fără trimitere.
+# DE VERIFICAT: închiderea foii cu `back` (neverificat în cod că ambele platforme o închid așa).
+- runFlow:
+    when:
+      true: "${ALLOW_SEND != 'true'}"
+    commands:
+      - back
+      - takeScreenshot: 03-netrimis
 
-# Verificare în tab-ul „Candidaturi” (mechanic.tabs.applications).
-# DE VERIFICAT: eticheta tab-ului nu are diacritice în ro.json („Candidaturi” e corectă; „Anunturi”/„Conversatii” nu).
-- tapOn: 'Candidaturi'
-- assertVisible: 'Candidaturile mele'
-- assertVisible: 'În așteptare'
-# Curățare (retragerea ofertei) — DE VERIFICAT, manual: „Retrage oferta” → „Da, retrage” din ecranul candidaturii.
+# TRIMITERE — doar cu ALLOW_SEND=true (notificare către șoferul de TEST).
+- runFlow:
+    when:
+      true: "${ALLOW_SEND == 'true'}"
+    commands:
+      # DE VERIFICAT: butonul de trimitere e al doilea „Trimite candidatura” (index 1); dacă foaia nu are titlu
+      # separat, index 0. Propunere: testID „apply-submit”.
+      - tapOn:
+          text: 'Trimite candidatura'
+          index: 1
+      - extendedWaitUntil:
+          visible: 'Candidatură trimisă.*'
+          timeout: 30000
+      - takeScreenshot: 03-oferta-trimisa
+      # Verificare în tab-ul „Candidaturi” (mechanic.tabs.applications).
+      # DE VERIFICAT: eticheta tab-ului „Candidaturi”.
+      - tapOn: 'Candidaturi'
+      - assertVisible: 'Candidaturile mele'
+      - assertVisible: 'În așteptare'
+      # Curățare (retragerea ofertei) — DE VERIFICAT, manual: „Retrage oferta” → „Da, retrage”.
 
 - takeScreenshot: 03-final

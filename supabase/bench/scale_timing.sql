@@ -7,8 +7,9 @@
 -- „greu”), 30 000 de mesaje în canal, channel_push_prefs și token de push pentru toți. Triggerele de utilizator sunt oprite
 -- pe durata seed-ului (altfel fiecare rând ar pune notificări în coadă) și repornite înainte de măsurători.
 --
--- Utilizatorul „greu” H (șofer, …0001): 200 de conversații (100 cu cursor de citire, 100 niciodată deschise → 600 de
--- necitite), 13 000 de mesaje trimise (exportul atinge plafonul de 10 000), 300 de anunțuri istorice.
+-- Utilizatorul „greu” H (șofer, …0001): 202 conversații (primele 200 + două nimerite de formula seed-ului; 100 cu cursor
+-- de citire, restul niciodată deschise → 610 necitite), 13 000 de mesaje trimise (exportul atinge plafonul de 10 000),
+-- 300 de anunțuri istorice.
 --
 -- Măsurătorile rulează cu rolul REAL: `authenticated` + request.jwt.claims pentru apelurile clientului (ca postgres
 -- auth.uid() e NULL și totul ar întoarce gol în 1 ms), postgres pentru joburile de server (digest, claim, retenție).
@@ -16,9 +17,23 @@
 -- Pragurile din plan (10.2) sunt p95 k6 la 200 de utilizatori simultani; aici e O SINGURĂ interogare pe o bază fără altă
 -- încărcare, deci cifra e un minim, nu un p95 — e scris așa și în raport.
 --
--- O singură tranzacție încheiată cu ROLLBACK: nimic nu rămâne pentru pgTAP sau pentru alți pași.
--- Rulare: psql "$DB" -X -v ON_ERROR_STOP=1 -f supabase/bench/scale_timing.sql
+-- O singură tranzacție încheiată cu ROLLBACK: nimic nu rămâne în bază (în CI e ultimul pas, după pgTAP).
+-- GARDĂ CONTRA PRODUCȚIEI: scriptul refuză să pornească fără `-v bench_ephemeral=1` și pe o bază cu peste 200 de
+-- conturi (baza din CI are doar fixture-urile porții). Pe o bază reală `DISABLE TRIGGER USER` ar ține blocate scrierile
+-- pe profiluri, anunțuri, conversații și mesaje cât durează seed-ul și măsurătorile.
+-- Rulare: psql "$DB" -X -v ON_ERROR_STOP=1 -v bench_ephemeral=1 -f supabase/bench/scale_timing.sql
 -- Id-urile 76… nu se ciocnesc cu poarta (a0…e0), cu bench-ul fazei 3 (75…) sau cu pgTAP.
+
+\if :{?bench_ephemeral}
+\else
+  \echo 'bench: REFUZ - lipseste -v bench_ephemeral=1 (scriptul ruleaza DOAR pe baza efemera din CI, niciodata pe productie)'
+  DO $$ BEGIN RAISE EXCEPTION 'scale_timing.sql: lipseste -v bench_ephemeral=1'; END $$;
+\endif
+SELECT ((SELECT count(*) FROM auth.users) > 200) AS bench_real_db \gset
+\if :bench_real_db
+  \echo 'bench: REFUZ - baza are peste 200 de conturi: nu e baza efemera din CI'
+  DO $$ BEGIN RAISE EXCEPTION 'scale_timing.sql: baza are peste 200 de conturi (nu e baza efemera din CI)'; END $$;
+\endif
 
 SELECT (to_regclass('app.profiles') IS NOT NULL AND to_regclass('app.announcements') IS NOT NULL) AS has_faza4 \gset
 \if :has_faza4
@@ -188,7 +203,7 @@ SELECT pg_temp.bench('bulina feed: open_announcements_near_count(150 km)', 300, 
 --    prin RLS (clientul 1.0.x o face în până la 200 de cereri separate, deci costul lui real e mai mare)
 SELECT pg_temp.bench('bulina: unread_counts() - H, 200 conversatii', 100, pg_temp.u(1),
   $q$ SELECT count(*) FROM public.unread_counts() $q$, 2, 'public.unread_counts()',
-  'prag plan: bulina p95 <= 100 ms; asteptat 200 de randuri');
+  'prag plan: bulina p95 <= 100 ms; asteptat 202 randuri');
 SELECT pg_temp.bench('bulina (inainte): numaratoarea veche prin RLS, intr-o singura interogare', 100, pg_temp.u(1),
   $q$ SELECT count(*)
         FROM public.conversations c
@@ -221,13 +236,14 @@ SELECT pg_temp.bench('cautare: search_mechanics(''Scale 12'')', 200, pg_temp.u(1
 SELECT pg_temp.bench('export_my_data() - H (octeti)', NULL, pg_temp.u(1),
   $q$ SELECT octet_length(public.export_my_data()::text)::bigint $q$, 2, 'public.export_my_data()', 'fara prag in plan');
 
--- ── Joburile de server (postgres) ───────────────────────────────────────────────────────────────────────────────
--- 6. Un mesaj în canalul cu 50 000 de membri, apoi digest-ul lui
-SELECT pg_temp.bench('INSERT channel_messages (canal cu 50 000 de membri)', 50, NULL,
+-- 6. Un mesaj în canalul cu 50 000 de membri, trimis de client (RLS + triggere), apoi digest-ul lui (job de server)
+SELECT pg_temp.bench('INSERT channel_messages (canal cu 50 000 de membri; RLS + triggere)', 50, pg_temp.u(1),
   $q$ WITH i AS (INSERT INTO public.channel_messages (channel_id, sender_id, content)
-                 VALUES ('76555555-0000-4000-8000-000000000001', '76000000-0000-4000-8000-000000000001', 'Scale: mesaj nou in canal')
+                 VALUES ('76555555-0000-4000-8000-000000000001', auth.uid(), 'Scale: mesaj nou in canal')
                  RETURNING 1)
       SELECT count(*) FROM i $q$, 1, NULL, 'prag plan: INSERT in canal <= 50 ms');
+
+-- ── Joburile de server (postgres) ───────────────────────────────────────────────────────────────────────────────
 SELECT pg_temp.bench('digest de canal: build_channel_digests() - 50 000 de membri', 2000, NULL,
   $q$ SELECT app.build_channel_digests()::bigint $q$, 1, 'app.build_channel_digests()',
   'prag faza 3: < 2 s la 10 000 de membri (aici sunt 50 000)');

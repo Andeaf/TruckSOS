@@ -9,7 +9,7 @@ Maestro (mobile.dev) rulează fluxuri YAML pe un build instalat. Instalare și s
 Build-ul de test vorbește cu baza de date REALĂ de producție; nu există mediu de test. De aceea:
 
 - **02-publicare-anunt**: un anunț publicat din aplicație trimite notificări push mecanicilor REALI din rază. Fluxul completează formularul și se OPREȘTE înaintea butonului „Trimite anunțul”. Publicarea e într-un bloc separat, executat doar cu `ALLOW_PUBLISH=true`. Se rulează doar într-o zonă fără mecanici reali, cu textul „TEST — de șters”, iar anunțul se șterge imediat (blocul include pașii de ștergere).
-- **03-oferta** și **04-chat**: doar între cele două conturi de TEST (șofer și mecanic) create pentru asta; niciodată către un utilizator real. Fluxurile verifică (`assertVisible`) numele interlocutorului înainte de a trimite; `MECHANIC_NAME` și `DRIVER_NAME` trebuie să fie unice. Nu se scrie niciodată în canalul Comunității (mesajele ajung la toți utilizatorii reali).
+- **03-oferta** și **04-chat**: NU trimit nimic fără `ALLOW_SEND=true` (implicit `false`): 03 completează suma și mesajul și închide foaia, 04 scrie mesajul în câmp și se oprește, ambele cu captură. Se folosesc doar între cele două conturi de TEST (șofer și mecanic) create pentru asta; niciodată către un utilizator real. `MECHANIC_NAME` și `DRIVER_NAME` trebuie să fie nume UNICE și greu de confundat (ex. `Mecanic Test 7Q4X`, `Sofer Test 7Q4X`), pe care nicio persoană reală nu le poate avea sau conține. 04 alege rezultatul după numele complet și verifică, înainte de a scrie, că antetul conversației e exact acest nume; 03 verifică numele autorului anunțului înainte de ofertă. Nu se scrie niciodată în canalul Comunității (mesajele ajung la toți utilizatorii reali).
 - **05-raportare**: sesizarea ajunge la administratori. Textul detaliilor începe cu „TEST — de ignorat”. Trimiterea finală e sub `ALLOW_SUBMIT=true`. Varianta oaspete deschide primul anunț din lista publică, care poate fi un anunț real: trimite doar când lista conține anunțul de test, sau nu trimite deloc.
 - **06-stergere-cont**: DOAR cu un cont creat special pentru test (cel din `01-inscriere`); NICIODATĂ cu conturile demo ale recenzorilor (`review.*`) și niciodată cu un cont real (fluxul refuză adresele care încep cu `review.`). Confirmarea finală e sub `ALLOW_DELETE=true`; fără ea alerta se anulează.
 - **01-inscriere** creează un cont real și trimite un e-mail real: folosește o adresă de test pe care o controlezi.
@@ -44,10 +44,10 @@ Toate se dau din linia de comandă (`-e`). Exemple fictive:
 | `APP_ID` | toate | `com.andeaf.trucksos.dev` |
 | `DRIVER_EMAIL` | 02, 04, 05 | `test.sofer@example.com` |
 | `DRIVER_PASSWORD` | 02, 04, 05 | (parola contului de test) |
-| `DRIVER_NAME` | 02, 03 | `Test Sofer TruckSOS` |
+| `DRIVER_NAME` | 02, 03 | `Sofer Test 7Q4X` (unic, greu de confundat) |
 | `MECHANIC_EMAIL` | 03 | `test.mecanic@example.com` |
 | `MECHANIC_PASSWORD` | 03 | (parola contului de test) |
-| `MECHANIC_NAME` | 03, 04, 05 | `Test Mecanic TruckSOS` (unic) |
+| `MECHANIC_NAME` | 03, 04, 05 | `Mecanic Test 7Q4X` (UNIC, greu de confundat; mai mult de 6 caractere) |
 | `NEW_EMAIL` | 01, 06 | `test.nou@example.com` (o adresă pe care o controlezi) |
 | `NEW_PASSWORD` | 01, 06 | (min. 8 caractere) |
 | `NEW_NAME` | 01, 06 | `Test Nou TruckSOS` |
@@ -59,6 +59,7 @@ Toate se dau din linia de comandă (`-e`). Exemple fictive:
 | `CHAT_TEXT` | 04 | `TEST — de șters (chat)` (implicit) |
 | `REPORT_TEXT` | 05 | `TEST — de ignorat` (implicit) |
 | `ALLOW_PUBLISH` | 02 | `false` (implicit) |
+| `ALLOW_SEND` | 03, 04 | `false` (implicit) |
 | `ALLOW_SUBMIT` | 05 | `false` (implicit) |
 | `ALLOW_DELETE` | 06 | `false` (implicit) |
 
@@ -74,7 +75,7 @@ maestro test -e APP_ID=com.andeaf.trucksos.dev \
 
 Verificare de sintaxă fără rulare: `maestro test --dry-run ...` (de verificat în versiunea ta de Maestro).
 
-Fără `ALLOW_*` fluxurile nu fac nimic ireversibil. Ca să publici / trimiți / ștergi de-adevăratelea: adaugă explicit `-e ALLOW_PUBLISH=true` (respectiv `ALLOW_SUBMIT`, `ALLOW_DELETE`), cu respectarea regulilor de mai sus.
+Fără `ALLOW_*` fluxurile nu fac nimic ireversibil. Ca să publici / trimiți / ștergi de-adevăratelea: adaugă explicit `-e ALLOW_PUBLISH=true` (respectiv `ALLOW_SEND`, `ALLOW_SUBMIT`, `ALLOW_DELETE`), cu respectarea regulilor de mai sus.
 
 ## Ordinea recomandată
 
@@ -102,8 +103,8 @@ Codul de 6 cifre (sau linkul) vine pe e-mail și nu se poate automatiza fără a
 |---|---|---|
 | `01-inscriere` | login → înregistrare, formular, parole, ecranul „Verifică email-ul”; opțional rol, telefon, bifa 18+, ecran principal | codul din e-mail (sau linkul); verificarea e-mailului primit; tema/fontul mărit |
 | `02-publicare-anunt` | login șofer, formular „Anunț nou” (locație + descriere), buton „Trimite anunțul” vizibil; sub `ALLOW_PUBLISH`: publicare + ștergere | publicarea reală (push-uri reale), pozele, GPS, coordonatele, mecanicii din rază |
-| `03-oferta` | mecanic: deschide anunțul de test, „Sunt interesat”, preț + mesaj, trimitere, status „Candidatură trimisă”, tab „Candidaturi” | retragerea ofertei, notificarea primită de șofer, acceptarea ofertei |
-| `04-chat` | șofer: conversație nouă cu mecanicul de test, mesaj trimis, conversația în listă | citirea mesajului de pe contul de mecanic, ✓✓, poze/fișiere, notificări |
+| `03-oferta` | mecanic: deschide anunțul de test, „Sunt interesat”, preț + mesaj, captură, închiderea foii; sub `ALLOW_SEND`: trimitere, status „Candidatură trimisă”, tab „Candidaturi” | trimiterea reală (fără `ALLOW_SEND`), retragerea ofertei, notificarea primită de șofer, acceptarea ofertei |
+| `04-chat` | șofer: conversație nouă cu mecanicul de test (ales după numele complet, antet verificat exact), mesaj scris în câmp, captură; sub `ALLOW_SEND`: mesaj trimis, conversația în listă | trimiterea reală (fără `ALLOW_SEND`), citirea mesajului de pe contul de mecanic, ✓✓, poze/fișiere, notificări |
 | `05-raportare` | A: raportare cu cont (profil mecanic de test → motiv + detalii); B: oaspete → foaia „Ai nevoie de un cont” → „Raportează acest conținut fără cont” → formular „Sesizare”; trimiterea sub `ALLOW_SUBMIT` | verificarea anti-roboți (Turnstile), confirmarea pe e-mail, primirea sesizării în panoul de administrare |
 | `06-stergere-cont` | Profil → Setări → „Șterge contul” → parolă → alerta finală; sub `ALLOW_DELETE`: ștergerea | verificarea că autentificarea cu contul șters eșuează, că datele au dispărut din baza de date și că e-mailul poate fi reînregistrat |
 
