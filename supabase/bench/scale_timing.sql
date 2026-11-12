@@ -232,6 +232,14 @@ SELECT pg_temp.bench('digest de canal: build_channel_digests() - 50 000 de membr
   $q$ SELECT app.build_channel_digests()::bigint $q$, 1, 'app.build_channel_digests()',
   'prag faza 3: < 2 s la 10 000 de membri (aici sunt 50 000)');
 
+-- Coada tocmai a primit ~50 000 de rânduri: statistici proaspete, ca pe producție după autovacuum (nemăsurat) — altfel
+-- claim-ul ar fi cronometrat cu un plan făcut pentru o coadă goală.
+DO $$
+BEGIN
+  IF to_regclass('app.push_queue') IS NOT NULL THEN EXECUTE 'ANALYZE app.push_queue'; END IF;
+  IF to_regclass('app.channel_events') IS NOT NULL THEN EXECUTE 'ANALYZE app.channel_events'; END IF;
+END $$;
+
 -- 7. claim_push_batch pe coada umplută de digest
 SELECT pg_temp.bench('claim_push_batch(100)', NULL, NULL,
   $q$ SELECT count(*) FROM public.claim_push_batch(100) $q$, 1, 'public.claim_push_batch(integer)', 'fara prag in plan');
