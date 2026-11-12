@@ -136,10 +136,42 @@ describe('outbox: coada și persistența', () => {
     expect((await outbox.list(THREAD)).map((e) => e.localId)).toEqual(['blob', 'data', 'text']);
   });
 
-  it('comportament actual: enqueue NU deduplică după localId (același id intră de două ori)', async () => {
+  it('enqueue elimină dublurile după localId: al doilea apel păstrează intrarea existentă, cu starea ei', async () => {
+    const listener = vi.fn<Listener>();
+    outbox.subscribe(THREAD, listener);
+    await flushPromises();
+    expect(await outbox.enqueue(THREAD, entry('a', { content: 'primul' }))).toBe(true);
+    await outbox.markFailed(THREAD, 'a');
+    const calls = listener.mock.calls.length;
+
+    // Același id a doua oară (dublu apel pentru aceeași trimitere): `true` (e pe disc), fără o a doua bulă.
+    expect(await outbox.enqueue(THREAD, entry('a', { content: 'al doilea' }))).toBe(true);
+    const entries = await outbox.list(THREAD);
+    expect(entries.map((e) => e.localId)).toEqual(['a']);
+    expect(entries[0]).toMatchObject({ content: 'primul', status: 'failed' });
+    expect(stored(THREAD)?.map((e) => e.content)).toEqual(['primul']);
+    // Nimic nu s-a schimbat, deci ascultătorii nu sunt anunțați din nou.
+    expect(listener.mock.calls.length).toBe(calls);
+    // Alte id-uri intră normal, în ordine.
+    await outbox.enqueue(THREAD, entry('b'));
+    expect((await outbox.list(THREAD)).map((e) => e.localId)).toEqual(['a', 'b']);
+  });
+
+  it('dublură + disc care nu scrie: întoarce false, dar intrarea originală rămâne în coadă', async () => {
     await outbox.enqueue(THREAD, entry('a'));
-    await outbox.enqueue(THREAD, entry('a'));
-    expect((await outbox.list(THREAD)).map((e) => e.localId)).toEqual(['a', 'a']);
+    env.storage.failures.add('setItem');
+    expect(await outbox.enqueue(THREAD, entry('a'))).toBe(false);
+    expect((await outbox.list(THREAD)).map((e) => e.localId)).toEqual(['a']);
+  });
+
+  it('dublurile de pe disc (același localId) se elimină la citire: rămâne prima', async () => {
+    env.storage.store.set(
+      PREFIX + THREAD,
+      JSON.stringify([entry('a', { content: 'primul', status: 'failed' }), entry('b'), entry('a', { content: 'dublura' })]),
+    );
+    await restart();
+    const entries = await outbox.list(THREAD);
+    expect(entries.map((e) => `${e.localId}:${e.content}`)).toEqual(['a:primul', 'b:mesaj b']);
   });
 
   it('enqueue întoarce false și scoate intrarea când scrierea pe disc eșuează', async () => {

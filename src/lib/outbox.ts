@@ -124,6 +124,13 @@ async function load(thread: string): Promise<OutboxEntry[]> {
       const raw = await AsyncStorage.getItem(STORAGE_PREFIX + thread);
       const parsed: unknown = raw ? JSON.parse(raw) : [];
       entries = Array.isArray(parsed) ? parsed.filter(isEntry) : [];
+      // Un `localId` apare o singură dată (prima intrare rămâne): o dublură de pe disc ar pleca de două ori.
+      const seen = new Set<string>();
+      entries = entries.filter((e) => {
+        if (seen.has(e.localId)) return false;
+        seen.add(e.localId);
+        return true;
+      });
     } catch {
       entries = [];
     }
@@ -223,6 +230,19 @@ export function subscribe(thread: string, listener: (entries: OutboxEntry[]) => 
  */
 export async function enqueue(thread: string, entry: OutboxEntry): Promise<boolean> {
   const entries = await load(thread);
+  // Același `localId` = același mesaj (un al doilea apel pentru aceeași trimitere): rămâne intrarea existentă, cu
+  // starea ei (poate fi deja în curs de trimitere) — altfel mesajul ar pleca de două ori (12 nov 2026). Se confirmă
+  // doar că e pe disc; la eșec NU se scoate nimic din coadă (intrarea e a primului apel). `true` doar dacă intrarea
+  // mai e în coadă după scriere: dacă scrierea primului apel a eșuat între timp, el a scos-o deja și textul nu are
+  // voie să dispară din compozitor.
+  if (entries.some((e) => e.localId === entry.localId)) {
+    try {
+      await persist(thread);
+      return (cache.get(thread) ?? []).some((e) => e.localId === entry.localId);
+    } catch {
+      return false;
+    }
+  }
   cache.set(thread, [...entries, entry]);
   notify(thread);
   try {

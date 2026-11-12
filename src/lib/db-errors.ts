@@ -8,7 +8,8 @@ import { isNetworkError } from '@/lib/network-diagnosis';
  *
  * Reguli, în ordinea aplicării:
  *  1. codurile din PASS_THROUGH rămân neatinse — ecranele le tratează singure (ramuri în UI);
- *  2. rețea → același text ca la auth (ecranele pornesc pe el diagnosticul de rețea);
+ *  2. rețea → același text ca la auth (ecranele pornesc pe el diagnosticul de rețea); înaintea ei, „statement
+ *     timeout” de la Postgres (57014) → text propriu — cererea a ajuns la server, nu e o problemă de conexiune;
  *  3. codurile ridicate de serverul nostru (RAISE EXCEPTION 'rate_limited' …) → text propriu;
  *  4. SQLSTATE cunoscut (23505, 23514, 42501 …) → text pe categorie;
  *  5. erorile de Storage (MIME respins, fișier prea mare, politică/cotă) → text propriu;
@@ -85,6 +86,10 @@ export function translateDbError(error: unknown): string | null {
   const { code, message, details, status } = parts(error);
 
   if (PASS_THROUGH.has(message)) return message;
+  // Un „statement timeout” vine de la Postgres (SQLSTATE 57014), nu din transport: cererea a ajuns la server.
+  // Se verifică ÎNAINTEA rețelei, altfel tiparul de rețea (care prinde „timeout”) îl arăta ca lipsă de conexiune
+  // și pornea diagnosticul de rețea (12 nov 2026, găsit de testele unitare).
+  if (code === '57014' || /canceling statement due to statement timeout/i.test(message)) return i18n.t('dbErrors.timeout');
   if (isNetworkError(error)) return i18n.t('authErrors.network');
 
   if (message === 'rate_limited' && details === 'announcements_open') return i18n.t('dbErrors.rate_limited_open');
