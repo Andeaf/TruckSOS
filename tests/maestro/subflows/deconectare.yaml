@@ -1,0 +1,16 @@
+# NERULAT — scris din citirea codului (12 nov 2026); selectorii se verifică la prima rulare.
+#
+# Subflux: deconectare. Rândul „Deconectare” (common.signOut) e la capătul ecranului de profil
+# (src/app/(driver)/profile/index.tsx, la fel la mecanic). Variabile: PROFILE_NAME, APP_ID.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: deschide-profil.yaml
+    env:
+      PROFILE_NAME: ${PROFILE_NAME}
+- scrollUntilVisible:
+    element: 'Deconectare'
+- tapOn: 'Deconectare'
+- extendedWaitUntil:
+    visible: 'Autentifică-te'
+    timeout: 20000

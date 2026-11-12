@@ -1,0 +1,16 @@
+# NERULAT — scris din citirea codului (12 nov 2026); selectorii se verifică la prima rulare.
+#
+# Subflux: deschide ecranul de profil din butonul-avatar al antetului (HeaderProfileButton din
+# src/components/screen-header.tsx). Butonul nu are text, iar avatarul poartă ca accessibilityLabel
+# NUMELE complet al utilizatorului (src/components/avatar.tsx).
+# Variabile: PROFILE_NAME (numele complet al contului autentificat), APP_ID.
+# DE VERIFICAT: dacă același nume apare și în altă parte pe ecran (ex. în carduri), `index: 0` poate alege elementul greșit.
+#               Propunere pentru o fază viitoare: testID „header-profile-button” (vezi README).
+appId: ${APP_ID}
+---
+- tapOn:
+    text: ${PROFILE_NAME}
+    index: 0
+- extendedWaitUntil:
+    visible: 'Deconectare'
+    timeout: 15000

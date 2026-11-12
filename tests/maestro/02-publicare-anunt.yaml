@@ -1,0 +1,77 @@
+# NERULAT — scris din citirea codului (12 nov 2026); selectorii se verifică la prima rulare.
+#
+# 02 — Șofer: completarea formularului „Anunț nou” (depanare). Fluxul se OPREȘTE înaintea publicării.
+#
+# !!! AVERTISMENT (baza de date REALĂ): un anunț publicat din aplicație trimite notificări push mecanicilor REALI
+# din rază. Pasul de publicare e într-un bloc separat, executat DOAR cu ALLOW_PUBLISH=true. Se rulează numai într-o
+# zonă fără mecanici reali, cu textul „TEST — de șters”, iar anunțul se șterge imediat (pașii de curățare din bloc).
+#
+# Precondiții: cont de TEST de tip șofer (DRIVER_EMAIL / DRIVER_PASSWORD, nume DRIVER_NAME).
+# Variabile: APP_ID, DRIVER_EMAIL, DRIVER_PASSWORD, DRIVER_NAME, ALLOW_PUBLISH (implicit „false”),
+#            TEST_TEXT (implicit „TEST — de șters”; dacă `inputText` strică diacriticele pe Android,
+#            dă un text ASCII, ex. „TEST - de sters” — aceeași valoare trebuie dată și la 03).
+# Locația se scrie de mână în câmpul text (fără GPS); coordonatele sunt opționale și rămân necompletate.
+appId: ${APP_ID}
+env:
+  ALLOW_PUBLISH: 'false'
+  TEST_TEXT: 'TEST — de șters'
+---
+- launchApp:
+    clearState: true
+    permissions:
+      all: deny
+- runFlow:
+    file: subflows/autentificare.yaml
+    env:
+      EMAIL: ${DRIVER_EMAIL}
+      PASSWORD: ${DRIVER_PASSWORD}
+- assertVisible: 'Anunțurile mele'
+
+# FAB-ul „Anunț nou” (a11y.newAnnouncement) — accessibilityLabel existent în src/components/announcements-list-screen.tsx.
+- tapOn: 'Anunț nou'
+- extendedWaitUntil:
+    visible: 'Descrierea problemei'
+    timeout: 15000
+- assertVisible: 'Locația actuală'
+
+# DE VERIFICAT: placeholder-urile au diacritice stricate în ro.json („lângã”, „roatã”); se potrivesc cu regex pe prefix.
+- tapOn: 'ex: DN1.*'
+- inputText: ${TEST_TEXT}
+- tapOn: 'ex: Motor nu pornește.*'
+- inputText: ${TEST_TEXT}
+- hideKeyboard
+- scrollUntilVisible:
+    element: 'Trimite anunțul'
+- assertVisible: 'Trimite anunțul'
+- takeScreenshot: 02-formular-completat-NEPUBLICAT
+
+# ------------------------------------------------------------------------------------------------
+# PUBLICARE — doar cu ALLOW_PUBLISH=true. Trimite push-uri reale mecanicilor din rază!
+# ------------------------------------------------------------------------------------------------
+- runFlow:
+    when:
+      true: "${ALLOW_PUBLISH == 'true'}"
+    commands:
+      - tapOn: 'Trimite anunțul'
+      # DE VERIFICAT: după publicare nu știm sigur ecranul (listă sau detalii); așteptăm să apară textul de test.
+      - extendedWaitUntil:
+          visible: '.*${TEST_TEXT}.*'
+          timeout: 30000
+      - takeScreenshot: 02-publicat
+      # Curățare imediată: deschide anunțul și îl șterge (icon „Șterge” = a11y.delete, vizibil proprietarului).
+      - tapOn:
+          text: '.*${TEST_TEXT}.*'
+          index: 0
+      - extendedWaitUntil:
+          visible: 'Detalii anunț'
+          timeout: 15000
+      # DE VERIFICAT: iconița de ștergere se află prin accessibilityLabel „Șterge”.
+      - tapOn: 'Șterge'
+      - assertVisible: 'Ștergi anunțul.*'
+      - tapOn: 'Da, șterge'
+      - extendedWaitUntil:
+          visible: 'Anunțurile mele'
+          timeout: 20000
+      - takeScreenshot: 02-sters
+
+- takeScreenshot: 02-final

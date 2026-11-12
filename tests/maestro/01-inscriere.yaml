@@ -1,0 +1,103 @@
+# NERULAT — scris din citirea codului (12 nov 2026); selectorii se verifică la prima rulare.
+#
+# 01 — Înscriere cont nou: formularul de înregistrare, pasul de confirmare a e-mailului (OPRIRE),
+# apoi alegerea rolului + telefon + bifa 18+ (după confirmarea manuală).
+#
+# ATENȚIE (build-ul vorbește cu baza de date REALĂ): fluxul CREEAZĂ un cont real în producție și trimite
+# un e-mail real la NEW_EMAIL. Folosește doar o adresă de test pe care o controlezi (ex. o adresă cu
+# plus-addressing într-o căsuță proprie). Contul creat aici e cel care se șterge în 06-stergere-cont.
+#
+# Variabile: APP_ID, NEW_EMAIL, NEW_PASSWORD (min. 8 caractere), NEW_NAME (nume complet de test),
+#            NEW_PHONE (număr fictiv valid ca format), NEW_ROLE_TITLE (opțional: „Transportator” sau „Mecanic”),
+#            WAIT_FOR_MANUAL_CODE (opțional: „true” = fluxul așteaptă până la 5 minute ca TU să tastezi codul).
+#
+# Pasul de confirmare (cod de 6 cifre trimis pe e-mail / link) NU se poate automatiza fără acces la căsuță:
+# fluxul se oprește pe ecranul „Verifică email-ul”. Continuarea: vezi README, secțiunea „Confirmarea e-mailului”.
+appId: ${APP_ID}
+env:
+  NEW_ROLE_TITLE: 'Transportator'
+  WAIT_FOR_MANUAL_CODE: 'false'
+---
+# DE VERIFICAT: `permissions: all: deny` refuză notificările și locația la pornire (ca să nu apară dialoguri de sistem).
+# `clearState` merge pe emulator/simulator; pe iPhone real se reinstalează aplicația înainte.
+- launchApp:
+    clearState: true
+    permissions:
+      all: deny
+- extendedWaitUntil:
+    visible: 'Autentifică-te'
+    timeout: 30000
+
+# Din login la formularul de înregistrare (link „Înregistrează-te”, auth.login.registerLink).
+- tapOn: 'Înregistrează-te'
+- assertVisible: 'Creează-ți contul'
+
+# DE VERIFICAT: câmpurile se găsesc după placeholder (src/app/(auth)/register.tsx). „Minim 8 caractere” apare de
+# două ori (parolă + confirmare), deci se folosește `index`.
+- tapOn: 'Ion Popescu'
+- inputText: ${NEW_NAME}
+- tapOn: 'email@exemplu.com'
+- inputText: ${NEW_EMAIL}
+- tapOn:
+    text: 'Minim 8 caractere'
+    index: 0
+- inputText: ${NEW_PASSWORD}
+- tapOn:
+    text: 'Minim 8 caractere'
+    index: 1
+- inputText: ${NEW_PASSWORD}
+- hideKeyboard
+- takeScreenshot: 01-formular-completat
+
+# Consimțământul („Continuând, accepți Termenii și Politica”) e doar o notă pe acest ecran; bifa 18+ vine la pasul cu rolul.
+# DE VERIFICAT: nota poate fi sub zona vizibilă; se derulează până la ea.
+- scrollUntilVisible:
+    element: 'Continuând, accepți.*'
+- tapOn: 'Înregistrează-te'
+
+# Pasul de confirmare (auth.register.verifyEmailTitle).
+- extendedWaitUntil:
+    visible: 'Verifică email-ul'
+    timeout: 30000
+- assertVisible: 'Cod de verificare'
+- takeScreenshot: 01-asteptare-cod
+
+# ------------------------------------------------------------------------------------------------
+# OPRIRE AUTOMATĂ AICI. Codul / linkul din e-mail nu se poate obține din flux.
+# Opțional: cu WAIT_FOR_MANUAL_CODE=true fluxul așteaptă (până la 5 min) ca tu să tastezi manual codul de 6 cifre
+# și să apeși „Confirmă email-ul”; apoi continuă singur cu rolul.
+# DE VERIFICAT: `extendedWaitUntil` cu timeout lung ca punct de predare către om (nu e o practică standard Maestro).
+# ------------------------------------------------------------------------------------------------
+- runFlow:
+    when:
+      true: "${WAIT_FOR_MANUAL_CODE == 'true'}"
+    commands:
+      - extendedWaitUntil:
+          visible: 'Bun venit,'
+          timeout: 300000
+      - assertVisible: 'Care este rolul tău în aplicație.*'
+      - tapOn: '${NEW_ROLE_TITLE}'
+      - assertVisible: 'Încă un pas'
+      # Câmpul „Nume complet” apare aici doar dacă numele nu a ajuns în metadatele contului.
+      - runFlow:
+          when:
+            visible: 'Nume complet'
+          commands:
+            - tapOn: 'Ion Popescu'
+            - inputText: ${NEW_NAME}
+      - tapOn: 'ex: 0722 123 456'
+      - inputText: ${NEW_PHONE}
+      - hideKeyboard
+      # DE VERIFICAT (mecanic): adresa și TVA sunt opționale în codul din role-select.tsx; nu se completează aici.
+      - scrollUntilVisible:
+          element: 'Confirm că am cel puțin 18 ani.*'
+      - tapOn: 'Confirm că am cel puțin 18 ani.*'
+      - takeScreenshot: 01-rol-si-bifa-18
+      - tapOn: 'Continuă'
+      - extendedWaitUntil:
+          visible: 'Anunțurile mele|Anunțuri deschise'
+          timeout: 45000
+      - runFlow: subflows/intreruperi.yaml
+      - takeScreenshot: 01-cont-nou-ecran-principal
+
+- takeScreenshot: 01-final

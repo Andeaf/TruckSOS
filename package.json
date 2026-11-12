@@ -56,7 +56,9 @@
     "eslint": "^9.39.5",
     "eslint-config-expo": "~10.0.0",
     "supabase": "^2.109.1",
-    "typescript": "*"
+    "typescript": "*",
+    "vite": "~7.3.8",
+    "vitest": "~4.1.12"
   },
   "scripts": {
     "start": "expo start --clear",
@@ -65,6 +67,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "gen:types": "supabase gen types typescript --linked --schema public > src/types/supabase.ts",
     "check:migrations": "node scripts/check-migrations.mjs"
   },
