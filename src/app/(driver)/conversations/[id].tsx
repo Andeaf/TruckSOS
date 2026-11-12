@@ -72,7 +72,8 @@ export default function DriverChatScreen() {
   const [initialCursor, setInitialCursor] = useState<string | null | undefined>(undefined);
   // Telefonul interlocutorului (RPC pe rolul lui): null = inaccesibil → fără buton de apel.
   const [peerPhone, setPeerPhone] = useState<string | null>(null);
-  const { messages, loading, addMessage, patchMessage } = useMessages(id);
+  const { messages, loading, loadingMore, loadOlder, addMessage, patchMessage } =
+    useMessages(id);
   // Faza 19: interlocutorul prin ID, nu prin rol — pe market poate fi orice rol.
   const other = conv && session ? otherParticipant(conv, session.user.id) : null;
   const readCursor = useReadCursor(id, other?.id);
@@ -226,6 +227,9 @@ export default function DriverChatScreen() {
       }
       messages={messages}
       loading={loading}
+      // Faza 5: chatul privat e paginat ca și canalul (50 / pagină, „mai vechi” la derulare în sus).
+      loadingMore={loadingMore}
+      onLoadOlder={loadOlder}
       // 1.1 (7.1): coada locală a mesajelor netrimise pentru conversația asta.
       threadKey={`conversation:${id}`}
       // 1.1 (7.1): contextele vin cu mesajul (ChatScreen le scoate din banner când mesajul
