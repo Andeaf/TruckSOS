@@ -36,3 +36,50 @@ BEGIN
   END IF;
   RAISE NOTICE 'post-check: OK';
 END $$;
+
+-- Mesajele inserate de replay (20261112000200_messages_created_at_server). Rândurile din fixtures au id-urile
+-- 88888888-… / 99999999-…; restul sunt ale replay-ului, toate trimise de A.
+--   • inserările cu corpul 1.0.8 (fără created_at): data serverului, înainte și după migrare (identic pentru 1.0.x);
+--   • inserarea „client modificat” (created_at = 2099): înainte de migrare rămâne 2099 (golul), după ea e now().
+DO $$
+DECLARE
+  v_fixed boolean := to_regprocedure('app.stamp_created_at_client()') IS NOT NULL;
+  v_far constant timestamptz := '2099-01-01T00:00:00Z';
+  v_n int;
+  v_bad int;
+  v_fake timestamptz;
+BEGIN
+  SELECT count(*), count(*) FILTER (WHERE created_at IS NULL OR abs(extract(epoch FROM (now() - created_at))) > 900)
+    INTO v_n, v_bad
+    FROM public.messages
+   WHERE conversation_id = '33333333-0000-4000-8000-000000000001' AND id::text NOT LIKE '88888888-%' AND content LIKE 'Gate %: mesaj%';
+  IF v_n <> 2 OR v_bad <> 0 THEN RAISE EXCEPTION 'post-check: messages 1.0.8: % rânduri (așteptat 2), % cu created_at departe de now()', v_n, v_bad; END IF;
+
+  SELECT count(*), count(*) FILTER (WHERE abs(extract(epoch FROM (now() - created_at))) > 900)
+    INTO v_n, v_bad
+    FROM public.channel_messages
+   WHERE channel_id = '44444444-0000-4000-8000-000000000001' AND id::text NOT LIKE '99999999-%' AND content LIKE 'Gate %: mesaj%';
+  IF v_n <> 1 OR v_bad <> 0 THEN RAISE EXCEPTION 'post-check: channel_messages 1.0.8: % rânduri (așteptat 1), % cu created_at departe de now()', v_n, v_bad; END IF;
+
+  SELECT count(*), min(created_at) INTO v_n, v_fake
+    FROM public.messages
+   WHERE conversation_id = '33333333-0000-4000-8000-000000000001' AND content = 'Gate: created_at fals';
+  IF v_n <> 1 THEN RAISE EXCEPTION 'post-check: messages cu created_at fals: % rânduri (așteptat 1)', v_n; END IF;
+  IF v_fixed AND abs(extract(epoch FROM (now() - v_fake))) > 900 THEN
+    RAISE EXCEPTION 'post-check: după migrare, mesajul trimis cu created_at = 2099 a rămas cu % (trebuia now())', v_fake;
+  ELSIF NOT v_fixed AND v_fake <> v_far THEN
+    RAISE EXCEPTION 'post-check: înainte de migrare, mesajul trimis cu created_at = 2099 are % (golul ar trebui să existe)', v_fake;
+  END IF;
+
+  SELECT count(*), min(created_at) INTO v_n, v_fake
+    FROM public.channel_messages
+   WHERE channel_id = '44444444-0000-4000-8000-000000000001' AND content = 'Gate: created_at fals';
+  IF v_n <> 1 THEN RAISE EXCEPTION 'post-check: channel_messages cu created_at fals: % rânduri (așteptat 1)', v_n; END IF;
+  IF v_fixed AND abs(extract(epoch FROM (now() - v_fake))) > 900 THEN
+    RAISE EXCEPTION 'post-check: după migrare, mesajul de canal trimis cu created_at = 2099 a rămas cu % (trebuia now())', v_fake;
+  ELSIF NOT v_fixed AND v_fake <> v_far THEN
+    RAISE EXCEPTION 'post-check: înainte de migrare, mesajul de canal trimis cu created_at = 2099 are % (golul ar trebui să existe)', v_fake;
+  END IF;
+
+  RAISE NOTICE 'post-check mesaje: OK (trigger created_at %)', CASE WHEN v_fixed THEN 'prezent: 2099 → now()' ELSE 'absent: 2099 păstrat' END;
+END $$;
