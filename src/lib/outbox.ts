@@ -232,11 +232,13 @@ export async function enqueue(thread: string, entry: OutboxEntry): Promise<boole
   const entries = await load(thread);
   // Același `localId` = același mesaj (un al doilea apel pentru aceeași trimitere): rămâne intrarea existentă, cu
   // starea ei (poate fi deja în curs de trimitere) — altfel mesajul ar pleca de două ori (12 nov 2026). Se confirmă
-  // doar că e pe disc; la eșec NU se scoate nimic din coadă (intrarea e a primului apel).
+  // doar că e pe disc; la eșec NU se scoate nimic din coadă (intrarea e a primului apel). `true` doar dacă intrarea
+  // mai e în coadă după scriere: dacă scrierea primului apel a eșuat între timp, el a scos-o deja și textul nu are
+  // voie să dispară din compozitor.
   if (entries.some((e) => e.localId === entry.localId)) {
     try {
       await persist(thread);
-      return true;
+      return (cache.get(thread) ?? []).some((e) => e.localId === entry.localId);
     } catch {
       return false;
     }
