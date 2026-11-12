@@ -69,7 +69,11 @@ export default function DriverChatScreen() {
   const [conv, setConv] = useState<ConversationWithDetails | null>(null);
   // Snapshot-ul cursorului MEU de citire (7 aug): luat ÎNAINTE ca mark-read să-l mute
   // la zi — decide unde apare „Mesaje noi" și unde aterizează lista. undefined = în curs.
-  const [initialCursor, setInitialCursor] = useState<string | null | undefined>(undefined);
+  // Ținut împreună cu id-ul conversației lui: ecranul e refolosit între conversații, iar în primul
+  // commit după schimbarea id-ului starea e încă a conversației vechi — cursorul ei nu are voie să
+  // treacă drept al celei noi (altfel conversația nouă era marcată citită înainte de a-i afla cursorul).
+  const [cursorState, setCursorState] = useState<{ id: string; cursor: string | null } | undefined>(undefined);
+  const initialCursor = cursorState?.id === id ? cursorState.cursor : undefined;
   // Telefonul interlocutorului (RPC pe rolul lui): null = inaccesibil → fără buton de apel.
   const [peerPhone, setPeerPhone] = useState<string | null>(null);
   const { messages, loading, loadingMore, loadOlder, addMessage, patchMessage } =
@@ -88,11 +92,8 @@ export default function DriverChatScreen() {
 
   useEffect(() => {
     let active = true;
-    // Ecranul e refolosit între conversații: până sosește cursorul conversației noi nu se
-    // marchează nimic (altfel ancora „Mesaje noi” a celei noi se pierdea).
-    setInitialCursor(undefined);
     fetchMyReadCursor(id).then((c) => {
-      if (active) setInitialCursor(c);
+      if (active) setCursorState({ id, cursor: c });
     });
     return () => {
       active = false;

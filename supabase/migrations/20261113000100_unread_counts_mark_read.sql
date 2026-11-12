@@ -20,19 +20,29 @@
 --
 --   mark_conversation_read(p_conversation uuid, p_at timestamptz DEFAULT now()) → timestamptz
 --   mark_channel_read(p_channel uuid, p_at timestamptz DEFAULT now()) → timestamptz
---     Cursorul de citire, scris pe server: last_read_at = GREATEST(cel existent, LEAST(p_at, plafon)), unde
---     plafon = cel mai mare dintre now() și (cel mai nou mesaj existent în fir + 1 ms).
---       · nu mai poate merge ÎNAPOI (două dispozitive, răspunsuri sosite în altă ordine);
---       · nu mai poate fi ÎN VIITOR față de ceasul serverului (ceasul telefonului înainte ar ascunde necititele până
---         la data aceea); singura excepție e un mesaj existent cu dată din viitor, care trebuie să poată fi citit;
---       · un cursor EXISTENT rămas peste plafon (scris de un 1.0.x cu ceasul înainte) e adus înapoi la primul apel;
+--     Cursorul de citire, scris pe server. Valoarea cerută = LEAST(p_at, plafon), unde plafon = cel mai mare dintre
+--     now() și (cel mai nou mesaj NEȘTERS din fir + 1 ms); p_at NULL explicit = plafonul. Regulile:
+--       · cursorul AVANSEAZĂ doar: o valoare cerută mai mică decât cea existentă nu se scrie (două dispozitive,
+--         răspunsuri sosite în altă ordine);
+--       · nu poate fi pus ÎN VIITOR față de ceasul serverului (ceasul telefonului înainte ar ascunde necititele până
+--         la data aceea); singura excepție e un mesaj neșters cu dată din viitor, până la care p_at explicit poate urca;
+--       · singurul caz în care cursorul COBOARĂ: valoarea existentă e în viitor — mai mare și decât ceasul de acum
+--         (clock_timestamp(), evaluat după blocarea rândului, deci peste now()-ul oricărui apel deja comis), și decât
+--         cel mai nou mesaj neșters + 1 ms. Așa ajunge un cursor scris de un 1.0.x cu ceasul telefonului înainte, sau
+--         rămas după ștergerea unui mesaj cu dată din viitor; e adus la valoarea cerută. Mesajele sosite cât cursorul
+--         a stat în viitor rămân citite (nu se pot deosebi de cele chiar citite);
 --       · când cursorul nu se schimbă NU se scrie nimic (fără UPDATE gol → fără eveniment Realtime de pomană);
 --       · doar pentru conversațiile la care sunt participant / canalele care există; întoarce cursorul rezultat.
---     Clientul 1.1 apelează mark_channel_read FĂRĂ p_at (= plafonul: ceasul serverului, nu al telefonului).
+--     Clientul 1.1: la conversații trimite p_at = cel mai nou mesaj afișat + 1 ms; la canal NU trimite p_at, deci
+--     serverul folosește DEFAULT-ul now() (ceasul serverului, nu al telefonului).
 --     GOL VECHI, NEATINS AICI (de decis de David): clientul poate alege created_at la INSERT în messages /
---     channel_messages (grant la nivel de tabel, niciun trigger nu-l fixează). Remediul ar fi un trigger BEFORE INSERT
---     care pune now() pentru inserările făcute direct de client — atinge drumul de inserare al 1.0.x, deci nu e în
---     această migrare.
+--     channel_messages (grant la nivel de tabel, niciun trigger nu-l fixează). Urmarea pentru un mesaj neșters cu
+--     dată din viitor: într-o conversație privată poate fi citit (p_at urcă până la el), iar cursorul rămâne acolo
+--     până e șters mesajul; într-un CANAL nu poate fi citit de clientul 1.1 (cursorul lui e now()), deci bulina
+--     canalului rămâne aprinsă până când un admin șterge mesajul (mesajele șterse nu se numără) — ales așa
+--     intenționat: altfel un singur mesaj datat în viitor ar duce cursorul tuturor cititorilor acolo și bulina
+--     canalului ar amuți pentru toți. Remediul real e un trigger BEFORE INSERT care pune now() pentru inserările
+--     făcute direct de client — atinge drumul de inserare al 1.0.x, deci nu e în această migrare.
 --
 -- Ce NU face (rămâne pentru varianta A, care se poate adăuga peste aceasta fără rescriere): niciun obiect în schema
 -- `realtime`, niciun trigger de broadcast, nicio politică pe realtime.messages. Numele și semnăturile RPC-urilor sunt
@@ -173,7 +183,7 @@ $function$;
 REVOKE ALL ON FUNCTION public.mark_conversation_read(p_conversation uuid, p_at timestamptz) FROM PUBLIC, anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.mark_conversation_read(p_conversation uuid, p_at timestamptz) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.mark_conversation_read(p_conversation uuid, p_at timestamptz) TO service_role;
-COMMENT ON FUNCTION public.mark_conversation_read(p_conversation uuid, p_at timestamptz) IS 'Faza 5 (B): cursorul meu de citire pe o conversație; nu merge înapoi și nu trece de now().';
+COMMENT ON FUNCTION public.mark_conversation_read(p_conversation uuid, p_at timestamptz) IS 'Faza 5 (B): cursorul meu de citire pe o conversație; doar avansează, nu trece de now() sau de cel mai nou mesaj neșters + 1 ms; un cursor rămas în viitor e adus înapoi.';
 
 -- ── 4. mark_channel_read ────────────────────────────────────────────────────────────────────────────────────────
 CREATE FUNCTION public.mark_channel_read(p_channel uuid, p_at timestamptz DEFAULT now())
@@ -193,9 +203,9 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.channels ch WHERE ch.id = p_channel) THEN
     RAISE EXCEPTION 'channel_not_found' USING ERRCODE = '42501';
   END IF;
-  -- Același plafon ca la conversații: now() sau cel mai nou mesaj existent + 1 ms. Fără p_at (clientul 1.1)
-  -- cursorul e chiar plafonul: tot ce există în canal e citit, inclusiv un mesaj cu dată din viitor.
-  -- Doar mesajele neșterse (vezi mark_conversation_read).
+  -- Același plafon ca la conversații: now() sau cel mai nou mesaj neșters + 1 ms. Clientul 1.1 nu trimite p_at,
+  -- deci aici ajunge DEFAULT-ul now() și cursorul lui e ceasul serverului: un mesaj neșters cu dată din viitor
+  -- rămâne necitit în canal până e șters (vezi antetul). Doar un p_at explicit (sau NULL) poate urca până la el.
   v_newest := (SELECT max(m.created_at) FROM public.channel_messages m
                 WHERE m.channel_id = p_channel AND m.deleted_at IS NULL) + interval '1 millisecond';
   v_cap := GREATEST(now(), COALESCE(v_newest, now()));
@@ -220,7 +230,7 @@ $function$;
 REVOKE ALL ON FUNCTION public.mark_channel_read(p_channel uuid, p_at timestamptz) FROM PUBLIC, anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.mark_channel_read(p_channel uuid, p_at timestamptz) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.mark_channel_read(p_channel uuid, p_at timestamptz) TO service_role;
-COMMENT ON FUNCTION public.mark_channel_read(p_channel uuid, p_at timestamptz) IS 'Faza 5 (B): cursorul meu de citire pe un canal; nu merge înapoi și nu trece de now().';
+COMMENT ON FUNCTION public.mark_channel_read(p_channel uuid, p_at timestamptz) IS 'Faza 5 (B): cursorul meu de citire pe un canal; doar avansează, nu trece de now() sau de cel mai nou mesaj neșters + 1 ms; un cursor rămas în viitor e adus înapoi.';
 
 -- ── 5. Verificări + PostgREST ───────────────────────────────────────────────────────────────────────────────────
 DO $$
