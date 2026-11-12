@@ -24,6 +24,8 @@ insert into allowlist values
   ('accept_terms'), ('my_terms_status'),                          -- 20261110000100 (faza 8.2)
   ('report_client_error'), ('admin_client_errors'),               -- 20261111000100 (faza 9.1)
   ('admin_health'),                                               -- 20261111000300 (faza 9.4)
+  ('unread_counts'), ('channel_unread_count'),                    -- 20261113000100 (faza 5, varianta B)
+  ('mark_conversation_read'), ('mark_channel_read'),              -- 20261113000100 (faza 5, varianta B)
   ('admin_purge_accounts'),                                       -- 20261031000100 (faza 2)
   ('admin_ban_user'), ('admin_dashboard_stats'), ('admin_delete_announcement'),
   ('admin_delete_listing'), ('admin_delete_message'), ('admin_delete_review'),
