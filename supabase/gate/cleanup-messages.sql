@@ -15,9 +15,15 @@ DELETE FROM app.rate_events
 
 DO $$
 BEGIN
-  -- Faza 3: evenimentele de digest și rândurile din coada de push ale canalului porții.
+  -- Faza 3: evenimentele de digest ale canalului porții și, ca plasă de siguranță, rândurile din coada de push ale
+  -- persoanelor porții (azi niciunul: destinatarii nu au token, iar singurul cu token e expeditorul).
   IF to_regclass('app.channel_events') IS NOT NULL THEN
     EXECUTE $q$DELETE FROM app.channel_events WHERE channel_id = '44444444-0000-4000-8000-000000000001'$q$;
+  END IF;
+  IF to_regclass('app.push_queue') IS NOT NULL THEN
+    EXECUTE $q$DELETE FROM app.push_queue
+                WHERE user_id::text LIKE 'a0000000-%' OR user_id::text LIKE 'b0000000-%' OR user_id::text LIKE 'c0000000-%'
+                   OR user_id::text LIKE 'd0000000-%' OR user_id::text LIKE 'e0000000-%'$q$;
   END IF;
   IF (SELECT count(*) FROM public.messages) <> 9 THEN RAISE EXCEPTION 'cleanup-messages: messages (așteptat 9 din fixtures)'; END IF;
   IF (SELECT count(*) FROM public.channel_messages) <> 6 THEN RAISE EXCEPTION 'cleanup-messages: channel_messages (așteptat 6 din fixtures)'; END IF;
