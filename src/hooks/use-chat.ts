@@ -319,6 +319,9 @@ export function useMessages(conversationId: string) {
   // (pagină mai veche) nu are voie să ajungă în lista altei conversații.
   const conversationRef = useRef(conversationId);
   conversationRef.current = conversationId;
+  // Generația listei: crește la fiecare (re)deschidere a unei conversații. Un răspuns de „mai
+  // vechi” pornit pentru o deschidere anterioară (chiar a aceleiași conversații: A → B → A) e aruncat.
+  const generationRef = useRef(0);
 
   // Vezi CATCH_UP_OVERLAP: readuce ce e mai nou decât al 20-lea mesaj de la coadă. Cel mai
   // nou primul + plafon (ca în canal), ca la o pauză foarte lungă să nu pierdem tocmai
@@ -353,6 +356,9 @@ export function useMessages(conversationId: string) {
   // răspunsului la INSERT, varianta completă (cu embed-uri) venea a doua și era
   // aruncată — propriul reply rămânea pe „Mesaj indisponibil".
   const addMessage = useCallback((msg: Message) => {
+    // Ecranul e refolosit între conversații: o trimitere pornită în conversația veche se poate
+    // termina după ce am trecut pe alta — rândul ei nu are ce căuta în lista de acum.
+    if (msg.conversation_id !== conversationRef.current) return;
     setMessages((prev) => {
       const at = prev.findIndex((m) => m.id === msg.id);
       if (at === -1) return [...prev, msg];
@@ -370,6 +376,7 @@ export function useMessages(conversationId: string) {
   useEffect(() => {
     let active = true;
     // Ecranul e refolosit între conversații: pornim de la zero (lista, paginarea).
+    generationRef.current += 1;
     setLoading(true);
     setHasMore(true);
     setLoadingMore(false);
@@ -492,6 +499,7 @@ export function useMessages(conversationId: string) {
       return;
     }
     const requestedFor = conversationId;
+    const generation = generationRef.current;
     loadingMoreRef.current = true;
     setLoadingMore(true);
     const oldest = messagesRef.current[0].created_at;
@@ -502,8 +510,8 @@ export function useMessages(conversationId: string) {
       .lt('created_at', oldest)
       .order('created_at', { ascending: false })
       .limit(PAGE_SIZE);
-    // Între timp ecranul a trecut pe altă conversație: efectul a resetat deja starea.
-    if (conversationRef.current !== requestedFor) return;
+    // Între timp ecranul a trecut pe altă conversație (sau a redeschis-o): efectul a resetat deja starea.
+    if (generationRef.current !== generation) return;
     if (!error && data) {
       const page = (data as unknown as Message[]).slice().reverse();
       setMessages((prev) => {
@@ -958,6 +966,9 @@ export function useCoalescedRecount(recount: () => Promise<void>): () => void {
       s.running = true;
       try {
         await recountRef.current();
+      } catch {
+        // Recalculul nu aruncă în mod normal (supabase-js întoarce erorile); dacă totuși o face,
+        // bulina rămâne cum era și runda următoare reîncearcă.
       } finally {
         s.running = false;
       }
@@ -1034,6 +1045,13 @@ export function useUnreadCounts(userId: string | undefined): { counts: Record<st
   );
 
   useEffect(() => {
+    // Alt cont sau delogare (ambele funcții depind doar de userId): bulinele și filtrul contului
+    // vechi nu au ce căuta aici, iar răspunsurile lui aflate în zbor sunt aruncate. Altfel, dacă
+    // prima numărătoare a contului nou pica pe rețea, rămâneau afișate bulinele celui vechi.
+    countsSeqRef.current += 1;
+    idsSeqRef.current += 1;
+    setCounts((prev) => (Object.keys(prev).length > 0 ? {} : prev));
+    setConvIdsKey('');
     void refreshConversationIds();
     void fetchCounts();
   }, [refreshConversationIds, fetchCounts]);

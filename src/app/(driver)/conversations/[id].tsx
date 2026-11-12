@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -78,6 +78,8 @@ export default function DriverChatScreen() {
   const other = conv && session ? otherParticipant(conv, session.user.id) : null;
   const readCursor = useReadCursor(id, other?.id);
   const isFocused = useIsFocused();
+  // Ultima marcare trimisă (conversația + cel mai nou mesaj afișat), ca să nu o repetăm degeaba.
+  const lastMarkedRef = useRef<string | null>(null);
   useThreadNotifications('conversation', id, isFocused);
 
   useEffect(() => {
@@ -86,6 +88,9 @@ export default function DriverChatScreen() {
 
   useEffect(() => {
     let active = true;
+    // Ecranul e refolosit între conversații: până sosește cursorul conversației noi nu se
+    // marchează nimic (altfel ancora „Mesaje noi” a celei noi se pierdea).
+    setInitialCursor(undefined);
     fetchMyReadCursor(id).then((c) => {
       if (active) setInitialCursor(c);
     });
@@ -183,8 +188,21 @@ export default function DriverChatScreen() {
     // La revenirea pe ecran (isFocused redevine true) efectul marchează ce s-a strâns.
     // + gardă pe snapshot (7 aug): prima marcare așteaptă citirea cursorului VECHI,
     // altfel upsert-ul putea câștiga cursa și ancora „Mesaje noi" nu mai apărea.
-    if (!loading && isFocused && initialCursor !== undefined)
-      markConversationRead(id, messages[messages.length - 1]?.created_at ?? null);
+    // La pierderea focusului uităm ultima marcare: la revenire se marchează din nou (pe server e
+    // fără efect dacă nu s-a schimbat nimic, dar reia o marcare pierdută pe rețea slabă).
+    if (!isFocused) {
+      lastMarkedRef.current = null;
+      return;
+    }
+    if (loading || initialCursor === undefined) return;
+    const newest = messages[messages.length - 1];
+    // Ecran refolosit: în primul commit după schimbarea conversației lista e încă a celei vechi.
+    if (newest && newest.conversation_id !== id) return;
+    // „Mai vechi” (faza 5) schimbă lungimea listei, nu și cel mai nou mesaj: nimic de marcat din nou.
+    const markKey = `${id}:${newest?.created_at ?? ''}`;
+    if (lastMarkedRef.current === markKey) return;
+    lastMarkedRef.current = markKey;
+    markConversationRead(id, newest?.created_at ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length, loading, id, isFocused, initialCursor]);
 

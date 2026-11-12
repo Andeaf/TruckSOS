@@ -466,6 +466,9 @@ async function fetchChannelUnread(userId: string, channelId: string): Promise<nu
   return fetchChannelUnreadLegacy(userId, channelId);
 }
 
+/** Fereastra în care un INSERT sosit după o numărătoare cere recalcul în loc de simplul +1 local. */
+const RECOUNT_GUARD_MS = 3000;
+
 /** Evenimentele care pot schimba bulina canalului — doar datele rândului, nu payload-ul Realtime. */
 export type ChannelUnreadEvent =
   | { kind: 'message_inserted'; row: Partial<ChannelMessage> }
@@ -482,6 +485,9 @@ export function useChannelUnreadCount(userId: string | undefined, channelId: str
   // Numărătorile în zbor (imediate + coalescate): un INSERT sosit între timp poate lipsi din
   // instantaneul lor, iar rezultatul ar suprascrie +1-ul local.
   const inFlightRef = useRef(0);
+  // Când s-a terminat ultima numărătoare (ceasul local): un INSERT sosit imediat după poate fi al
+  // unui mesaj pe care numărătoarea l-a văzut deja (evenimentul Realtime vine mai încet decât RPC-ul).
+  const lastCountDoneAtRef = useRef(0);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -503,6 +509,7 @@ export function useChannelUnreadCount(userId: string | undefined, channelId: str
       next = await fetchChannelUnread(userId, channelId);
     } finally {
       inFlightRef.current -= 1;
+      lastCountDoneAtRef.current = Date.now();
     }
     if (next === null || !mountedRef.current || seq !== seqRef.current) return;
     setCount(next);
@@ -519,7 +526,11 @@ export function useChannelUnreadCount(userId: string | undefined, channelId: str
           // Fără refetch: un mesaj nou (netombstonat) al altcuiva = +1 local.
           if (!userId || event.row.sender_id === userId || event.row.deleted_at) return;
           setCount((c) => c + 1);
-          if (inFlightRef.current > 0) scheduleRecount();
+          // +1-ul local e sigur doar departe de o numărătoare: una în zbor l-ar suprascrie, una abia
+          // terminată poate să fi numărat deja mesajul (bulina ar arăta cu 1 în plus) → recalcul.
+          if (inFlightRef.current > 0 || Date.now() - lastCountDoneAtRef.current < RECOUNT_GUARD_MS) {
+            scheduleRecount();
+          }
           return;
         case 'message_updated':
           // Doar tombstone-ul scade bulina (un necitit șters); editarea n-o schimbă.
