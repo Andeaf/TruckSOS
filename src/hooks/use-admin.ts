@@ -1,6 +1,6 @@
 import { translateDbError } from '@/lib/db-errors';
 import { supabase } from '@/lib/supabase';
-import type { AnnouncementStatus, ReportReason, ReportStatus } from '@/types/database';
+import type { AnnouncementStatus, ReportReason, ReportSource, ReportStatus } from '@/types/database';
 import type { Database } from '@/types/database-overrides';
 
 /**
@@ -19,11 +19,23 @@ export interface AdminReport {
   message_table: 'messages' | 'channel_messages' | null;
   status: ReportStatus;
   created_at: string;
-  reporter_id: string;
+  /** NULL la sesizările publice (faza 8.3). */
+  reporter_id: string | null;
   reporter_name: string | null;
   reported_user_id: string;
   reported_name: string | null;
   reported_banned_at: string | null;
+  /** Faza 19 / 8.3: ținta, când e un anunț (Market sau depanare). */
+  listing_id?: string | null;
+  listing_title?: string | null;
+  announcement_id?: string | null;
+  announcement_text?: string | null;
+  /** Faza 8.3: `public` = de pe trucksos.net/report, fără cont; e-mailul reclamantului pentru răspunsul manual (D8.4).
+   *  Lipsesc până la aplicarea migrării 20261110000200 pe producție (admin_list_reports vechi). */
+  source?: ReportSource;
+  reporter_email?: string | null;
+  /** Limba în care a fost trimisă sesizarea publică (ro / en / de) = limba răspunsului manual. */
+  reporter_lang?: string | null;
 }
 
 export interface AdminUserRow {

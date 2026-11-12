@@ -11,6 +11,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
+import { AgeConfirmCheckbox, ConsentNotice } from '@/components/terms-update-screen';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ThemedText } from '@/components/themed-text';
@@ -18,8 +19,10 @@ import { ThemedView } from '@/components/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { usePushPermissionRequest } from '@/hooks/use-push-permission-request';
+import { useTermsStatus } from '@/hooks/use-terms-status';
 import { useTheme } from '@/hooks/use-theme';
 import { isValidPhone, isValidVat, normalizePhone, normalizeVat } from '@/lib/profile-validation';
+import { acceptTerms } from '@/lib/terms';
 
 type PickedRole = 'driver' | 'mechanic';
 
@@ -42,6 +45,7 @@ const ROLE_META: Record<PickedRole, { color: string; icon: 'local-shipping' | 'b
 export default function RoleSelectScreen() {
   const { createProfile, session, signOut } = useAuth();
   const { request: requestPushPermission } = usePushPermissionRequest();
+  const { markAccepted } = useTermsStatus();
   const { t } = useTranslation();
   const theme = useTheme();
   const [role, setRole] = useState<PickedRole | null>(null);
@@ -51,6 +55,8 @@ export default function RoleSelectScreen() {
   const [vatNumber, setVatNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // 8.2 (C8.2): confirmarea 18+ e obligatorie la crearea contului.
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
 
   // Numele din metadata: pus la înregistrare sau de Google (`full_name`/`name`). Apple îl
   // poate ascunde (6 oct) → când lipsește, îl cerem aici; câmpul apare DOAR în cazul ăsta.
@@ -90,6 +96,16 @@ export default function RoleSelectScreen() {
       setError(t('profile.errorVatInvalid'));
       return;
     }
+    // Butonul e dezactivat fără casetă; tasta „done” ajunge totuși aici.
+    if (!ageConfirmed) {
+      setError(t('consent.ageRequired'));
+      return;
+    }
+
+    // 8.2 (C8.2): caseta e bifată, deci poarta „Termenii s-au actualizat” nu are ce cere contului
+    // nou. Marcat ÎNAINTE de createProfile: profilul apărut ar porni citirea `my_terms_status`
+    // (încă NULL) și garda ar arăta o clipă ecranul de încărcare / poarta.
+    markAccepted();
 
     setLoading(true);
     setError('');
@@ -104,6 +120,10 @@ export default function RoleSelectScreen() {
       setLoading(false);
       return;
     }
+    // 8.2 (C8.2): dovada pe server. Un eșec (rețea) NU blochează înscrierea: coloanele rămân NULL,
+    // iar poarta o cere la următoarea deschidere a aplicației.
+    const termsError = await acceptTerms('signup');
+    if (termsError && __DEV__) console.warn('[terms] accept_terms (signup) a eșuat:', termsError);
     // Pe succes, _layout.tsx redirecționează automat la home-ul rolului. 1.1 (7.6): contul nou
     // ajunge pe ecranul principal → dialogul sistemului pentru notificări (doar dacă
     // permisiunea se poate cere).
@@ -259,13 +279,25 @@ export default function RoleSelectScreen() {
             </>
           ) : null}
 
+          <AgeConfirmCheckbox
+            checked={ageConfirmed}
+            onChange={(next) => {
+              setAgeConfirmed(next);
+              if (next && error === t('consent.ageRequired')) setError('');
+            }}
+            disabled={loading}
+          />
+
           {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
 
           <Button
             title={t('auth.roleSelect.continueButton')}
             onPress={handleContinue}
             loading={loading}
+            disabled={!ageConfirmed}
           />
+
+          <ConsentNotice />
 
           <ThemedText themeColor="textSecondary" type="small" style={styles.requiredNote}>
             {t('common.requiredNote')}

@@ -76,6 +76,13 @@
       "reason_scam": "Înșelătorie",
       "reason_other": "Altele",
       "reporter": "Raportat de",
+      "reason_illegal": "Conținut ilegal",
+      "reason_rights": "Încalcă drepturile (poze, marcă)",
+      "reason_personal_data": "Date personale ale altcuiva",
+      "reason_sexual_violent": "Conținut sexual sau violent",
+      "publicReporter": "Sesizare publică (fără cont) de la",
+      "onAnnouncement": "Pe anunțul",
+      "announcementGone": "anunț șters între timp",
       "hasImage": "Conține o imagine",
       "actionReview": "Marchează revizuit",
       "actionDismiss": "Respinge",
@@ -618,7 +625,11 @@
       "harassment": "Beleidigende Sprache / Belästigung",
       "inappropriate": "Unangemessener Inhalt",
       "scam": "Betrug",
-      "other": "Etwas anderes"
+      "other": "Etwas anderes",
+      "illegal": "Rechtswidriger Inhalt",
+      "rights": "Verletzt meine Rechte (Fotos, Marke)",
+      "personal_data": "Personenbezogene Daten einer anderen Person",
+      "sexual_violent": "Sexueller oder gewalttätiger Inhalt"
     },
     "detailsPlaceholder": "Details",
     "submitButton": "Meldung senden",
@@ -1115,6 +1126,7 @@
     "create": "Konto erstellen",
     "haveAccount": "Ich habe bereits ein Konto",
     "later": "Später",
+    "reportWithoutAccount": "Diesen Inhalt ohne Konto melden",
     "reason": {
       "message": "Erstelle ein Konto, um Nachrichten zu senden.",
       "publish": "Erstelle ein Konto, um die Anzeige zu veröffentlichen. Deine Eingaben bleiben gespeichert.",
@@ -1168,92 +1180,160 @@
   "legal": {
     "terms": {
       "title": "Nutzungsbedingungen",
-      "updated": "Zuletzt aktualisiert: 31. Juli 2026",
+      "updated": "Version 1.1.0 · gültig ab dem Erscheinungsdatum der Version 1.1.0 der App",
       "sections": [
         {
-          "heading": "1. Annahme der Bedingungen",
-          "body": "Mit der Erstellung eines Kontos und der Nutzung der TruckSOS-App akzeptierst du diese Bedingungen. Wenn du nicht einverstanden bist, nutze den Dienst bitte nicht."
+          "heading": "1. Wer den Dienst anbietet und Annahme der Bedingungen",
+          "body": "Der Dienst TruckSOS (die Android/iOS-App und https://trucksos.net) wird angeboten von Breană David Eduard, natürliche Person, Rumänien, support@trucksos.net. Mit der Erstellung eines Kontos oder der Nutzung des Dienstes akzeptierst du diese Bedingungen und die Datenschutzerklärung (die Teil davon ist). Wenn du nicht einverstanden bist, nutze den Dienst nicht. Bei der Registrierung bestätigst du deine Zustimmung und dass du mindestens 18 Jahre alt bist; bei einer neuen Version der Bedingungen bitten wir dich erneut um Bestätigung."
         },
         {
           "heading": "2. Was TruckSOS ist",
-          "body": "TruckSOS verbindet Transporteure liegengebliebener Lkw mit verfügbaren Mechanikern. Die App vermittelt nur den Kontakt: Preis, Ausführung der Arbeit und Zahlung werden direkt zwischen Transporteur und Mechaniker vereinbart. TruckSOS ist nicht Partei ihres Vertrags und garantiert weder Qualität noch Verfügbarkeit oder Ergebnis der erbrachten Leistungen. Die App enthält außerdem einen Bereich Markt, in dem Nutzer Verkaufsanzeigen für Teile, Reifen, Lkw und Anhänger veröffentlichen können. Auch hier vermittelt TruckSOS nur den Kontakt: Verhandlung, Zahlung und Lieferung erfolgen direkt zwischen Käufer und Verkäufer, außerhalb der App. Wir prüfen die angebotenen Waren nicht und haften nicht für Transaktionen zwischen Nutzern. Der Verkäufer ist dafür verantwortlich, die geltenden Gesetze einzuhalten, einschließlich steuerlicher und verbraucherschutzrechtlicher Pflichten, wenn er gewerblich verkauft."
+          "body": "TruckSOS verbindet Lkw-Fahrer mit einer Panne mit verfügbaren Mechanikern. Die App erleichtert nur den Kontakt: Preis, Ausführung der Arbeit und Zahlung werden direkt zwischen Fahrer und Mechaniker vereinbart. Preisangebote in Bewerbungen sind unverbindlich und dienen der Orientierung, bis die Parteien sich direkt einigen. TruckSOS ist nicht Partei des Vertrags zwischen ihnen, garantiert weder Verfügbarkeit, Qualität noch Preis der Arbeit und erhebt keine Provision. Der Bereich Market erlaubt Nutzern, Verkaufsanzeigen für Teile, Reifen, Lkw und Anhänger zu veröffentlichen. Verhandlung, Zahlung und Lieferung erfolgen direkt zwischen Käufer und Verkäufer, außerhalb der App; TruckSOS wickelt keine Zahlungen ab, prüft keine Produkte und garantiert das Geschäft nicht. Der Community-Kanal ist ein öffentlicher Diskussionsraum zwischen Nutzern; Nachrichten sind für alle sichtbar, auch für Besucher ohne Konto."
         },
         {
-          "heading": "3. Dein Konto",
-          "body": "Du erstellst dein Konto mit echten Daten und nutzt es persönlich. Du bist für die sichere Aufbewahrung deiner Zugangsdaten und für alles verantwortlich, was über dein Konto geschieht. Ein Konto entspricht einer Person oder Firma."
+          "heading": "3. Wer den Dienst nutzen darf",
+          "body": "Der Dienst richtet sich an Fachleute im Straßentransport und in Kfz-Werkstätten und ist Personen vorbehalten, die mindestens 18 Jahre alt sind. Ein Konto gehört zu einer einzigen Person oder Firma; du erstellst dein Konto mit echten Angaben, nutzt es persönlich und bist dafür verantwortlich, deine Anmeldedaten sicher aufzubewahren und für alles, was über dein Konto geschieht. Besucher ohne Konto können öffentliche Inhalte ansehen (Profile der Mechaniker, aktive Anzeigen, den Kanal), ohne jemandem zu schreiben oder jemanden zu kontaktieren."
         },
         {
           "heading": "4. Deine Inhalte",
-          "body": "Du bleibst Eigentümer der von dir veröffentlichten Inhalte (Pannen-Anzeigen, Markt-Verkaufsanzeigen, Fotos, angehängte Dateien, Nachrichten, Bewertungen). Du gewährst uns eine begrenzte Lizenz, sie in der App zu speichern und anzuzeigen, ausschließlich für den Betrieb des Dienstes. Illegale, irreführende oder beleidigende Inhalte, falsche Anzeigen und Spam sind verboten. Markt-Transaktionen kommen direkt zwischen Nutzern zustande; TruckSOS ist nicht Partei des Verkaufs, wickelt keine Zahlungen ab und übernimmt keine Gewähr für die angebotenen Artikel."
+          "body": "Du bleibst Eigentümer der Inhalte, die du veröffentlichst (Pannenmeldungen, Market-Anzeigen, Fotos, Videos, Dateien, Nachrichten, Bewertungen). Du räumst uns eine nicht ausschließliche, unentgeltliche Lizenz ein, die sich auf das Speichern, Anzeigen und Übermitteln innerhalb des Dienstes beschränkt (einschließlich in Push-Benachrichtigungen und, auf Wunsch eines anderen Nutzers, der automatischen Übersetzung von Anzeigen), solange der Inhalt in der App vorhanden ist. Du garantierst, dass du das Recht hast, die Fotos und Dateien zu veröffentlichen (veröffentliche keine Fotos anderer Personen ohne deren Einwilligung), und dass du in Anzeigen oder Nachrichten keine personenbezogenen Daten Dritter (Telefonnummern, Dokumente) ohne deren Zustimmung angibst. Untersagt sind: rechtswidrige, irreführende, bedrohliche, beleidigende oder diskriminierende Inhalte; falsche oder doppelte Anzeigen; Spam und unerwünschte Werbung; die Nutzung des Dienstes, um Daten über andere Nutzer zu sammeln; die Umgehung technischer Maßnahmen (Ratenbegrenzungen, Sperren)."
         },
         {
-          "heading": "5. Verhalten und Moderation",
-          "body": "Du kannst Inhalte oder Nutzer melden und jeden Nutzer blockieren. Die Moderation ist reaktiv: Wir prüfen eingehende Meldungen und können Inhalte entfernen oder Konten, die gegen diese Bedingungen verstoßen, vorübergehend oder dauerhaft sperren."
+          "heading": "5. Verhalten, Moderation und Meldungen (Gesetz über digitale Dienste — DSA)",
+          "body": "• Du kannst Inhalte oder Nutzer in der App melden und jeden Nutzer sperren. Jeder, auch ohne Konto, kann eine Meldung an abuse@trucksos.net oder unter https://trucksos.net/report senden und dabei den Inhalt, den Grund und eine Kontaktadresse angeben.\n• Wir bestätigen den Eingang der Meldung und entscheiden innerhalb von 48 Stunden bei offensichtlich rechtswidrigen Inhalten bzw. innerhalb von 7 Tagen in den übrigen Fällen. Mögliche Maßnahmen: Entfernen des Inhalts, Einschränkung der Sichtbarkeit, vorübergehende oder dauerhafte Sperrung des Kontos. Der Verfasser des Inhalts erhält die Begründung der Entscheidung (in der App und per Mitteilung) und kann innerhalb von 14 Tagen an abuse@trucksos.net widersprechen; wir beantworten den Widerspruch spätestens innerhalb von 14 Tagen. Offensichtlich unbegründete oder wiederholt missbräuchliche Meldungen können vorübergehend unberücksichtigt bleiben.\n• Die Moderation erfolgt reaktiv (auf Grundlage von Meldungen); wir überwachen keine privaten Unterhaltungen. Der Zugriff der Administratoren auf Nachrichten ist begrenzt und wird protokolliert, wie in der Datenschutzerklärung beschrieben.\n• Die Sprachen, in denen wir Meldungen entgegennehmen und beantworten, sind Rumänisch, Englisch und Deutsch."
         },
         {
-          "heading": "6. Haftungsbeschränkung",
-          "body": "Der Dienst wird „wie besehen\" ohne Garantien bereitgestellt. Soweit gesetzlich zulässig, haftet TruckSOS nicht für Schäden aus der Beziehung zwischen Transporteur und Mechaniker, aus vorübergehender Nichtverfügbarkeit des Dienstes oder aus von Nutzern veröffentlichten Inhalten."
+          "heading": "6. Verfügbarkeit, Änderungen des Dienstes",
+          "body": "Der Dienst wird „wie besehen” angeboten, ohne Garantie für eine unterbrechungsfreie Verfügbarkeit. Wir können Funktionen (einschließlich Market oder des Kanals) ändern, aussetzen oder einstellen, wobei wir dich in der App benachrichtigen, sofern dies vernünftigerweise möglich ist. Alte Versionen der App können aufhören zu funktionieren; die App informiert dich, wenn eine neue Version verfügbar ist."
         },
         {
-          "heading": "7. Beendigung",
-          "body": "Du kannst dein Konto jederzeit löschen, direkt in der App (Profil → Einstellungen → Konto löschen) oder per E-Mail. Wir behalten uns vor, Konten zu sperren, die gegen diese Bedingungen verstoßen."
+          "heading": "7. Haftungsbeschränkung",
+          "body": "Soweit gesetzlich zulässig, haftet TruckSOS nicht für: das Verhältnis und die Geschäfte zwischen Nutzern (Pannenhilfe, Market), von Nutzern veröffentlichte Inhalte, vorübergehende Nichtverfügbarkeit des Dienstes, Datenverlust, der durch dein Gerät oder durch Dritte verursacht wurde. Nichts in diesen Bedingungen begrenzt eine Haftung, die gesetzlich nicht begrenzt werden kann (zum Beispiel bei Arglist oder Körperverletzung), und es werden dadurch keine Verbraucherrechte berührt, soweit diese anwendbar sind."
         },
         {
-          "heading": "8. Deine Daten",
-          "body": "Die Verarbeitung personenbezogener Daten ist in der Datenschutzerklärung beschrieben, die Teil dieser Bedingungen ist."
+          "heading": "8. Beendigung",
+          "body": "Du kannst dein Konto jederzeit löschen, in der App (Profil → Einstellungen → Konto löschen) oder per E-Mail; die Folgen sind in der Datenschutzerklärung und auf der Seite „Konto löschen” beschrieben. Wir können Konten, die gegen diese Bedingungen verstoßen, unter Angabe von Gründen und mit Widerspruchsrecht (§5) sperren oder schließen, bei schwerwiegenden Fällen (Betrug, rechtswidrige Inhalte, Sicherheit anderer) auch sofort."
         },
         {
-          "heading": "9. Anwendbares Recht und Kontakt",
-          "body": "Diese Bedingungen unterliegen rumänischem Recht. Bei Fragen erreichst du uns unter trucksos.support@gmail.com."
+          "heading": "9. Deine Daten",
+          "body": "Die Verarbeitung personenbezogener Daten ist in der Datenschutzerklärung (https://trucksos.net/legal/privacy) beschrieben, die Teil dieser Bedingungen ist."
+        },
+        {
+          "heading": "10. Geistiges Eigentum",
+          "body": "Name, Logo und App TruckSOS gehören dem Betreiber. Du darfst sie ohne schriftliche Zustimmung nicht verwenden, außer im normalen Gebrauch des Dienstes."
+        },
+        {
+          "heading": "11. Anwendbares Recht, Sprache, Kontakt",
+          "body": "Diese Bedingungen unterliegen rumänischem Recht; zuständig sind die Gerichte in Rumänien, unbeschadet des Rechts der Verbraucher, sich an die Gerichte ihres Landes zu wenden, wo dies zutrifft. Die Bedingungen sind auf Rumänisch, Englisch und Deutsch verfügbar; bei Widersprüchen gilt die rumänische Fassung. Kontakt: support@trucksos.net; Meldungen: abuse@trucksos.net."
+        },
+        {
+          "heading": "12. Änderungen der Bedingungen",
+          "body": "Wir können die Bedingungen aktualisieren; Version und Datum werden oben angezeigt. Bei wesentlichen Änderungen bitten wir dich, sie beim nächsten Öffnen der App erneut zu akzeptieren; die weitere Nutzung des Dienstes nach dem Datum des Inkrafttretens bedeutet die Annahme der neuen Version."
         }
       ]
     },
     "privacy": {
       "title": "Datenschutzerklärung",
-      "updated": "Zuletzt aktualisiert: 1. November 2026",
+      "updated": "Version 1.1.0 · gültig ab dem Erscheinungsdatum der Version 1.1.0 der App",
       "sections": [
         {
-          "heading": "1. Wer wir sind",
-          "body": "TruckSOS ist eine mobile App, die Transporteure liegengebliebener Lkw mit verfügbaren Mechanikern verbindet und die einen Bereich für Verkaufsanzeigen (Markt) zwischen Nutzern enthält. Verantwortlicher für die Daten ist der Entwickler von TruckSOS; du erreichst uns jederzeit unter trucksos.support@gmail.com."
+          "heading": "1. Wer wir sind (der Betreiber)",
+          "body": "TruckSOS ist eine mobile und webbasierte Anwendung, die Lkw-Fahrer mit einer Panne mit verfügbaren Mechanikern verbindet. Sie umfasst außerdem einen Bereich mit Verkaufsanzeigen (Market) zwischen Nutzern und einen öffentlichen Community-Kanal für Diskussionen.\n\nVerantwortlicher für die personenbezogenen Daten ist Breană David Eduard, natürliche Person, Rumänien, E-Mail support@trucksos.net. Wir haben keinen Datenschutzbeauftragten benannt; Anfragen zu deinen Daten richtest du bitte an die oben genannte Adresse."
         },
         {
-          "heading": "2. Welche Daten wir erfassen",
-          "body": "Kontodaten: E-Mail-Adresse und Passwort (das Passwort wird von unserem Authentifizierungsanbieter verschlüsselt verwaltet; wir sehen es nie). Wenn du dich mit Google oder Apple anmeldest, erhalten wir von diesen nur die E-Mail-Adresse und den Namen deines Kontos (oder eine Relay-Adresse, wenn du bei Apple „E-Mail verbergen“ wählst); dein Google- oder Apple-Passwort erhalten wir nie. Profildaten: Name, Rolle, Telefonnummer, Firma, Kontakt-E-Mail, Adresse, USt-IdNr., Spezialisierung, Einsatzgebiet, Profilfoto und gewählte Sprache. Veröffentlichte Inhalte: Pannen-Anzeigen (Beschreibung, Ort, Lkw-Details, Kennzeichen, Fotos und — nur wenn du sie anhängst — die GPS-Position), Markt-Verkaufsanzeigen (Titel, Beschreibung, Preis, Kategorie, Fotos), private Nachrichten, Nachrichten im öffentlichen Kanal, die Fotos und Dateien, die du in Konversationen anhängst, Bewertungen und Meldungen. Technische Daten: das Push-Token deines Geräts, deinen Verlauf der Mechaniker-Suchen (in deinem Konto gespeichert, damit wir dir deine letzten Suchen anzeigen können) und bei Mechanikern die Referenzposition, falls für den Radiusfilter gesetzt. Wenn die App unseren Server nicht erreicht, speichert sie auf dem Gerät ein kurzes technisches Protokoll der Prüfung (Ergebnis, Netztyp, Gerätemodell und Systemversion, App-Version, keine persönlichen Inhalte) und sendet es bei der nächsten erfolgreichen Anmeldung, damit wir die Verbindung verbessern können; es wird nach 90 Tagen gelöscht. Wenn du bei einer Anzeige auf „Übersetzen“ tippst, wird der Text der Beschreibung an die Google Cloud Translation API (Google Ireland Ltd.) geschickt, nur um in die Sprache der App übersetzt zu werden; die Übersetzung wird in unserem Konto gespeichert, damit sie nicht mehrfach angefordert werden muss; Google verwendet den Text nicht für andere Zwecke."
+          "heading": "2. Welche Daten wir verarbeiten",
+          "body": "• Kontodaten: E-Mail-Adresse und Passwort (das Passwort wird verschlüsselt vom Authentifizierungsanbieter Supabase gespeichert; wir sehen es nie). Bei Anmeldung mit Google oder Apple erhalten wir nur deine E-Mail-Adresse (oder die Apple-Weiterleitungsadresse, wenn du „Mein E-Mail verbergen” wählst) und deinen Namen; das Passwort deines Google- oder Apple-Kontos erhalten wir nicht. Wenn du dich in der iOS-App mit Apple anmeldest, bewahren wir ein verschlüsseltes technisches Token auf, das Apple ausgestellt hat. Es wird ausschließlich verwendet, um bei der Löschung deines Kontos die Autorisierung bei Apple zu widerrufen (eine Apple-Vorgabe); wir verwenden es für keinen anderen Zweck.\n• Profildaten: Name, Rolle (Fahrer / Mechaniker), Profilfoto, Sprache; bei Mechanikern: Spezialisierung, Tätigkeitsgebiet, Firma, Adresse, USt-IdNr., Kontakt-E-Mail; Telefonnummer (beide Rollen); ungefähre GPS-Position, falls du eine für Entfernungen festlegst.\n• Meldungen ohne Konto (Seite trucksos.net/report): die von dir angegebene E-Mail-Adresse und der Inhalt der Meldung, nur zur Bearbeitung und Antwort verwendet (siehe §7); ein Konto ist nicht nötig.\n• Inhalte: Pannenmeldungen (Beschreibung, Ort, Koordinaten, Marke und Modell des Lkw, Kennzeichen und Fahrgestellnummer — Daten, die du selbst angibst), gespeicherte Lkw, Bewerbungen der Mechaniker (optionales Preisangebot, Nachricht), Market-Anzeigen (Titel, Beschreibung, Preis, Fotos), private Nachrichten und Kanalnachrichten (Text, Fotos, Videos mit Ton — in der Unterhaltung aufgenommen, wobei das Mikrofon nur während der Aufnahme verwendet wird, oder aus der Galerie ausgewählt —, Dateien, einschließlich Audiodateien), Bewertungen, Favoriten, Sperren, Verlauf der Mechanikersuche.\n• Technische Daten: das Push-Benachrichtigungs-Token des Geräts (Plattform, App-Version), der Zeitpunkt des letzten Lesens von Unterhaltungen / Kanal, Benachrichtigungseinstellungen, das Diagnoseprotokoll der Verbindung (Zeitpunkt, Art des Netzwerkfehlers, App-Version — ohne Nachrichteninhalte; es wird erst nach der Anmeldung hochgeladen), die Fehlerberichte der App, die du im Bildschirm „Etwas ist schiefgelaufen“ selbst sendest (der Fehlertyp und seine technischen Details — die Fehlermeldung und der Stacktrace, aus denen E-Mail-Adressen, Telefonnummern und Kennungen automatisch entfernt werden —, der Bildschirm, die Plattform, die App- und Betriebssystemversion sowie ein kurzer, aus deinem Konto abgeleiteter Code, der nur dazu dient zu zählen, wie viele Nutzer betroffen sind; keine E-Mail, keine Telefonnummer, keine Nachrichteninhalte; Löschung nach 30 Tagen).\n• Lokale Speicherung auf dem Gerät / im Browser: Anmeldesitzung (auf dem Telefon verschlüsselt), Einstellungen (Sprache, Design, Filter), noch nicht gesendete Nachrichten (lokale Warteschlange), Foto-Cache. Im Web verwenden wir nur den für den Betrieb unbedingt nötigen Speicher; wir setzen keine Tracking- oder Werbe-Cookies ein, deshalb zeigen wir kein Cookie-Banner. Die Karte im Web lädt beim Öffnen des Kartenbildschirms Google Maps (Google kann eigene Cookies setzen; siehe die Richtlinie von Google)."
         },
         {
           "heading": "3. Wer was sieht",
-          "body": "Deine Telefonnummer ist NICHT öffentlich: Nur der Nutzer, mit dem du eine offene Konversation hast, sieht sie. Name, Profilfoto und Firma sind für angemeldete Nutzer sichtbar (bei Mechanikern auch für Gäste, auf dem öffentlichen Profil); die Kontakt-E-Mail nur für angemeldete Nutzer. Adresse und USt-IdNr. von Mechanikern werden als Anbieterinformation auf ihrem öffentlichen Profil angezeigt, nur für angemeldete Nutzer. Private Nachrichten sehen nur die Gesprächsteilnehmer; Nachrichten im öffentlichen Kanal sehen angemeldete Nutzer (und, wie unten beschrieben, Gäste) — jeder Nutzer sieht die Nachrichten, die nach Erstellung seines Kontos gesendet wurden, und Administratoren sehen den gesamten Kanal zur Moderation. Offene Anzeigen sind für Mechaniker mit der genauen Position sichtbar; Gäste sehen nur die unten beschriebene Variante. Aktive Markt-Verkaufsanzeigen sind für alle sichtbar, auch für Gäste, zusammen mit deinem Namen und deinem Profilfoto; Käufer und Verkäufer nehmen ausschließlich über den Chat in der App Kontakt auf, und wir wickeln keine Zahlungen ab und erheben keine Zahlungsdaten. Fotos und Dateien, die in einer Konversation angehängt werden, sind nur für deren Teilnehmer sichtbar, die im öffentlichen Kanal gesendeten für alle angemeldeten Nutzer. Wenn du in einer Konversation eine Pannen-Anzeige, eine Markt-Anzeige oder das Profil eines Mechanikers teilst, enthält die gesendete Karte deren öffentliche Daten. Dein Suchverlauf ist nur für dich sichtbar. Ohne Konto (als Gast) sind sichtbar: offene Pannen-Anzeigen mit ungefährer Position (auf ~1 km gerundet), ohne Kennzeichen, Fahrgestellnummer oder Kontaktdaten; die öffentlichen Profile (Name, Foto, Firma; bei Mechanikern auch Spezialisierung, Einsatzgebiet, Bewertung), ohne Adresse, USt-IdNr., E-Mail oder Telefon; aktive Anzeigen im Markt; Nachrichten der letzten 7 Tage aus dem öffentlichen Kanal, ohne Fotos und Dateien. Gäste können nicht schreiben, erhalten keine Benachrichtigungen und haben kein Konto, daher erheben wir keine Konto- oder Profildaten über sie (unsere Server führen nur die üblichen technischen Zugriffsprotokolle)."
+          "body": "• Telefonnummer: NICHT öffentlich. Sie sieht nur der Nutzer, mit dem du eine offene Unterhaltung hast (nach einer angenommenen Bewerbung oder einer von dir begonnenen Unterhaltung).\n• Kennzeichen, Fahrgestellnummer und genaue Position einer Pannenmeldung: sehen nur du, der angenommene Mechaniker und die Administratoren. Andere Mechaniker sehen die Meldung mit auf etwa 1 km gerundeter Position und ohne Kennzeichen oder Fahrgestellnummer.\n• Name, Foto, Firma, Spezialisierung, Gebiet, Bewertungen: sichtbar für angemeldete Nutzer und, bei Mechanikern, für Besucher ohne Konto (öffentliches Profil des Dienstleisters). Adresse und USt-IdNr. der Mechaniker werden im öffentlichen Profil als Angaben eines Dienstleisters angezeigt.\n• Besucher ohne Konto (Gäste) können sehen: die Liste der Mechaniker (öffentliches Profil), aktive Market-Anzeigen, offene Pannenmeldungen (ohne Kennzeichen oder Fahrgestellnummer, mit ungefährer Position, mit dem Namen des Verfassers) und Nachrichten im öffentlichen Community-Kanal. Sie können jedoch nicht schreiben, niemanden kontaktieren und keine Kontaktdaten sehen.\n• Private Nachrichten sind nur für die Teilnehmer sichtbar; Kanalnachrichten sind für alle Nutzer und Besucher sichtbar.\n• Push-Benachrichtigungen können den Titel und einen Auszug aus einer Nachricht oder Anzeige enthalten; sie laufen über die Dienste von Expo, Google (Android) und Apple (iOS) — siehe §5."
         },
         {
-          "heading": "4. Wo die Daten gespeichert werden",
-          "body": "Die Daten werden auf der Infrastruktur von Supabase gespeichert, in der Europäischen Union (Irland, AWS-Region eu-west-1). Unterauftragsverarbeiter: Supabase (Datenbank, Authentifizierung, Dateispeicher), Expo (Zustellung von Push-Benachrichtigungen), Google (Kartendarstellung auf Android und, wenn du es wählst, Anmeldung mit deinem Google-Konto), Google Cloud Translation (Übersetzung von Anzeigenbeschreibungen auf Anfrage; Google Ireland Ltd.), Apple (Anmeldung mit Apple, wenn du es wählst) und Brevo (Versand der Authentifizierungs-E-Mails — Bestätigungs- und Passwort-Reset-Codes; Unternehmen mit Sitz in der EU)."
+          "heading": "4. Zwecke und Rechtsgrundlagen",
+          "body": "• Bereitstellung des Dienstes (Konto, Anzeigen, Bewerbungen, Chat, Market, Benachrichtigungen): Erfüllung eines Vertrags (Art. 6 Abs. 1 lit. b DSGVO).\n• Sicherheit, Moderation, Verhinderung von Missbrauch, Ratenbegrenzungen, das Diagnoseprotokoll, die von dir gesendeten Fehlerberichte: berechtigtes Interesse (Art. 6 Abs. 1 lit. f) — um einen funktionierenden und sicheren Dienst für Fachleute zu erhalten.\n• Gesetzliche Pflichten (DSA-Meldungen, Anfragen von Behörden, Nachweis über Moderationsmaßnahmen): rechtliche Verpflichtung (Art. 6 Abs. 1 lit. c).\n• Optionale Benachrichtigungen (neue Market-Anzeigen, Erwähnungen) und Standort: Einwilligung (Art. 6 Abs. 1 lit. a), die du jederzeit in den Einstellungen widerrufen kannst."
         },
         {
-          "heading": "5. Moderation und administrativer Zugriff",
-          "body": "Du kannst Nachrichten oder Nutzer melden und jeden Nutzer blockieren. Administratoren haben KEINEN allgemeinen Zugriff auf deine privaten Konversationen: Sie sehen nur ein begrenztes Nachrichtenfenster um eine gemeldete Nachricht oder, bei einer Meldung gegen einen Nutzer, einen begrenzten Ausschnitt der Konversationen zwischen dem Meldenden und dem gemeldeten Nutzer. Jeder solche Zugriff wird in einem Audit-Protokoll erfasst. Konten, die gegen die Regeln verstoßen, können gesperrt werden."
+          "heading": "5. Wo die Daten liegen und wer sie für uns verarbeitet",
+          "body": "Die Daten werden auf der Infrastruktur von Supabase in der Europäischen Union (Irland, AWS eu-west-1) gespeichert. Wir setzen folgende Auftragsverarbeiter (Unterauftragnehmer) ein; bei Anbietern außerhalb des Europäischen Wirtschaftsraums stützt sich die Übermittlung auf den Angemessenheitsbeschluss EU–USA (Data Privacy Framework, DPF) und/oder auf die Standardvertragsklauseln (SCC):\n\nSupabase Inc. (auf AWS): Datenbank, Authentifizierung, Dateispeicher, Serverfunktionen: EU (Irland): im EWR\nBrevo (Sendinblue SAS): Konto-E-Mails (Bestätigung, Passwort, Änderung der E-Mail): EU (Frankreich): im EWR\nExpo (650 Industries Inc.): Zustellung der Push-Benachrichtigungen an das Gerät: USA: SCC\nGoogle LLC / Google Ireland Ltd.: Karten (Android, Web), Anmeldung mit Google (optional), Push-Zustellung auf Android (Firebase Cloud Messaging), Übersetzung von Anzeigen auf Anfrage (Cloud Translation): USA / Irland: DPF + SCC\nApple Inc.: Anmeldung mit Apple (optional), Push-Zustellung auf iOS (APNs), Karten auf iOS: USA: DPF\nCloudflare Inc.: Hosting der Web-Anwendung (trucksos.net), Bot-Schutz (Turnstile) bei der Registrierung und bei Meldungen: USA (globales Netz): DPF\nGitHub Inc. (Microsoft): Hosting der Spiegelung der Rechtsseiten: USA: DPF\n\nWir verkaufen deine Daten nicht und geben sie nicht zu eigenen Zwecken Dritter weiter. Die Übersetzung von Anzeigen sendet auf Wunsch des Lesers nur den Text der Beschreibung an Google."
         },
         {
-          "heading": "6. Speicherdauer und Kontolöschung",
-          "body": "Die Daten bleiben gespeichert, solange dein Konto aktiv ist. Du kannst dein Konto direkt in der App löschen (Profil → Einstellungen → Konto löschen) oder per E-Mail; die Löschung ist sofortig und unwiderruflich. Textnachrichten in den Konversationen anderer bleiben anonymisiert sichtbar, markiert als von einem gelöschten Nutzer — alles andere (Profil, Pannen-Anzeigen, Markt-Verkaufsanzeigen, Fotos, angehängte Dateien, Bewertungen, Favoriten und Suchverlauf) wird endgültig gelöscht."
+          "heading": "6. Wie lange wir die Daten aufbewahren",
+          "body": "Konto, Profil, Inhalte: solange das Konto aktiv ist\nKennzeichen, Fahrgestellnummer, genaue Koordinaten einer geschlossenen (gelösten / abgebrochenen) Pannenmeldung: nach dem Schließen automatisch nach 90 Tagen gelöscht; der Text der Meldung bleibt in deinem Verlauf\nNicht veröffentlichte Entwürfe von Anzeigen: 24 Stunden\nOffene Pannenmeldungen: werden nach 30 Stunden ohne Annahme als „abgebrochen” markiert (ihre Fotos werden gelöscht)\nWer eine Meldung geöffnet hat (Aufrufe, nur für Administratoren): 90 Tage\nPrivate Unterhaltungen ohne neue Nachricht: 24 Monate, danach vollständige Löschung samt Anhängen\nGeschlossene Meldungen (mit Kopie der gemeldeten Nachricht und, bei Meldungen ohne Konto, der E-Mail des Meldenden): 12 Monate; offene Meldungen bis zur Erledigung\nProtokoll der Verwaltungsmaßnahmen: 12 Monate (ohne personenbezogene Daten im Klartext)\nPush-Benachrichtigungen in der Warteschlange: 48 Stunden (der Inhalt wird unmittelbar nach dem Versand gelöscht)\nDiagnoseprotokoll der Verbindung: 90 Tage\nFehlerberichte der App (von dir gesendet): 30 Tage\nApple-Token für den Widerruf: bis zur Löschung des Kontos\nProtokoll der Annahme der Bedingungen (Datum, Version): 3 Jahre ab Annahme (auch nach Löschung des Kontos; nur technische Kennung, Version, Datum)\n\nLöschung des Kontos: in der App (Profil → Einstellungen → Konto löschen) oder per E-Mail. Sie erfolgt sofort und ist unwiderruflich: dein Profil, deine Anzeigen, Lkw, Bewerbungen, Bewertungen, Favoriten, Fotos und Dateien werden gelöscht; wenn du dich mit Apple angemeldet hast, widerrufen wir die Autorisierung bei Apple. Bleiben, pseudonymisiert (ohne Namen, ohne Kontaktdaten, als „gelöschter Nutzer” markiert): die Textnachrichten, die du in fremden Unterhaltungen und im Kanal gesendet hast (damit andere ihre Unterhaltungen behalten), die Bewertungen, die Mechaniker erhalten haben (der Durchschnitt bleibt), und — ohne personenbezogene Daten — das Moderations- und Meldeprotokoll, soweit das Gesetz es verlangt. Details: die Seite „Konto löschen”."
         },
         {
-          "heading": "7. Rechtsgrundlagen",
-          "body": "Wir verarbeiten Daten zur Vertragserfüllung (Bereitstellung des Dienstes der App) und auf Grundlage berechtigten Interesses (Moderation, Nutzersicherheit, Missbrauchsprävention)."
+          "heading": "7. Moderation, Meldungen und Verwaltungszugriff (DSA)",
+          "body": "• Du kannst Inhalte oder Nutzer in der App melden und jeden Nutzer sperren. Jeder (auch ohne Konto) kann eine Meldung an abuse@trucksos.net oder über das Formular unter https://trucksos.net/report senden. Wir bestätigen den Eingang und entscheiden innerhalb von 48 Stunden bei offensichtlich rechtswidrigen Inhalten bzw. innerhalb von 7 Tagen in den übrigen Fällen. Der Verfasser des Inhalts erhält eine Mitteilung mit der Begründung der Entscheidung (in der App im Bereich „Moderationshinweise” und per Push) und kann innerhalb von 14 Tagen an dieselbe Adresse widersprechen. Mögliche Maßnahmen: Entfernen des Inhalts, vorübergehende oder dauerhafte Sperrung des Kontos.\n• Administratoren haben KEINEN allgemeinen Zugriff auf private Unterhaltungen: Sie können nur ein begrenztes Fenster von Nachrichten rund um eine gemeldete Nachricht sehen oder bei einer Meldung gegen einen Nutzer die letzten Nachrichten zwischen Melder und gemeldetem Nutzer. Jeder Zugriff wird im Verwaltungsprotokoll erfasst. Administratorkonten verwenden eine Zwei-Faktor-Authentifizierung."
         },
         {
           "heading": "8. Deine Rechte",
-          "body": "Du hast das Recht auf Auskunft, Berichtigung (direkt in der App), Löschung, Einschränkung, Widerspruch und Datenübertragbarkeit. Für Anfragen schreib uns an trucksos.support@gmail.com. Du kannst jederzeit Beschwerde bei deiner Aufsichtsbehörde einlegen — in Rumänien der ANSPDCP (www.dataprotection.ro)."
+          "body": "Auskunft, Berichtigung (direkt in der App), Löschung (aus der App), Einschränkung, Widerspruch, Datenübertragbarkeit („Meine Daten herunterladen” in den Einstellungen gibt dir eine Datei mit allen deinen Daten, zweimal täglich), Widerruf der Einwilligung (die Schalter in den Einstellungen). Wir antworten spätestens innerhalb von 30 Tagen an support@trucksos.net. Du kannst bei der Aufsichtsbehörde Beschwerde einlegen — in Rumänien bei der ANSPDCP (die rumänische Aufsichtsbehörde, www.dataprotection.ro) — oder bei der Behörde deines Landes."
         },
         {
           "heading": "9. An wen sich der Dienst richtet",
-          "body": "TruckSOS richtet sich an Profis im Straßentransport. Der Dienst richtet sich nicht an Minderjährige."
+          "body": "TruckSOS richtet sich an Fachleute im Straßentransport und an Werkstätten. Der Dienst ist Personen vorbehalten, die mindestens 18 Jahre alt sind; das bestätigst du bei der Registrierung. Wir verarbeiten wissentlich keine Daten von Minderjährigen; erfahren wir von einem solchen Konto, löschen wir es."
         },
         {
-          "heading": "10. Änderungen",
-          "body": "Wir können diese Erklärung aktualisieren; über wichtige Änderungen informieren wir dich in der App. Das Datum der letzten Aktualisierung steht oben."
+          "heading": "10. Sicherheit",
+          "body": "Verschlüsselte Verbindungen (TLS), Passwörter, die vom Authentifizierungsanbieter verwaltet werden, auf dem Telefon verschlüsselt gespeicherte Sitzung, Datenzugriff auf Grundlage von Regeln auf Zeilenebene (Row Level Security, RLS), das Apple-Token verschlüsselt in der Datenbank, Administratoren mit Zwei-Faktor-Authentifizierung. Keine Methode ist absolut sicher; sollte ein dich betreffender Vorfall auftreten, informieren wir dich gemäß dem Gesetz."
+        },
+        {
+          "heading": "11. Änderungen",
+          "body": "Wir können diese Erklärung aktualisieren. Bei wesentlichen Änderungen bitten wir dich, sie beim nächsten Öffnen der App erneut zu bestätigen; Version und Datum werden oben angezeigt. Frühere Versionen sind auf Anfrage erhältlich."
+        },
+        {
+          "heading": "12. Kontakt",
+          "body": "Breană David Eduard, natürliche Person, Rumänien, support@trucksos.net · Meldungen: abuse@trucksos.net · https://trucksos.net/legal"
         }
       ]
     }
+  },
+  "consent": {
+    "continueAccept": "Wenn du fortfährst, akzeptierst du die {{terms}} und die {{privacy}}.",
+    "termsLink": "Nutzungsbedingungen",
+    "privacyLink": "Datenschutzerklärung",
+    "ageCheckbox": "Ich bestätige, dass ich mindestens 18 Jahre alt bin und TruckSOS beruflich nutze.",
+    "ageRequired": "Um fortzufahren, musst du bestätigen, dass du mindestens 18 Jahre alt bist.",
+    "updatedTitle": "Die Bedingungen wurden aktualisiert",
+    "updatedBody": "Wir haben die Nutzungsbedingungen und die Datenschutzerklärung aktualisiert (Version {{version}}). Kurz gesagt: Der Betreiber ist mit Name und Kontaktdaten angegeben; die vollständige Liste der Dienstleister; wie lange wir jede Datenart aufbewahren; wie du eine Meldung einreichst und eine Entscheidung anfechtest; du kannst alle deine Daten in den Einstellungen herunterladen. Um fortzufahren, lies sie bitte und bestätige.",
+    "updatedRead": "Nutzungsbedingungen lesen · Datenschutzerklärung lesen",
+    "readTerms": "Nutzungsbedingungen lesen",
+    "readPrivacy": "Datenschutzerklärung lesen",
+    "updatedAccept": "Gelesen und akzeptiert",
+    "guestPrivacyLink": "Datenschutz und Bedingungen",
+    "signOut": "Abmelden",
+    "exportData": "Meine Daten herunterladen",
+    "deleteAccount": "Konto löschen",
+    "exportDone": "Die Datei mit deinen Daten ist bereit."
+  },
+  "publicReport": {
+    "title": "Meldung",
+    "intro": "Wenn du in TruckSOS eine Anzeige, eine Kanalnachricht, ein Profil oder eine Marktplatz-Anzeige gesehen hast, die gegen das Gesetz oder unsere Bedingungen verstößt, sag es uns hier. Du brauchst kein Konto.",
+    "timeline": "Du erhältst eine Bestätigung an die angegebene Adresse; wir entscheiden innerhalb von 48 Stunden bei offensichtlich rechtswidrigen Inhalten, sonst innerhalb von 7 Tagen, und teilen dir die Entscheidung per E-Mail mit. Der Verfasser des Inhalts kann innerhalb von 14 Tagen widersprechen.",
+    "typeLabel": "Was du meldest",
+    "type": {
+      "announcement": "Pannenmeldung",
+      "listing": "Marktplatz-Anzeige",
+      "channel_message": "Kanalnachricht",
+      "user": "Nutzer"
+    },
+    "targetLabel": "Kennung oder Link",
+    "targetPlaceholder": "Link oder Kennung einfügen",
+    "targetHint": "Füge den Link zum Inhalt (zum Beispiel einen Profil-Link) oder dessen Kennung ein. Wenn du keins von beiden hast, schreib an abuse@trucksos.net und beschreibe den Inhalt: wer ihn veröffentlicht hat, wo und wann du ihn gesehen hast.",
+    "reasonLabel": "Grund",
+    "detailsLabel": "Erklärung (optional)",
+    "emailLabel": "Deine E-Mail-Adresse",
+    "emailPlaceholder": "name@beispiel.de",
+    "declaration": "Ich erkläre in gutem Glauben, dass die Angaben in dieser Meldung richtig und vollständig sind.",
+    "privacyNote": "Deine E-Mail-Adresse und der Inhalt der Meldung werden nur verwendet, um sie zu bearbeiten und dir zu antworten; sie werden 12 Monate nach dem Abschluss aufbewahrt. Wir geben sie nicht an den Verfasser des Inhalts weiter.",
+    "submit": "Meldung senden",
+    "sent": "Wir haben deine Meldung erhalten; du bekommst die Bestätigung und die Entscheidung an {{email}}.",
+    "emailAlternative": "Du kannst auch per E-Mail an abuse@trucksos.net melden.",
+    "errorTarget": "Füge einen gültigen Link oder eine gültige Kennung ein.",
+    "errorEmail": "Wir brauchen eine gültige E-Mail-Adresse, damit wir dir antworten können.",
+    "errorDeclaration": "Bitte bestätige die Erklärung in gutem Glauben.",
+    "errorCaptcha": "Die Bot-Prüfung ist fehlgeschlagen. Bitte versuche es erneut.",
+    "errorRateLimited": "Du hast in einer Stunde zu viele Meldungen gesendet. Versuche es später erneut oder schreibe uns an abuse@trucksos.net.",
+    "errorNotFound": "Wir haben den Inhalt nicht gefunden. Prüfe den Link oder die Kennung."
   },
   "shareContact": {
     "action": "Kontakt teilen",

@@ -36,8 +36,8 @@ jobs:
 
       - name: Edge Functions (Deno) tests and typecheck
         run: |
-          deno test supabase/functions/push-dispatch supabase/functions/push-receipts supabase/functions/_shared supabase/functions/apple-link supabase/functions/storage-gc supabase/functions/delete-account
-          deno check supabase/functions/push-dispatch/index.ts supabase/functions/push-receipts/index.ts supabase/functions/apple-link/index.ts supabase/functions/storage-gc/index.ts supabase/functions/delete-account/index.ts
+          deno test supabase/functions/push-dispatch supabase/functions/push-receipts supabase/functions/_shared supabase/functions/apple-link supabase/functions/storage-gc supabase/functions/delete-account supabase/functions/report-public
+          deno check supabase/functions/push-dispatch/index.ts supabase/functions/push-receipts/index.ts supabase/functions/apple-link/index.ts supabase/functions/storage-gc/index.ts supabase/functions/delete-account/index.ts supabase/functions/report-public/index.ts
 
   db-tests:
     # Faza 0.3 + 0.3-bis (PLAN_1.1_FIX, 26–31 oct 2026), un singur job, în ordinea în care a evoluat producția:
@@ -201,8 +201,13 @@ jobs:
             echo "re-apply $f: $(( ($(date +%s%N) - start) / 1000000 )) ms (o singură tranzacție psql -1)"
           done
           fp /tmp/fp/reapplied.txt
-          echo "diff applied vs re-applied (trebuie gol):"
-          diff -u /tmp/fp/applied.txt /tmp/fp/reapplied.txt
+          # Poziția fizică a coloanei (attnum) e scoasă DOAR din această comparație: o coloană adăugată cu ALTER TABLE,
+          # scoasă de rollback și adăugată din nou primește alt număr (coloanele șterse își păstrează locul în catalog),
+          # deci diferența e un artefact al repetiției, nu al migrării (CI 42828016579, faza 8: reports.source 15 → 19).
+          # Numele, tipul, NOT NULL și default-ul coloanei rămân comparate; amprentele brute sunt în artefact.
+          noattnum() { sed -E 's/^(column \| [^|]+ \| )[0-9]+\|/\1/' "$1"; }
+          echo "diff applied vs re-applied, fără attnum (trebuie gol):"
+          diff -u <(noattnum /tmp/fp/applied.txt) <(noattnum /tmp/fp/reapplied.txt)
 
       - name: "Faza 3: măsurători la scară (10 000 membri în canal; raportate, nu asserturi)"
         # Condiția lui David din 25 oct (PLAN_1.1_FIX §3 „Teste”): INSERT în channel_messages ≤ 50 ms și
