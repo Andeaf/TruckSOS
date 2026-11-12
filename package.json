@@ -56,7 +56,9 @@
     "eslint": "^9.39.5",
     "eslint-config-expo": "~10.0.0",
     "supabase": "^2.109.1",
-    "typescript": "*"
+    "typescript": "*",
+    "vite": "~7.3.8",
+    "vitest": "~4.1.12"
   },
   "scripts": {
     "start": "expo start --clear",
