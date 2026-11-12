@@ -1,0 +1,28 @@
+# NERULAT — scris din citirea codului (12 nov 2026); selectorii se verifică la prima rulare.
+#
+# Subflux: închide ecranele care pot apărea ÎNAINTEA celui așteptat. Fiecare pas e condițional
+# (nu pică dacă ecranul nu apare).
+#   - poarta „Termenii s-au actualizat” (src/components/terms-update-screen.tsx): se bifează 18+ și se acceptă.
+#     Atenție: asta înregistrează acceptarea termenilor pe contul de TEST (nu pe unul real).
+#   - foaia de opt-in Market (src/components/market-push-optin-sheet.tsx): „Nu acum”.
+#   - cererea „Versiune nouă disponibilă” (src/components/update-prompt.tsx): „Mai târziu”.
+# DE VERIFICAT: dialogurile de permisiune ale sistemului (notificări / locație) sunt gestionate prin
+# `permissions` la `launchApp`, nu aici; textele lor depind de limba telefonului.
+appId: ${APP_ID}
+---
+- runFlow:
+    when:
+      visible: 'Termenii s-au actualizat'
+    commands:
+      - tapOn: 'Confirm că am cel puțin 18 ani.*'
+      - tapOn: 'Am citit și accept'
+- runFlow:
+    when:
+      visible: 'Vrei notificări la anunțuri noi pe Market.*'
+    commands:
+      - tapOn: 'Nu acum'
+- runFlow:
+    when:
+      visible: 'Versiune nouă disponibilă'
+    commands:
+      - tapOn: 'Mai târziu'

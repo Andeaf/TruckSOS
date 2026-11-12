@@ -1,0 +1,85 @@
+# NERULAT — scris din citirea codului (12 nov 2026); selectorii se verifică la prima rulare.
+#
+# 06 — Ștergerea contului: Profil → Setări → „Șterge contul” → confirmare cu parola → alerta finală.
+#
+# !!! SIGURANȚĂ (baza de date REALĂ, acțiune IREVERSIBILĂ): se rulează DOAR cu contul creat special pentru acest test
+# (cel din 01-inscriere: NEW_EMAIL / NEW_PASSWORD / NEW_NAME). NICIODATĂ cu conturile demo ale recenzorilor (review.*)
+# și niciodată cu un cont real. Confirmarea finală („Da, șterge contul”) se apasă DOAR cu ALLOW_DELETE=true;
+# altfel fluxul ajunge până la alerta finală și o anulează.
+#
+# Variabile: APP_ID, NEW_EMAIL, NEW_PASSWORD, NEW_NAME, ALLOW_DELETE (implicit „false”).
+# Poarta de siguranță de mai jos refuză adresele care încep cu „review.”.
+appId: ${APP_ID}
+env:
+  ALLOW_DELETE: 'false'
+---
+# Pas de apărare: dacă NEW_EMAIL arată ca un cont demo de recenzor, fluxul pică imediat (înainte de orice autentificare).
+- assertTrue: ${NEW_EMAIL.toLowerCase().indexOf('review.') !== 0}
+- launchApp:
+    clearState: true
+    permissions:
+      all: deny
+- runFlow:
+    file: subflows/autentificare.yaml
+    env:
+      EMAIL: ${NEW_EMAIL}
+      PASSWORD: ${NEW_PASSWORD}
+
+# Profilul (avatarul din antet), apoi „Setări” (settings.title).
+- runFlow:
+    file: subflows/deschide-profil.yaml
+    env:
+      PROFILE_NAME: ${NEW_NAME}
+- scrollUntilVisible:
+    element: 'Setări'
+- tapOn: 'Setări'
+
+# Zona distructivă e la capătul ecranului de setări (src/components/settings-screen.tsx).
+- scrollUntilVisible:
+    element: 'Șterge contul'
+- tapOn: 'Șterge contul'
+
+# Ecranul de confirmare (src/components/delete-account-screen.tsx).
+- extendedWaitUntil:
+    visible: 'Ce se șterge'
+    timeout: 15000
+- assertVisible: 'Această acțiune este imediată.*'
+- takeScreenshot: 06-ecran-stergere
+
+# Cont cu parolă: câmpul „Confirmă cu parola ta” (placeholder „Parola”).
+# DE VERIFICAT: un cont Google/Apple are alt câmp (cuvântul „ȘTERGE”); contul din 01 are parolă.
+- tapOn: 'Parola'
+- inputText: ${NEW_PASSWORD}
+- hideKeyboard
+- tapOn: 'Șterge definitiv'
+
+# Alerta finală (settings.deleteAccountScreen.finalTitle / finalBody) — dialog de sistem.
+- extendedWaitUntil:
+    visible: 'Ești absolut sigur.*'
+    timeout: 20000
+- assertVisible: 'Contul și datele tale vor fi șterse imediat.*'
+- takeScreenshot: 06-alerta-finala
+
+# Fără ALLOW_DELETE=true: se anulează (butonul „Anulează” al alertei) și contul rămâne.
+- runFlow:
+    when:
+      true: "${ALLOW_DELETE != 'true'}"
+    commands:
+      - tapOn: 'Anulează'
+      - assertVisible: 'Ce se șterge'
+      - takeScreenshot: 06-anulat
+
+# Cu ALLOW_DELETE=true: ștergere ireversibilă a contului de TEST.
+- runFlow:
+    when:
+      true: "${ALLOW_DELETE == 'true'}"
+    commands:
+      - tapOn: 'Da, șterge contul'
+      # După ștergere: deconectare → ecranul de login.
+      - extendedWaitUntil:
+          visible: 'Autentifică-te'
+          timeout: 45000
+      - takeScreenshot: 06-cont-sters
+      # DE VERIFICAT: autentificarea cu contul șters trebuie să eșueze (nu se mai poate verifica fără alt flux).
+
+- takeScreenshot: 06-final

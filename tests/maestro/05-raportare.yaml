@@ -1,0 +1,139 @@
+# NERULAT — scris din citirea codului (12 nov 2026); selectorii se verifică la prima rulare.
+#
+# 05 — Raportarea unui conținut, în două variante, în același fișier:
+#   A) cu cont: șoferul de TEST raportează profilul mecanicului de TEST (foaia „Raportează” din src/components/report-sheet.tsx);
+#   B) oaspete: fără cont, din foaia „Ai nevoie de un cont” → „Raportează acest conținut fără cont” → formularul „Sesizare”
+#      (src/components/account-gate-sheet.tsx → src/app/report.tsx → src/components/public-report-screen.tsx).
+#
+# !!! SIGURANȚĂ (baza de date REALĂ): sesizarea ajunge la administratori. Textul detaliilor începe cu „TEST — de ignorat”.
+# Trimiterea finală (ambele variante) se face DOAR cu ALLOW_SUBMIT=true; altfel fluxul se oprește cu formularul completat.
+# Varianta A vizează numai contul de mecanic de TEST (MECHANIC_NAME, unic). Varianta B se deschide pe PRIMUL anunț din lista
+# publică — poate fi un anunț REAL: de aceea, trimiterea reală se face doar cu ALLOW_SUBMIT=true și, de preferat,
+# când lista conține doar anunțul de test (vezi README). Adresa de e-mail din B e REPORT_EMAIL (căsuță proprie/fictivă).
+#
+# Variabile: APP_ID, DRIVER_EMAIL, DRIVER_PASSWORD, DRIVER_NAME, MECHANIC_NAME, REPORT_EMAIL, ALLOW_SUBMIT (implicit „false”),
+#            REPORT_TEXT (implicit „TEST — de ignorat”).
+appId: ${APP_ID}
+env:
+  ALLOW_SUBMIT: 'false'
+  REPORT_TEXT: 'TEST — de ignorat'
+---
+# =============================== A) RAPORTARE CU CONT ===============================
+- launchApp:
+    clearState: true
+    permissions:
+      all: deny
+- runFlow:
+    file: subflows/autentificare.yaml
+    env:
+      EMAIL: ${DRIVER_EMAIL}
+      PASSWORD: ${DRIVER_PASSWORD}
+- assertVisible: 'Anunțurile mele'
+
+# Profilul mecanicului de test: din chat (antetul deschide profilul interlocutorului) — presupune conversația din 04.
+# DE VERIFICAT: antetul chatului e un buton cu accessibilityLabel „<nume>, <subtitlu>”; alternativ, profilul se
+# deschide din tab-ul de căutare (driver.search). Fluxul alege varianta cu chat.
+- tapOn: 'Conversatii'
+- extendedWaitUntil:
+    visible: '.*${MECHANIC_NAME}.*'
+    timeout: 20000
+- tapOn:
+    text: '.*${MECHANIC_NAME}.*'
+    index: 0
+- extendedWaitUntil:
+    visible: 'Scrie un mesaj.*'
+    timeout: 20000
+# Poarta de siguranță: doar mecanicul de test.
+- assertVisible: '.*${MECHANIC_NAME}.*'
+- tapOn: '.*${MECHANIC_NAME}.*'
+
+# Ecranul de profil public: iconița steag are accessibilityLabel „Raportează” (src/components/public-profile-screen.tsx).
+- extendedWaitUntil:
+    visible: 'Raportează'
+    timeout: 20000
+- tapOn: 'Raportează'
+
+# Foaia „Raportează” (report.title / report.subtitle).
+- assertVisible: 'Spune-ne ce nu e în regulă.*'
+- tapOn: 'Spam'
+- tapOn: 'Detalii'
+- inputText: ${REPORT_TEXT}
+- hideKeyboard
+- takeScreenshot: 05A-foaie-completata
+
+- runFlow:
+    when:
+      true: "${ALLOW_SUBMIT == 'true'}"
+    commands:
+      - tapOn: 'Trimite raportul'
+      # Alertă de confirmare: „Mulțumim” + „Raportul a fost trimis. Îl vom analiza.”
+      - extendedWaitUntil:
+          visible: 'Mulțumim'
+          timeout: 20000
+      - takeScreenshot: 05A-trimis
+      # DE VERIFICAT: butonul „OK” al alertei e localizat de sistem (OK / Ok).
+      - tapOn: 'OK'
+
+# =============================== B) VARIANTA OASPETE ===============================
+# Pornire proaspătă (fără sesiune) → „Încearcă aplicația ca vizitator” (auth.login.continueAsGuest).
+- launchApp:
+    clearState: true
+    permissions:
+      all: deny
+- extendedWaitUntil:
+    visible: 'Încearcă aplicația ca vizitator'
+    timeout: 30000
+- tapOn: 'Încearcă aplicația ca vizitator'
+- extendedWaitUntil:
+    visible: 'Camioane care au nevoie de ajutor acum'
+    timeout: 30000
+
+# DE VERIFICAT: cardurile de anunț nu au text sau testID stabil; se atinge primul card prin punct (sub antet).
+# Dacă lista e goală („Niciun anunț deschis”), fluxul pică aici — nu există ce raporta.
+# Propunere: testID „announcement-card” pe cardul din src/components/announcement-card.tsx.
+- tapOn:
+    point: '50%,35%'
+
+# Foaia „Ai nevoie de un cont” (accountGate.title) cu motivul „viewAnnouncement”.
+- extendedWaitUntil:
+    visible: 'Ai nevoie de un cont'
+    timeout: 15000
+- assertVisible: 'Fă-ți cont ca să vezi detaliile anunțului.'
+- takeScreenshot: 05B-foaia-cont
+- tapOn: 'Raportează acest conținut fără cont'
+
+# Formularul „Sesizare” (publicReport.*).
+- extendedWaitUntil:
+    visible: 'Sesizare'
+    timeout: 15000
+- assertVisible: '.*Nu ai nevoie de cont.*'
+- assertVisible: 'Anunț de depanare'
+# Identificatorul anunțului vine precompletat din legătură (params.id).
+- scrollUntilVisible:
+    element: 'Spam'
+- tapOn: 'Spam'
+- tapOn: 'Detalii'
+- inputText: ${REPORT_TEXT}
+- tapOn: 'nume@exemplu.ro'
+- inputText: ${REPORT_EMAIL}
+- hideKeyboard
+- scrollUntilVisible:
+    element: 'Declar cu bună-credință.*'
+- tapOn: 'Declar cu bună-credință.*'
+- scrollUntilVisible:
+    element: 'Trimite sesizarea'
+- takeScreenshot: 05B-formular-completat
+
+# DE VERIFICAT: verificarea anti-roboți (Turnstile, src/lib/captcha.ts) pe nativ poate cere interacțiune sau poate eșua
+# într-un build de test („Verificarea anti-roboți a eșuat”); atunci trimiterea nu poate fi automatizată.
+- runFlow:
+    when:
+      true: "${ALLOW_SUBMIT == 'true'}"
+    commands:
+      - tapOn: 'Trimite sesizarea'
+      - extendedWaitUntil:
+          visible: 'Am primit sesizarea ta.*'
+          timeout: 45000
+      - takeScreenshot: 05B-trimis
+
+- takeScreenshot: 05-final

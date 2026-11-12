@@ -1,0 +1,75 @@
+# NERULAT — scris din citirea codului (12 nov 2026); selectorii se verifică la prima rulare.
+#
+# 04 — Conversație privată: șoferul de TEST începe o conversație directă cu mecanicul de TEST, trimite un mesaj,
+# iar mesajul apare în conversație și conversația în listă.
+#
+# !!! SIGURANȚĂ (baza de date REALĂ): doar între cele două conturi de TEST; niciodată către un utilizator real.
+# MECHANIC_NAME trebuie să fie UNIC (ex. „Test Mecanic TruckSOS”), ca nicio persoană reală să nu apară în căutare.
+# Fluxul verifică, ÎNAINTE de trimitere, că antetul conversației conține MECHANIC_NAME; altfel pică fără să trimită.
+# NU se scrie niciodată în canalul Comunității (mesajele ajung la toți utilizatorii reali) — fluxul nu îl deschide.
+#
+# Variabile: APP_ID, DRIVER_EMAIL, DRIVER_PASSWORD, DRIVER_NAME, MECHANIC_NAME, CHAT_TEXT (implicit „TEST — de șters (chat)”).
+appId: ${APP_ID}
+env:
+  CHAT_TEXT: 'TEST — de șters (chat)'
+---
+- launchApp:
+    clearState: true
+    permissions:
+      all: deny
+- runFlow:
+    file: subflows/autentificare.yaml
+    env:
+      EMAIL: ${DRIVER_EMAIL}
+      PASSWORD: ${DRIVER_PASSWORD}
+- assertVisible: 'Anunțurile mele'
+
+# Tab-ul „Conversații” (driver.tabs.conversations = „Conversatii”, fără diacritice în ro.json).
+- tapOn: 'Conversatii'
+- extendedWaitUntil:
+    visible: 'Conversații'
+    timeout: 15000
+
+# FAB „Începe o conversație nouă” (newConversation.fab) — accessibilityLabel existent.
+- tapOn: 'Începe o conversație nouă'
+- assertVisible: 'Conversație nouă'
+- tapOn: 'Caută după nume.*'
+- inputText: ${MECHANIC_NAME}
+# Rezultatul are subtitlul „Mecanic · …” (rolul + eventual rating/zonă). DE VERIFICAT: selectorul prin subtitlu.
+- extendedWaitUntil:
+    visible: 'Mecanic.*'
+    timeout: 15000
+- tapOn:
+    text: 'Mecanic.*'
+    index: 0
+
+# Poarta de siguranță: antetul chatului trebuie să conțină numele mecanicului de test.
+# DE VERIFICAT: antetul are accessibilityLabel „<nume>, <subtitlu>”.
+- extendedWaitUntil:
+    visible: '.*${MECHANIC_NAME}.*'
+    timeout: 20000
+- assertVisible: 'Scrie un mesaj.*'
+- takeScreenshot: 04-chat-deschis
+
+- tapOn: 'Scrie un mesaj.*'
+- inputText: ${CHAT_TEXT}
+- hideKeyboard
+# DE VERIFICAT: butonul „Trimite” e o iconiță fără text/testID (src/components/chat-screen.tsx, ~linia 2030).
+# Se apasă prin poziție (dreapta jos, deasupra barei de tab-uri, după ascunderea tastaturii); ajustează procentele
+# la prima rulare. Propunere: testID „chat-send”.
+- tapOn:
+    point: '93%,91%'
+- extendedWaitUntil:
+    visible: '.*${CHAT_TEXT}.*'
+    timeout: 20000
+- takeScreenshot: 04-mesaj-trimis
+
+# Înapoi la listă: conversația apare (cu eticheta „Conversație directă”).
+# DE VERIFICAT: `back` poate închide doar tastatura pe Android dacă mai e deschisă.
+- back
+- extendedWaitUntil:
+    visible: 'Conversație directă'
+    timeout: 20000
+- assertVisible: '.*${MECHANIC_NAME}.*'
+# DE VERIFICAT: previzualizarea ultimului mesaj în card (nu am verificat în cod că se afișează).
+- takeScreenshot: 04-in-lista

@@ -1,0 +1,75 @@
+# NERULAT — scris din citirea codului (12 nov 2026); selectorii se verifică la prima rulare.
+#
+# 03 — Mecanic: ofertă („Sunt interesat”) la UN anunț de test al contului de șofer de TEST.
+#
+# !!! SIGURANȚĂ (baza de date REALĂ): fluxul se folosește DOAR între cele două conturi de TEST (șofer + mecanic) create
+# pentru asta. Niciodată către un utilizator real. Fluxul deschide numai anunțul care conține TEST_TEXT și verifică,
+# ÎNAINTE de a trimite oferta, că autorul e DRIVER_NAME; dacă nu se potrivește, pică fără să trimită nimic.
+# Oferta trimite o notificare șoferului de TEST. Nu se scrie nimic în canalul Comunității.
+#
+# Precondiții: un anunț DESCHIS al șoferului de test cu textul TEST_TEXT (creat manual sau cu 02-publicare-anunt
+# rulat cu ALLOW_PUBLISH=true, dar fără pasul de curățare — vezi README), iar contul de mecanic de test are acces la el
+# (raza / locația mecanicului; DE VERIFICAT).
+# Variabile: APP_ID, MECHANIC_EMAIL, MECHANIC_PASSWORD, MECHANIC_NAME, DRIVER_NAME, TEST_TEXT (implicit „TEST — de șters”).
+appId: ${APP_ID}
+env:
+  TEST_TEXT: 'TEST — de șters'
+---
+- launchApp:
+    clearState: true
+    permissions:
+      all: deny
+- runFlow:
+    file: subflows/autentificare.yaml
+    env:
+      EMAIL: ${MECHANIC_EMAIL}
+      PASSWORD: ${MECHANIC_PASSWORD}
+- assertVisible: 'Anunțuri deschise'
+
+# DE VERIFICAT: cardul anunțului arată descrierea; se caută după TEST_TEXT (fără testID pe carduri).
+- scrollUntilVisible:
+    element: '.*${TEST_TEXT}.*'
+- tapOn:
+    text: '.*${TEST_TEXT}.*'
+    index: 0
+- extendedWaitUntil:
+    visible: 'Detalii anunț'
+    timeout: 15000
+
+# Poarta de siguranță: autorul trebuie să fie șoferul de test. Dacă nu, fluxul pică aici.
+- assertVisible: '.*${DRIVER_NAME}.*'
+- assertVisible: '.*${TEST_TEXT}.*'
+- takeScreenshot: 03-detalii-anunt
+
+- scrollUntilVisible:
+    element: 'Sunt interesat'
+- tapOn: 'Sunt interesat'
+
+# Foaia „Trimite candidatura” (apply-bottom-sheet.tsx). Titlul și butonul de trimitere au ACELAȘI text.
+- assertVisible: 'Trimite candidatura'
+- assertVisible: 'Preț fix'
+- tapOn: 'ex: 150'
+- inputText: '150'
+- tapOn: 'ex: Pot ajunge.*'
+- inputText: ${TEST_TEXT}
+- hideKeyboard
+- takeScreenshot: 03-oferta-completata
+
+# DE VERIFICAT: ordinea elementelor — butonul de trimitere e al doilea „Trimite candidatura” (index 1);
+# dacă foaia nu are titlu separat, se folosește index 0. Propunere: testID „apply-submit”.
+- tapOn:
+    text: 'Trimite candidatura'
+    index: 1
+- extendedWaitUntil:
+    visible: 'Candidatură trimisă.*'
+    timeout: 30000
+- takeScreenshot: 03-oferta-trimisa
+
+# Verificare în tab-ul „Candidaturi” (mechanic.tabs.applications).
+# DE VERIFICAT: eticheta tab-ului nu are diacritice în ro.json („Candidaturi” e corectă; „Anunturi”/„Conversatii” nu).
+- tapOn: 'Candidaturi'
+- assertVisible: 'Candidaturile mele'
+- assertVisible: 'În așteptare'
+# Curățare (retragerea ofertei) — DE VERIFICAT, manual: „Retrage oferta” → „Da, retrage” din ecranul candidaturii.
+
+- takeScreenshot: 03-final
