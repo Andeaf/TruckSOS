@@ -26,6 +26,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Unit tests (vitest)
+        run: npm test
+
       - name: Migrations follow the grants convention
         run: npm run check:migrations
 
@@ -247,6 +250,46 @@ jobs:
         # Rulează și când paritatea pică (vrem ambele rezultate), dar nu pe o schemă aplicată pe jumătate.
         if: ${{ !cancelled() && steps.start.outcome == 'success' && steps.apply.outcome == 'success' }}
         run: supabase test db
+
+      - name: "Faza 10: teste la scară (seed mare + interogările grele; raportate, nu asserturi)"
+        # PLAN_1.1_FIX §3 „Faza 10” (10.1 + 10.2), cererea lui David din 12 nov 2026: seed-ul din plan (50 000 de conturi,
+        # 105 000 de anunțuri, 20 000 de conversații / 212 000 de mesaje, 30 000 de mesaje în canal) și interogările grele
+        # cronometrate cu rolul real (authenticated + JWT pentru apelurile clientului, postgres pentru joburile de server).
+        # ULTIMUL pas pe bază (după pgTAP): o singură tranzacție cu ROLLBACK, nimic nu rămâne. Niciodată pe producție.
+        # Pragurile din plan sunt p95 k6 la 200 de utilizatori; aici e o singură interogare pe o bază liberă, deci cifra e
+        # un minim. Depășirea pragului sau o eroare la o măsurătoare = ::warning:: (David decide), NU eșec. Eșec doar dacă
+        # bench-ul însuși e stricat: nicio linie BENCH sau o măsurătoare care nu întoarce niciun rând (seed / rol greșit).
+        if: ${{ !cancelled() && steps.start.outcome == 'success' && steps.apply.outcome == 'success' }}
+        env:
+          PGCLIENTENCODING: UTF8
+        run: |
+          set -o pipefail
+          DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+          # -v bench_ephemeral=1: garda scriptului contra rulării pe o bază reală (refuză fără ea și peste 200 de conturi).
+          psql "$DB" -X -v ON_ERROR_STOP=1 -v bench_ephemeral=1 -f supabase/bench/scale_timing.sql 2>&1 | tr -d '\r' | tee /tmp/scale.out
+          if grep -q 'sunt sarite' /tmp/scale.out; then exit 0; fi
+          grep '^BENCH|' /tmp/scale.out > /tmp/scale.bench || true
+          [ "$(wc -l < /tmp/scale.bench)" -ge 10 ] || { echo "::error::Faza 10: bench-ul la scară nu a produs măsurătorile (vezi ieșirea de mai sus)"; exit 1; }
+          echo "FAZA 10 — TESTE LA SCARĂ (ms: prima rulare / cea mai bună; n = rânduri sau octeți; prag = p95 k6 din plan)"
+          awk -F'|' '{ printf "  %-82s prima=%9s  best=%9s  n=%-9s prag=%-6s %s\n", $2, $3, $4, $5, $6, $7 }' /tmp/scale.bench
+          {
+            echo "### Faza 10 — teste la scară"
+            echo ""
+            echo "| Măsurătoare | prima rulare (ms) | cea mai bună (ms) | n | prag plan (ms) | notă |"
+            echo "|---|---:|---:|---:|---:|---|"
+            awk -F'|' '{ printf "| %s | %s | %s | %s | %s | %s |\n", $2, $3, $4, $5, $6, $7 }' /tmp/scale.bench
+          } >> "$GITHUB_STEP_SUMMARY"
+          awk -F'|' '$6 != "-" && $4 != "-" && ($4 + 0) > ($6 + 0) { printf "::warning::Faza 10: %s = %s ms > pragul de %s ms (de raportat lui David, nu se repară aici)\n", $2, $4, $6 }' /tmp/scale.bench
+          awk -F'|' '$7 ~ /^EROARE/ { printf "::warning::Faza 10: %s -> %s\n", $2, $7 }' /tmp/scale.bench
+          bad=$(awk -F'|' '$2 != "seed" && $7 !~ /^SARIT/ && $7 !~ /^EROARE/ && ($5 == "-" || $5 + 0 == 0) { print $2 }' /tmp/scale.bench)
+          # O măsurătoare căzută în eroare (de ex. digest-ul peste statement_timeout) lasă legitim fără rânduri pe cele care
+          # depind de ea (claim-ul pe coada rămasă goală): atunci „fără rânduri” e tot avertisment, nu eșec.
+          if [ -n "$bad" ] && grep -q '|EROARE' /tmp/scale.bench; then
+            echo "::warning::Faza 10: măsurători fără rânduri, după o eroare la altă măsurătoare (în lanț): $bad"
+          elif [ -n "$bad" ]; then
+            echo "::error::Faza 10: măsurători fără niciun rând (seed-ul sau rolul sunt greșite): $bad"; exit 1
+          fi
+          exit 0
 
       - name: Stop
         if: always()

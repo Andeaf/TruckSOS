@@ -1,0 +1,24 @@
+# NERULAT — scris din citirea codului (12 nov 2026); selectorii se verifică la prima rulare.
+#
+# Subflux: autentificare cu e-mail + parolă, pornind de la o aplicație proaspăt lansată (ecranul de login).
+# Variabile (primite de la fluxul apelant prin `env:`): EMAIL, PASSWORD, APP_ID.
+# Selectori: placeholder-urile din src/app/(auth)/login.tsx (auth.login.emailPlaceholder / passwordPlaceholder),
+# butonul „Autentifică-te” (auth.login.button).
+# DE VERIFICAT: Maestro potrivește placeholder-ul (hint) pe Android; pe iOS verifică la prima rulare.
+# DE VERIFICAT: `hideKeyboard` poate fi nesigur pe iOS; dacă tastatura acoperă butonul, se înlocuiește cu un tap pe titlu.
+appId: ${APP_ID}
+---
+- extendedWaitUntil:
+    visible: 'Autentifică-te'
+    timeout: 30000
+- tapOn: 'email@exemplu.com'
+- inputText: ${EMAIL}
+- tapOn: '••••••••'
+- inputText: ${PASSWORD}
+- hideKeyboard
+- tapOn: 'Autentifică-te'
+# Așteaptă ecranul principal (șofer: „Anunțurile mele”, mecanic: „Anunțuri deschise”) SAU poarta termenilor.
+- extendedWaitUntil:
+    visible: 'Anunțurile mele|Anunțuri deschise|Termenii s-au actualizat'
+    timeout: 45000
+- runFlow: intreruperi.yaml

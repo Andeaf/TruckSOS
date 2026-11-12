@@ -1,0 +1,18 @@
+# NERULAT — scris din citirea codului (12 nov 2026); selectorii se verifică la prima rulare.
+#
+# Configurația spațiului de lucru Maestro: ordinea fluxurilor când se rulează tot folderul
+# (`maestro test tests/maestro`). Subfluxurile din subflows/ NU sunt fluxuri de sine stătătoare și nu se rulează singure.
+# Ordinea contează: 01 creează contul de test, 06 îl șterge (ultimul).
+# Acțiunile cu efect pe datele reale rămân sub ALLOW_PUBLISH / ALLOW_SUBMIT / ALLOW_DELETE (implicit „false”).
+# DE VERIFICAT cu `maestro test --dry-run`: forma exactă a cheilor `flows` și `executionOrder` în versiunea de Maestro folosită.
+flows:
+  - '0*.yaml'
+executionOrder:
+  continueOnFailure: false
+  flowsOrder:
+    - 01-inscriere
+    - 02-publicare-anunt
+    - 03-oferta
+    - 04-chat
+    - 05-raportare
+    - 06-stergere-cont
