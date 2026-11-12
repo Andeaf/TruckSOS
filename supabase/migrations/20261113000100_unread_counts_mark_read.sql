@@ -20,12 +20,19 @@
 --
 --   mark_conversation_read(p_conversation uuid, p_at timestamptz DEFAULT now()) → timestamptz
 --   mark_channel_read(p_channel uuid, p_at timestamptz DEFAULT now()) → timestamptz
---     Cursorul de citire, scris pe server: last_read_at = GREATEST(cel existent, LEAST(p_at, now())).
+--     Cursorul de citire, scris pe server: last_read_at = GREATEST(cel existent, LEAST(p_at, plafon)), unde
+--     plafon = cel mai mare dintre now() și (cel mai nou mesaj existent în fir + 1 ms).
 --       · nu mai poate merge ÎNAPOI (două dispozitive, răspunsuri sosite în altă ordine);
---       · nu mai poate fi ÎN VIITOR (ceasul telefonului înainte ar ascunde necititele până la data aceea);
---       · când cursorul nu avansează NU se scrie nimic (fără UPDATE gol → fără eveniment Realtime de pomană);
+--       · nu mai poate fi ÎN VIITOR față de ceasul serverului (ceasul telefonului înainte ar ascunde necititele până
+--         la data aceea); singura excepție e un mesaj existent cu dată din viitor, care trebuie să poată fi citit;
+--       · un cursor EXISTENT rămas peste plafon (scris de un 1.0.x cu ceasul înainte) e adus înapoi la primul apel;
+--       · când cursorul nu se schimbă NU se scrie nimic (fără UPDATE gol → fără eveniment Realtime de pomană);
 --       · doar pentru conversațiile la care sunt participant / canalele care există; întoarce cursorul rezultat.
---     Clientul 1.1 apelează mark_channel_read FĂRĂ p_at (= ceasul serverului, nu al telefonului).
+--     Clientul 1.1 apelează mark_channel_read FĂRĂ p_at (= plafonul: ceasul serverului, nu al telefonului).
+--     GOL VECHI, NEATINS AICI (de decis de David): clientul poate alege created_at la INSERT în messages /
+--     channel_messages (grant la nivel de tabel, niciun trigger nu-l fixează). Remediul ar fi un trigger BEFORE INSERT
+--     care pune now() pentru inserările făcute direct de client — atinge drumul de inserare al 1.0.x, deci nu e în
+--     această migrare.
 --
 -- Ce NU face (rămâne pentru varianta A, care se poate adăuga peste aceasta fără rescriere): niciun obiect în schema
 -- `realtime`, niciun trigger de broadcast, nicio politică pe realtime.messages. Numele și semnăturile RPC-urilor sunt
@@ -75,7 +82,9 @@ AS $function$
                    WHERE m.conversation_id = c.id
                      AND m.sender_id <> (SELECT auth.uid())
                      AND m.deleted_at IS NULL
-                     AND (r.last_read_at IS NULL OR m.created_at > r.last_read_at)
+                     -- COALESCE, nu „IS NULL OR”: așa cursorul e limită pe idx_messages_conversation_created și
+                     -- numărătoarea unei conversații citite nu mai parcurge tot istoricul ei (review 12 nov)
+                     AND m.created_at > COALESCE(r.last_read_at, '-infinity'::timestamptz)
                    LIMIT 100) x
         ) u
    WHERE (c.driver_id = (SELECT auth.uid()) OR c.mechanic_id = (SELECT auth.uid()))
@@ -105,9 +114,11 @@ AS $function$
              AND m.created_at > COALESCE((SELECT r.last_read_at FROM public.channel_reads r
                                            WHERE r.channel_id = p_channel AND r.user_id = (SELECT auth.uid())),
                                          '-infinity'::timestamptz)
-             -- politica channel_messages_select_since_join, repetată (SECURITY DEFINER ocolește RLS)
-             AND (m.created_at >= (SELECT p.created_at FROM app.profiles p WHERE p.id = (SELECT auth.uid()))
-                  OR (SELECT public.is_admin((SELECT auth.uid()))))
+             -- politica channel_messages_select_since_join, repetată (SECURITY DEFINER ocolește RLS): mesajele de după
+             -- crearea contului meu; adminul le vede pe toate. O singură limită de jos, calculată o dată, ca să fie
+             -- condiție de index; fără profil și fără rol de admin = NULL → niciun rând, ca prin RLS.
+             AND m.created_at >= (SELECT CASE WHEN public.is_admin((SELECT auth.uid())) THEN '-infinity'::timestamptz
+                                              ELSE (SELECT p.created_at FROM app.profiles p WHERE p.id = (SELECT auth.uid())) END)
            LIMIT 100) x;
 $function$;
 REVOKE ALL ON FUNCTION public.channel_unread_count(p_channel uuid) FROM PUBLIC, anon, authenticated, service_role;
@@ -124,7 +135,8 @@ CREATE FUNCTION public.mark_conversation_read(p_conversation uuid, p_at timestam
 AS $function$
 DECLARE
   v_uid uuid := auth.uid();
-  v_at  timestamptz := LEAST(COALESCE(p_at, now()), now());   -- niciodată în viitor
+  v_cap timestamptz;
+  v_at  timestamptz;
   v_out timestamptz;
 BEGIN
   IF v_uid IS NULL THEN RAISE EXCEPTION 'not_authenticated' USING ERRCODE = '42501'; END IF;
@@ -132,11 +144,20 @@ BEGIN
                   WHERE c.id = p_conversation AND (c.driver_id = v_uid OR c.mechanic_id = v_uid)) THEN
     RAISE EXCEPTION 'not_participant' USING ERRCODE = '42501';
   END IF;
+  -- Plafonul cursorului: ceasul serverului SAU cel mai nou mesaj existent + 1 ms, care e mai mare. A doua parte
+  -- contează doar pentru un mesaj cu dată din viitor (clientul poate trimite created_at la INSERT — gol vechi):
+  -- fără ea mesajul acela n-ar putea fi citit niciodată și bulina ar rămâne aprinsă (review 12 nov).
+  -- Doar mesajele neșterse: odată șters (tombstone) un mesaj cu dată din viitor, plafonul revine la now().
+  v_cap := GREATEST(now(), COALESCE((SELECT max(m.created_at) FROM public.messages m
+                                      WHERE m.conversation_id = p_conversation AND m.deleted_at IS NULL), now())
+                           + interval '1 millisecond');
+  v_at := LEAST(COALESCE(p_at, v_cap), v_cap);
   INSERT INTO public.message_reads AS r (conversation_id, user_id, last_read_at)
   VALUES (p_conversation, v_uid, v_at)
   ON CONFLICT (conversation_id, user_id) DO UPDATE
         SET last_read_at = EXCLUDED.last_read_at
       WHERE r.last_read_at < EXCLUDED.last_read_at            -- doar înainte; altfel nu se scrie nimic
+         OR r.last_read_at > v_cap                            -- un cursor rămas în viitor (scris de 1.0.x) e adus înapoi
   RETURNING r.last_read_at INTO v_out;
   IF v_out IS NULL THEN
     SELECT r.last_read_at INTO v_out FROM public.message_reads r
@@ -159,18 +180,27 @@ CREATE FUNCTION public.mark_channel_read(p_channel uuid, p_at timestamptz DEFAUL
 AS $function$
 DECLARE
   v_uid uuid := auth.uid();
-  v_at  timestamptz := LEAST(COALESCE(p_at, now()), now());   -- niciodată în viitor
+  v_cap timestamptz;
+  v_at  timestamptz;
   v_out timestamptz;
 BEGIN
   IF v_uid IS NULL THEN RAISE EXCEPTION 'not_authenticated' USING ERRCODE = '42501'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.channels ch WHERE ch.id = p_channel) THEN
     RAISE EXCEPTION 'channel_not_found' USING ERRCODE = '42501';
   END IF;
+  -- Același plafon ca la conversații: now() sau cel mai nou mesaj existent + 1 ms. Fără p_at (clientul 1.1)
+  -- cursorul e chiar plafonul: tot ce există în canal e citit, inclusiv un mesaj cu dată din viitor.
+  -- Doar mesajele neșterse (vezi mark_conversation_read).
+  v_cap := GREATEST(now(), COALESCE((SELECT max(m.created_at) FROM public.channel_messages m
+                                      WHERE m.channel_id = p_channel AND m.deleted_at IS NULL), now())
+                           + interval '1 millisecond');
+  v_at := LEAST(COALESCE(p_at, v_cap), v_cap);
   INSERT INTO public.channel_reads AS r (channel_id, user_id, last_read_at)
   VALUES (p_channel, v_uid, v_at)
   ON CONFLICT (channel_id, user_id) DO UPDATE
         SET last_read_at = EXCLUDED.last_read_at
       WHERE r.last_read_at < EXCLUDED.last_read_at            -- doar înainte; altfel nu se scrie nimic
+         OR r.last_read_at > v_cap                            -- un cursor rămas în viitor (scris de 1.0.x) e adus înapoi
   RETURNING r.last_read_at INTO v_out;
   IF v_out IS NULL THEN
     SELECT r.last_read_at INTO v_out FROM public.channel_reads r

@@ -1,12 +1,13 @@
 -- pgTAP: faza 5, varianta B (migrarea 20261113000100_unread_counts_mark_read): unread_counts() = numărătoarea
 -- clientului 1.0.x pe fiecare ramură (citit / necitit / niciodată deschis / tombstone / mesaj propriu / conversație
 -- ștearsă / conversația altcuiva / plafon 100), channel_unread_count() cu regula „de după crearea contului”,
--- mark_*_read (nu merge înapoi, nu trece de now(), nu scrie când nu avansează, doar participanții), drepturile,
+-- mark_*_read (nu merge înapoi, nu trece de plafon — now() sau cel mai nou mesaj existent + 1 ms —, nu scrie când
+-- nu se schimbă, aduce înapoi un cursor rămas în viitor, doar participanții), drepturile,
 -- și drumul 1.0.x (upsert direct pe message_reads / channel_reads) neatins.
 -- Id-urile 95… .
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(34);
+select plan(44);
 
 create function pg_temp.as_user(p_uid uuid, p_role text) returns void language plpgsql as $$
 begin
@@ -139,13 +140,20 @@ select is((select public.mark_conversation_read('95333333-0000-4000-8000-0000000
           now() - interval '5 minutes' + interval '1 millisecond', '9. un cursor mai vechi NU dă cursorul înapoi (întoarce valoarea existentă)');
 select is((select ctid from public.message_reads where conversation_id = '95333333-0000-4000-8000-000000000002' and user_id = '95000000-0000-4000-8000-0000000000a1'),
           (select c from t_ctid), '10. când cursorul nu avansează nu se scrie nimic (același ctid → niciun eveniment Realtime)');
+select is((select public.mark_conversation_read('95333333-0000-4000-8000-000000000002', now() - interval '5 minutes' + interval '1 millisecond')), now() - interval '5 minutes' + interval '1 millisecond',
+          '10b. același cursor a doua oară → aceeași valoare');
+select is((select ctid from public.message_reads where conversation_id = '95333333-0000-4000-8000-000000000002' and user_id = '95000000-0000-4000-8000-0000000000a1'),
+          (select c from t_ctid), '10c. … tot fără scriere');
 select is((select public.mark_conversation_read('95333333-0000-4000-8000-000000000001', now() + interval '1 day')), now(),
           '11. un cursor din viitor (ceasul telefonului înainte) e adus la now()');
 select is((select string_agg(right(conversation_id::text, 1) || '=' || unread, ',' order by conversation_id) from public.unread_counts()),
           '6=100', '12. c1 citită');
 select is((select public.mark_conversation_read('95333333-0000-4000-8000-000000000006') = now()), true, '13. fără p_at → now()');
+select is((select public.mark_conversation_read('95333333-0000-4000-8000-000000000006', null)), now(), '13b. p_at NULL explicit → plafonul (now())');
 select throws_ok($$ select public.mark_conversation_read('95333333-0000-4000-8000-000000000005') $$, '42501', 'not_participant',
                  '14. conversația altcuiva → not_participant (și niciun rând scris)');
+select throws_ok($$ select public.mark_conversation_read('95333333-0000-4000-8000-0000000000ff') $$, '42501', 'not_participant',
+                 '14b. conversație inexistentă → ACEEAȘI eroare (existența unei conversații nu se poate sonda)');
 select pg_temp.as_postgres();
 select is((select count(*)::int from public.message_reads where conversation_id = '95333333-0000-4000-8000-000000000005'), 0,
           '15. niciun rând de citire pe conversația altcuiva');
@@ -162,6 +170,22 @@ select lives_ok($$ insert into public.channel_reads (channel_id, user_id, last_r
                 '17. 1.0.x: upsert direct pe channel_reads merge ca înainte');
 select is((select string_agg(right(conversation_id::text, 1) || '=' || unread, ',' order by conversation_id) from public.unread_counts()),
           '5=2', '18. după upsert-ul direct, unread_counts vede c1 citită (aceleași tabele)');
+
+-- ── 18b–18e. mesaj cu dată din viitor (clientul poate trimite created_at la INSERT) și cursor rămas în viitor ───
+select pg_temp.as_postgres();
+insert into public.messages (id, conversation_id, sender_id, content, created_at) values
+  ('95444444-0000-4000-8000-000000000302', '95333333-0000-4000-8000-000000000003', '95000000-0000-4000-8000-0000000000c3', 'U c3 din viitor', now() + interval '2 days');
+select pg_temp.as_user('95000000-0000-4000-8000-0000000000a1', 'authenticated');
+select is((select string_agg(right(conversation_id::text, 1) || '=' || unread, ',' order by conversation_id) from public.unread_counts()), '3=1', '18b. mesajul cu dată din viitor e numărat ca necitit');
+select is((select public.mark_conversation_read('95333333-0000-4000-8000-000000000003', now() + interval '2 days' + interval '1 millisecond')),
+          now() + interval '2 days' + interval '1 millisecond',
+          '18c. plafonul urcă până la cel mai nou mesaj EXISTENT + 1 ms: mesajul poate fi citit (altfel bulina ar rămâne aprinsă)');
+select is((select count(*)::int from public.unread_counts()), 0, '18d. … și nu mai e numărat');
+select pg_temp.as_postgres();
+update public.messages set deleted_at = now() where id = '95444444-0000-4000-8000-000000000302';
+select pg_temp.as_user('95000000-0000-4000-8000-0000000000a1', 'authenticated');
+select is((select public.mark_conversation_read('95333333-0000-4000-8000-000000000003')), now(),
+          '18e. după ștergerea mesajului, cursorul rămas în viitor e adus înapoi la now() (la fel pentru unul scris de 1.0.x cu ceasul înainte)');
 
 -- ── 19–27. channel_unread_count ────────────────────────────────────────────────────────────────────────────────
 select pg_temp.as_user('95000000-0000-4000-8000-0000000000a1', 'authenticated');
@@ -184,6 +208,8 @@ select pg_temp.as_user('95000000-0000-4000-8000-0000000000c1', 'authenticated');
 select is((select public.channel_unread_count('95555555-0000-4000-8000-000000000001')), 2,
           '25. M1 (cursor la −3 h, pus prin upsert direct): mesajul lui A + cel al lui M2; ale lui proprii nu se numără');
 select is((select public.channel_unread_count('95555555-0000-4000-8000-0000000000ff')), 0, '26. canal inexistent → 0');
+select pg_temp.as_user('95000000-0000-4000-8000-0000000000ee', 'authenticated');
+select is((select public.channel_unread_count('95555555-0000-4000-8000-000000000001')), 0, '26b. cont fără profil (și fără rol de admin) → 0, ca prin RLS');
 select pg_temp.as_user('95000000-0000-4000-8000-0000000000a1', 'anon');
 select throws_ok($$ select public.channel_unread_count('95555555-0000-4000-8000-000000000001') $$, '42501', null, '27. anon nu poate apela channel_unread_count');
 
@@ -197,6 +223,8 @@ select throws_ok($$ select public.mark_channel_read('95555555-0000-4000-8000-000
 
 -- ── 33–34. drepturile ──────────────────────────────────────────────────────────────────────────────────────────
 select pg_temp.as_postgres();
+select is((select count(*)::int from public.channel_reads where channel_id = '95555555-0000-4000-8000-0000000000ff'), 0,
+          '32b. … și niciun rând de citire pentru canalul inexistent');
 select is((select bool_or(has_function_privilege('anon', f, 'EXECUTE'))
              from unnest(array['public.unread_counts()', 'public.channel_unread_count(uuid)',
                                'public.mark_conversation_read(uuid, timestamptz)', 'public.mark_channel_read(uuid, timestamptz)']) f), false,
