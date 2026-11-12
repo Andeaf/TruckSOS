@@ -20,6 +20,30 @@ import { setPendingLink } from '@/lib/pending-link';
  * (linkul amânat, persistent) ca după cont omul să revină unde era; „Mai târziu" (la fel
  * tap pe fundal / back pe Android) doar închide.
  */
+/**
+ * 8.3 (decizia lui David, 11 nov 2026): oaspetele nu vede detaliile, deci nu ajunge la niciun
+ * buton „Raportează”. Când foaia s-a deschis de pe un card (anunț, anunț din Market, profil),
+ * linkul amânat spune ce conținut era — de aici tipul și id-ul pentru formularul public
+ * `/report` (DSA art. 16), precompletat. Orice alt link = fără rândul de raportare.
+ */
+const REPORT_TARGETS: readonly { re: RegExp; type: 'announcement' | 'listing' | 'user' }[] = [
+  { re: /^\/\(guest\)\/announcements\/([0-9a-f]{8}-[0-9a-f-]{27})$/i, type: 'announcement' },
+  { re: /^\/\(guest\)\/market\/([0-9a-f]{8}-[0-9a-f-]{27})$/i, type: 'listing' },
+  { re: /^\/\(guest\)\/mechanics\/([0-9a-f]{8}-[0-9a-f-]{27})$/i, type: 'user' },
+  { re: /^\/p\/([0-9a-f]{8}-[0-9a-f-]{27})$/i, type: 'user' },
+];
+
+export function reportTargetFromLink(
+  link: string | null
+): { type: 'announcement' | 'listing' | 'user'; id: string } | null {
+  if (!link) return null;
+  for (const { re, type } of REPORT_TARGETS) {
+    const m = re.exec(link);
+    if (m) return { type, id: m[1].toLowerCase() };
+  }
+  return null;
+}
+
 export function AccountGateSheet() {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -64,6 +88,18 @@ export function AccountGateSheet() {
   function openPrivacy() {
     close();
     router.push('/(auth)/privacy' as never);
+  }
+
+  // Doar pentru motivele „vezi detaliul”: acolo `link` e cardul apăsat. Nu ține minte ecranul
+  // (nu e un drum spre cont); formularul merge fără sesiune, garda nu-l ricoșează.
+  const reportTarget =
+    shown === 'viewAnnouncement' || shown === 'viewListing' || shown === 'viewProfile'
+      ? reportTargetFromLink(link)
+      : null;
+  function openReport() {
+    if (!reportTarget) return;
+    close();
+    router.push({ pathname: '/report', params: reportTarget } as never);
   }
 
   const laterLabel = t('accountGate.later');
@@ -123,6 +159,21 @@ export function AccountGateSheet() {
                 {laterLabel}
               </ThemedText>
             </Pressable>
+            {reportTarget ? (
+              <Pressable
+                onPress={openReport}
+                style={styles.privacy}
+                accessibilityRole="link"
+                hitSlop={8}>
+                <ThemedText
+                  type="small"
+                  themeColor="textSecondary"
+                  style={styles.privacyText}
+                  maxFontSizeMultiplier={1.3}>
+                  {t('accountGate.reportWithoutAccount')}
+                </ThemedText>
+              </Pressable>
+            ) : null}
             <Pressable
               onPress={openPrivacy}
               style={styles.privacy}
@@ -179,5 +230,5 @@ const styles = StyleSheet.create({
   later: { alignSelf: 'center', paddingVertical: Spacing.two },
   laterText: { fontWeight: '600' },
   privacy: { alignSelf: 'center', paddingBottom: Spacing.one },
-  privacyText: { textDecorationLine: 'underline' },
+  privacyText: { textDecorationLine: 'underline', textAlign: 'center' },
 });
