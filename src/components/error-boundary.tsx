@@ -21,7 +21,7 @@ import { supabase } from '@/lib/supabase';
  *
  * UNDE stă: e exportul `ErrorBoundary` al expo-router (îl învelește pe ruta care îl exportă într-un
  * `Try`), pus pe layout-urile de GRUP — (auth), (driver), (mechanic), (admin), (guest) — și pe rutele
- * din rădăcină (index, auth/confirm, p/[id]). NU în jurul `<Slot />` din `app/_layout.tsx`: acolo ar fi
+ * din rădăcină (index, auth/confirm, p/[id], report). NU în jurul `<Slot />` din `app/_layout.tsx`: acolo ar fi
  * demontat navigatorul rădăcină, iar garda de navigare sau un tap pe notificare ar fi aruncat „Attempted
  * to navigate before mounting the Root Layout” DEASUPRA plasei (review 10 nov). Așa, rădăcina rămâne
  * montată: garda poate trimite la login, iar o navigare (tap pe notificare) schimbă ruta — ecranul de

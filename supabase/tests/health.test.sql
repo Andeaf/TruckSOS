@@ -4,7 +4,7 @@
 -- Id-urile 93… .
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(14);
 
 create function pg_temp.as_user(p_uid uuid, p_role text) returns void language plpgsql as $$
 begin
@@ -92,6 +92,11 @@ select is((select j ? 'public_reports_pending' from ah_out),
           '12. public_reports_pending apare exact când există reports.source (faza 8.3)');
 select ok((select not (j ? 'client_errors') or ((j->'client_errors'->>'h24')::int >= 0 and (j->'client_errors'->>'d7')::int >= (j->'client_errors'->>'h24')::int) from ah_out),
           '13. client_errors: h24 ≤ d7');
+-- Ramura public_reports_pending rulează prima dată abia cu faza 8 în arbore; blocul ei EXCEPTION pune cheia și la eroare,
+-- deci testul 12 singur ar trece și cu interogarea stricată (review-ul merge-ului, 11 nov 2026).
+select ok((select not (j ? 'public_reports_pending_error')
+                  and (not (j ? 'public_reports_pending') or (j->>'public_reports_pending')::int >= 0) from ah_out),
+          '14. public_reports_pending: fără eroare, valoare ≥ 0');
 
 select * from finish();
 rollback;
