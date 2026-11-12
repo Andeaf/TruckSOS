@@ -123,7 +123,7 @@ select is((select details->'old'->>'full_name' || '>' || (details->'new'->>'full
 -- tabelul temporar se creează ca postgres (authenticated n-are neapărat drept de TEMP), apoi se umple ca utilizator
 -- 20261112000100: sesizările depuse intră în export (`reports_filed`); captura conținutului raportat și sesizările
 -- depuse ÎMPOTRIVA mea nu. Raportul pending al lui A (rămas după retenție) primește o captură + detalii; M îl raportează pe A.
-update public.reports set content_snapshot = 'R text raportat', details = 'R detalii A'
+update public.reports set content_snapshot = 'R text raportat', image_path_snapshot = 'chat/r-captura/poza-raportata.jpg', details = 'R detalii A'
  where id = '78222222-0000-4000-8000-000000000002';
 insert into public.reports (id, reporter_id, reported_user_id, reason, details) values
   ('78222222-0000-4000-8000-000000000009', '78000000-0000-4000-8000-0000000000c1', '78000000-0000-4000-8000-0000000000a1', 'scam', 'R impotriva lui A');
@@ -144,7 +144,7 @@ select is((select jsonb_array_length(j->'reports_filed')::text || '|' || (j->'re
           '1|spam|R detalii A|pending|78000000-0000-4000-8000-0000000000c1',
           '26b. reports_filed: DOAR sesizarea depusă de mine (motiv, detalii, stare, țintă)');
 select is((select (j->'reports_filed'->0 ?| array['content_snapshot', 'image_path_snapshot', 'reporter_email', 'reporter_id'])
-                  or j::text like '%R text raportat%' or j::text like '%R impotriva lui A%' from exp), false,
+                  or j::text like '%R text raportat%' or j::text like '%poza-raportata%' or j::text like '%R impotriva lui A%' from exp), false,
           '26c. fără captura conținutului raportat, fără e-mail, fără sesizarea depusă împotriva mea');
 select is((select (public.export_my_data()->>'user_id')::uuid), '78000000-0000-4000-8000-0000000000a1', '27. al doilea apel în 24 h merge (cota e 2/24 h — decizia din 9 nov)');
 select throws_ok($$ select public.export_my_data() $$, 'P0001', 'rate_limited', '27b. al treilea apel în 24 h → rate_limited');

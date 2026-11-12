@@ -126,7 +126,7 @@ BEGIN
   IF (SELECT prosrc FROM pg_proc WHERE oid = 'public.export_my_data()'::regprocedure) NOT LIKE '%reports_filed%' THEN
     RAISE EXCEPTION 'export_my_data: cheia reports_filed lipseste';
   END IF;
-  IF (SELECT prosrc FROM pg_proc WHERE oid = 'public.export_my_data()'::regprocedure) LIKE '%content_snapshot%' THEN
+  IF (SELECT prosrc FROM pg_proc WHERE oid = 'public.export_my_data()'::regprocedure) LIKE ANY (ARRAY['%content_snapshot%', '%image_path_snapshot%']) THEN
     RAISE EXCEPTION 'export_my_data: captura continutului raportat nu are voie in export';
   END IF;
   IF has_function_privilege('anon', 'public.export_my_data()', 'EXECUTE') THEN RAISE EXCEPTION 'export_my_data executabil de anon'; END IF;
