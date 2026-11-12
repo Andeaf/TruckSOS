@@ -88,6 +88,29 @@ describe('readPushData: datele unei notificări → { type, id, message_id, kind
     expect(readPushData(notification(undefined, ios))).toEqual({ type: 'conversation', id: 'c9' });
   });
 
+  it('tap pe notificare: use-push-navigation citește răspunsul prin readPushData, deci toate formele dau { type, id } navigabile', () => {
+    // Din 12 nov 2026 hook-ul nu mai ia `content.data` direct (un payload ca text JSON sau sub `body` nu deschidea nimic).
+    // Răspunsul unui tap = { notification }; hook-ul apelează readPushData(response.notification) și navighează doar cu rezultat.
+    const tapped = [
+      notification({ type: 'conversation', id: 'c1' }),
+      notification(JSON.stringify({ type: 'conversation', id: 'c1' })),
+      notification({ body: { type: 'conversation', id: 'c1' } }),
+      notification({ body: JSON.stringify({ type: 'conversation', id: 'c1' }) }),
+      notification({}, { remoteMessage: { data: { body: JSON.stringify({ type: 'conversation', id: 'c1' }) } } }),
+      notification(undefined, { payload: { body: { type: 'conversation', id: 'c1' } } }),
+    ].map((n) => readPushData(({ notification: n }).notification));
+    for (const data of tapped) expect(data).toEqual({ type: 'conversation', id: 'c1' });
+    // Mesajul la care derulează canalul ajunge la navigare ca text, și dintr-un payload împachetat.
+    expect(readPushData(notification({ body: { type: 'channel', id: 'g', message_id: 7, kind: 'mention' } }))).toEqual({
+      type: 'channel',
+      id: 'g',
+      message_id: '7',
+      kind: 'mention',
+    });
+    // Fără date citibile hook-ul nu navighează (înainte: `open(undefined)` ar fi aruncat la `data.id`).
+    expect(readPushData(notification(undefined))).toBeUndefined();
+  });
+
   it('content.data are prioritate față de declanșator', () => {
     const trigger = { payload: { body: { type: 'feed', id: 'din-trigger' } } };
     expect(readPushData(notification({ type: 'feed', id: 'din-content' }, trigger))?.id).toBe('din-content');
