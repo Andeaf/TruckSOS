@@ -1281,7 +1281,7 @@
         },
         {
           "heading": "4. Scopuri și temeiuri legale",
-          "body": "• Furnizarea serviciului (cont, anunțuri, candidaturi, chat, Market, notificări): executarea contractului (art. 6(1)(b) GDPR).\n• Siguranța, moderarea, prevenirea abuzurilor, limitele de ritm, jurnalul de diagnostic, rapoartele de eroare pe care le trimiți tu: interes legitim (art. 6(1)(f)) — să menținem un serviciu funcțional și sigur pentru profesioniști.\n• Obligații legale (sesizări DSA, cereri ale autorităților, evidența acțiunilor de moderare): obligație legală (art. 6(1)(c)).\n• Notificările opționale (anunțuri noi pe Market, mențiuni) și locația: consimțământ (art. 6(1)(a)), retractabil oricând din Setări."
+          "body": "• Furnizarea serviciului (cont, anunțuri, candidaturi, chat, Market, notificări): executarea contractului (art. 6(1)(b) GDPR).\n• Siguranța, moderarea, prevenirea abuzurilor, limitele de ritm, jurnalul de diagnostic al conexiunii, rapoartele de eroare pe care le trimiți tu: interes legitim (art. 6(1)(f)) — să menținem un serviciu funcțional și sigur pentru profesioniști.\n• Obligații legale (sesizări DSA, cereri ale autorităților, evidența acțiunilor de moderare): obligație legală (art. 6(1)(c)).\n• Notificările opționale (anunțuri noi pe Market, mențiuni) și locația: consimțământ (art. 6(1)(a)), retractabil oricând din Setări."
         },
         {
           "heading": "5. Unde sunt datele și cine le prelucrează pentru noi",
@@ -1297,7 +1297,7 @@
         },
         {
           "heading": "8. Drepturile tale",
-          "body": "Acces, rectificare (direct din aplicație), ștergere (din aplicație), restricționare, opoziție, portabilitate („Descarcă datele mele” din Setări îți dă un fișier cu datele contului tău și conținutul creat de tine, de două ori pe zi; fără jurnalele tehnice — jurnalul de diagnostic al conexiunii și rapoartele de eroare), retragerea consimțământului (comutatoarele din Setări). Răspundem în cel mult 30 de zile la support@trucksos.net. Poți depune plângere la autoritatea de supraveghere — în România, ANSPDCP (www.dataprotection.ro) — sau la autoritatea din țara ta."
+          "body": "Acces, rectificare (direct din aplicație), ștergere (din aplicație), restricționare, opoziție, portabilitate („Descarcă datele mele” din Setări îți dă un fișier cu datele contului tău și conținutul creat de tine, inclusiv sesizările depuse din aplicație, de două ori pe zi; pozele și fișierele apar ca referințe, iar mesajele sunt limitate la cele mai recente 10 000 din conversațiile private și la cele mai recente 10 000 din canal; fără jurnalele tehnice — jurnalul de diagnostic al conexiunii și rapoartele de eroare), retragerea consimțământului (comutatoarele din Setări). Răspundem în cel mult 30 de zile la support@trucksos.net. Poți depune plângere la autoritatea de supraveghere — în România, ANSPDCP (www.dataprotection.ro) — sau la autoritatea din țara ta."
         },
         {
           "heading": "9. Cui se adresează serviciul",

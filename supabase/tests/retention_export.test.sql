@@ -3,7 +3,7 @@
 -- Id-urile 78… .
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(35);
+select plan(38);
 
 create function pg_temp.as_user(p_uid uuid, p_role text) returns void language plpgsql as $$
 begin
@@ -121,6 +121,12 @@ select is((select details->'old'->>'full_name' || '>' || (details->'new'->>'full
 
 -- ── 21–30. export_my_data ───────────────────────────────────────────────────────────────────────────
 -- tabelul temporar se creează ca postgres (authenticated n-are neapărat drept de TEMP), apoi se umple ca utilizator
+-- 20261112000100: sesizările depuse intră în export (`reports_filed`); captura conținutului raportat și sesizările
+-- depuse ÎMPOTRIVA mea nu. Raportul pending al lui A (rămas după retenție) primește o captură + detalii; M îl raportează pe A.
+update public.reports set content_snapshot = 'R text raportat', image_path_snapshot = 'chat/r-captura/poza-raportata.jpg', details = 'R detalii A'
+ where id = '78222222-0000-4000-8000-000000000002';
+insert into public.reports (id, reporter_id, reported_user_id, reason, details) values
+  ('78222222-0000-4000-8000-000000000009', '78000000-0000-4000-8000-0000000000c1', '78000000-0000-4000-8000-0000000000a1', 'scam', 'R impotriva lui A');
 create temp table exp (j jsonb) on commit drop;
 grant all on exp to authenticated;
 select pg_temp.as_user('78000000-0000-4000-8000-0000000000a1', 'authenticated');
@@ -133,10 +139,19 @@ select is((select string_agg(x->>'content', ',') from exp, jsonb_array_elements(
           '24. DOAR mesajele trimise de mine (nu „R activ M” al mecanicului; cele vechi au fost șterse de retenție)');
 select is((select (j->'messages_sent'->>'truncated')::boolean from exp), false, '25. fără trunchiere la volum mic');
 select is((select j ? 'push_devices' and j ? 'moderation_notices' and j ? 'ratings_given' and j ? 'blocked_users' from exp), true, '26. secțiunile există și goale');
+select is((select jsonb_array_length(j->'reports_filed')::text || '|' || (j->'reports_filed'->0->>'reason') || '|' || (j->'reports_filed'->0->>'details')
+                  || '|' || (j->'reports_filed'->0->>'status') || '|' || (j->'reports_filed'->0->>'reported_user_id') from exp),
+          '1|spam|R detalii A|pending|78000000-0000-4000-8000-0000000000c1',
+          '26b. reports_filed: DOAR sesizarea depusă de mine (motiv, detalii, stare, țintă)');
+select is((select (j->'reports_filed'->0 ?| array['content_snapshot', 'image_path_snapshot', 'reporter_email', 'reporter_id'])
+                  or j::text like '%R text raportat%' or j::text like '%poza-raportata%' or j::text like '%R impotriva lui A%' from exp), false,
+          '26c. fără captura conținutului raportat, fără e-mail, fără sesizarea depusă împotriva mea');
 select is((select (public.export_my_data()->>'user_id')::uuid), '78000000-0000-4000-8000-0000000000a1', '27. al doilea apel în 24 h merge (cota e 2/24 h — decizia din 9 nov)');
 select throws_ok($$ select public.export_my_data() $$, 'P0001', 'rate_limited', '27b. al treilea apel în 24 h → rate_limited');
 select pg_temp.as_user('78000000-0000-4000-8000-0000000000c1', 'authenticated');
 select is((select jsonb_array_length(public.export_my_data()->'applications')), 0, '28. alt utilizator primește exportul LUI (fără camioanele lui A)');
+select is((select public.export_my_data()->'reports_filed'->0->>'details'), 'R impotriva lui A',
+          '28b. sesizarea depusă de M apare în exportul LUI M (al doilea apel al lui, în cotă)');
 select pg_temp.as_postgres();
 select is(has_function_privilege('anon', 'public.export_my_data()', 'EXECUTE'), false, '29. anon nu poate exporta');
 select is(has_function_privilege('authenticated', 'public.export_my_data()', 'EXECUTE'), true, '30. authenticated poate');
