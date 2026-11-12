@@ -135,6 +135,7 @@ CREATE FUNCTION public.mark_conversation_read(p_conversation uuid, p_at timestam
 AS $function$
 DECLARE
   v_uid uuid := auth.uid();
+  v_newest timestamptz;   -- cel mai nou mesaj neșters din fir + 1 ms (NULL = fir fără mesaje)
   v_cap timestamptz;
   v_at  timestamptz;
   v_out timestamptz;
@@ -148,16 +149,19 @@ BEGIN
   -- contează doar pentru un mesaj cu dată din viitor (clientul poate trimite created_at la INSERT — gol vechi):
   -- fără ea mesajul acela n-ar putea fi citit niciodată și bulina ar rămâne aprinsă (review 12 nov).
   -- Doar mesajele neșterse: odată șters (tombstone) un mesaj cu dată din viitor, plafonul revine la now().
-  v_cap := GREATEST(now(), COALESCE((SELECT max(m.created_at) FROM public.messages m
-                                      WHERE m.conversation_id = p_conversation AND m.deleted_at IS NULL), now())
-                           + interval '1 millisecond');
+  v_newest := (SELECT max(m.created_at) FROM public.messages m
+                WHERE m.conversation_id = p_conversation AND m.deleted_at IS NULL) + interval '1 millisecond';
+  v_cap := GREATEST(now(), COALESCE(v_newest, now()));
   v_at := LEAST(COALESCE(p_at, v_cap), v_cap);
   INSERT INTO public.message_reads AS r (conversation_id, user_id, last_read_at)
   VALUES (p_conversation, v_uid, v_at)
   ON CONFLICT (conversation_id, user_id) DO UPDATE
         SET last_read_at = EXCLUDED.last_read_at
       WHERE r.last_read_at < EXCLUDED.last_read_at            -- doar înainte; altfel nu se scrie nimic
-         OR r.last_read_at > v_cap                            -- un cursor rămas în viitor (scris de 1.0.x) e adus înapoi
+         -- un cursor rămas în VIITOR (scris de un 1.0.x cu ceasul înainte, sau rămas după ștergerea unui mesaj cu dată
+         -- din viitor) e adus înapoi. Comparat cu ceasul de ACUM, nu cu now()-ul tranzacției: altfel, la două apeluri
+         -- aproape simultane, cel pornit mai devreme ar da înapoi cursorul scris de cel pornit mai târziu.
+         OR r.last_read_at > GREATEST(clock_timestamp(), COALESCE(v_newest, '-infinity'::timestamptz))
   RETURNING r.last_read_at INTO v_out;
   IF v_out IS NULL THEN
     SELECT r.last_read_at INTO v_out FROM public.message_reads r
@@ -180,6 +184,7 @@ CREATE FUNCTION public.mark_channel_read(p_channel uuid, p_at timestamptz DEFAUL
 AS $function$
 DECLARE
   v_uid uuid := auth.uid();
+  v_newest timestamptz;   -- cel mai nou mesaj neșters din fir + 1 ms (NULL = fir fără mesaje)
   v_cap timestamptz;
   v_at  timestamptz;
   v_out timestamptz;
@@ -191,16 +196,19 @@ BEGIN
   -- Același plafon ca la conversații: now() sau cel mai nou mesaj existent + 1 ms. Fără p_at (clientul 1.1)
   -- cursorul e chiar plafonul: tot ce există în canal e citit, inclusiv un mesaj cu dată din viitor.
   -- Doar mesajele neșterse (vezi mark_conversation_read).
-  v_cap := GREATEST(now(), COALESCE((SELECT max(m.created_at) FROM public.channel_messages m
-                                      WHERE m.channel_id = p_channel AND m.deleted_at IS NULL), now())
-                           + interval '1 millisecond');
+  v_newest := (SELECT max(m.created_at) FROM public.channel_messages m
+                WHERE m.channel_id = p_channel AND m.deleted_at IS NULL) + interval '1 millisecond';
+  v_cap := GREATEST(now(), COALESCE(v_newest, now()));
   v_at := LEAST(COALESCE(p_at, v_cap), v_cap);
   INSERT INTO public.channel_reads AS r (channel_id, user_id, last_read_at)
   VALUES (p_channel, v_uid, v_at)
   ON CONFLICT (channel_id, user_id) DO UPDATE
         SET last_read_at = EXCLUDED.last_read_at
       WHERE r.last_read_at < EXCLUDED.last_read_at            -- doar înainte; altfel nu se scrie nimic
-         OR r.last_read_at > v_cap                            -- un cursor rămas în viitor (scris de 1.0.x) e adus înapoi
+         -- un cursor rămas în VIITOR (scris de un 1.0.x cu ceasul înainte, sau rămas după ștergerea unui mesaj cu dată
+         -- din viitor) e adus înapoi. Comparat cu ceasul de ACUM, nu cu now()-ul tranzacției: altfel, la două apeluri
+         -- aproape simultane, cel pornit mai devreme ar da înapoi cursorul scris de cel pornit mai târziu.
+         OR r.last_read_at > GREATEST(clock_timestamp(), COALESCE(v_newest, '-infinity'::timestamptz))
   RETURNING r.last_read_at INTO v_out;
   IF v_out IS NULL THEN
     SELECT r.last_read_at INTO v_out FROM public.channel_reads r
