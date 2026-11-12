@@ -239,3 +239,7 @@ const styles = StyleSheet.create({
   actions: { alignSelf: 'stretch', gap: Spacing.two, marginTop: Spacing.two },
   textLink: { alignSelf: 'center', paddingVertical: Spacing.two },
 });
+
+// 1.1 (faza 9.1): o eroare la randare aici arată ecranul „Ceva n-a mers” (components/error-boundary.tsx),
+// fără să demonteze navigatorul rădăcină.
+export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-boundary';

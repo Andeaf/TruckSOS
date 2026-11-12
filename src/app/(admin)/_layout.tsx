@@ -99,6 +99,11 @@ export default function AdminLayout() {
       />
       {/* Ecran deschis din Panou, ascuns din bară și din sidebar (href: null). */}
       <Tabs.Screen name="purge-accounts" options={{ href: null, title: t('admin.purge.title') }} />
+      <Tabs.Screen name="client-errors" options={{ href: null, title: t('admin.clientErrors.listTitle') }} />
     </Tabs>
   );
 }
+
+// 1.1 (faza 9.1): o eroare la randare aici arată ecranul „Ceva n-a mers” (components/error-boundary.tsx),
+// fără să demonteze navigatorul rădăcină.
+export { RouteErrorBoundary as ErrorBoundary } from '@/components/error-boundary';

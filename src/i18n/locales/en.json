@@ -176,6 +176,34 @@
         "nelogat_dupa_inscriere": "Profil gol, nicio conectare după înscriere",
         "profil_gol_fara_activitate": "Profil gol, fără nicio activitate"
       }
+    },
+    "clientErrors": {
+      "title": "Erori client (7 zile)",
+      "listTitle": "Erori client",
+      "total": "Total",
+      "users": "Utilizatori afectați",
+      "open": "Vezi lista",
+      "back": "Înapoi",
+      "screen": "Ecran: {{screen}}",
+      "meta": "{{platform}} {{os}} · versiunea {{build}}",
+      "showStack": "Arată stiva",
+      "hideStack": "Ascunde stiva",
+      "empty": "Nicio eroare în ultimele 7 zile.",
+      "unavailable": "Lista nu e disponibilă (funcția nu există încă pe server sau conexiunea a picat)."
+    },
+    "health": {
+      "title": "Sănătate",
+      "withOldest": "{{count}} (cel mai vechi: {{time}})",
+      "pushQueued": "Push în coadă",
+      "pushExpired48h": "Push expirate (48 h)",
+      "push401": "Kick-uri HTTP 401 (6 h)",
+      "storageQueue": "Coada Storage",
+      "storageStale": "Coada Storage mai veche de 48 h",
+      "retentionLast": "Ultima retenție",
+      "cronFailed": "Joburi cron eșuate (24 h)",
+      "clientErrors": "Erori client 24 h / 7 z",
+      "publicReports": "Sesizări publice în așteptare",
+      "sectionError": "Eroare la citire: {{section}}"
     }
   },
   "auth": {
@@ -1418,5 +1446,21 @@
     "editFailedBody": "Check your connection and try again.",
     "sendFailed": "Message not sent",
     "attachmentMissing": "The file is no longer on this phone, so the unsent message was removed."
+  },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "body": "This screen ran into an error. Try again; if it keeps happening, you can send us a report so we can fix it.",
+    "retry": "Try again",
+    "send": "Send report",
+    "sending": "Sending…",
+    "sent": "Thank you, the report has been sent.",
+    "whatIsSent": "What is sent",
+    "type": "Error type",
+    "message": "Technical message",
+    "screen": "Screen",
+    "version": "App version",
+    "noPersonalData": "We also send the technical trace of the error, the platform, the system version and a short code derived from your account (to count how many users are affected). E-mail addresses, phone numbers and identifiers are removed automatically before sending. The report is deleted after 30 days.",
+    "rateLimited": "You've already sent several reports in the last hour. Please try again later.",
+    "failed": "The report couldn't be sent. Check your connection and try again."
   }
 }

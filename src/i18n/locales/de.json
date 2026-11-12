@@ -176,6 +176,34 @@
         "nelogat_dupa_inscriere": "Profil gol, nicio conectare după înscriere",
         "profil_gol_fara_activitate": "Profil gol, fără nicio activitate"
       }
+    },
+    "clientErrors": {
+      "title": "Erori client (7 zile)",
+      "listTitle": "Erori client",
+      "total": "Total",
+      "users": "Utilizatori afectați",
+      "open": "Vezi lista",
+      "back": "Înapoi",
+      "screen": "Ecran: {{screen}}",
+      "meta": "{{platform}} {{os}} · versiunea {{build}}",
+      "showStack": "Arată stiva",
+      "hideStack": "Ascunde stiva",
+      "empty": "Nicio eroare în ultimele 7 zile.",
+      "unavailable": "Lista nu e disponibilă (funcția nu există încă pe server sau conexiunea a picat)."
+    },
+    "health": {
+      "title": "Sănătate",
+      "withOldest": "{{count}} (cel mai vechi: {{time}})",
+      "pushQueued": "Push în coadă",
+      "pushExpired48h": "Push expirate (48 h)",
+      "push401": "Kick-uri HTTP 401 (6 h)",
+      "storageQueue": "Coada Storage",
+      "storageStale": "Coada Storage mai veche de 48 h",
+      "retentionLast": "Ultima retenție",
+      "cronFailed": "Joburi cron eșuate (24 h)",
+      "clientErrors": "Erori client 24 h / 7 z",
+      "publicReports": "Sesizări publice în așteptare",
+      "sectionError": "Eroare la citire: {{section}}"
     }
   },
   "auth": {
@@ -1418,5 +1446,21 @@
     "editFailedBody": "Prüfe deine Verbindung und versuche es erneut.",
     "sendFailed": "Nachricht wurde nicht gesendet",
     "attachmentMissing": "Die Datei ist nicht mehr auf dem Telefon, daher wurde die nicht gesendete Nachricht gelöscht."
+  },
+  "errorBoundary": {
+    "title": "Etwas ist schiefgelaufen",
+    "body": "Auf diesem Bildschirm ist ein Fehler aufgetreten. Versuche es erneut; wenn es wieder passiert, kannst du uns einen Bericht senden, damit wir ihn beheben können.",
+    "retry": "Erneut versuchen",
+    "send": "Bericht senden",
+    "sending": "Wird gesendet…",
+    "sent": "Danke, der Bericht wurde gesendet.",
+    "whatIsSent": "Was gesendet wird",
+    "type": "Fehlertyp",
+    "message": "Technische Meldung",
+    "screen": "Bildschirm",
+    "version": "App-Version",
+    "noPersonalData": "Außerdem werden der technische Stacktrace des Fehlers, die Plattform, die Systemversion und ein kurzer, aus deinem Konto abgeleiteter Code gesendet (um zu zählen, wie viele Nutzer betroffen sind). E-Mail-Adressen, Telefonnummern und Kennungen werden vor dem Senden automatisch entfernt. Der Bericht wird nach 30 Tagen gelöscht.",
+    "rateLimited": "Du hast in der letzten Stunde bereits mehrere Berichte gesendet. Bitte versuche es später erneut.",
+    "failed": "Der Bericht konnte nicht gesendet werden. Prüfe deine Verbindung und versuche es erneut."
   }
 }

@@ -248,7 +248,7 @@ select is((select receipt_status || '|' || (select count(*) from public.push_tok
 -- ── 27. Nimic nu mai apelează Expo direct; cron-urile există ─────────────────────────────────────────
 select is((select coalesce(string_agg(n.nspname || '.' || p.proname, ', ' order by n.nspname, p.proname), '') from pg_proc p join pg_namespace n on n.oid = p.pronamespace
              where n.nspname in ('public', 'app') and p.prosrc ilike '%net.http_post%'),
-          'app.kick_push_dispatch, app.kick_push_receipts, app.kick_storage_gc', '27. net.http_post doar în funcțiile kick (cron), nu în triggere');  -- + storage-gc (faza 6.2, 20261109000400)
+          'app.kick_cleanup_announcements, app.kick_push_dispatch, app.kick_push_receipts, app.kick_storage_gc', '27. net.http_post doar în funcțiile kick (cron), nu în triggere');  -- + storage-gc (faza 6.2, 20261109000400) + cleanup-announcements (faza 9.3, 20261111000200)
 select is((select count(*)::int from cron.job where jobname in ('push-dispatch', 'channel-digests', 'push-receipts', 'cleanup-push-queue-daily', 'cleanup-cron-run-details-daily')), 5,
           '27b. cele 5 joburi cron există');
 select ok((select split_part(extversion, '.', 1)::int * 100 + split_part(extversion, '.', 2)::int >= 105 from pg_extension where extname = 'pg_cron'),

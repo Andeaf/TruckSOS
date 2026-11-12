@@ -173,6 +173,93 @@ export function fetchDashboardStats() {
   return rpcData<DashboardStats | null>('admin_dashboard_stats', {}, null);
 }
 
+// ── Erori client + sănătate (faza 9.1 / 9.4) ─────────────────────────────────
+// RPC-urile vin cu migrările 20261111000100 (admin_client_errors) și 20261111000300 (admin_health);
+// cât nu sunt pe server (PGRST202) sau la orice altă eroare → `null` = cardul nu apare. Fără Alert,
+// fără reîncercări: le reîncarcă butonul / pull-to-refresh-ul panoului.
+export interface ClientErrorTypeCount {
+  error_type: string;
+  count: number;
+  users: number;
+  last_at: string;
+}
+
+export interface ClientErrorItem {
+  id: number;
+  created_at: string;
+  app_build: string | null;
+  platform: string;
+  os_version: string | null;
+  screen: string | null;
+  error_type: string;
+  message: string | null;
+  stack: string | null;
+  user_hash: string;
+}
+
+export interface ClientErrorsSummary {
+  since: string;
+  total: number;
+  users: number;
+  by_type: ClientErrorTypeCount[];
+  items: ClientErrorItem[];
+}
+
+export interface AdminHealthPush {
+  queued: number;
+  sending: number;
+  sent_1h: number;
+  sent_24h: number;
+  failed_24h: number;
+  oldest_queued_at: string | null;
+  receipt_errors_24h: number;
+  channel_events_pending: number;
+  http_401_6h: number;
+  http_errors_6h: number;
+  expired_48h: number;
+}
+
+export interface AdminHealthCronFailure {
+  jobname: string;
+  failures: number;
+  last_at: string | null;
+  last_message: string | null;
+}
+
+/** Fiecare secțiune poate lipsi sau fi `null`; la o eroare pe secțiune serverul pune `<secțiune>_error`. */
+export interface AdminHealth {
+  generated_at?: string;
+  push?: AdminHealthPush | null;
+  storage_gc?: { queued: number; oldest_at: string | null; stale_48h: number } | null;
+  retention_last?: { status: string | null; end_time: string | null; message: string | null } | null;
+  cron_failed_24h?: AdminHealthCronFailure[] | null;
+  client_errors?: { h24: number; d7: number } | null;
+  public_reports_pending?: number | null;
+  [key: `${string}_error`]: string | undefined;
+}
+
+export async function fetchClientErrors(hours = 168, limit = 200): Promise<ClientErrorsSummary | null> {
+  try {
+    const { data, error } = await rpcData<ClientErrorsSummary | null>(
+      'admin_client_errors',
+      { p_hours: hours, p_limit: limit },
+      null
+    );
+    return error ? null : data;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchAdminHealth(): Promise<AdminHealth | null> {
+  try {
+    const { data, error } = await rpcData<AdminHealth | null>('admin_health', {}, null);
+    return error ? null : data;
+  } catch {
+    return null;
+  }
+}
+
 // ── Rapoarte ─────────────────────────────────────────────────────────────────
 export function fetchReports(status: ReportStatus | 'all' = 'pending') {
   return rpcData<AdminReport[]>('admin_list_reports', { p_status: status }, []);

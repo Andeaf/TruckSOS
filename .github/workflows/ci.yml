@@ -36,8 +36,8 @@ jobs:
 
       - name: Edge Functions (Deno) tests and typecheck
         run: |
-          deno test supabase/functions/push-dispatch supabase/functions/push-receipts supabase/functions/_shared supabase/functions/apple-link supabase/functions/storage-gc supabase/functions/delete-account supabase/functions/report-public
-          deno check supabase/functions/push-dispatch/index.ts supabase/functions/push-receipts/index.ts supabase/functions/apple-link/index.ts supabase/functions/storage-gc/index.ts supabase/functions/delete-account/index.ts supabase/functions/report-public/index.ts
+          deno test supabase/functions/push-dispatch supabase/functions/push-receipts supabase/functions/_shared supabase/functions/apple-link supabase/functions/storage-gc supabase/functions/delete-account supabase/functions/report-public supabase/functions/cleanup-announcements
+          deno check supabase/functions/push-dispatch/index.ts supabase/functions/push-receipts/index.ts supabase/functions/apple-link/index.ts supabase/functions/storage-gc/index.ts supabase/functions/delete-account/index.ts supabase/functions/report-public/index.ts supabase/functions/cleanup-announcements/index.ts
 
   db-tests:
     # Faza 0.3 + 0.3-bis (PLAN_1.1_FIX, 26–31 oct 2026), un singur job, în ordinea în care a evoluat producția:
