@@ -1294,7 +1294,7 @@
         },
         {
           "heading": "8. Your rights",
-          "body": "Access, rectification (directly in the app), erasure (from the app), restriction, objection, portability (“Download my data” in Settings gives you a file with all your data, twice a day), withdrawal of consent (the switches in Settings). We reply within 30 days at the latest to support@trucksos.net. You can lodge a complaint with the supervisory authority — in Romania, ANSPDCP (the Romanian supervisory authority, www.dataprotection.ro) — or with the authority in your country."
+          "body": "Access, rectification (directly in the app), erasure (from the app), restriction, objection, portability (“Download my data” in Settings gives you a file with your account data and the content you created, twice a day; without the technical logs — the connection diagnostic log and the error reports), withdrawal of consent (the switches in Settings). We reply within 30 days at the latest to support@trucksos.net. You can lodge a complaint with the supervisory authority — in Romania, ANSPDCP (the Romanian supervisory authority, www.dataprotection.ro) — or with the authority in your country."
         },
         {
           "heading": "9. Who the service is for",
@@ -1322,7 +1322,7 @@
     "ageCheckbox": "I confirm that I am at least 18 years old and use TruckSOS for professional purposes.",
     "ageRequired": "To continue you must confirm that you are at least 18 years old.",
     "updatedTitle": "The terms have been updated",
-    "updatedBody": "We have updated the Terms and the Privacy Policy (version {{version}}). In brief: the operator is identified by name and contact details; the full list of providers; how long we keep each type of data; how you send a report and how you contest a decision; you can download all your data from Settings. To continue, read them and confirm.",
+    "updatedBody": "We have updated the Terms and the Privacy Policy (version {{version}}). In brief: the operator is identified by name and contact details; the full list of providers; how long we keep each type of data; how you send a report and how you contest a decision; you can download your account data and your content from Settings. To continue, read them and confirm.",
     "updatedRead": "Read the Terms · Read the Policy",
     "readTerms": "Read the Terms",
     "readPrivacy": "Read the Policy",
