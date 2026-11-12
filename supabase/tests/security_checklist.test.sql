@@ -21,6 +21,7 @@ insert into allowlist values
   ('record_announcement_view'), ('get_own_profile'),
   ('open_announcements_near'), ('open_announcements_near_count'), ('rate_mechanic'),  -- 20261101000300 (faza 4.3)
   ('export_my_data'),                                             -- 20261109000600 (faza 6.4)
+  ('accept_terms'), ('my_terms_status'),                          -- 20261110000100 (faza 8.2)
   ('report_client_error'), ('admin_client_errors'),               -- 20261111000100 (faza 9.1)
   ('admin_health'),                                               -- 20261111000300 (faza 9.4)
   ('admin_purge_accounts'),                                       -- 20261031000100 (faza 2)
@@ -95,7 +96,8 @@ select is(
       and fn in ('_purge_user_data', 'notify_push', 'notify_mechanics_new_announcement',
                  'storage_api_delete', 'recompute_mechanic_rating', 'is_blocked_by', 'accept_announcement',
                  'claim_push_batch', 'finish_push_batch', 'pending_push_receipts', 'finish_push_receipts',
-                 'store_apple_token', 'read_apple_token', 'record_account_deletion', 'storage_gc_claim', 'storage_gc_finish')),
+                 'store_apple_token', 'read_apple_token', 'record_account_deletion', 'storage_gc_claim', 'storage_gc_finish',
+                 'insert_public_report')),
   '', 'Funcțiile interne rămân închise');
 
 -- 5. SECURITY DEFINER fără search_path fixat

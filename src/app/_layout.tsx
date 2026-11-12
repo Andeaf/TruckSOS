@@ -19,6 +19,7 @@ import { useLangSync } from '@/hooks/use-lang-sync';
 import { usePushNavigation } from '@/hooks/use-push-navigation';
 import { PushPermissionRequestProvider } from '@/hooks/use-push-permission-request';
 import { SettingsProvider, useSettings } from '@/hooks/use-settings';
+import { TermsStatusProvider, useTermsStatus } from '@/hooks/use-terms-status';
 import { isBanned } from '@/lib/ban';
 import { sessionNeedsMfa } from '@/lib/mfa';
 import { resolvePendingLink, takePendingLink } from '@/lib/pending-link';
@@ -27,6 +28,7 @@ import i18n from '@/i18n';
 function RootLayoutNav() {
   const { session, profile, profileMissing, loading, isGuest } = useAuth();
   const { resolvedScheme, ready, adminViewAs, setAdminViewAs } = useSettings();
+  const { loading: termsLoading, needsAcceptance } = useTermsStatus();
   const segments = useSegments();
   const router = useRouter();
 
@@ -48,6 +50,12 @@ function RootLayoutNav() {
     const onRoleSelect = inAuth && seg[1] === 'role-select';
     const onBanned = inAuth && seg[1] === 'banned';
     const onTwoFactor = inAuth && seg[1] === 'two-factor';
+    // 8.2 (C8.2): cât timp poarta „Termenii s-au actualizat” e jos, doar ecranul ei și cele 3
+    // ieșiri care au nevoie de rută proprie (textele și ștergerea contului).
+    const onTermsGate =
+      inAuth && ['terms-update', 'terms', 'privacy', 'delete-account'].includes(seg[1] ?? '');
+    // 8.2 (C8.2): textele deschise din „Continuând, accepți…” de pe alegerea rolului (cont fără profil).
+    const onLegal = inAuth && (seg[1] === 'terms' || seg[1] === 'privacy');
     const noRoute = seg.length === 0;
     // Link de profil partajat, trucksos.net/p/<id> (7 sept): ecranul /p/[id] își
     // decide singur soarta — cu sesiune rezolvă rolul și navighează, fără sesiune ține
@@ -59,6 +67,8 @@ function RootLayoutNav() {
     // sesiune, nici cu sesiunea nou creată fără profil (altfel „Cont activat" ar sări direct
     // la alegerea rolului înainte ca omul să-l vadă).
     const inAuthLink = seg[0] === 'auth';
+    // 8.3 (DSA art. 16): trucksos.net/report — sesizare fără cont; ecranul merge cu sau fără sesiune. Garda NU-l ricoșează.
+    const inReport = seg[0] === 'report';
     // 1.1 (Faza B): grupul oaspeților. Cu sesiune nu are ce căuta acolo (vezi ramurile de jos).
     const inGuest = seg[0] === '(guest)';
 
@@ -69,10 +79,10 @@ function RootLayoutNav() {
         // Oaspetele („Continuă fără cont"): (guest), linkurile partajate / de activare și
         // ecranele de autentificare (foaia „Fă-ți cont" duce acolo). Orice altceva — pornirea
         // fără rută sau un grup de cont, de ex. (driver) — ajunge pe anunțurile oaspeților.
-        if (!inGuest && !inAuth && !inSharedLink && !inAuthLink) {
+        if (!inGuest && !inAuth && !inSharedLink && !inAuthLink && !inReport) {
           router.replace('/(guest)/announcements' as never);
         }
-      } else if (!inAuth && !inSharedLink && !inAuthLink) {
+      } else if (!inAuth && !inSharedLink && !inAuthLink && !inReport) {
         router.replace('/(auth)/login');
       }
     } else if (sessionNeedsMfa(session)) {
@@ -82,20 +92,29 @@ function RootLayoutNav() {
       // nimic din cont să nu se deschidă fără el; ieșirea e „Deconectare" de pe ecran. Fără
       // factor verificat (toți utilizatorii, inclusiv sesiunile din 1.0.8) ramura nu se atinge.
       if (!onTwoFactor) router.replace('/(auth)/two-factor' as never);
+    } else if (profile && termsLoading) {
+      // 8.2 (C8.2): starea consimțământului se citește o dată per sesiune (useTermsStatus, max 5 s);
+      // până atunci nu rutăm (ecranul de încărcare de mai jos), altfel ecranul de start ar clipi
+      // înaintea porții.
+    } else if (profile && needsAcceptance) {
+      // 8.2 (C8.2): serverul spune că versiunea acceptată nu e TERMS_VERSION (NULL la conturile
+      // 1.0.x) → „Termenii s-au actualizat”, pentru TOȚI cu sesiune + profil, inclusiv admini și
+      // conturi banate (are Deconectare / Ștergere). Citire picată = fără poartă (lib/terms.ts).
+      if (!onTermsGate) router.replace('/(auth)/terms-update' as never);
     } else if (!profile) {
       // Doar cu confirmarea serverului ca nu exista profil (cont nou). O citire picata pe
       // retea nu mai trimite nicaieri: ramane ecranul curent / cel de incarcare (14 oct 2026).
       // 15 oct: o identitate Google/Apple fara cont venita de pe LOGIN nu ajunge aici —
       // use-auth o deconecteaza (profileMissing ramane false) si login-ul explica de ce.
-      if (profileMissing && !onRoleSelect && !inAuthLink) router.replace('/(auth)/role-select');
+      if (profileMissing && !onRoleSelect && !onLegal && !inAuthLink) router.replace('/(auth)/role-select');
     } else if (profile.role === 'admin') {
       // Adminul poate „intra ca" șofer/mecanic (Faza 16), altfel stă în (admin).
       // Ramura e ÎNAINTEA check-ului de ban — adminii nu ajung pe ecranul de ban.
       if (adminViewAs === 'driver') {
-        if (!inDriver && !inSharedLink && !inAuthLink) router.replace('/(driver)/announcements');
+        if (!inDriver && !inSharedLink && !inAuthLink && !inReport) router.replace('/(driver)/announcements');
       } else if (adminViewAs === 'mechanic') {
-        if (!inMechanic && !inSharedLink && !inAuthLink) router.replace('/(mechanic)/feed');
-      } else if (!inAdmin && !inSharedLink && !inAuthLink) {
+        if (!inMechanic && !inSharedLink && !inAuthLink && !inReport) router.replace('/(mechanic)/feed');
+      } else if (!inAdmin && !inSharedLink && !inAuthLink && !inReport) {
         // Un link amânat de pe un ecran de oaspete nu are echivalent în grupul (admin).
         const pending = takePendingLink();
         const target = pending && !pending.startsWith('/(guest)') ? pending : null;
@@ -118,10 +137,23 @@ function RootLayoutNav() {
       const target = pending ? resolvePendingLink(pending, side) : null;
       router.replace((target ?? home) as never);
     }
-  }, [session, profile, profileMissing, loading, isGuest, segments, adminViewAs, setAdminViewAs, router]);
+  }, [
+    session,
+    profile,
+    profileMissing,
+    loading,
+    isGuest,
+    segments,
+    adminViewAs,
+    setAdminViewAs,
+    router,
+    termsLoading,
+    needsAcceptance,
+  ]);
 
   // `ready` evită un flash pe tema greșită cât citim preferința din AsyncStorage.
-  if (loading || !ready) {
+  // 8.2 (C8.2): și cât citim starea consimțământului — dar nu peste ecranul codului 2FA.
+  if (loading || !ready || (termsLoading && !!session && !sessionNeedsMfa(session))) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#164F9E" />
@@ -137,7 +169,13 @@ function RootLayoutNav() {
           pe web nu apare. O dată la 24h — vezi useUpdatePrompt. */}
       <UpdatePrompt
         enabled={
-          (!!session && !!profile && !isBanned(profile) && !sessionNeedsMfa(session)) || (isGuest && !session)
+          (!!session &&
+            !!profile &&
+            !isBanned(profile) &&
+            !sessionNeedsMfa(session) &&
+            // 8.2 (C8.2): nu peste poarta „Termenii s-au actualizat”.
+            !needsAcceptance) ||
+          (isGuest && !session)
         }
       />
       {/* 1.1 (Faza B2): „Ai nevoie de un cont" — o deschide useAccountGate().requireAccount. */}
@@ -168,7 +206,10 @@ export default function RootLayout() {
                     ecranele care declanșează cererea se demontează imediat după. */}
                 <PushPermissionRequestProvider>
                   <BlockedProvider>
-                    <RootLayoutNav />
+                    {/* 1.1 (8.2, C8.2): starea consimțământului la Termeni — poarta din garda de sus. */}
+                    <TermsStatusProvider>
+                      <RootLayoutNav />
+                    </TermsStatusProvider>
                   </BlockedProvider>
                 </PushPermissionRequestProvider>
               </AccountGateProvider>

@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { PhotoGallery } from '@/components/photo-gallery';
 import { RatingBadge } from '@/components/rating-badge';
 import { RatingSheet } from '@/components/rating-sheet';
+import { ReportSheet } from '@/components/report-sheet';
 import { ScreenHeader } from '@/components/screen-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -195,6 +196,8 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
     role === 'driver' ? '/(driver)/mechanic-profile/[id]' : '/(mechanic)/public-profile/[id]';
   // Faza 19.6: share — trimite anunțul unui alt utilizator (card pe primul mesaj).
   const [shareOpen, setShareOpen] = useState(false);
+  // Faza 8.3 (D8.5): „Raportează” pe anunțul altcuiva → reports.announcement_id.
+  const [reportOpen, setReportOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
   const handleShareTo = async (targetId: string) => {
     if (sharing) return;
@@ -426,6 +429,14 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
                 hitSlop={12}
                 disabled={deleting}
                 icon={<MaterialIcons name="delete" size={22} color={theme.onHeader} />}
+              />
+            ) : null}
+            {!isOwner && session ? (
+              <IconButton
+                label={t('a11y.report')}
+                onPress={() => setReportOpen(true)}
+                hitSlop={12}
+                icon={<MaterialIcons name="flag" size={22} color={theme.onHeader} />}
               />
             ) : null}
           </View>
@@ -771,6 +782,20 @@ export function AnnouncementDetailScreen({ role }: { role: 'driver' | 'mechanic'
           onPick={(user) => handleShareTo(user.id)}
         />
       ) : null}
+
+      {/* Faza 8.3 (D8.5): raport pe anunțul de depanare al altcuiva (snapshot = descrierea, prima poză). */}
+      <ReportSheet
+        visible={reportOpen}
+        reportedUserId={announcement.driver_id}
+        announcementId={announcement.id}
+        contentSnapshot={announcement.description}
+        imagePathSnapshot={photos[0]?.storage_path ?? null}
+        onClose={() => setReportOpen(false)}
+        onSubmitted={() => {
+          setReportOpen(false);
+          Alert.alert(t('report.submittedTitle'), t('report.submitted'));
+        }}
+      />
     </ThemedView>
   );
 }

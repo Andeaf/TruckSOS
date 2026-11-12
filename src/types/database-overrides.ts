@@ -45,6 +45,7 @@
  * Funcții încă negenerate (migrări din repo neaplicate pe proiectul legat; după aplicare, la
  * următorul `npm run gen:types`, intrarea de aici se poate scoate — forma generată e aceeași):
  * - export_my_data (faza 6.4, 20261109000600): fără argumente → jsonb.
+ * - accept_terms / my_terms_status (faza 8.2, 20261110000100): (p_version, p_source?) → jsonb; fără argumente → jsonb.
  * - report_client_error (faza 9.1, 20261111000100): 7 argumente text → jsonb `{ ok }`.
  * - admin_client_errors (faza 9.1, 20261111000100): p_hours?, p_limit? (integer) → jsonb.
  * - admin_health (faza 9.4, 20261111000300): fără argumente → jsonb.
@@ -190,8 +191,37 @@ type ModerationNoticeRow = {
   read_at: string | null;
 };
 
+/** Faza 8.3 (20261110000200): `reports.reporter_id` devine nullable (sesizări publice) și apar 4 coloane noi; tipul generat
+ *  le va avea după `gen:types` de după aplicarea migrării pe producție — atunci intrarea de aici se scoate. */
+type ReportsOverride = {
+  Row: {
+    reporter_id: string | null;
+    announcement_id: string | null;
+    source: string;
+    reporter_email: string | null;
+    reporter_lang: string | null;
+  };
+  Insert: {
+    reporter_id?: string | null;
+    announcement_id?: string | null;
+    source?: string;
+    reporter_email?: string | null;
+    reporter_lang?: string | null;
+  };
+  Update: {
+    reporter_id?: string | null;
+    announcement_id?: string | null;
+    source?: string;
+    reporter_email?: string | null;
+    reporter_lang?: string | null;
+  };
+};
+
 type DatabaseOverrides = {
   public: {
+    Tables: {
+      reports: ReportsOverride;
+    };
     Views: {
       announcements: {
         Row: AnnouncementRow;
@@ -258,6 +288,9 @@ type DatabaseOverrides = {
     Functions: {
       // Forma generatorului pentru funcțiile fără argumente (`Args: never`, ca admin_dashboard_stats).
       export_my_data: { Args: never; Returns: Json };
+      // Faza 8.2 (C8.2): consimțământul la Termeni; p_source = 'signup' | 'update' (DEFAULT 'update').
+      accept_terms: { Args: { p_version: string; p_source?: string }; Returns: Json };
+      my_terms_status: { Args: never; Returns: Json };
       report_client_error: {
         Args: {
           p_app_build: string;

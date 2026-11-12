@@ -429,6 +429,11 @@ verify_jwt = false
 [functions.storage-gc]
 verify_jwt = false
 
+# Faza 8.3 (DSA art. 16): `report-public` primește sesizări FĂRĂ cont de pe trucksos.net/report; porțile sunt Turnstile
+# (TURNSTILE_SECRET) și limita pe IP din bază (hash cu REPORT_IP_SALT). Fără JWT la gateway.
+[functions.report-public]
+verify_jwt = false
+
 # Faza 9.3 (D9.3): `cleanup-announcements` e apelată doar de pg_cron (app.kick_cleanup_announcements), cu același header și
 # același secret ca faza 3 (`x-push-secret` / Vault `push_kick_secret`); fără JWT la gateway (înainte: Bearer service_role).
 [functions.cleanup-announcements]

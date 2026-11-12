@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { NetworkTroubleshoot } from '@/components/network-troubleshoot';
 import { Input } from '@/components/ui/input';
 import { SocialSignIn } from '@/components/social-sign-in';
+import { ConsentNotice } from '@/components/terms-update-screen';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -113,6 +114,9 @@ export default function LoginScreen() {
 
       {/* 6 oct: Google (+ Apple pe iOS) — se randează doar când furnizorii sunt disponibili. */}
       <SocialSignIn origin="login" />
+
+      {/* 8.2 (C8.2): „Continuând, accepți Termenii și Politica” — sub butoanele Google/Apple. */}
+      <ConsentNotice />
     </View>
   );
 
@@ -135,6 +139,16 @@ export default function LoginScreen() {
         onPress={() => void handleContinueAsGuest()}
         loading={guestLoading}
       />
+      {/* 8.2 (C8.2): politica și termenii, accesibile și fără cont. */}
+      <Pressable
+        style={styles.guestPrivacy}
+        onPress={() => router.push('/(auth)/privacy' as never)}
+        accessibilityRole="link"
+        hitSlop={8}>
+        <ThemedText themeColor="textSecondary" style={styles.guestPrivacyText}>
+          {t('consent.guestPrivacyLink')}
+        </ThemedText>
+      </Pressable>
     </View>
   );
 
@@ -275,4 +289,6 @@ const styles = StyleSheet.create({
   wideSubtitle: { fontSize: 14, fontWeight: '600', marginTop: 4 },
   wideFormFields: { marginTop: 28, marginBottom: 18 },
   guestWide: { marginTop: 18 },
+  guestPrivacy: { alignSelf: 'center', paddingVertical: Spacing.two, marginTop: Spacing.one },
+  guestPrivacyText: { fontSize: 14, fontWeight: '600', textDecorationLine: 'underline' },
 });

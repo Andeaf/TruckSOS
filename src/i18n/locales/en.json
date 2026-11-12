@@ -76,6 +76,13 @@
       "reason_scam": "Înșelătorie",
       "reason_other": "Altele",
       "reporter": "Raportat de",
+      "reason_illegal": "Conținut ilegal",
+      "reason_rights": "Încalcă drepturile (poze, marcă)",
+      "reason_personal_data": "Date personale ale altcuiva",
+      "reason_sexual_violent": "Conținut sexual sau violent",
+      "publicReporter": "Sesizare publică (fără cont) de la",
+      "onAnnouncement": "Pe anunțul",
+      "announcementGone": "anunț șters între timp",
       "hasImage": "Conține o imagine",
       "actionReview": "Marchează revizuit",
       "actionDismiss": "Respinge",
@@ -646,7 +653,11 @@
       "harassment": "Offensive language / harassment",
       "inappropriate": "Inappropriate content",
       "scam": "Scam / fraud",
-      "other": "Something else"
+      "other": "Something else",
+      "illegal": "Illegal content",
+      "rights": "Infringes my rights (photos, trademark)",
+      "personal_data": "Personal data of someone else",
+      "sexual_violent": "Sexual or violent content"
     },
     "detailsPlaceholder": "Details",
     "submitButton": "Submit report",
@@ -1143,6 +1154,7 @@
     "create": "Create account",
     "haveAccount": "I already have an account",
     "later": "Later",
+    "reportWithoutAccount": "Report this content without an account",
     "reason": {
       "message": "Create an account to send messages.",
       "publish": "Create an account to post your announcement. What you filled in stays saved.",
@@ -1196,92 +1208,160 @@
   "legal": {
     "terms": {
       "title": "Terms and conditions",
-      "updated": "Last updated: 31 July 2026",
+      "updated": "Version 1.1.0 · in force from the release date of version 1.1.0 of the app",
       "sections": [
         {
-          "heading": "1. Accepting the terms",
-          "body": "By creating an account and using the TruckSOS app you accept these terms. If you do not agree with them, please do not use the service."
+          "heading": "1. Who provides the service and acceptance of the terms",
+          "body": "The TruckSOS service (the Android/iOS application and https://trucksos.net) is provided by Breană David Eduard, natural person, Romania, support@trucksos.net. By creating an account or using the service you accept these terms and the Privacy policy (which forms part of them). If you do not agree, do not use the service. When you sign up you confirm your acceptance and that you are at least 18 years old; for a new version of the terms we will ask you to confirm again."
         },
         {
           "heading": "2. What TruckSOS is",
-          "body": "TruckSOS connects carriers with broken-down trucks to available mechanics. The app only facilitates contact: the price, the work itself and the payment are agreed directly between carrier and mechanic. TruckSOS is not a party to their contract and does not guarantee the quality, availability or outcome of the services provided. The app also includes a Market section, where users can post listings for parts, tyres, trucks and trailers. Here too TruckSOS only facilitates contact: negotiation, payment and delivery happen directly between buyer and seller, outside the app. We do not verify the goods offered and we are not liable for transactions between users. Sellers are responsible for complying with applicable law, including tax and consumer-protection obligations if they sell in a professional capacity."
+          "body": "TruckSOS connects truck drivers whose vehicles have broken down with available mechanics. The application only facilitates contact: the price, the carrying out of the work and the payment are agreed directly between the driver and the mechanic. Price offers in applications are indicative and non-binding until the parties reach a direct agreement. TruckSOS is not a party to the contract between them, does not guarantee the availability, quality or price of the work, and does not charge any commission. The Market section allows users to publish sale listings for parts, tyres, trucks and trailers. Negotiation, payment and delivery take place directly between buyer and seller, outside the application; TruckSOS does not process payments, does not verify products and does not guarantee the transaction. The community channel is a public space for discussion between users; messages are visible to everyone, including visitors without an account."
         },
         {
-          "heading": "3. Your account",
-          "body": "You create your account with real details and use it personally. You are responsible for keeping your credentials safe and for everything done from your account. One account corresponds to one person or company."
+          "heading": "3. Who may use the service",
+          "body": "The service is intended for professionals in road transport and car service workshops, and is reserved for persons aged at least 18. One account corresponds to one person or company; you create your account with real details, use it personally, and are responsible for keeping your sign-in details safe and for everything that happens in your account. Visitors without an account can view public content (mechanics’ profiles, active listings, the channel), without writing or contacting anyone."
         },
         {
           "heading": "4. Your content",
-          "body": "You remain the owner of the content you publish (breakdown announcements, Market sale listings, photos, attached files, messages, reviews). You grant us a limited licence to store and display it in the app, strictly to operate the service. Illegal, misleading or offensive content, false announcements and spam are forbidden. Market transactions are concluded directly between users; TruckSOS is not a party to the sale, does not process payments and does not guarantee the listed items."
+          "body": "You remain the owner of the content you publish (breakdown announcements, Market listings, photos, videos, files, messages, ratings). You grant us a non-exclusive, royalty-free licence, limited to storing, displaying and transmitting it within the service (including in push notifications and, at another user’s request, automatic translation of listings), for as long as the content exists in the application. You guarantee that you have the right to publish the photos and files (do not publish photos of other people without their consent) and that you do not include in listings or messages personal data of third parties (telephone numbers, documents) without their consent. The following are prohibited: illegal, misleading, threatening, offensive or discriminatory content; false or duplicate listings; spam and unsolicited advertising; using the service to collect data about other users; circumventing technical measures (rate limits, blocks)."
         },
         {
-          "heading": "5. Conduct and moderation",
-          "body": "You can report content or users and you can block any user. Moderation is reactive: we review incoming reports and may remove content or suspend, temporarily or permanently, accounts that break these terms."
+          "heading": "5. Conduct, moderation and reports (Digital Services Regulation — DSA)",
+          "body": "• You can report content or users from the application and you can block any user. Anyone, including without an account, can send a report to abuse@trucksos.net or at https://trucksos.net/report, stating the content, the reason and a contact address.\n• We confirm receipt of the report and decide within 48 hours for manifestly illegal content, respectively within 7 days in other cases. Possible measures: removal of the content, restriction of visibility, temporary or permanent suspension of the account. The author of the content receives the reasons for the decision (in the application and by notification) and can contest it within 14 days at abuse@trucksos.net; we reply to the contestation within 14 days at the latest. Reports that are manifestly unfounded or repeatedly abusive may lead to their being temporarily disregarded.\n• Moderation is reactive (based on reports); we do not monitor private conversations. Administrators’ access to messages is limited and logged, as described in the Privacy policy.\n• The languages in which we receive and reply to reports are Romanian, English and German."
         },
         {
-          "heading": "6. Limitation of liability",
-          "body": "The service is provided \"as is\", without warranties. To the extent permitted by law, TruckSOS is not liable for damages arising from the relationship between carrier and mechanic, from temporary unavailability of the service or from user-published content."
+          "heading": "6. Availability, changes to the service",
+          "body": "The service is provided “as is”, without guarantees of uninterrupted availability. We may modify, suspend or discontinue functions (including Market or the channel) with notice in the application where reasonably possible. Old versions of the application may stop working; the application tells you when a new version is available."
         },
         {
-          "heading": "7. Termination",
-          "body": "You can delete your account at any time, directly from the app (Profile → Settings → Delete account) or by email. We reserve the right to suspend accounts that break these terms."
+          "heading": "7. Limitation of liability",
+          "body": "To the extent permitted by law, TruckSOS is not liable for: the relationship and transactions between users (breakdown work, Market), content published by users, temporary unavailability of the service, loss of data caused by your device or by third parties. Nothing in these terms limits liability that cannot be limited by law (for example for fraud or personal injury) and does not affect consumers’ rights where they apply."
         },
         {
-          "heading": "8. Your data",
-          "body": "How we process personal data is described in the Privacy policy, which is part of these terms."
+          "heading": "8. Termination",
+          "body": "You may delete your account at any time, from the application (Profile → Settings → Delete account) or by e-mail; the effects are described in the Privacy policy and on the “Delete account” page. We may suspend or close accounts that breach these terms, with reasons and the right to contest (§5), or immediately in serious cases (fraud, illegal content, the safety of others)."
         },
         {
-          "heading": "9. Governing law and contact",
-          "body": "These terms are governed by Romanian law. For any question you can write to us at trucksos.support@gmail.com."
+          "heading": "9. Your data",
+          "body": "The processing of personal data is described in the Privacy policy (https://trucksos.net/legal/privacy), which forms part of these terms."
+        },
+        {
+          "heading": "10. Intellectual property",
+          "body": "The name, logo and application TruckSOS belong to the operator. You may not use them without written consent, beyond normal use of the service."
+        },
+        {
+          "heading": "11. Governing law, language, contact",
+          "body": "These terms are governed by Romanian law; the competent courts are those in Romania, without affecting consumers’ right to bring proceedings before the courts of their own country, where that applies. The terms are available in Romanian, English and German; in case of inconsistency, the Romanian version prevails. Contact: support@trucksos.net; reports: abuse@trucksos.net."
+        },
+        {
+          "heading": "12. Changes to the terms",
+          "body": "We may update the terms; the version and date are shown above. For important changes we will ask you to accept them again the next time you open the application; continuing to use the service after the date of entry into force means accepting the new version."
         }
       ]
     },
     "privacy": {
       "title": "Privacy policy",
-      "updated": "Last updated: 1 November 2026",
+      "updated": "Version 1.1.0 · in force from the release date of version 1.1.0 of the app",
       "sections": [
         {
-          "heading": "1. Who we are",
-          "body": "TruckSOS is a mobile app that connects carriers with broken-down trucks to available mechanics, and that includes a classified-ads section (Market) between users. The data controller is the developer of TruckSOS; you can contact us any time at trucksos.support@gmail.com."
+          "heading": "1. Who we are (the operator)",
+          "body": "TruckSOS is a mobile and web application that connects truck drivers whose vehicles have broken down with available mechanics. It also includes a section for sale listings (Market) between users and a public community discussion channel.\n\nThe controller of personal data is Breană David Eduard, natural person, Romania, e-mail support@trucksos.net. We have not appointed a data protection officer; any request about your data should be sent to the address above."
         },
         {
-          "heading": "2. What data we collect",
-          "body": "Account data: your email address and password (the password is handled encrypted by our authentication provider; we never see it). If you choose to sign in with Google or Apple, we receive from them only your account's email address and name (or a relay address, if you choose \"Hide My Email\" with Apple); we never receive your Google or Apple password. Profile data: name, role, phone number, company, contact email, address, VAT number, specialisation, activity zone, profile photo and chosen language. Published content: breakdown announcements (description, location, truck details, plate number, photos and — only if you choose to attach it — the GPS position), Market sale listings (title, description, price, category, photos), private messages, public-channel messages, the photos and files you attach in conversations, reviews and reports. Technical data: your device's push notification token, your mechanic-search history (kept in your account so we can show you your recent searches) and, for mechanics, the reference position if set for the radius filter. If the app cannot reach our server, it keeps a short technical log of the check on your device (the result, network type, device model and OS version, app version, no personal content) and sends it at the next successful sign-in so we can improve connectivity; it is deleted after 90 days. If you tap “Translate” on an announcement, the text of the description is sent to the Google Cloud Translation API (Google Ireland Ltd.) only to be translated into the app's language; the translation is kept in our account so it does not have to be requested again; Google does not use the text for any other purpose."
+          "heading": "2. What data we process",
+          "body": "• Account data: e-mail address and password (the password is stored encrypted by the authentication provider, Supabase; we never see it). When you sign in with Google or Apple we receive only your e-mail address (or the Apple relay address, if you choose “Hide My Email”) and your name; we do not receive your Google or Apple account password. If you sign in with Apple from the iOS app, we keep an encrypted technical token issued by Apple, used exclusively to revoke the authorisation at Apple when you delete your account (an Apple requirement); we do not use it for any other purpose.\n• Profile data: name, role (driver / mechanic), profile photo, language; for mechanics: specialisation, area of activity, company, address, VAT number, contact e-mail; telephone number (both roles); approximate GPS position, if you set one for distances.\n• Reports without an account (the trucksos.net/report page): the e-mail address you provide and the content of the report, used only to handle it and reply to you (see §7); no account is needed.\n• Content: breakdown announcements (description, location, coordinates, truck make and model, registration number and chassis number — data you provide yourself), saved trucks, mechanics’ applications (optional price offer, message), Market listings (title, description, price, photos), private and channel messages (text, photos, videos with their sound — recorded from the conversation, in which case the microphone is used only while you are recording, or picked from your gallery —, files, including audio files), ratings, favourites, blocks, history of mechanic searches.\n• Technical data: the device’s push notification token (platform, app version), the time of the last reading of conversations / channel, notification preferences, the connection diagnostic log (time, type of network error, app version — without message content; it is uploaded only after you sign in), the app error reports you choose to send from the “Something went wrong” screen (the error type and its technical details — the error message and stack trace, from which e-mail addresses, phone numbers and identifiers are removed automatically —, the screen, the platform, the app and operating system version and a short code derived from your account, used only to count how many users are affected; no e-mail, phone or message content; deleted after 30 days).\n• Local storage on the device / in the browser: authentication session (encrypted on the phone), preferences (language, theme, filters), messages not yet sent (local queue), photo cache. On the web we use only the storage strictly necessary for operation; we do not use tracking or advertising cookies, which is why we do not show a cookie banner. The web map loads Google Maps when you open the map screen (Google may set its own cookies; see Google’s policy)."
         },
         {
           "heading": "3. Who sees what",
-          "body": "Your phone number is NOT public: only the user you have an open conversation with can see it. Your name, profile photo and company are visible to signed-in users (for mechanics, also to guests, on the public profile); your contact email is visible only to signed-in users. Mechanics' address and VAT number are shown on their public profile as provider information, to signed-in users only. Private messages are visible only to the conversation participants; public-channel messages are visible to signed-in users (and, as described below, to guests) — each user sees the messages sent after their account was created, and administrators can view the entire channel for moderation. Open announcements are visible to mechanics, with the exact position; guests see only the version described below. Active Market sale listings are visible to everyone, guests included, together with your name and profile photo; buyer and seller contact each other exclusively through the in-app chat, and we neither process payments nor collect payment data. Photos and files attached in a conversation are visible only to that conversation's participants, and those sent in the public channel to all signed-in users. When you share a breakdown announcement, a Market listing or a mechanic's profile inside a conversation, the card you send contains their public details. Your search history is visible only to you. Without an account (as a guest) the following can be seen: open breakdown announcements with the approximate position (rounded to ~1 km), without plate number, chassis number or contact details; public profiles (name, photo, company; for mechanics also specialisation, zone, rating), without address, VAT number, email or phone; active Market listings; messages from the last 7 days of the public channel, without photos and files. Guests cannot write, do not receive notifications and have no account, so we collect no account or profile data about them (our servers keep only the usual technical access logs)."
+          "body": "• Telephone number: NOT public. It is seen only by the user with whom you have an open conversation (after an accepted application or a conversation you started).\n• Registration number, chassis number and exact position of a breakdown announcement: seen only by you, the accepted mechanic and administrators. Other mechanics see the announcement with the position rounded to approximately 1 km and without the plate or chassis number.\n• Name, photo, company, specialisation, area, ratings: visible to signed-in users and, for mechanics, to visitors without an account (public service provider profile). The mechanics’ address and VAT number are shown in the public profile, as information of a service provider.\n• Visitors without an account (guests) can see: the list of mechanics (public profile), active Market listings, open breakdown announcements (without plate or chassis number, with approximate position, with the author’s name) and messages in the public community channel, but they cannot write, contact anyone or see contact data.\n• Private messages are visible only to their participants; channel messages are visible to all users and visitors.\n• Push notifications may contain the title and an excerpt of a message or listing; they pass through the services of Expo, Google (Android) and Apple (iOS) — see §5."
         },
         {
-          "heading": "4. Where the data is stored",
-          "body": "Data is stored on Supabase infrastructure, in the European Union (Ireland, AWS region eu-west-1). Sub-processors: Supabase (database, authentication, file storage), Expo (push notification delivery), Google (map display on Android and, if you choose it, sign-in with your Google account), Google Cloud Translation (on-request translation of announcement descriptions; Google Ireland Ltd.), Apple (Sign in with Apple, if you choose it) and Brevo (sending authentication emails — confirmation and password-reset codes; EU-based company)."
+          "heading": "4. Purposes and legal bases",
+          "body": "• Providing the service (account, announcements, applications, chat, Market, notifications): performance of a contract (Art. 6(1)(b) GDPR).\n• Safety, moderation, prevention of abuse, rate limits, the diagnostic log, the error reports you send: legitimate interest (Art. 6(1)(f)) — to keep a functional and safe service for professionals.\n• Legal obligations (DSA reports, requests from authorities, record of moderation actions): legal obligation (Art. 6(1)(c)).\n• Optional notifications (new Market listings, mentions) and location: consent (Art. 6(1)(a)), which you can withdraw at any time in Settings."
         },
         {
-          "heading": "5. Moderation and administrative access",
-          "body": "You can report messages or users and you can block any user. Administrators do NOT have general access to your private conversations: they can only see a limited window of messages around a reported message or, for a report against a user, a limited window of the conversations between the reporter and the reported user. Every such access is recorded in an audit log. Accounts that break the rules may be suspended."
+          "heading": "5. Where the data is and who processes it for us",
+          "body": "The data is stored on Supabase infrastructure in the European Union (Ireland, AWS eu-west-1). We use the following processors (sub-processors); for providers outside the European Economic Area, the transfer is based on the EU–US adequacy decision (Data Privacy Framework, DPF) and/or on the Standard Contractual Clauses (SCC):\n\nSupabase Inc. (on AWS): database, authentication, file storage, server functions: EU (Ireland): within the EEA\nBrevo (Sendinblue SAS): account e-mails (confirmation, password, change of e-mail): EU (France): within the EEA\nExpo (650 Industries Inc.): delivery of push notifications to the device: USA: SCC\nGoogle LLC / Google Ireland Ltd.: maps (Android, web), sign-in with Google (optional), push delivery on Android (Firebase Cloud Messaging), on-request translation of listings (Cloud Translation): USA / Ireland: DPF + SCC\nApple Inc.: sign-in with Apple (optional), push delivery on iOS (APNs), maps on iOS: USA: DPF\nCloudflare Inc.: hosting of the web application (trucksos.net), bot protection (Turnstile) at sign-up and for reports: USA (global network): DPF\nGitHub Inc. (Microsoft): hosting of the mirror of the legal pages: USA: DPF\n\nWe do not sell your data or share it with third parties for their own purposes. Translation of listings sends only the text of the description to Google, at the request of the reader."
         },
         {
-          "heading": "6. Retention and deleting your account",
-          "body": "Data is kept while your account is active. You can delete your account directly from the app (Profile → Settings → Delete account) or by email; deletion is immediate and irreversible. Text messages you sent in other people's conversations remain visible anonymised, marked as coming from a deleted user — everything else (profile, breakdown announcements, Market sale listings, photos, attached files, reviews, favourites and search history) is permanently deleted."
+          "heading": "6. How long we keep the data",
+          "body": "Account, profile, content: as long as the account is active\nRegistration number, chassis number, exact coordinates of a closed (resolved / cancelled) breakdown announcement: deleted automatically 90 days after closing; the text of the announcement remains in your history\nUnpublished listing drafts: 24 hours\nOpen breakdown announcements: become “cancelled” after 30 hours without acceptance (their photos are deleted)\nWho opened an announcement (views, administrators only): 90 days\nPrivate conversations with no new message: 24 months, then complete deletion with attachments\nClosed reports (with a copy of the reported message and, for reports without an account, the reporter’s e-mail): 12 months; open reports, until resolved\nLog of administrative actions: 12 months (no personal data in clear text)\nPush notifications in the queue: 48 hours (content is deleted immediately after sending)\nConnection diagnostic log: 90 days\nApp error reports (sent by you): 30 days\nApple token for revocation: until the account is deleted\nLog of acceptance of the terms (date, version): 3 years from acceptance (also after account deletion; technical identifier, version and date only)\n\nDeleting the account: from the app (Profile → Settings → Delete account) or by e-mail. It is immediate and irreversible: your profile, announcements, trucks, applications, ratings, favourites, photos and files are deleted; if you signed in with Apple, we revoke the authorisation at Apple. The following remain, pseudonymised (no name, no contact details, marked “deleted user”): the text messages you sent in other people’s conversations and in the channel (so that others keep their conversations), ratings received by mechanics (the average remains), and — without personal data — the moderation / report log where the law requires it. Details: the page “Delete account”."
         },
         {
-          "heading": "7. Legal bases",
-          "body": "We process data to perform the contract (providing the service the app offers) and on the basis of legitimate interest (moderation, user safety, abuse prevention)."
+          "heading": "7. Moderation, reports and administrative access (DSA)",
+          "body": "• You can report content or users from the app and you can block any user. Anyone (including without an account) can send a report to abuse@trucksos.net or through the form at https://trucksos.net/report. We confirm receipt and decide within 48 hours for manifestly illegal content, respectively 7 days otherwise; the author of the content receives a notice with the reasons for the decision (in the app, in the section “Moderation notices”, and by push) and can contest it within 14 days at the same address. Possible actions: removal of the content, temporary or permanent suspension of the account.\n• Administrators do NOT have general access to private conversations: they can only see a limited window of messages around a reported message or, in a report against a user, the latest messages between the reporter and the reported user. Each access is recorded in the administrative log. Administrator accounts use two-step authentication."
         },
         {
           "heading": "8. Your rights",
-          "body": "You have the right of access, rectification (directly in the app), erasure, restriction, objection and portability. For any request write to us at trucksos.support@gmail.com. You can also lodge a complaint with your supervisory authority — in Romania, ANSPDCP (www.dataprotection.ro)."
+          "body": "Access, rectification (directly in the app), erasure (from the app), restriction, objection, portability (“Download my data” in Settings gives you a file with all your data, twice a day), withdrawal of consent (the switches in Settings). We reply within 30 days at the latest to support@trucksos.net. You can lodge a complaint with the supervisory authority — in Romania, ANSPDCP (the Romanian supervisory authority, www.dataprotection.ro) — or with the authority in your country."
         },
         {
           "heading": "9. Who the service is for",
-          "body": "TruckSOS is intended for road transport professionals. The service is not directed at minors."
+          "body": "TruckSOS is intended for professionals in road transport and service workshops. The service is reserved for persons aged at least 18; you confirm this when you sign up. We do not knowingly process data of minors; if we learn of such an account, we delete it."
         },
         {
-          "heading": "10. Changes",
-          "body": "We may update this policy; we will notify you in the app about important changes. The date of the last update is shown above."
+          "heading": "10. Security",
+          "body": "Encrypted connections (TLS), passwords managed by the authentication provider, session stored encrypted on the phone, access to data based on row-level security rules (RLS), the Apple token encrypted in the database, administrators with two-step authentication. No method is absolutely secure; if an incident affecting you occurs, we will inform you as required by law."
+        },
+        {
+          "heading": "11. Changes",
+          "body": "We may update this policy. For important changes we will ask you to confirm it again the next time you open the app; the version and date are shown above. Previous versions are available on request."
+        },
+        {
+          "heading": "12. Contact",
+          "body": "Breană David Eduard, natural person, Romania, support@trucksos.net · reports: abuse@trucksos.net · https://trucksos.net/legal"
         }
       ]
     }
+  },
+  "consent": {
+    "continueAccept": "By continuing, you accept the {{terms}} and the {{privacy}}.",
+    "termsLink": "Terms and Conditions",
+    "privacyLink": "Privacy Policy",
+    "ageCheckbox": "I confirm that I am at least 18 years old and use TruckSOS for professional purposes.",
+    "ageRequired": "To continue you must confirm that you are at least 18 years old.",
+    "updatedTitle": "The terms have been updated",
+    "updatedBody": "We have updated the Terms and the Privacy Policy (version {{version}}). In brief: the operator is identified by name and contact details; the full list of providers; how long we keep each type of data; how you send a report and how you contest a decision; you can download all your data from Settings. To continue, read them and confirm.",
+    "updatedRead": "Read the Terms · Read the Policy",
+    "readTerms": "Read the Terms",
+    "readPrivacy": "Read the Policy",
+    "updatedAccept": "I have read and accept",
+    "guestPrivacyLink": "Privacy and terms",
+    "signOut": "Sign out",
+    "exportData": "Download my data",
+    "deleteAccount": "Delete account",
+    "exportDone": "Your data file is ready."
+  },
+  "publicReport": {
+    "title": "Report",
+    "intro": "If you have seen in TruckSOS an announcement, a channel message, a profile or a Market listing that breaks the law or our Terms, tell us here. You do not need an account.",
+    "timeline": "You receive a confirmation at the address you give; we decide within 48 hours for manifestly illegal content, respectively 7 days otherwise, and tell you the decision by e-mail. The author of the content can contest within 14 days.",
+    "typeLabel": "What you are reporting",
+    "type": {
+      "announcement": "Breakdown announcement",
+      "listing": "Market listing",
+      "channel_message": "Channel message",
+      "user": "User"
+    },
+    "targetLabel": "Identifier or link",
+    "targetPlaceholder": "Paste the link or the id",
+    "targetHint": "Paste the link to the content (for example a profile link) or its identifier. If you have neither, write to abuse@trucksos.net and describe the content: who published it, where and when you saw it.",
+    "reasonLabel": "Reason",
+    "detailsLabel": "Explanation (optional)",
+    "emailLabel": "Your e-mail address",
+    "emailPlaceholder": "name@example.com",
+    "declaration": "I declare in good faith that the information in this report is correct and complete.",
+    "privacyNote": "Your e-mail address and the content of the report are used only to handle it and to reply to you; they are kept for 12 months after closure. We do not share them with the author of the content.",
+    "submit": "Submit report",
+    "sent": "We have received your report; you will receive the confirmation and the decision at {{email}}.",
+    "emailAlternative": "You can also report by e-mail to abuse@trucksos.net.",
+    "errorTarget": "Paste a valid link or identifier.",
+    "errorEmail": "We need a valid e-mail address so that we can reply to you.",
+    "errorDeclaration": "Tick the good-faith declaration.",
+    "errorCaptcha": "The anti-bot check failed. Please try again.",
+    "errorRateLimited": "You have sent too many reports within an hour. Try again later or write to us at abuse@trucksos.net.",
+    "errorNotFound": "We could not find the content. Check the link or the identifier."
   },
   "shareContact": {
     "action": "Share contact",
