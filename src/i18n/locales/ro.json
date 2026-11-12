@@ -1297,7 +1297,7 @@
         },
         {
           "heading": "8. Drepturile tale",
-          "body": "Acces, rectificare (direct din aplicație), ștergere (din aplicație), restricționare, opoziție, portabilitate („Descarcă datele mele” din Setări îți dă un fișier cu toate datele tale, de două ori pe zi), retragerea consimțământului (comutatoarele din Setări). Răspundem în cel mult 30 de zile la support@trucksos.net. Poți depune plângere la autoritatea de supraveghere — în România, ANSPDCP (www.dataprotection.ro) — sau la autoritatea din țara ta."
+          "body": "Acces, rectificare (direct din aplicație), ștergere (din aplicație), restricționare, opoziție, portabilitate („Descarcă datele mele” din Setări îți dă un fișier cu datele contului tău și conținutul creat de tine, de două ori pe zi; fără jurnalele tehnice — jurnalul de diagnostic al conexiunii și rapoartele de eroare), retragerea consimțământului (comutatoarele din Setări). Răspundem în cel mult 30 de zile la support@trucksos.net. Poți depune plângere la autoritatea de supraveghere — în România, ANSPDCP (www.dataprotection.ro) — sau la autoritatea din țara ta."
         },
         {
           "heading": "9. Cui se adresează serviciul",
@@ -1325,7 +1325,7 @@
     "ageCheckbox": "Confirm că am cel puțin 18 ani și folosesc TruckSOS în scop profesional.",
     "ageRequired": "Pentru a continua trebuie să confirmi că ai cel puțin 18 ani.",
     "updatedTitle": "Termenii s-au actualizat",
-    "updatedBody": "Am actualizat Termenii și Politica de confidențialitate (versiunea {{version}}). Pe scurt: operatorul este indicat cu nume și contact; lista completă a furnizorilor; cât timp păstrăm fiecare tip de date; cum trimiți o sesizare și cum contești o decizie; poți descărca toate datele tale din Setări. Pentru a continua, citește-le și confirmă.",
+    "updatedBody": "Am actualizat Termenii și Politica de confidențialitate (versiunea {{version}}). Pe scurt: operatorul este indicat cu nume și contact; lista completă a furnizorilor; cât timp păstrăm fiecare tip de date; cum trimiți o sesizare și cum contești o decizie; poți descărca datele contului și conținutul tău din Setări. Pentru a continua, citește-le și confirmă.",
     "updatedRead": "Citește Termenii · Citește Politica",
     "readTerms": "Citește Termenii",
     "readPrivacy": "Citește Politica",
