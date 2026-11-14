@@ -32,12 +32,12 @@
 20261109000400_storage_gc.sql
 20261109000500_retention.sql
 20261109000600_export_my_data.sql
-# faza 9, pachetul A (9.1 + 9.4)
-20261111000100_client_errors.sql
-20261111000300_health.sql
 # faza 8 — consimțământ + sesizări publice
 20261110000100_terms_consent.sql
 20261110000200_public_reports.sql
+# faza 9, pachetul A (9.1 + 9.4)
+20261111000100_client_errors.sql
+20261111000300_health.sql
 # exportul include sesizările depuse
 20261112000100_export_reports_filed.sql
 # faza 9, pachetul B (9.3)
