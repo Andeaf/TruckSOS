@@ -44,3 +44,5 @@
 20261111000200_kicks_push_secret.sql
 # created_at al mesajelor pus de server
 20261112000200_messages_created_at_server.sql
+# faza 5 (varianta B) — bulinele și citirea prin RPC; doar dacă PR #11 e aprobat
+20261113000100_unread_counts_mark_read.sql
