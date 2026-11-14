@@ -63,8 +63,8 @@ Items marked **1.1** are merged in `main` and reach production with the next rel
    (`profiles`, `announcements`) live in a private `app` schema; clients read `security_invoker` views that mask the
    sensitive columns. A phone number is visible only to its owner and to admins; plate, VIN and exact coordinates only to
    the driver, the accepted mechanic and admins, while everyone else gets a position rounded to about 1 km. Privileged
-   writes go through `SECURITY DEFINER` functions with a pinned `search_path`, and new functions get no `EXECUTE` by
-   default. CI rejects a migration that creates a table without RLS and explicit grants, or a function without
+   writes go through `SECURITY DEFINER` functions with a pinned `search_path`, and a new function is not executable by
+   clients (`anon`, `authenticated`) unless granted explicitly. CI rejects a migration that creates a table without RLS and explicit grants, or a function without
    `REVOKE … FROM PUBLIC` (`scripts/check-migrations.mjs`), and a pgTAP security checklist fails the build if an
    unlisted function or column becomes reachable (`supabase/tests/security_checklist.test.sql`).
 
@@ -80,8 +80,8 @@ Items marked **1.1** are merged in `main` and reach production with the next rel
    the applied state. On production a migration first runs inside `BEGIN … ROLLBACK`, and its catalog diff is compared
    with the one from CI.
 
-4. **Push notifications go through a queue (1.1).** Triggers no longer call the network; they only insert rows into
-   `app.push_queue`. `pg_cron` wakes the
+4. **Push notifications go through a queue (1.1).** Triggers no longer call the network; they only enqueue rows
+   (`app.push_queue`). `pg_cron` wakes the
    `push-dispatch` Edge Function every 5 seconds, only when something is due, and authenticates with a dedicated
    `x-push-secret` from Vault instead of the service-role key, because `pg_net` keeps request headers in plain text. The
    function claims batches of 100 with `FOR UPDATE SKIP LOCKED`, retries with backoff, and uses delivery receipts to
@@ -108,8 +108,8 @@ Items marked **1.1** are merged in `main` and reach production with the next rel
 ## Run it locally
 
 Requirements: Node 22+ and either a local Supabase stack or a Supabase project of your own. The repository contains no
-real keys; `.env.example` lists the two variables the app needs. The code is published for evaluation only (see
-[LICENSE](LICENSE)).
+real keys; `.env.example` lists the two variables the app needs. The code is published for reference and portfolio
+purposes only (see [LICENSE](LICENSE)).
 
 ```bash
 git clone https://github.com/Andeaf/TruckSOS.git
@@ -121,8 +121,8 @@ npx expo start              # press w for web, or scan the QR code with Expo Go
 
 The backend comes from `supabase/migrations`. With Docker and the Supabase CLI, `npx supabase start` builds the whole
 schema locally and `npx supabase status -o env` prints the API URL and the anon key for `.env`; CI builds the same
-schema on every push. For a hosted project, `npx supabase link` followed by `npx supabase db push` applies the same
-migrations. Maps and push notifications need a development build (`npx expo run:android`, `npx expo run:ios` or an EAS dev
+schema on every push. For a hosted project, `npx supabase link --project-ref <your-ref>` followed by
+`npx supabase db push` applies the same migrations. Maps and push notifications need a development build (`npx expo run:android`, `npx expo run:ios` or an EAS dev
 client); everything else works in Expo Go and in the browser.
 
 ```bash
