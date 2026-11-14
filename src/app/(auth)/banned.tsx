@@ -9,6 +9,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { deleteAccount } from '@/lib/account';
+import { banExpiryDate } from '@/lib/ban';
 
 /** Locale explicit: altfel formatul urmează regiunea dispozitivului, nu limba aplicației. */
 const LOCALE_MAP: Record<string, string> = { ro: 'ro-RO', en: 'en-GB', de: 'de-DE' };
@@ -22,9 +23,8 @@ export default function BannedScreen() {
   const { profile, signOut } = useAuth();
   const [deleting, setDeleting] = useState(false);
 
-  const until = profile?.banned_until
-    ? new Date(profile.banned_until).toLocaleDateString(LOCALE_MAP[i18n.language] ?? 'ro-RO')
-    : null;
+  // Fără dată citibilă (ban permanent sau `banned_until` stricat) → textul fără dată, niciodată „Invalid Date”.
+  const until = banExpiryDate(profile)?.toLocaleDateString(LOCALE_MAP[i18n.language] ?? 'ro-RO') ?? null;
 
   function confirmDelete() {
     Alert.alert(t('auth.banned.deleteConfirmTitle'), t('auth.banned.deleteConfirmBody'), [

@@ -331,6 +331,28 @@ async function run() {
   } else {
     console.warn('SERVICE_ROLE_KEY lipsește: pașii service_role sunt săriți');
   }
+  // use-chat.ts sendMessage / use-channel-chat.ts sendChannelMessage (1.0.8, fb3ab3f): .insert(row).select(<embed-uri>).single().
+  // Query string-ul e chiar forma din jurnalul producției (shapes-1.0.x.csv), corpurile sunt cele din cod: niciun client
+  // publicat nu trimite created_at. Migrarea 20261112000200 pune created_at = now() la inserările făcute de client, deci
+  // răspunsul trebuie să rămână identic (cod, chei); valorile le verifică supabase/gate/post-check.sql, iar rândurile le
+  // șterge supabase/gate/cleanup-messages.sql după fiecare fază. Ultimii doi pași sunt un client MODIFICAT care trimite
+  // created_at din 2099: tot 201 în ambele faze; post-check cere 2099 înainte de migrare (golul) și now() după ea.
+  const postShape = (path) => shapes.find((s) => s.method === 'POST' && s.path === path)?.search_shape;
+  const msgSearch = postShape('/rest/v1/messages'), chSearch = postShape('/rest/v1/channel_messages');
+  if (!msgSearch || !chSearch) throw new Error('shapes-1.0.x.csv: lipsesc formele POST messages / channel_messages');
+  const single = { Prefer: 'return=representation', Accept: 'application/vnd.pgrst.object+json' };
+  const msgBody = (content, extra) => ({ conversation_id: ID.CONV_A_M1, sender_id: ID.A, content, image_path: null, reply_to_id: null, ...extra });
+  const chBody = (content, extra) => ({ channel_id: ID.CH, sender_id: ID.A, content, image_path: null, reply_to_id: null, ...extra });
+  await step('POST messages text (sendMessage 1.0.8) as driver_a', { method: 'POST', path: '/rest/v1/messages', search: msgSearch, token: A, headers: single,
+    body: msgBody(`Gate ${phase}: mesaj text`) });
+  await step('POST messages cu citat (sendMessage 1.0.8, reply_to_id) as driver_a', { method: 'POST', path: '/rest/v1/messages', search: msgSearch, token: A, headers: single,
+    body: msgBody(`Gate ${phase}: mesaj cu citat`, { reply_to_id: ID.MSG1 }) });
+  await step('POST channel_messages text (sendChannelMessage 1.0.8) as driver_a', { method: 'POST', path: '/rest/v1/channel_messages', search: chSearch, token: A, headers: single,
+    body: chBody(`Gate ${phase}: mesaj in canal`) });
+  await step('POST messages cu created_at din 2099 (client modificat) as driver_a', { method: 'POST', path: '/rest/v1/messages', search: msgSearch, token: A, headers: single,
+    body: msgBody('Gate: created_at fals', { created_at: '2099-01-01T00:00:00.000Z' }) });
+  await step('POST channel_messages cu created_at din 2099 (client modificat) as driver_a', { method: 'POST', path: '/rest/v1/channel_messages', search: chSearch, token: A, headers: single,
+    body: chBody('Gate: created_at fals', { created_at: '2099-01-01T00:00:00.000Z' }) });
   // Ultimul: tokenul de push (după el, orice INSERT ar încerca un push către exp.host)
   await step('RPC claim_push_token as driver_a', { method: 'POST', path: '/rest/v1/rpc/claim_push_token', token: A,
     body: { p_token: `ExponentPushToken[gate-${phase}]`, p_platform: 'android', p_device_token: null, p_previous_token: null, p_app_build: '1.0.8' } });

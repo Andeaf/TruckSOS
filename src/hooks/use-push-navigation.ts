@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 
 import { useAuth } from '@/hooks/use-auth';
 import { useSettings } from '@/hooks/use-settings';
-import { pushAvailable, type PushData } from '@/lib/push';
+import { pushAvailable, readPushData, type PushData } from '@/lib/push';
 
 // Răspunsurile deja tratate (identificatorul notificării). Fără gardă, același
 // răspuns ajungea navigat de mai multe ori: getLastNotificationResponseAsync
@@ -145,7 +145,11 @@ export function usePushNavigation() {
       const key = response.notification.request.identifier;
       if (handledResponses.has(key)) return;
       handledResponses.add(key);
-      open(response.notification.request.content.data as PushData);
+      // readPushData, nu `content.data` direct (12 nov 2026): aceleași date ajung uneori ca text JSON, împachetate
+      // sub `body` sau doar în payload-ul declanșatorului (aplicația era închisă) — citite direct, tap-ul nu deschidea
+      // nimic. E același cititor folosit la afișarea notificării în prim-plan.
+      const data = readPushData(response.notification);
+      if (data) open(data);
     }
 
     // Aplicația era închisă: notificarea care a pornit-o. `.catch`: pe iOS un reject

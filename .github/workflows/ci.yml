@@ -132,6 +132,8 @@ jobs:
           # Valorile după scrieri (plăcuță/VIN/coordonate intacte etc.), apoi urmele scrierilor dispar, ca „after”
           # să vadă aceleași date (comparăm numărul de rânduri).
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -q -v ON_ERROR_STOP=1 -f supabase/gate/post-check.sql
+          # Mesajele inserate de replay (și urmele triggerelor de notificare) se șterg după fiecare fază.
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -q -v ON_ERROR_STOP=1 -f supabase/gate/cleanup-messages.sql
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -q -v ON_ERROR_STOP=1 -f supabase/gate/cleanup.sql
 
       - name: Apply the migrations after the baseline
@@ -170,6 +172,7 @@ jobs:
           [ "$ready" = "1" ] || { echo "PostgREST nu a răspuns 200 după restart"; exit 1; }
           node scripts/replay-1_0_8.mjs run --phase after --out /tmp/gate/after
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -q -v ON_ERROR_STOP=1 -f supabase/gate/post-check.sql
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -q -v ON_ERROR_STOP=1 -f supabase/gate/cleanup-messages.sql
           node scripts/replay-1_0_8.mjs compare /tmp/gate/before /tmp/gate/after
 
       - name: Rollback rehearsal (migrations after the baseline)

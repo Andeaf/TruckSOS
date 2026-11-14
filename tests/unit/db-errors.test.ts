@@ -89,11 +89,17 @@ describe('translateDbError', () => {
       expect(translateDbError({ code: '57014', message: 'canceling statement due to user request' })).toBe('dbErrors.timeout');
     });
 
-    it('comportament actual, posibil bug: 57014 cu mesajul real al Postgres („statement timeout”) e luat drept eroare de rețea', () => {
-      // isNetworkError rulează înaintea SQLSTATE-urilor, iar tiparul lui (/timed? ?out/) prinde „timeout”.
-      expect(translateDbError({ code: '57014', message: 'canceling statement due to statement timeout' })).toBe(
-        'authErrors.network',
-      );
+    it('57014 cu mesajul real al Postgres („statement timeout”) → dbErrors.timeout, nu eroare de rețea', () => {
+      // Tiparul de rețea (/timed? ?out/) prinde „timeout”; SQLSTATE-ul serverului are prioritate (reparat 12 nov 2026).
+      expect(translateDbError({ code: '57014', message: 'canceling statement due to statement timeout' })).toBe('dbErrors.timeout');
+      // Același mesaj ajuns ca text simplu (hook-urile vechi întorceau error.message) sau ca Error fără cod.
+      expect(translateDbError('canceling statement due to statement timeout')).toBe('dbErrors.timeout');
+      expect(translateDbError(new Error('canceling statement due to statement timeout'))).toBe('dbErrors.timeout');
+    });
+
+    it('un timeout de transport (fără SQLSTATE) rămâne eroare de rețea', () => {
+      expect(translateDbError({ message: 'The request timed out.' })).toBe('authErrors.network');
+      expect(translateDbError({ code: '', message: 'TypeError: Network request failed' })).toBe('authErrors.network');
     });
   });
 

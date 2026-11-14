@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { clearAuthEntry, readAuthEntry, setAuthEntry } from '@/lib/auth-entry';
 import { MIN_PASSWORD_LENGTH } from '@/lib/auth-rules';
-import { isBanned } from '@/lib/ban';
+import { banExpiryDate, isBanned } from '@/lib/ban';
 import { readGuestMode, writeGuestMode } from '@/lib/guest';
 import { isValidPhone, isValidVat, normalizePhone, normalizeVat } from '@/lib/profile-validation';
 
@@ -59,8 +59,18 @@ describe('isBanned', () => {
     expect(isBanned(ban)).toBe(false);
   });
 
-  it('comportament actual: o dată banned_until ilizibilă dă NaN → tratat ca ban expirat', () => {
-    expect(isBanned({ banned_at: '2026-11-01T00:00:00Z', banned_until: 'nu-e-data' })).toBe(false);
+  it('o dată banned_until ilizibilă → tratat ca banat (nu ca ban expirat); serverul rămâne autoritatea', () => {
+    expect(isBanned({ banned_at: '2026-11-01T00:00:00Z', banned_until: 'nu-e-data' })).toBe(true);
+    // Fără banned_at contul nu e banat, oricât de stricat ar fi banned_until.
+    expect(isBanned({ banned_at: null, banned_until: 'nu-e-data' })).toBe(false);
+  });
+
+  it('banExpiryDate: data de afișat pe ecranul de ban; null la ban permanent sau la o dată ilizibilă', () => {
+    expect(banExpiryDate({ banned_until: '2026-11-20T08:00:00.000Z' })?.toISOString()).toBe('2026-11-20T08:00:00.000Z');
+    expect(banExpiryDate({ banned_until: null })).toBeNull();
+    expect(banExpiryDate({ banned_until: 'nu-e-data' })).toBeNull();
+    expect(banExpiryDate(null)).toBeNull();
+    expect(banExpiryDate(undefined)).toBeNull();
   });
 });
 
