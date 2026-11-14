@@ -172,7 +172,9 @@ select lives_ok($$ insert into public.channel_reads (channel_id, user_id, last_r
 select is((select string_agg(right(conversation_id::text, 1) || '=' || unread, ',' order by conversation_id) from public.unread_counts()),
           '5=2', '18. după upsert-ul direct, unread_counts vede c1 citită (aceleași tabele)');
 
--- ── 18b–18e. mesaj cu dată din viitor (clientul poate trimite created_at la INSERT) și cursor rămas în viitor ───
+-- ── 18b–18e. mesaj cu dată din viitor și cursor rămas în viitor. Mesajul e inserat ca postgres: din 20261112000200
+--    clientul nu mai poate alege created_at (triggerul aaa_created_at_server), deci un asemenea rând poate fi doar
+--    unul mai vechi decât triggerul sau unul venit pe un drum de server ───
 select pg_temp.as_postgres();
 insert into public.messages (id, conversation_id, sender_id, content, created_at) values
   ('95444444-0000-4000-8000-000000000302', '95333333-0000-4000-8000-000000000003', '95000000-0000-4000-8000-0000000000c3', 'U c3 din viitor', now() + interval '2 days');

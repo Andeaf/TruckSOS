@@ -35,14 +35,19 @@
 --       · doar pentru conversațiile la care sunt participant / canalele care există; întoarce cursorul rezultat.
 --     Clientul 1.1: la conversații trimite p_at = cel mai nou mesaj afișat + 1 ms; la canal NU trimite p_at, deci
 --     serverul folosește DEFAULT-ul now() (ceasul serverului, nu al telefonului).
---     GOL VECHI, NEATINS AICI (de decis de David): clientul poate alege created_at la INSERT în messages /
---     channel_messages (grant la nivel de tabel, niciun trigger nu-l fixează). Urmarea pentru un mesaj neșters cu
---     dată din viitor: într-o conversație privată poate fi citit (p_at urcă până la el), iar cursorul rămâne acolo
---     până e șters mesajul; într-un CANAL nu poate fi citit de clientul 1.1 (cursorul lui e now()), deci bulina
---     canalului rămâne aprinsă până când un admin șterge mesajul (mesajele șterse nu se numără) — ales așa
---     intenționat: altfel un singur mesaj datat în viitor ar duce cursorul tuturor cititorilor acolo și bulina
---     canalului ar amuți pentru toți. Remediul real e un trigger BEFORE INSERT care pune now() pentru inserările
---     făcute direct de client — atinge drumul de inserare al 1.0.x, deci nu e în această migrare.
+--     MESAJELE CU DATĂ DIN VIITOR. Golul vechi (clientul putea alege created_at la INSERT în messages /
+--     channel_messages: grant la nivel de tabel, niciun trigger nu-l fixa) e ÎNCHIS pentru mesajele noi de migrarea
+--     20261112000200_messages_created_at_server (decizia lui David, 12 nov 2026): triggerul BEFORE INSERT
+--     aaa_created_at_server pune now() la orice inserare făcută direct de client (authenticated / anon). Un mesaj cu
+--     dată din viitor mai poate exista doar ca rând mai vechi decât triggerul (pe producție: de la aplicarea lui
+--     încolo, niciunul nou) sau inserat pe un drum de server (service_role, postgres, o funcție SECURITY DEFINER —
+--     azi niciun asemenea drum). Regulile de mai sus rămân, ca plasă de siguranță pentru acele rânduri și pentru
+--     cazul în care 20261113000100 ajunge pe o bază fără trigger (ordinea de aplicare: triggerul înaintea ei).
+--     Ce face un mesaj neșters cu dată din viitor: într-o conversație privată poate fi citit (p_at urcă până la
+--     el), iar cursorul rămâne acolo până e șters mesajul; într-un CANAL nu poate fi citit de clientul 1.1
+--     (cursorul lui e now()), deci bulina canalului rămâne aprinsă până când un admin șterge mesajul (mesajele
+--     șterse nu se numără) — ales așa intenționat: altfel un singur mesaj datat în viitor ar duce cursorul tuturor
+--     cititorilor acolo și bulina canalului ar amuți pentru toți.
 --
 -- Ce NU face (rămâne pentru varianta A, care se poate adăuga peste aceasta fără rescriere): niciun obiect în schema
 -- `realtime`, niciun trigger de broadcast, nicio politică pe realtime.messages. Numele și semnăturile RPC-urilor sunt
@@ -156,7 +161,8 @@ BEGIN
     RAISE EXCEPTION 'not_participant' USING ERRCODE = '42501';
   END IF;
   -- Plafonul cursorului: ceasul serverului SAU cel mai nou mesaj existent + 1 ms, care e mai mare. A doua parte
-  -- contează doar pentru un mesaj cu dată din viitor (clientul poate trimite created_at la INSERT — gol vechi):
+  -- contează doar pentru un mesaj cu dată din viitor (un rând de dinaintea triggerului aaa_created_at_server din
+  -- 20261112000200 sau unul inserat pe un drum de server; clientul nu mai poate alege created_at):
   -- fără ea mesajul acela n-ar putea fi citit niciodată și bulina ar rămâne aprinsă (review 12 nov).
   -- Doar mesajele neșterse: odată șters (tombstone) un mesaj cu dată din viitor, plafonul revine la now().
   v_newest := (SELECT max(m.created_at) FROM public.messages m
