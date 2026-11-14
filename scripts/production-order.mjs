@@ -35,6 +35,8 @@ const FINGERPRINT_SQL = join(ROOT, 'supabase', 'gate', 'fingerprint.sql');
 const BASELINE_SUFFIX = '_baseline_production_schema.sql';
 /** Câte linii dintr-o diferență apar în jurnal (fișierul din --out o are întreagă). */
 const LOG_DIFF_LINES = 200;
+/** Sub atâtea linii amprenta nu e a unei baze cu baseline-ul aplicat (baseline-ul singur: 1 131 de linii, 14 nov 2026). */
+const MIN_FINGERPRINT_LINES = 500;
 
 const version = (file) => file.slice(0, 14);
 
@@ -123,6 +125,8 @@ function parseArgs(argv) {
   }
   if (!args.out) throw new Error('lipsește --out <dir>');
   if (!args.dryRun && !args.db) throw new Error('lipsește --db <url>');
+  // --dry-run doar tipărește comenzile și trece toate verificările: e pentru probă locală, niciodată în CI.
+  if (args.dryRun && process.env.CI) throw new Error('--dry-run nu se folosește în CI (nu verifică nimic)');
   return args;
 }
 
@@ -146,7 +150,12 @@ const toLines = (text) => text.split('\n').map((l) => l.replace(/\r$/, '')).filt
 function fingerprint(db, dryRun) {
   const r = psql(db, ['-A', '-t', '-f', FINGERPRINT_SQL], dryRun);
   if (!r.ok) throw new Error(`amprenta nu a putut fi luată:\n${r.stderr}`);
-  return toLines(r.stdout);
+  const lines = toLines(r.stdout);
+  // O amprentă aproape goală ar face ca două baze stricate să pară „identice”: baseline-ul singur are peste 1 000 de linii.
+  if (!dryRun && lines.length < MIN_FINGERPRINT_LINES) {
+    throw new Error(`amprenta are doar ${lines.length} linii (minimul așteptat: ${MIN_FINGERPRINT_LINES}); baza nu e cea așteptată`);
+  }
+  return lines;
 }
 
 /** Diferența dintre două amprente (linii sortate, unice): ce dispare din `a` și ce apare în `b`. */
@@ -320,7 +329,8 @@ function run(order, args) {
       }
     }
   }
-  for (const j of deferred) record(`rollback ${done[j]} (reîncercat)`, false, 'refuzat și după toate celelalte rollback-uri');
+  // (refuzul e deja numărat ca FAIL o dată; aici doar se spune că nu a trecut nici la reîncercare)
+  for (const j of deferred) console.log(`      rollback ${done[j]}: refuzat și după toate celelalte rollback-uri`);
   const rolledBackAll = rolled.size === done.length;
   if (done.length > 0) {
     console.log('Ordinea în care au rulat de fapt rollback-urile:');

@@ -312,6 +312,8 @@ jobs:
     #      aceeași tranzacție), cu amprenta luată după fiecare pas;
     #   4. amprenta finală comparată brut cu `applied.txt` din artefactul `fingerprints` al lui db-tests (ordinea numelui);
     #   5. rollback-urile în ordinea inversă a celei de producție; după fiecare, amprenta = cea de dinaintea migrării.
+    #      Un rollback refuzat (de garda lui) e o verificare picată, dar repetiția merge mai departe: îl amână și îl
+    #      reîncearcă după următoarele; cât există rollback-uri amânate, pasul nu se poate compara și e doar notat.
     # Orice diferență sau eroare = job roșu, cu toate diferențele în jurnal și în artefactul
     # `fingerprints-production-order` (amprentele pe pași sunt și referința „înainte / după” a fiecărui rând aplicat
     # pe producție). Nimic nu se repară aici: se raportează lui David.
