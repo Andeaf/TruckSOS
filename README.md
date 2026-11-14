@@ -25,10 +25,12 @@
 </p>
 
 <p align="center">
+  <img src="docs/screenshots/01.jpg" width="230" alt="Feed of open breakdown announcements, as a mechanic sees it" />
   <img src="docs/screenshots/02.jpg" width="230" alt="Map of open breakdown announcements" />
-  <img src="docs/screenshots/03.jpg" width="230" alt="Announcement details: location, truck, problem description, photos" />
   <img src="docs/screenshots/05.jpg" width="230" alt="Market: classifieds for tyres, parts, trucks and trailers" />
 </p>
+
+<p align="center"><sub>Demo data. The interface is shown in English; the announcements themselves are written in Romanian.</sub></p>
 
 ## The problem and the users
 
@@ -58,11 +60,14 @@ It is a solo project: product, design, the app, the backend, releases and user s
 
 Items marked **1.1** are merged in `main` and reach production with the next release; the rest is live today.
 
-1. **Postgres is the backend, and the client is never trusted.** Every table has RLS. The two tables with personal data
-   (`profiles`, `announcements`) live in a private `app` schema; clients read `security_invoker` views that hide phone
-   numbers, exact coordinates, plate and VIN from everyone except the owner, the accepted mechanic and admins. Privileged
-   writes go through `SECURITY DEFINER` functions with a pinned `search_path`. CI rejects a migration that creates a table
-   without RLS and explicit grants, or a function without `REVOKE … FROM PUBLIC` (`scripts/check-migrations.mjs`).
+1. **Postgres is the backend, and the client is never trusted.** Every table has RLS. The two most exposed tables
+   (`profiles`, `announcements`) live in a private `app` schema; clients read `security_invoker` views that mask the
+   sensitive columns. A phone number is visible only to its owner and to admins; plate, VIN and exact coordinates only to
+   the driver, the accepted mechanic and admins, while everyone else gets a position rounded to about 1 km. Privileged
+   writes go through `SECURITY DEFINER` functions with a pinned `search_path`, and new functions get no `EXECUTE` by
+   default. CI rejects a migration that creates a table without RLS and explicit grants, or a function without
+   `REVOKE … FROM PUBLIC` (`scripts/check-migrations.mjs`), and a pgTAP security checklist fails the build if an
+   unlisted function or column becomes reachable (`supabase/tests/security_checklist.test.sql`).
 
 2. **A server change must not break a published build.** Store builds stay on phones for months, so schema changes are
    additive and every migration passes a compatibility gate: CI replays about 900 request shapes of the published 1.0.x
@@ -71,11 +76,13 @@ Items marked **1.1** are merged in `main` and reach production with the next rel
    already stopped a real mistake: a new column on `profiles` would have broken every write made by old clients.
 
 3. **Migrations are rehearsed like deployments.** The schema baseline is generated from the production catalog and CI
-   proves it matches. Each migration ends with its own assertions and ships with a rollback; CI compares a catalog
-   fingerprint before the migration, after it, after the rollback and after re-applying. On production each migration
-   first runs inside `BEGIN … ROLLBACK`, and its catalog diff must equal the one from CI.
+   proves it matches. Migrations carry their own assertions and each ships with a rollback: CI applies them all, rolls
+   them all back and applies them again, and a catalog fingerprint must return exactly to the starting point and then to
+   the applied state. On production a migration first runs inside `BEGIN … ROLLBACK`, and its catalog diff is compared
+   with the one from CI.
 
-4. **Push notifications go through a queue (1.1).** Triggers only insert into `app.push_queue`. `pg_cron` wakes the
+4. **Push notifications go through a queue (1.1).** Triggers no longer call the network; they only insert rows into
+   `app.push_queue`. `pg_cron` wakes the
    `push-dispatch` Edge Function every 5 seconds, only when something is due, and authenticates with a dedicated
    `x-push-secret` from Vault instead of the service-role key, because `pg_net` keeps request headers in plain text. The
    function claims batches of 100 with `FOR UPDATE SKIP LOCKED`, retries with backoff, and uses delivery receipts to
@@ -89,31 +96,34 @@ Items marked **1.1** are merged in `main` and reach production with the next rel
 
 6. **Moderation built for the EU Digital Services Act (1.1).** Users can report and block in the app, and admins work from
    a queue that keeps a snapshot of the reported content. 1.1 adds a public report form that needs no account (Edge
-   Function, Turnstile captcha, rate limit on a salted IP hash, so no raw IP is stored), a statement of reasons sent to the
-   affected user for every moderation action, and a server-side record of accepted terms and age confirmation.
+   Function, Turnstile captcha, rate limit on a salted IP hash, so no raw IP is stored), a notice with the reason sent to the
+   affected user when content is removed or an account is banned, and a server-side record of accepted terms and age
+   confirmation.
 
-7. **Tests where a failure is expensive.** More than 400 pgTAP assertions run as the real client roles, with JWT claims,
-   not as a superuser. About 220 Vitest unit tests cover client logic (offline message outbox, push payload parsing,
-   permission rules, error mapping), and the Edge Functions have Deno tests. CI also seeds 50,000 accounts, 105,000
+7. **Tests where a failure is expensive.** More than 400 pgTAP assertions; access rules are tested as the real client
+   roles, with JWT claims, not as a superuser. About 220 Vitest unit tests cover client logic (offline message outbox,
+   push payload parsing, permission rules, error mapping), and most Edge Functions have Deno tests. CI also seeds 50,000 accounts, 105,000
    announcements and 212,000 messages and times the heavy queries; results are reported in the job summary and a number
    over its threshold is a warning, not a silent pass.
 
 ## Run it locally
 
-Requirements: Node 22+ and a Supabase project of your own. The repository contains no real keys; `.env.example` lists the
-two variables the app needs.
+Requirements: Node 22+ and either a local Supabase stack or a Supabase project of your own. The repository contains no
+real keys; `.env.example` lists the two variables the app needs. The code is published for evaluation only (see
+[LICENSE](LICENSE)).
 
 ```bash
 git clone https://github.com/Andeaf/TruckSOS.git
 cd TruckSOS
 npm install
-cp .env.example .env        # EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY of your project
+cp .env.example .env        # EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY of your stack or project
 npx expo start              # press w for web, or scan the QR code with Expo Go
 ```
 
 The backend comes from `supabase/migrations`. With Docker and the Supabase CLI, `npx supabase start` builds the whole
-schema locally and `npx supabase status` prints the URL and the anon key for `.env`; CI builds the same schema on every
-push. Maps and push notifications need a development build (`npx expo run:android`, `npx expo run:ios` or an EAS dev
+schema locally and `npx supabase status -o env` prints the API URL and the anon key for `.env`; CI builds the same
+schema on every push. For a hosted project, `npx supabase link` followed by `npx supabase db push` applies the same
+migrations. Maps and push notifications need a development build (`npx expo run:android`, `npx expo run:ios` or an EAS dev
 client); everything else works in Expo Go and in the browser.
 
 ```bash
@@ -125,9 +135,9 @@ npm run check:migrations          # RLS / grants convention for migrations
 
 ## Status
 
-- **Live:** version 1.0.8 on the App Store, Google Play and the web, since August 2026.
+- **Live** on Google Play, the App Store and the web since late summer 2026; the current version is 1.0.8.
 - **In preparation:** version 1.1. The server side (push queue, retention and export, consent, public reports, client
-  error reporting and a health view for admins) is merged in `main` and is being applied to production in small steps,
+  error reporting and a health view for admins) is merged in `main` and will be applied to production in small steps,
   each rehearsed first, while the published 1.0.8 keeps working. The private `app` schema with masked views is already
   live.
 
@@ -176,7 +186,7 @@ src/
   types/               domain types + generated Supabase schema
 supabase/
   migrations/          baseline of the production schema + migrations after it, named <YYYYMMDDHHMMSS>_<name>.sql
-  rollback/            one rollback per migration, rehearsed in CI
+  rollback/            rollback scripts; the ones for the current migrations are rehearsed in CI
   migrations-archive/  the 92 historical migrations the baseline replaces (reference only, not applied)
   baseline/            catalog extraction + parity query and expected output used by CI
   gate/                compatibility gate: request shapes of published clients, fixtures, catalog fingerprint
@@ -243,7 +253,7 @@ Setup, once per platform:
 
 ### Legal pages
 
-The privacy policy, terms, account-deletion and reports pages live in `public/legal/` (one file per language:
+The privacy policy, terms and account-deletion pages live in `public/legal/` (one file per language:
 `privacy.ro.html`, `privacy.en.html`, `privacy.de.html`, plus `privacy.html` = Romanian with `hreflang` alternates) and are
 served as static files at `https://trucksos.net/legal/…` by the regular web deploy (Cloudflare Pages serves `public/`
 before the SPA fallback). `web/legal/` holds the same files for the GitHub Pages mirror. The in-app texts (`legal.*` in
