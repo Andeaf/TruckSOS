@@ -32,6 +32,10 @@ jobs:
       - name: Migrations follow the grants convention
         run: npm run check:migrations
 
+      - name: Every migration has a place in the production order
+        # Fără bază de date: supabase/gate/production-order.txt acoperă exact supabase/migrations/ (repetiția e în jobul prod-order).
+        run: node scripts/production-order.mjs check
+
       # Faza 3: Edge Functions push-dispatch / push-receipts (Deno) — testele unitare + verificarea tipurilor.
       - uses: denoland/setup-deno@v2
         with:
@@ -293,6 +297,95 @@ jobs:
             echo "::error::Faza 10: măsurători fără niciun rând (seed-ul sau rolul sunt greșite): $bad"; exit 1
           fi
           exit 0
+
+      - name: Stop
+        if: always()
+        run: supabase stop --no-backup
+
+  prod-order:
+    # Repetiția ordinii de producție (14 nov 2026). Pe producție migrările nu se aplică în ordinea numelui, ci în
+    # ordinea din supabase/gate/production-order.txt; `db-tests` le-a aplicat mereu doar în ordinea numelui.
+    # Pe o bază proaspătă (al doilea `supabase start`, DUPĂ db-tests, ca pull-urile de imagini să nu se suprapună):
+    #   1. baseline + fixturile porții — aceeași stare de pornire ca db-tests (control: amprenta = baseline.txt al lui);
+    #   2. migrările deja pe producție;
+    #   3. restul, EXACT în ordinea de producție, fiecare cu `psql -1` (verificările de la finalul migrării rulează în
+    #      aceeași tranzacție), cu amprenta luată după fiecare pas;
+    #   4. amprenta finală comparată brut cu `applied.txt` din artefactul `fingerprints` al lui db-tests (ordinea numelui);
+    #   5. rollback-urile în ordinea inversă a celei de producție; după fiecare, amprenta = cea de dinaintea migrării.
+    # Orice diferență sau eroare = job roșu, cu toate diferențele în jurnal și în artefactul
+    # `fingerprints-production-order` (amprentele pe pași sunt și referința „înainte / după” a fiecărui rând aplicat
+    # pe producție). Nimic nu se repară aici: se raportează lui David.
+    # Rulează și când db-tests a picat după ce și-a urcat artefactul (de ex. doar pgTAP roșu); fără artefact, comparațiile
+    # sunt raportate ca picate, dar aplicarea și rollback-urile se repetă oricum.
+    name: Production order rehearsal
+    needs: db-tests
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    env:
+      BASELINE_FILE: 20261031000300_baseline_production_schema.sql
+      DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Order list covers the migrations (no database)
+        run: node scripts/production-order.mjs check
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.109.1
+
+      - name: Set aside the migrations after the baseline
+        # Ca în db-tests: `supabase start` aplică doar baseline-ul; restul le aplică scriptul, în ordinea lui.
+        run: |
+          mkdir -p /tmp/pending
+          find supabase/migrations -maxdepth 1 -name '*.sql' ! -name "$BASELINE_FILE" -exec mv -t /tmp/pending {} +
+          test -f "supabase/migrations/$BASELINE_FILE"
+          echo "pending after baseline: $(ls /tmp/pending | wc -l)"
+
+      - name: Start local Postgres and apply the baseline
+        id: start
+        run: |
+          for attempt in 1 2 3; do
+            if supabase start -x studio,imgproxy,mailpit,logflare,vector,edge-runtime,realtime,supavisor,postgres-meta; then
+              exit 0
+            fi
+            echo "supabase start failed (attempt $attempt)"; supabase stop --no-backup || true; sleep 45
+          done
+          exit 1
+
+      - name: Match platform settings and load the gate fixtures
+        # Aceiași pași ca în db-tests înainte de `baseline.txt`: fără pg_graphql, cu fixturile porții (date, nu schemă —
+        # migrările rulează peste rânduri reale, ca acolo).
+        env:
+          PGCLIENTENCODING: UTF8
+        run: |
+          psql "postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres" -X -q -v ON_ERROR_STOP=1 -c "DROP EXTENSION IF EXISTS pg_graphql;"
+          psql "$DB_URL" -X -q -v ON_ERROR_STOP=1 -f supabase/gate/fixtures.sql
+          mv /tmp/pending/*.sql supabase/migrations/
+
+      - name: Download the name-order fingerprints (db-tests)
+        # Fără artefact pasul nu oprește jobul: scriptul raportează comparațiile ca picate și repetă restul.
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: fingerprints
+          path: /tmp/fp-name
+
+      - name: Apply in production order, compare with name order, roll back in reverse
+        run: node scripts/production-order.mjs run --db "$DB_URL" --name-order /tmp/fp-name --out /tmp/fp-order
+
+      - name: Upload the production-order fingerprints
+        if: ${{ always() && steps.start.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: fingerprints-production-order
+          path: /tmp/fp-order/
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Stop
         if: always()
