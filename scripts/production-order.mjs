@@ -268,24 +268,64 @@ function run(order, args) {
 
   // 5. Rollback-urile, în ordinea inversă a celei de producție.
   console.log('── 5. Rollback în ordinea inversă a celei de producție ──');
-  let rolledBackAll = true;
-  for (let i = done.length - 1; i >= 0; i--) {
+  // Un rollback refuzat (de ex. de garda lui: „rulează întâi rollback-ul X”) e o verificare PICATĂ, dar repetiția nu se
+  // oprește: îl amână, merge mai departe și îl reîncearcă după fiecare rollback reușit — ca raportul să spună și dacă
+  // restul trec și în ce ordine. Compararea pe pas („amprenta = cea de dinaintea migrării”) are sens doar când
+  // rollback-urile făcute până atunci sunt exact un capăt al ordinii de aplicare; altfel pasul e doar notat.
+  const rolled = new Set();
+  const deferred = [];
+  const effective = [];
+  let seq = 0;
+  const tryRollback = (i, retry) => {
     const f = done[i];
-    const nn = String(i + 2).padStart(2, '0');
     const r = psql(db, ['-1', '-f', join(ROLLBACK_DIR, f)], dryRun);
     if (r.stderr.trim()) console.log(r.stderr.trimEnd().split('\n').map((l) => `    ${l}`).join('\n'));
     if (!r.ok) {
-      record(`rollback ${f}`, false, 'rollback-ul NU rulează în ordinea inversă a celei de producție; eroarea e mai sus');
-      rolledBackAll = false;
-      break;
+      if (!retry) {
+        const chained = deferred.length > 0 ? ` — posibil în lanț: ${deferred.map((j) => version(done[j])).join(', ')} e deja amânat` : '';
+        record(`rollback ${f}`, false, `rollback-ul NU rulează în ordinea inversă a celei de producție (eroarea e mai sus); amânat, se reîncearcă după următoarele${chained}`);
+        deferred.push(i);
+      }
+      return false;
     }
+    rolled.add(i);
+    effective.push(f);
+    seq += 1;
     const fp = fingerprint(db, dryRun);
-    const d = diffLines(before[i], fp);
-    save(`rb-${nn}-after-rollback-${version(f)}.txt`, fp);
-    if (!d.same) saveText(`rb-${nn}-${version(f)}.diff`, d.text);
-    record(`rollback ${f}`, d.same, d.same ? `${r.ms} ms; amprenta = cea de dinaintea migrării` : `amprenta diferă de cea de dinaintea migrării: -${d.removed} / +${d.added}`);
-    if (!d.same) logDiff(d.text);
     current = fp;
+    save(`rb-${String(seq).padStart(2, '0')}-after-rollback-${version(f)}.txt`, fp);
+    const lowest = Math.min(...rolled);
+    const isSuffix = rolled.size === done.length - lowest;
+    const label = retry ? `rollback ${f} (reîncercat, în afara ordinii inverse)` : `rollback ${f}`;
+    if (!isSuffix) {
+      record(label, true, `${r.ms} ms; rulat cât alte rollback-uri sunt amânate: amprenta pe pas nu se poate compara`);
+      return true;
+    }
+    const d = diffLines(before[lowest], fp);
+    if (!d.same) saveText(`rb-${String(seq).padStart(2, '0')}-${version(f)}.diff`, d.text);
+    record(label, d.same, d.same ? `${r.ms} ms; amprenta = cea de dinaintea migrării ${version(done[lowest])}` : `amprenta diferă de cea de dinaintea migrării ${version(done[lowest])}: -${d.removed} / +${d.added}`);
+    if (!d.same) logDiff(d.text);
+    return true;
+  };
+  for (let i = done.length - 1; i >= 0; i--) {
+    if (!tryRollback(i, false)) continue;
+    // după un rollback reușit: cele amânate, în ordinea în care au fost refuzate, până nu mai trece niciunul
+    for (let progress = true; progress && deferred.length > 0; ) {
+      progress = false;
+      for (const j of [...deferred]) {
+        if (tryRollback(j, true)) {
+          deferred.splice(deferred.indexOf(j), 1);
+          progress = true;
+        }
+      }
+    }
+  }
+  for (const j of deferred) record(`rollback ${done[j]} (reîncercat)`, false, 'refuzat și după toate celelalte rollback-uri');
+  const rolledBackAll = rolled.size === done.length;
+  if (done.length > 0) {
+    console.log('Ordinea în care au rulat de fapt rollback-urile:');
+    effective.forEach((f, k) => console.log(`  ${String(k + 1).padStart(2, '0')}  ${f}`));
+    saveText('rollback-order-effective.txt', effective.join('\n'));
   }
   save('rolled-back.txt', current);
   if (done.length > 0 && rolledBackAll) {
