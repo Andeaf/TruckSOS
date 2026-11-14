@@ -25,12 +25,11 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/01.jpg" width="230" alt="Feed of open breakdown announcements, as a mechanic sees it" />
-  <img src="docs/screenshots/02.jpg" width="230" alt="Map of open breakdown announcements" />
-  <img src="docs/screenshots/05.jpg" width="230" alt="Market: classifieds for tyres, parts, trucks and trailers" />
+  <img src="docs/screenshots/02.jpg" width="250" alt="Map of open breakdown announcements, as a mechanic sees it" />
+  <img src="docs/screenshots/05.jpg" width="250" alt="Market: classifieds for tyres, parts, trucks and trailers" />
 </p>
 
-<p align="center"><sub>Demo data. The interface is shown in English; the announcements themselves are written in Romanian.</sub></p>
+<p align="center"><sub>Demo content. The interface is shown in English; the listings themselves are written in Romanian.</sub></p>
 
 ## The problem and the users
 
