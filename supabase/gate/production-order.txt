@@ -1,0 +1,46 @@
+# Ordinea de aplicare pe producție a migrărilor din supabase/migrations/ (repetiția din CI: jobul `prod-order`,
+# scripts/production-order.mjs). Pe producție migrările NU se aplică în ordinea numelui: o fază aprobată mai târziu
+# poate avea o versiune mai mică decât una deja aplicată (faza 3 = 20261102…, aplicată după 20261103000100), iar
+# pachetele unei faze se pot aplica separat (faza 9: A înaintea fazei 8, B după ea). Jobul `db-tests` le aplică doar
+# în ordinea numelui; aici e ordinea reală, iar `prod-order` verifică că rezultatul e același.
+#
+# Format: un nume de fișier pe linie, în ordinea aplicării; `#` = comentariu; două secțiuni:
+#   [applied]  ce e deja pe producție, în ordinea în care a fost aplicat (starea de la care pornește repetiția);
+#   [pending]  ce e în repo și nu e încă pe producție, în ordinea în care urmează să fie aplicat.
+# Fiecare fișier din supabase/migrations/ apare exact o dată (`node scripts/production-order.mjs check` pică
+# altfel): o migrare nouă nu trece de CI până nu i se hotărăște locul în ordine.
+# După o aplicare pe producție, liniile ei se mută din [pending] la capătul lui [applied]. Ordinea din [pending] se
+# schimbă doar cu decizia lui David.
+
+[applied]
+20261031000300_baseline_production_schema.sql
+# faza 4 (4.1–4.3)
+20261101000100_private_tables.sql
+20261101000200_anon_profiles_predicate_role_checks.sql
+20261101000300_feed_near_rate_mechanic.sql
+# faza 4.6
+20261103000100_reopen_clears_mechanic.sql
+
+[pending]
+# faza 3 — push prin coadă
+20261102000100_push_queue.sql
+20261102000200_reports_moderation.sql
+# faza 6 — ștergere cont, retenție, export, ciorne
+20261109000100_announcement_drafts.sql
+20261109000200_market_push_optin.sql
+20261109000300_apple_tokens.sql
+20261109000400_storage_gc.sql
+20261109000500_retention.sql
+20261109000600_export_my_data.sql
+# faza 9, pachetul A (9.1 + 9.4)
+20261111000100_client_errors.sql
+20261111000300_health.sql
+# faza 8 — consimțământ + sesizări publice
+20261110000100_terms_consent.sql
+20261110000200_public_reports.sql
+# exportul include sesizările depuse
+20261112000100_export_reports_filed.sql
+# faza 9, pachetul B (9.3)
+20261111000200_kicks_push_secret.sql
+# created_at al mesajelor pus de server
+20261112000200_messages_created_at_server.sql
