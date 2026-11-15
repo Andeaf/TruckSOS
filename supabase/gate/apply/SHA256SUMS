@@ -8,7 +8,7 @@ b68c3ada61d52f2a1b641e750c1f1a0af32a8cfcc8f7809d44c135611c44c2a2  faza-6/01-fing
 e6699e8949e1c74f3835e588bab1d9c520ce37e9d45a3bf88595aa79fd6336c5  faza-6/02-rehearsal.sql
 baa72f1bcfdd28c654fb8f015c59b2842b2a7f91e3a688dfaf6414a2b49736e4  faza-6/03-fingerprint-after-rollback.sql
 55dd03a9afb481dd45808ecae3e765c87b40c92afe24e03414773ce343167989  faza-6/04-apply.sql
-b1ea7e220cb88bf6fae5ee923c979eb79b1ca3c8621624cff857307a25b9728f  faza-6/05-post-apply-check.sql
+2bdfa27b9eb2061a2d48d170bb1e7c410c03ccbd4c1d18ec62f068bf89caf436  faza-6/05-post-apply-check.sql
 c0457fcac7065627e952661b77c0758973ea55a59cbca78e515dcf6d0cee1cfe  faza-6/06-rollback-emergency.sql
 3aadcc3a87d1c806e58c2a2a7018fe5d0b2bd2e70cc57c04a5d03f61f1bf0844  faza-8/01-fingerprint-before.sql
 8abdadc3b3e6699667411c6afcaf6588c5e0a9c3b036e260da5fec7c92818f22  faza-8/02-rehearsal.sql
@@ -33,12 +33,12 @@ bf8bd7d22fb1f08fdd997a4865954f1113cae4648b86b5c35c5d2e80c18f018b  export-sesizar
 2b14c35a3f0f0674b0a1ea68651c436eb29802aed7f84a46164c6614f006e8b3  faza-9b/02-rehearsal.sql
 889b5b30dbd2a3ab695becb4907b4ee0b66bd3142eb93c729464e91a56e44b68  faza-9b/03-fingerprint-after-rollback.sql
 486fbc6e0745e11de9871faaf8bb1f87ac926ece1f591f3b174c9031401cf35a  faza-9b/04-apply.sql
-e5ec3750df97324591628dd22cf8c845ebc1d51698a27347eb11ce76cf0f870f  faza-9b/05-post-apply-check.sql
+7a51198b6984da591770b4623a136d53b681d21a0a692a5f83054896885a7bfc  faza-9b/05-post-apply-check.sql
 91448a5c787140d4e920f9a8272b698402476ee61ebe4110dbc2ea4eff3f6c44  faza-9b/06-rollback-emergency.sql
 617e70ca82377ea52de18586b2ab21f44df860e93a0556f3087a4390ffc22518  created-at/00-precheck.sql
 d9b2e87817eb24504a20b52088e072b60d3e469d52fd55b019fffc437bd3dbfc  created-at/01-fingerprint-before.sql
 db3815a57832ee29e5e869946be5a57d61d8db226b3783a80324c595f1a5ab6d  created-at/02-rehearsal.sql
-8b523e67e030699bb1753875b5fac8063e3f9e8ac97f922cf435936c18008b50  created-at/02b-probe-as-client.sql
+324ba26815393d731766198088d948bca66e5c907907a3b816e8665e1ca44488  created-at/02b-probe-as-client.sql
 735795dec6b197c6b4c9ac9670cb59b72fe10075a55d3d9aa301169a79524a68  created-at/03-fingerprint-after-rollback.sql
 6fa826b75aad6459fe2d5b8616fda38109de6356783ce9b0f00b340fb43b56c8  created-at/04-apply.sql
 3d65d5a60704c551add473b4196fa692fab8cf829073589e8b9359f1cca68140  created-at/05-post-apply-check.sql
@@ -46,7 +46,7 @@ db3815a57832ee29e5e869946be5a57d61d8db226b3783a80324c595f1a5ab6d  created-at/02-
 ea89e6c1ee7690d82fe49a3f7d56fcbc4a7a2a788c7921b1a6af776a98511e59  faza-5/00-precheck.sql
 54bbcaf8ddd9b60023173f9e0e0c96c4b9ec0c3b698ae8a2a5a7dadb1826f4ee  faza-5/01-fingerprint-before.sql
 d23f9be283033d11c8ec20d3705ed9960adeda348f9a4a4923d09137f7720391  faza-5/02-rehearsal.sql
-765ee05022ebeef3f605ad127777f2165ff91d9c5d1d27f5ccab4e8a77115edd  faza-5/02b-probe-as-client.sql
+6d68e36584944be6c103013f0c6f8a950952e977e2efde22841fad2f3ba27ba7  faza-5/02b-probe-as-client.sql
 6ca676efad835df53b91fb1caa129b5a03805ecb8c2b87f269172be8e1bddfc2  faza-5/03-fingerprint-after-rollback.sql
 5b5745eeb1addd0003faff26dbcba003bc46e58136e5aeb768892ce1a22e89cc  faza-5/04-apply.sql
 66defee7461186b646d232a3448abddb4971479ead75ce3d33fe8bb30594b5ab  faza-5/05-post-apply-check.sql

@@ -72,7 +72,7 @@
       "v": "0"
     },
     {
-      "k": "retentie DRY-RUN (contoarele a ceea ce AR face prima rulare; de citit de David inainte de cron)",
+      "k": "retentie DRY-RUN (contoarele a ceea ce AR face prima rulare; de citit inainte de prima rulare a cronului)",
       "info": "contoarele retenției în dry-run: depind de datele din bază; pe producție se citesc înainte de prima rulare reală"
     },
     {

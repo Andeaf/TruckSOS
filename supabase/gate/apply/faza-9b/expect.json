@@ -43,7 +43,7 @@
       "why": "secretul push_kick_secret din Vault se creează de mână pe producție (faza 3); în CI nu există"
     },
     {
-      "k": "Vault: service_role_key inca exista (informativ; se sterge de David dupa cateva zile fara Authorization in net.http_request_queue)",
+      "k": "Vault: service_role_key inca exista (informativ; se sterge de mana dupa cateva zile fara Authorization in net.http_request_queue)",
       "ci": "false",
       "why": "secretul service_role_key din Vault există doar pe producție (se șterge de mână la câteva zile după 9.3)"
     },

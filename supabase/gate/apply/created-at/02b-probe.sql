@@ -6,7 +6,7 @@ DECLARE
   v_at timestamptz;
   v_far constant timestamptz := '2099-01-01T00:00:00Z';
 BEGIN
-  -- un cont de admin care e participant într-o conversație (contul tău); fără el proba se sare, nu se inventează date
+  -- un cont de admin care e participant într-o conversație (pe producție: contul de admin al proprietarului); fără el proba se sare, nu se inventează date
   SELECT p.id, c.id INTO v_admin, v_conv
     FROM public.conversations c
     JOIN app.profiles p ON p.id IN (c.driver_id, c.mechanic_id)

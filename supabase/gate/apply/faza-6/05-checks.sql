@@ -64,7 +64,7 @@ SELECT 'secretul push_kick_secret in Vault (asteptat 64; il foloseste si kick_st
 UNION ALL
 SELECT 'coada storage_gc (asteptat 0 inainte de prima scanare)', (SELECT count(*)::text FROM app.storage_gc_queue)
 UNION ALL
-SELECT 'retentie DRY-RUN (contoarele a ceea ce AR face prima rulare; de citit de David inainte de cron)', app.apply_retention(true)::text
+SELECT 'retentie DRY-RUN (contoarele a ceea ce AR face prima rulare; de citit inainte de prima rulare a cronului)', app.apply_retention(true)::text
 UNION ALL
 SELECT 'istoric migrari (ultimele 8 versiuni)', string_agg(version, ',' ORDER BY version)
   FROM (SELECT version FROM supabase_migrations.schema_migrations ORDER BY version DESC LIMIT 8) h;
