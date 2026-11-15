@@ -1,0 +1,88 @@
+{
+  "00-precheck": [
+    {
+      "k": "functia app.stamp_created_at_client exista deja (asteptat false; true = migrarea e deja aplicata -> STOP)",
+      "v": "false"
+    },
+    {
+      "k": "triggere BEFORE INSERT pe public.messages, in ordinea rularii (asteptat aaa_rate_limit,ban_guard_ins)",
+      "v": "aaa_rate_limit,ban_guard_ins"
+    },
+    {
+      "k": "triggere BEFORE INSERT pe public.channel_messages (asteptat aaa_rate_limit,ban_guard_ins)",
+      "v": "aaa_rate_limit,ban_guard_ins"
+    },
+    {
+      "k": "authenticated: INSERT pe messages / channel_messages (asteptat true|true)",
+      "v": "true|true"
+    },
+    {
+      "k": "authenticated: UPDATE pe messages / channel_messages (asteptat false|false; altfel created_at s-ar putea schimba prin UPDATE)",
+      "v": "false|false"
+    },
+    {
+      "k": "messages cu created_at NULL (informativ; migrarea nu le atinge)",
+      "info": "numărul mesajelor existente fără dată"
+    },
+    {
+      "k": "messages cu created_at in viitor, peste 5 minute (informativ; asteptat 0)",
+      "info": "numărul mesajelor existente cu dată în viitor"
+    },
+    {
+      "k": "channel_messages cu created_at in viitor, peste 5 minute (informativ; asteptat 0)",
+      "info": "numărul mesajelor de canal existente cu dată în viitor"
+    },
+    {
+      "k": "istoric migrari (ultimele 6 versiuni)",
+      "prod": "20261110000100,20261110000200,20261111000100,20261111000200,20261111000300,20261112000100",
+      "ci": "20261031000300",
+      "why": "istoricul migrărilor: pe producție îl scrie `supabase migration repair` după 04; în CI migrările se aplică cu psql, deci istoricul local are doar baseline-ul"
+    }
+  ],
+  "02b-probe-as-client": [
+    {
+      "k": "messages ca authenticated, trimis 2099 (asteptat OK: now())",
+      "v": "OK: now()"
+    },
+    {
+      "k": "messages ca authenticated, fara created_at - forma 1.0.x (asteptat OK: now())",
+      "v": "OK: now()"
+    },
+    {
+      "k": "messages ca postgres, trimis 2020 (asteptat OK: pastrat)",
+      "v": "OK: pastrat"
+    }
+  ],
+  "05-post-apply-check": [
+    {
+      "k": "triggerul aaa_created_at_server pe ambele tabele, activ, BEFORE INSERT FOR EACH ROW (asteptat 2)",
+      "v": "2"
+    },
+    {
+      "k": "triggere BEFORE INSERT pe public.messages, in ordinea rularii (asteptat aaa_created_at_server,aaa_rate_limit,ban_guard_ins)",
+      "v": "aaa_created_at_server,aaa_rate_limit,ban_guard_ins"
+    },
+    {
+      "k": "triggere BEFORE INSERT pe public.channel_messages (asteptat aaa_created_at_server,aaa_rate_limit,ban_guard_ins)",
+      "v": "aaa_created_at_server,aaa_rate_limit,ban_guard_ins"
+    },
+    {
+      "k": "functia e SECURITY INVOKER, search_path gol (asteptat false|search_path=\"\")",
+      "v": "false|search_path=\"\""
+    },
+    {
+      "k": "EXECUTE anon / authenticated pe functia triggerului (asteptat false)",
+      "v": "false"
+    },
+    {
+      "k": "mesaje / mesaje de canal cu created_at in viitor (asteptat 0|0; altfel aceleasi numere ca la pasul 0 - randuri vechi)",
+      "info": "numărul mesajelor existente cu dată în viitor (rânduri vechi; aceleași numere ca la pasul 0)"
+    },
+    {
+      "k": "istoric migrari (ultimele 6 versiuni; 20261112000200 dupa repair)",
+      "prod": "20261110000200,20261111000100,20261111000200,20261111000300,20261112000100,20261112000200",
+      "ci": "20261031000300",
+      "why": "istoricul migrărilor: pe producție îl scrie `supabase migration repair` după 04; în CI migrările se aplică cu psql, deci istoricul local are doar baseline-ul"
+    }
+  ]
+}

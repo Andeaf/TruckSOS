@@ -1,0 +1,66 @@
+{
+  "00-precheck": [
+    {
+      "k": "export_my_data exista (faza 6.4; asteptat true)",
+      "v": "true"
+    },
+    {
+      "k": "export_my_data are cheile fazei 8.2 - app.profile_terms (asteptat true)",
+      "v": "true"
+    },
+    {
+      "k": "reports.announcement_id exista (faza 8.3; asteptat true)",
+      "v": "true"
+    },
+    {
+      "k": "cheia reports_filed e deja in export (asteptat false; true = migrarea e deja aplicata -> STOP)",
+      "v": "false"
+    },
+    {
+      "k": "istoric migrari (ultimele 6 versiuni)",
+      "prod": "20261109000500,20261109000600,20261110000100,20261110000200,20261111000100,20261111000300",
+      "ci": "20261031000300",
+      "why": "istoricul migrărilor: pe producție îl scrie `supabase migration repair` după 04; în CI migrările se aplică cu psql, deci istoricul local are doar baseline-ul"
+    }
+  ],
+  "05-post-apply-check": [
+    {
+      "k": "export_my_data are cheia reports_filed (asteptat true)",
+      "v": "true"
+    },
+    {
+      "k": "export_my_data NU contine content_snapshot / image_path_snapshot (asteptat false)",
+      "v": "false"
+    },
+    {
+      "k": "export_my_data NU contine reporter_email ca valoare exportata (asteptat false)",
+      "v": "false"
+    },
+    {
+      "k": "cheile fazei 8.2 au ramas - app.profile_terms si app.consent_log (asteptat true)",
+      "v": "true"
+    },
+    {
+      "k": "SECURITY DEFINER + search_path gol (asteptat true|search_path=\"\")",
+      "v": "true|search_path=\"\""
+    },
+    {
+      "k": "EXECUTE anon (asteptat false)",
+      "v": "false"
+    },
+    {
+      "k": "EXECUTE authenticated (asteptat true)",
+      "v": "true"
+    },
+    {
+      "k": "un singur overload export_my_data in public (asteptat 1)",
+      "v": "1"
+    },
+    {
+      "k": "istoric migrari (ultimele 6 versiuni; 20261112000100 dupa repair)",
+      "prod": "20261109000600,20261110000100,20261110000200,20261111000100,20261111000300,20261112000100",
+      "ci": "20261031000300",
+      "why": "istoricul migrărilor: pe producție îl scrie `supabase migration repair` după 04; în CI migrările se aplică cu psql, deci istoricul local are doar baseline-ul"
+    }
+  ]
+}

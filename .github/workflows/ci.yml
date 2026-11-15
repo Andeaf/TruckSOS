@@ -32,8 +32,10 @@ jobs:
       - name: Migrations follow the grants convention
         run: npm run check:migrations
 
-      - name: Every migration has a place in the production order
-        # Fără bază de date: supabase/gate/production-order.txt acoperă exact supabase/migrations/ (repetiția e în jobul prod-order).
+      - name: Every migration has a place in the production order and in an apply package
+        # Fără bază de date: supabase/gate/production-order.txt acoperă exact supabase/migrations/; pachetele de aplicare
+        # (supabase/gate/apply/packages.json) acoperă exact migrările de aplicat, în aceeași ordine; sumele din
+        # supabase/gate/apply/SHA256SUMS corespund surselor (repetiția pe bază e în jobul prod-order).
         run: node scripts/production-order.mjs check
 
       # Faza 3: Edge Functions push-dispatch / push-receipts (Deno) — testele unitare + verificarea tipurilor.
@@ -79,6 +81,13 @@ jobs:
           find supabase/migrations -maxdepth 1 -name '*.sql' ! -name "$BASELINE_FILE" -exec mv -t /tmp/pending {} +
           test -f "supabase/migrations/$BASELINE_FILE"
           echo "pending after baseline: $(ls /tmp/pending | wc -l)"; ls /tmp/pending || true
+
+      - name: Reserve the local Supabase ports
+        # `supabase start` publică pe gazdă porturile 54321–54327, care sunt în plaja de porturi efemere a Linuxului: o
+        # conexiune de ieșire a runner-ului poate primi din întâmplare unul dintre ele, iar pornirea pică atunci cu
+        # „failed to bind host port 0.0.0.0:54322/tcp: address already in use” (CI 43685804465, prima încercare a
+        # jobului prod-order: de trei ori la rând; re-rularea a trecut). Rezervarea le scoate din plaja efemeră.
+        run: sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54330 || echo "::warning::porturile Supabase nu au putut fi rezervate"
 
       - name: Start local Postgres and apply the baseline
         id: start
@@ -303,22 +312,29 @@ jobs:
         run: supabase stop --no-backup
 
   prod-order:
-    # Repetiția ordinii de producție (14 nov 2026). Pe producție migrările nu se aplică în ordinea numelui, ci în
-    # ordinea din supabase/gate/production-order.txt; `db-tests` le-a aplicat mereu doar în ordinea numelui.
+    # Repetiția ordinii de producție (14–15 nov 2026). Pe producție migrările nu se aplică în ordinea numelui, ci în
+    # ordinea din supabase/gate/production-order.txt, și nu una câte una, ci prin pachete de aplicare: fișierele 00–06
+    # generate de scripts/apply-packages.mjs din supabase/gate/apply/ (aceleași fișiere, cu aceleași sume, se rulează pe
+    # producție). `db-tests` aplică migrările doar în ordinea numelui.
     # Pe o bază proaspătă (al doilea `supabase start`, DUPĂ db-tests, ca pull-urile de imagini să nu se suprapună):
     #   1. baseline + fixturile porții — aceeași stare de pornire ca db-tests (control: amprenta = baseline.txt al lui);
     #   2. migrările deja pe producție;
-    #   3. restul, EXACT în ordinea de producție, fiecare cu `psql -1` (verificările de la finalul migrării rulează în
-    #      aceeași tranzacție), cu amprenta luată după fiecare pas;
+    #   3. trecerea 1, pe pachete, în ordinea de producție: 00 (starea de pornire) → 01 (amprenta înainte) → 02
+    #      (repetiția BEGIN … ROLLBACK) → 03 (amprenta după repetiție = 01) → 02b (proba ca rolul clientului, unde există)
+    #      → 04 (aplicarea) → 05 (verificările, comparate rând cu rând cu expect.json al pachetului); diferența anunțată
+    #      de 02 trebuie să fie exact cea făcută de 04;
     #   4. amprenta finală comparată brut cu `applied.txt` din artefactul `fingerprints` al lui db-tests (ordinea numelui);
-    #   5. rollback-urile în ordinea inversă a celei de producție; după fiecare, amprenta = cea de dinaintea migrării.
-    #      Un rollback refuzat (de garda lui) e o verificare picată, dar repetiția merge mai departe: îl amână și îl
-    #      reîncearcă după următoarele; cât există rollback-uri amânate, pasul nu se poate compara și e doar notat.
+    #   5. fișierele 06 (rollback-ul de urgență) în ordinea inversă a pachetelor; după fiecare, amprenta = cea din 01 al
+    #      pachetului; la capăt, starea producției de azi. Un rollback refuzat (de garda lui) e o verificare picată, dar
+    #      repetiția merge mai departe: îl amână și îl reîncearcă după următoarele;
+    #   6. trecerea 2, migrare cu migrare (`psql -1`), apoi fiecare rollback în ordinea inversă, cu amprenta comparată.
+    # Rândurile care depind de ce există doar pe producție (secrete din Vault, istoricul scris de `migration repair`,
+    # rulările cron) sunt marcate în expect.json și listate la sfârșit ca „nerulabil în CI”, nu ocolite.
     # Orice diferență sau eroare = job roșu, cu toate diferențele în jurnal și în artefactul
-    # `fingerprints-production-order` (amprentele pe pași sunt și referința „înainte / după” a fiecărui rând aplicat
-    # pe producție). Nimic nu se repară aici: se raportează lui David.
+    # `fingerprints-production-order` (fișierele generate ale fiecărui pachet, ieșirile lor și amprentele „înainte /
+    # după”: referința pentru aplicarea pe producție). Nimic nu se repară aici: se raportează.
     # Rulează și când db-tests a picat după ce și-a urcat artefactul (de ex. doar pgTAP roșu); fără artefact, comparațiile
-    # sunt raportate ca picate, dar aplicarea și rollback-urile se repetă oricum.
+    # sunt raportate ca picate, dar restul se repetă oricum.
     name: Production order rehearsal
     needs: db-tests
     if: ${{ !cancelled() }}
@@ -333,7 +349,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: Order list covers the migrations (no database)
+      - name: Order list and apply packages cover the migrations (no database)
         run: node scripts/production-order.mjs check
 
       - uses: supabase/setup-cli@v1
@@ -348,6 +364,13 @@ jobs:
           test -f "supabase/migrations/$BASELINE_FILE"
           echo "pending after baseline: $(ls /tmp/pending | wc -l)"
 
+      - name: Reserve the local Supabase ports
+        # `supabase start` publică pe gazdă porturile 54321–54327, care sunt în plaja de porturi efemere a Linuxului: o
+        # conexiune de ieșire a runner-ului poate primi din întâmplare unul dintre ele, iar pornirea pică atunci cu
+        # „failed to bind host port 0.0.0.0:54322/tcp: address already in use” (CI 43685804465, prima încercare a
+        # jobului prod-order: de trei ori la rând; re-rularea a trecut). Rezervarea le scoate din plaja efemeră.
+        run: sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54330 || echo "::warning::porturile Supabase nu au putut fi rezervate"
+
       - name: Start local Postgres and apply the baseline
         id: start
         run: |
@@ -361,12 +384,14 @@ jobs:
 
       - name: Match platform settings and load the gate fixtures
         # Aceiași pași ca în db-tests înainte de `baseline.txt`: fără pg_graphql, cu fixturile porții (date, nu schemă —
-        # migrările rulează peste rânduri reale, ca acolo).
+        # migrările rulează peste rânduri reale, ca acolo). În plus, doar aici: o conversație a contului de admin din
+        # fixturi (supabase/gate/apply/ci-fixtures.sql), fără de care probele 02b ale pachetelor s-ar sări.
         env:
           PGCLIENTENCODING: UTF8
         run: |
           psql "postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres" -X -q -v ON_ERROR_STOP=1 -c "DROP EXTENSION IF EXISTS pg_graphql;"
           psql "$DB_URL" -X -q -v ON_ERROR_STOP=1 -f supabase/gate/fixtures.sql
+          psql "$DB_URL" -X -q -v ON_ERROR_STOP=1 -f supabase/gate/apply/ci-fixtures.sql
           mv /tmp/pending/*.sql supabase/migrations/
 
       - name: Download the name-order fingerprints (db-tests)
@@ -377,7 +402,7 @@ jobs:
           name: fingerprints
           path: /tmp/fp-name
 
-      - name: Apply in production order, compare with name order, roll back in reverse
+      - name: Run the apply packages in production order, compare with name order, roll back in reverse
         run: node scripts/production-order.mjs run --db "$DB_URL" --name-order /tmp/fp-name --out /tmp/fp-order
 
       - name: Upload the production-order fingerprints

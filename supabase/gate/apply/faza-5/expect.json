@@ -1,0 +1,112 @@
+{
+  "00-precheck": [
+    {
+      "k": "functiile fazei 5 care exista deja (asteptat 0; altfel migrarea e deja aplicata -> STOP)",
+      "v": "0"
+    },
+    {
+      "k": "faza 4 aplicata: app.profiles exista (asteptat true)",
+      "v": "true"
+    },
+    {
+      "k": "indexurile folosite exista: idx_messages_conversation_created | idx_channel_messages_channel_created (asteptat true|true)",
+      "v": "true|true"
+    },
+    {
+      "k": "publicatia supabase_realtime: cele 5 tabele ale chatului (asteptat 5; altfel migrarea se opreste singura)",
+      "v": "5"
+    },
+    {
+      "k": "triggerul aaa_created_at_server (20261112000200) pe messages + channel_messages (asteptat 2 = 20261112000200 e aplicata inaintea fazei 5, ordinea hotarata; 0 = inca neaplicata -> vezi documentul)",
+      "v": "2"
+    },
+    {
+      "k": "authenticated: INSERT|UPDATE pe message_reads si pe channel_reads (asteptat true|true|true|true: drumul 1.0.x, upsert direct)",
+      "v": "true|true|true|true"
+    },
+    {
+      "k": "messages cu created_at NULL (informativ; asemenea randuri nu se numara ca necitite intr-o conversatie niciodata deschisa)",
+      "info": "numărul mesajelor existente fără dată"
+    },
+    {
+      "k": "mesaje NESTERSE cu created_at in viitor, peste 5 minute: messages|channel_messages (informativ; asteptat 0|0)",
+      "info": "numărul mesajelor neșterse cu dată în viitor"
+    },
+    {
+      "k": "cursoare de citire in viitor, peste 5 minute: message_reads|channel_reads (informativ; sunt aduse inapoi la primul apel mark_*_read)",
+      "info": "numărul cursoarelor de citire cu dată în viitor"
+    },
+    {
+      "k": "istoric migrari (ultimele 6 versiuni)",
+      "prod": "20261110000200,20261111000100,20261111000200,20261111000300,20261112000100,20261112000200",
+      "ci": "20261031000300",
+      "why": "istoricul migrărilor: pe producție îl scrie `supabase migration repair` după 04; în CI migrările se aplică cu psql, deci istoricul local are doar baseline-ul"
+    }
+  ],
+  "02b-probe-as-client": [
+    {
+      "k": "unread_counts() = numaratoarea 1.0.x prin RLS (asteptat OK: identic)",
+      "v": "OK: identic"
+    },
+    {
+      "k": "channel_unread_count() = numaratoarea 1.0.x prin RLS (asteptat OK: identic)",
+      "v": "OK: identic"
+    },
+    {
+      "k": "mark_conversation_read: cursor intors, nu in viitor, nu inapoi (asteptat OK)",
+      "v": "OK"
+    },
+    {
+      "k": "dupa citire, conversatia nu mai apare in unread_counts() (asteptat OK: 0)",
+      "v": "OK: 0"
+    },
+    {
+      "k": "mark_channel_read fara p_at: cursor intors, nu in viitor (asteptat OK)",
+      "v": "OK"
+    },
+    {
+      "k": "1.0.x: upsert direct pe message_reads ca authenticated (asteptat OK)",
+      "v": "OK"
+    }
+  ],
+  "05-post-apply-check": [
+    {
+      "k": "cele patru functii exista (asteptat 4)",
+      "v": "4"
+    },
+    {
+      "k": "toate SECURITY DEFINER cu search_path gol (asteptat 4)",
+      "v": "4"
+    },
+    {
+      "k": "EXECUTE pentru anon (asteptat 0 din 4)",
+      "v": "0"
+    },
+    {
+      "k": "EXECUTE pentru authenticated (asteptat 4 din 4)",
+      "v": "4"
+    },
+    {
+      "k": "EXECUTE pentru service_role (asteptat 4 din 4)",
+      "v": "4"
+    },
+    {
+      "k": "tipurile intoarse (asteptat TABLE(conversation_id uuid, unread integer)|integer|timestamp with time zone|timestamp with time zone)",
+      "v": "TABLE(conversation_id uuid, unread integer)|integer|timestamp with time zone|timestamp with time zone"
+    },
+    {
+      "k": "publicatia supabase_realtime: cele 5 tabele ale chatului, neatinse (asteptat 5)",
+      "v": "5"
+    },
+    {
+      "k": "authenticated: INSERT|UPDATE pe message_reads si pe channel_reads, neschimbate (asteptat true|true|true|true)",
+      "v": "true|true|true|true"
+    },
+    {
+      "k": "istoric migrari (ultimele 6 versiuni; 20261113000100 dupa repair)",
+      "prod": "20261111000100,20261111000200,20261111000300,20261112000100,20261112000200,20261113000100",
+      "ci": "20261031000300",
+      "why": "istoricul migrărilor: pe producție îl scrie `supabase migration repair` după 04; în CI migrările se aplică cu psql, deci istoricul local are doar baseline-ul"
+    }
+  ]
+}

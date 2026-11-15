@@ -1,0 +1,90 @@
+{
+  "05-post-apply-check": [
+    {
+      "k": "app.profile_terms: rls|drepturi anon+authenticated (asteptat true|0)",
+      "v": "true|0"
+    },
+    {
+      "k": "app.profiles NEATINS: coloane tabel|coloane view public.profiles (asteptat egale: 25|25)",
+      "v": "25|25"
+    },
+    {
+      "k": "app.consent_log: rls|FK|drepturi anon+authenticated (asteptat true|0|0)",
+      "v": "true|0|0"
+    },
+    {
+      "k": "accept_terms + my_terms_status: EXECUTE authenticated|anon (asteptat true|false)",
+      "v": "true|false"
+    },
+    {
+      "k": "export_my_data contine terms + consent_log (asteptat true)",
+      "v": "true"
+    },
+    {
+      "k": "apply_retention contine pasii consent_log + profile_terms (asteptat true)",
+      "v": "true"
+    },
+    {
+      "k": "conturi care au acceptat termenii (informativ: 0 inainte de build-ul 1.1)",
+      "info": "numărul conturilor care au acceptat termenii (0 înainte de build-ul 1.1)"
+    },
+    {
+      "k": "reports.reporter_id nullable (asteptat false = NOT attnotnull)",
+      "v": "false"
+    },
+    {
+      "k": "coloanele noi pe reports (asteptat announcement_id,reporter_email,source)",
+      "v": "announcement_id,reporter_email,source"
+    },
+    {
+      "k": "constrangerile noi pe reports (asteptat 4)",
+      "v": "4"
+    },
+    {
+      "k": "reports_reason_check contine illegal (asteptat true)",
+      "v": "true"
+    },
+    {
+      "k": "on_report_notify cu IS DISTINCT FROM (C8.1; asteptat true)",
+      "v": "true"
+    },
+    {
+      "k": "admin_list_reports intoarce source + reporter_email (asteptat true)",
+      "v": "true"
+    },
+    {
+      "k": "app.report_ip_events: rls|drepturi anon+authenticated (asteptat true|0)",
+      "v": "true|0"
+    },
+    {
+      "k": "insert_public_report: EXECUTE service_role|anon|authenticated (asteptat true|false|false)",
+      "v": "true|false|false"
+    },
+    {
+      "k": "grant-urile authenticated pe reports neschimbate (asteptat INSERT,SELECT)",
+      "v": "INSERT,SELECT"
+    },
+    {
+      "k": "cron cleanup-report-ip-events-hourly (asteptat 1 activ)",
+      "v": "1"
+    },
+    {
+      "k": "rapoarte publice existente (informativ: 0 la aplicare)",
+      "info": "numărul rapoartelor publice existente (0 la aplicare)"
+    },
+    {
+      "k": "rapoarte din app cu source=app (informativ: = toate rapoartele de azi)",
+      "info": "numărul rapoartelor din aplicație existente"
+    },
+    {
+      "k": "secretul push_kick_secret in Vault (asteptat 64; neatins de faza 8)",
+      "prod": "64",
+      "ci": "LIPSESTE",
+      "why": "secretul push_kick_secret din Vault se creează de mână pe producție (faza 3); în CI nu există"
+    },
+    {
+      "k": "retentie DRY-RUN (consent_log_deleted asteptat 0 la aplicare)",
+      "info": "contoarele retenției în dry-run: depind de datele din bază"
+    }
+  ]
+}
