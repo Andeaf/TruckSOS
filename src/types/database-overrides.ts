@@ -49,6 +49,10 @@
  * - report_client_error (faza 9.1, 20261111000100): 7 argumente text → jsonb `{ ok }`.
  * - admin_client_errors (faza 9.1, 20261111000100): p_hours?, p_limit? (integer) → jsonb.
  * - admin_health (faza 9.4, 20261111000300): fără argumente → jsonb.
+ * - unread_counts (faza 5, 20261113000100): fără argumente → TABLE(conversation_id uuid, unread integer).
+ * - channel_unread_count (faza 5, 20261113000100): p_channel (uuid) → integer.
+ * - mark_conversation_read / mark_channel_read (faza 5, 20261113000100): (p_conversation | p_channel,
+ *   p_at? timestamptz) → timestamptz (cursorul rezultat).
  */
 import type { Database as GeneratedDatabase, Json } from './supabase';
 
@@ -305,6 +309,11 @@ type DatabaseOverrides = {
       };
       admin_client_errors: { Args: { p_hours?: number; p_limit?: number }; Returns: Json };
       admin_health: { Args: never; Returns: Json };
+      // Faza 5 (varianta B): necititele într-o singură interogare + cursorul de citire scris pe server.
+      unread_counts: { Args: never; Returns: { conversation_id: string; unread: number }[] };
+      channel_unread_count: { Args: { p_channel: string }; Returns: number };
+      mark_conversation_read: { Args: { p_conversation: string; p_at?: string }; Returns: string };
+      mark_channel_read: { Args: { p_channel: string; p_at?: string }; Returns: string };
     };
   };
 };

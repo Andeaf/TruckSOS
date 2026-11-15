@@ -13,10 +13,15 @@ import { emitReadsChanged, onReadsChanged } from '@/lib/read-events';
 import { dismissThreadNotifications } from '@/lib/push';
 import { useBlocked } from '@/hooks/use-blocked';
 import {
+  CATCH_UP_LIMIT,
+  CATCH_UP_OVERLAP,
+  PAGE_SIZE,
   fetchMessageListingContext,
   fetchMessageMechanicContext,
+  isMissingRpc,
   mergeMessages,
   useCatchUpOnResume,
+  useCoalescedRecount,
   type MessageAnnouncementContext,
   type MessageListingContext,
   type MessageMechanicContext,
@@ -25,10 +30,8 @@ import { uploadFile, uploadPhoto, type PickedFile } from '@/lib/storage';
 import type { PickedImage } from '@/lib/media';
 import type { Channel, ChannelMessage, PublicUser, Role } from '@/types/database';
 
-const PAGE_SIZE = 50;
-/** Catch-up după fundal (vezi use-chat.ts): suprapunere pe ultimele N mesaje + plafon. */
-const CATCH_UP_OVERLAP = 20;
-const CATCH_UP_LIMIT = 200;
+// Pagina (PAGE_SIZE) și catch-up-ul după fundal (CATCH_UP_OVERLAP + CATCH_UP_LIMIT) vin din
+// use-chat.ts — aceleași valori pentru chatul privat și canal.
 
 export type ChannelMessageWithSender = ChannelMessage & {
   sender: PublicUser & { role: Role };
@@ -364,14 +367,19 @@ export async function fetchMyChannelReadCursor(channelId: string): Promise<strin
   return (data as unknown as { last_read_at: string } | null)?.last_read_at ?? null;
 }
 
-export async function markChannelRead(
+/**
+ * Faza 5 (migrarea 20261113000100): după primul PGRST202 (server fără migrare) nu mai încercăm
+ * RPC-urile canalului în sesiunea curentă — drumul vechi, al 1.0.x (vezi use-chat.ts).
+ */
+let channelUnreadRpcMissing = false;
+let markChannelReadRpcMissing = false;
+
+/** Drumul 1.0.x: upsert direct pe channel_reads (politica channel_reads_own). */
+async function upsertChannelReadLegacy(
   channelId: string,
+  userId: string,
   newestCreatedAt?: string | null
 ): Promise<void> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session?.user) return;
   // Ceasul telefonului poate fi în urma serverului → cursorul acoperă explicit cel
   // mai nou mesaj afișat (+1ms), altfel badge-ul îl număra „necitit" pe veci.
   // AICI păstrăm intenționat și Date.now() (spre deosebire de markConversationRead,
@@ -384,64 +392,180 @@ export async function markChannelRead(
   await supabase.from('channel_reads').upsert(
     {
       channel_id: channelId,
-      user_id: session.user.id,
+      user_id: userId,
       last_read_at: new Date(Math.max(Date.now(), newest)).toISOString(),
     } as never,
     { onConflict: 'channel_id,user_id' }
   );
+}
+
+export async function markChannelRead(
+  channelId: string,
+  newestCreatedAt?: string | null
+): Promise<void> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.user) return;
+  // Faza 5: FĂRĂ p_at — serverul pune cursorul pe ceasul lui (now()). Acoperă, ca vechiul
+  // max(Date.now(), cel mai nou + 1 ms), și mesajele ascunse ale utilizatorilor blocați, dar
+  // fără eroarea ceasului de telefon; serverul nu-l lasă nici să meargă înapoi. Orice altă
+  // eroare decât PGRST202: ca înainte, fără mesaj.
+  let legacy = markChannelReadRpcMissing;
+  if (!legacy) {
+    const { error } = await supabase.rpc('mark_channel_read', { p_channel: channelId });
+    if (isMissingRpc(error)) {
+      markChannelReadRpcMissing = true;
+      legacy = true;
+    }
+  }
+  if (legacy) await upsertChannelReadLegacy(channelId, session.user.id, newestCreatedAt);
   emitReadsChanged();
   // Mesajele au fost văzute → celula canalului dispare din bara de notificări (7 aug).
   void dismissThreadNotifications('channel', channelId);
 }
 
+/** Drumul 1.0.x (server fără migrarea fazei 5): cursorul meu + o numărătoare `count exact`. */
+async function fetchChannelUnreadLegacy(userId: string, channelId: string): Promise<number> {
+  const { data: read } = await supabase
+    .from('channel_reads')
+    .select('last_read_at')
+    .eq('channel_id', channelId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  let query = supabase
+    .from('channel_messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('channel_id', channelId)
+    .neq('sender_id', userId);
+  // Tombstone-urile (Faza 14) nu se numără.
+  query = query.is('deleted_at', null);
+  if (read?.last_read_at) query = query.gt('created_at', read.last_read_at);
+
+  const { count: c } = await query;
+  return c ?? 0;
+}
+
+/**
+ * Necititele mele din canal. Faza 5: `channel_unread_count(p_channel)` (aceleași reguli + politica
+ * „de după crearea contului”, plafon 100 — bulina arată oricum „9+”). `null` = eroare (rețea etc.):
+ * apelantul păstrează bulina de acum.
+ */
+async function fetchChannelUnread(userId: string, channelId: string): Promise<number | null> {
+  if (!channelUnreadRpcMissing) {
+    const { data, error } = await supabase.rpc('channel_unread_count', { p_channel: channelId });
+    if (!error) return data ?? 0;
+    if (!isMissingRpc(error)) return null;
+    // Două instanțe pot primi PGRST202 deodată: avertizează doar prima.
+    if (__DEV__ && !channelUnreadRpcMissing) {
+      console.warn('[channel] channel_unread_count lipsește pe server (PGRST202): numărătoarea veche');
+    }
+    channelUnreadRpcMissing = true;
+  }
+  return fetchChannelUnreadLegacy(userId, channelId);
+}
+
+/** Fereastra în care un INSERT sosit după o numărătoare cere recalcul în loc de simplul +1 local. */
+const RECOUNT_GUARD_MS = 3000;
+
+/** Evenimentele care pot schimba bulina canalului — doar datele rândului, nu payload-ul Realtime. */
+export type ChannelUnreadEvent =
+  | { kind: 'message_inserted'; row: Partial<ChannelMessage> }
+  | { kind: 'message_updated'; row: Partial<ChannelMessage> }
+  | { kind: 'read_changed'; row: { channel_id?: string } };
+
 // Separat de useUnreadCounts (chat privat): abonare Realtime FILTRATĂ pe channel_id,
 // nu recompute global la orice mesaj din aplicație — vezi PLAN_CHAT_GLOBAL.md secțiunea 5.
 export function useChannelUnreadCount(userId: string | undefined, channelId: string | undefined) {
   const [count, setCount] = useState(0);
+  const mountedRef = useRef(true);
+  // Numărul cererii: un răspuns mai vechi nu suprascrie unul mai nou.
+  const seqRef = useRef(0);
+  // Numărătorile în zbor (imediate + coalescate): un INSERT sosit între timp poate lipsi din
+  // instantaneul lor, iar rezultatul ar suprascrie +1-ul local.
+  const inFlightRef = useRef(0);
+  // Când s-a terminat ultima numărătoare (ceasul local): un INSERT sosit imediat după poate fi al
+  // unui mesaj pe care numărătoarea l-a văzut deja (evenimentul Realtime vine mai încet decât RPC-ul).
+  const lastCountDoneAtRef = useRef(0);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const fetchCount = useCallback(async () => {
     if (!userId || !channelId) {
+      seqRef.current += 1;
       setCount(0);
       return;
     }
-    const { data: read } = await supabase
-      .from('channel_reads')
-      .select('last_read_at')
-      .eq('channel_id', channelId)
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    let query = supabase
-      .from('channel_messages')
-      .select('id', { count: 'exact', head: true })
-      .eq('channel_id', channelId)
-      .neq('sender_id', userId);
-    // Tombstone-urile (Faza 14) nu se numără.
-    query = query.is('deleted_at', null);
-    if (read?.last_read_at) query = query.gt('created_at', read.last_read_at);
-
-    const { count: c } = await query;
-    setCount(c ?? 0);
+    const seq = ++seqRef.current;
+    inFlightRef.current += 1;
+    let next: number | null;
+    try {
+      next = await fetchChannelUnread(userId, channelId);
+    } finally {
+      inFlightRef.current -= 1;
+      lastCountDoneAtRef.current = Date.now();
+    }
+    if (next === null || !mountedRef.current || seq !== seqRef.current) return;
+    setCount(next);
   }, [userId, channelId]);
 
+  const scheduleRecount = useCoalescedRecount(fetchCount);
+
+  // Punctul de intrare pentru evenimentele Realtime ale bulinei; primește DOAR rândul.
+  // Varianta A (broadcast) va chema aceeași funcție.
+  const handleChannelUnreadEvent = useCallback(
+    (event: ChannelUnreadEvent) => {
+      switch (event.kind) {
+        case 'message_inserted':
+          // Fără refetch: un mesaj nou (netombstonat) al altcuiva = +1 local.
+          if (!userId || event.row.sender_id === userId || event.row.deleted_at) return;
+          setCount((c) => c + 1);
+          // +1-ul local e sigur doar departe de o numărătoare: una în zbor l-ar suprascrie, una abia
+          // terminată poate să fi numărat deja mesajul (bulina ar arăta cu 1 în plus) → recalcul.
+          if (inFlightRef.current > 0 || Date.now() - lastCountDoneAtRef.current < RECOUNT_GUARD_MS) {
+            scheduleRecount();
+          }
+          return;
+        case 'message_updated':
+          // Doar tombstone-ul scade bulina (un necitit șters); editarea n-o schimbă.
+          if (event.row.deleted_at) scheduleRecount();
+          return;
+        case 'read_changed':
+          // Abonarea e pe rândurile MELE din toate canalele: contează doar canalul acesta.
+          // La DELETE rândul vine gol (fără channel_id) → recalculăm oricum.
+          if (!event.row.channel_id || event.row.channel_id === channelId) scheduleRecount();
+          return;
+      }
+    },
+    [userId, channelId, scheduleRecount],
+  );
+
   useEffect(() => {
-    fetchCount();
+    void fetchCount();
   }, [fetchCount]);
 
   // Citirile făcute pe ACEST device sting badge-ul imediat — vezi lib/read-events.
-  useEffect(() => onReadsChanged(fetchCount), [fetchCount]);
+  // Coalescat: ecranul canalului marchează la fiecare schimbare a listei (și la „mai vechi”).
+  useEffect(() => onReadsChanged(scheduleRecount), [scheduleRecount]);
 
   // Plasă de siguranță (simetric cu useUnreadCounts): evenimentele ratate în fundal
   // nu mai pot fi „prinse" — recalculăm la revenirea în prim-plan.
   useEffect(() => {
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') fetchCount();
+      if (state === 'active') scheduleRecount();
     });
     return () => sub.remove();
-  }, [fetchCount]);
+  }, [scheduleRecount]);
 
   useEffect(() => {
-    if (!channelId) return;
+    // Fără utilizator bulina e 0 (fetchCount) și nu are ce asculta.
+    if (!channelId || !userId) return;
     // Nume unic per (RE)abonare, nu per instanță: hook-ul rulează simultan pe badge-ul
     // de tab ȘI pe ChannelCard, iar efectul se poate re-executa — un topic refolosit
     // imediat după removeChannel ar întoarce canalul vechi și abonarea ar muri tăcut.
@@ -456,7 +580,11 @@ export function useChannelUnreadCount(userId: string | undefined, channelId: str
           table: 'channel_messages',
           filter: `channel_id=eq.${channelId}`,
         },
-        () => fetchCount()
+        (payload) =>
+          handleChannelUnreadEvent({
+            kind: 'message_inserted',
+            row: payload.new as Partial<ChannelMessage>,
+          })
       )
       // UPDATE = tombstone: recalculăm ca badge-ul să scadă la ștergerea unui necitit.
       .on(
@@ -467,23 +595,34 @@ export function useChannelUnreadCount(userId: string | undefined, channelId: str
           table: 'channel_messages',
           filter: `channel_id=eq.${channelId}`,
         },
-        () => fetchCount()
+        (payload) =>
+          handleChannelUnreadEvent({
+            kind: 'message_updated',
+            row: payload.new as Partial<ChannelMessage>,
+          })
       )
+      // Faza 5 (AUDIT #8): filtrat pe user_id, nu pe channel_id — altfel fiecare citire a
+      // ORICUI din canal era verificată prin RLS pentru toți abonații, deși politica
+      // channel_reads_own livrează oricum doar rândurile proprii.
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'channel_reads',
-          filter: `channel_id=eq.${channelId}`,
+          filter: `user_id=eq.${userId}`,
         },
-        () => fetchCount()
+        (payload) =>
+          handleChannelUnreadEvent({
+            kind: 'read_changed',
+            row: payload.new as { channel_id?: string },
+          })
       )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [channelId, fetchCount]);
+  }, [channelId, userId, handleChannelUnreadEvent]);
 
   return { count, refresh: fetchCount };
 }

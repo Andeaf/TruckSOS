@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -69,14 +69,21 @@ export default function DriverChatScreen() {
   const [conv, setConv] = useState<ConversationWithDetails | null>(null);
   // Snapshot-ul cursorului MEU de citire (7 aug): luat ÎNAINTE ca mark-read să-l mute
   // la zi — decide unde apare „Mesaje noi" și unde aterizează lista. undefined = în curs.
-  const [initialCursor, setInitialCursor] = useState<string | null | undefined>(undefined);
+  // Ținut împreună cu id-ul conversației lui: ecranul e refolosit între conversații, iar în primul
+  // commit după schimbarea id-ului starea e încă a conversației vechi — cursorul ei nu are voie să
+  // treacă drept al celei noi (altfel conversația nouă era marcată citită înainte de a-i afla cursorul).
+  const [cursorState, setCursorState] = useState<{ id: string; cursor: string | null } | undefined>(undefined);
+  const initialCursor = cursorState?.id === id ? cursorState.cursor : undefined;
   // Telefonul interlocutorului (RPC pe rolul lui): null = inaccesibil → fără buton de apel.
   const [peerPhone, setPeerPhone] = useState<string | null>(null);
-  const { messages, loading, addMessage, patchMessage } = useMessages(id);
+  const { messages, loading, loadingMore, loadOlder, addMessage, patchMessage } =
+    useMessages(id);
   // Faza 19: interlocutorul prin ID, nu prin rol — pe market poate fi orice rol.
   const other = conv && session ? otherParticipant(conv, session.user.id) : null;
   const readCursor = useReadCursor(id, other?.id);
   const isFocused = useIsFocused();
+  // Ultima marcare trimisă (conversația + cel mai nou mesaj afișat), ca să nu o repetăm degeaba.
+  const lastMarkedRef = useRef<string | null>(null);
   useThreadNotifications('conversation', id, isFocused);
 
   useEffect(() => {
@@ -86,7 +93,7 @@ export default function DriverChatScreen() {
   useEffect(() => {
     let active = true;
     fetchMyReadCursor(id).then((c) => {
-      if (active) setInitialCursor(c);
+      if (active) setCursorState({ id, cursor: c });
     });
     return () => {
       active = false;
@@ -182,8 +189,21 @@ export default function DriverChatScreen() {
     // La revenirea pe ecran (isFocused redevine true) efectul marchează ce s-a strâns.
     // + gardă pe snapshot (7 aug): prima marcare așteaptă citirea cursorului VECHI,
     // altfel upsert-ul putea câștiga cursa și ancora „Mesaje noi" nu mai apărea.
-    if (!loading && isFocused && initialCursor !== undefined)
-      markConversationRead(id, messages[messages.length - 1]?.created_at ?? null);
+    // La pierderea focusului uităm ultima marcare: la revenire se marchează din nou (pe server e
+    // fără efect dacă nu s-a schimbat nimic, dar reia o marcare pierdută pe rețea slabă).
+    if (!isFocused) {
+      lastMarkedRef.current = null;
+      return;
+    }
+    if (loading || initialCursor === undefined) return;
+    const newest = messages[messages.length - 1];
+    // Ecran refolosit: în primul commit după schimbarea conversației lista e încă a celei vechi.
+    if (newest && newest.conversation_id !== id) return;
+    // „Mai vechi” (faza 5) schimbă lungimea listei, nu și cel mai nou mesaj: nimic de marcat din nou.
+    const markKey = `${id}:${newest?.created_at ?? ''}`;
+    if (lastMarkedRef.current === markKey) return;
+    lastMarkedRef.current = markKey;
+    markConversationRead(id, newest?.created_at ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length, loading, id, isFocused, initialCursor]);
 
@@ -226,6 +246,9 @@ export default function DriverChatScreen() {
       }
       messages={messages}
       loading={loading}
+      // Faza 5: chatul privat e paginat ca și canalul (50 / pagină, „mai vechi” la derulare în sus).
+      loadingMore={loadingMore}
+      onLoadOlder={loadOlder}
       // 1.1 (7.1): coada locală a mesajelor netrimise pentru conversația asta.
       threadKey={`conversation:${id}`}
       // 1.1 (7.1): contextele vin cu mesajul (ChatScreen le scoate din banner când mesajul
