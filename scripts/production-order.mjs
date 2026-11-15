@@ -36,11 +36,12 @@
 
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { buildPackage, checkPackages, compareRows, lastResultSet, loadExpect, loadPackages, sumsText } from './apply-packages.mjs';
 
-const ROOT = process.cwd();
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const MIGRATIONS_DIR = join(ROOT, 'supabase', 'migrations');
 const ROLLBACK_DIR = join(ROOT, 'supabase', 'rollback');
 const ORDER_FILE = join(ROOT, 'supabase', 'gate', 'production-order.txt');

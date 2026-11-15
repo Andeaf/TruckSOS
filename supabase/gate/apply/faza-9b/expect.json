@@ -49,7 +49,7 @@
     },
     {
       "k": "coada Storage: randuri|mai vechi de 48 h (al doilea trebuie 0)",
-      "info": "starea cozii Storage în momentul rulării; al doilea număr trebuie 0"
+      "re": "^[0-9]+[|]0$"
     }
   ]
 }

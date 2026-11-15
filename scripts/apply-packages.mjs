@@ -12,8 +12,9 @@
 //   06-rollback-emergency.sql       rollback-ul de urgență: BEGIN; rollback-urile în ordine inversă; COMMIT
 // Fișierele se GENEREAZĂ aici din supabase/migrations/, supabase/rollback/, supabase/gate/fingerprint.sql și din părțile
 // scrise de mână ale fiecărui pachet (supabase/gate/apply/<pachet>/: 00-precheck.sql, 02b-probe.sql, 05-checks.sql,
-// expect.json). Generarea e deterministă și scrie mereu cu LF: un fișier SQL scos din git pe Windows cu CRLF ar
-// schimba corpul funcțiilor (deci hash-ul lor din amprentă). De aceea în repo stau sursele și sumele
+// expect.json). Generarea e deterministă și scrie mereu cu LF: un fișier SQL scos din git pe Windows cu CRLF ar duce
+// pe producție alt text decât cel rulat în CI (CR în corpul stocat al funcțiilor și în comenzile cron, pe care amprenta
+// le compară brut). De aceea în repo stau sursele și sumele
 // (supabase/gate/apply/SHA256SUMS), nu fișierele generate: `check` (în CI) refuză sume care nu mai corespund surselor,
 // iar jobul `prod-order` rulează exact fișierele cu acele sume, în ordinea de producție (scripts/production-order.mjs).
 //
@@ -65,7 +66,8 @@ export function loadPackages() {
 function assertTransactional(name, sql) {
   if (/^\\/m.test(sql)) throw new Error(`${name}: comandă psql în fișier`);
   if (/CONCURRENTLY/i.test(sql)) throw new Error(`${name}: CONCURRENTLY nu merge într-o tranzacție`);
-  if (/^\s*(BEGIN|COMMIT|ROLLBACK|START\s+TRANSACTION)\s*;/im.test(sql)) throw new Error(`${name}: BEGIN / COMMIT / ROLLBACK la nivel înalt`);
+  // (`END;` nu se poate căuta: închide și blocurile plpgsql. Un COMMIT prematur e prins oricum de repetiția din CI: 03 ≠ 01.)
+  if (/^\s*(BEGIN|COMMIT|ROLLBACK|ABORT|START\s+TRANSACTION)(\s+(WORK|TRANSACTION))?\s*;/im.test(sql)) throw new Error(`${name}: BEGIN / COMMIT / ROLLBACK la nivel înalt`);
 }
 
 const banner = (text) => `\n-- ═══════════════════════ ${text} ═══════════════════════\n`;
@@ -126,7 +128,7 @@ export function buildPackage(pkg) {
   files.set('03-fingerprint-after-rollback.sql', header('amprenta catalogului DUPĂ repetiție (doar SELECT; trebuie identică cu 01)') + fingerprint + ';\n');
   files.set(
     '04-apply.sql',
-    header('APLICARE (BEGIN … COMMIT), doar cu aprobarea explicită dată în acel moment') +
+    header(`APLICARE (BEGIN … COMMIT), doar cu aprobarea explicită dată în acel moment; apoi: npx supabase migration repair --linked --status applied ${pkg.migrations.map((m) => m.slice(0, 14)).join(' ')}`) +
       'BEGIN;\n' + SET_LOCAL + applied + banner('COMMIT') + `SELECT '${pkg.id}: aplicat la ' || now()::text AS rezultat;\nCOMMIT;\n`,
   );
   files.set('05-post-apply-check.sql', header('verificări DUPĂ aplicare (doar SELECT)', [checks]) + checks.sql.trim() + '\n');
@@ -161,6 +163,8 @@ export function sumsText(packages) {
  * expect.json al unui pachet: { "<fișier>": [ rând, … ] } pentru fișierele din ROW_FILES pe care pachetul le are.
  * Un rând e exact unul dintre:
  *   { "k": "<eticheta>", "v": "<valoarea>" }                     aceeași valoare pe producție și în CI;
+ *   { "k": "<eticheta>", "re": "<expresie regulată>" }           aceeași condiție pe producție și în CI, pentru valori care
+ *       nu sunt fixe în întregime (de ex. „al doilea număr e 0”: "^[0-9]+[|]0$");
  *   { "k": "<eticheta>", "info": "<de ce>" }                     informativ: depinde de date, se citește, nu se compară;
  *   { "k": "<eticheta>", "why": "<de ce>", "prod": "<pe producție>", "ci": "<în CI>" }
  *       NERULABIL ÎN CI: valoarea de pe producție depinde de ceva ce există doar acolo (un secret din Vault, istoricul
@@ -180,13 +184,20 @@ export function loadExpect(pkg) {
       continue;
     }
     rows.forEach((r, i) => {
-      const kinds = ['v' in r, 'info' in r, 'why' in r].filter(Boolean).length;
+      const kinds = ['v' in r, 're' in r, 'info' in r, 'why' in r].filter(Boolean).length;
       if (typeof r.k !== 'string' || r.k === '') problems.push(`${pkg.id}/expect.json: ${file}[${i}] nu are eticheta „k”`);
-      if (kinds !== 1) problems.push(`${pkg.id}/expect.json: ${file}[${i}] trebuie să aibă exact una dintre „v”, „info”, „why”`);
+      if (kinds !== 1) problems.push(`${pkg.id}/expect.json: ${file}[${i}] trebuie să aibă exact una dintre „v”, „re”, „info”, „why”`);
       if (('prod' in r || 'ci' in r) && !('why' in r)) problems.push(`${pkg.id}/expect.json: ${file}[${i}] are „prod” / „ci” fără „why”`);
       if ('why' in r && r.why === '') problems.push(`${pkg.id}/expect.json: ${file}[${i}] are „why” gol`);
-      for (const key of ['v', 'info', 'prod', 'ci', 'why']) {
+      for (const key of ['v', 're', 'info', 'prod', 'ci', 'why']) {
         if (key in r && typeof r[key] !== 'string') problems.push(`${pkg.id}/expect.json: ${file}[${i}].${key} trebuie să fie text`);
+      }
+      if (typeof r.re === 'string') {
+        try {
+          new RegExp(r.re);
+        } catch {
+          problems.push(`${pkg.id}/expect.json: ${file}[${i}].re nu e o expresie regulată validă`);
+        }
       }
     });
   }
@@ -197,7 +208,8 @@ export function loadExpect(pkg) {
 /**
  * Compară rândurile (k, v) întoarse de un fișier cu așteptările lui. mode: 'ci' sau 'prod'.
  * Întoarce { ok, rows: [{ status, k, actual, expected, why }] }; status: OK | FAIL | INFO | NERULABIL.
- * O probă sărită sau căzută în eroare („SARIT…”, „EROARE…”) e FAIL oriunde: nu a verificat nimic.
+ * O probă sărită sau căzută în eroare („SARIT…”, „EROARE…”) e FAIL oriunde, și pe rândurile informative sau nerulabile
+ * în CI: nu a verificat nimic.
  */
 export function compareRows(expected, actual, mode) {
   const rows = [];
@@ -210,7 +222,7 @@ export function compareRows(expected, actual, mode) {
       continue;
     }
     if (!a) {
-      rows.push({ status: 'FAIL', k: e.k, actual: '(rândul lipsește din ieșire)', expected: e.v ?? e.prod ?? e.ci ?? '' });
+      rows.push({ status: 'FAIL', k: e.k, actual: '(rândul lipsește din ieșire)', expected: e.v ?? e.re ?? e.prod ?? e.ci ?? '' });
       continue;
     }
     if (a.k !== e.k) {
@@ -220,10 +232,12 @@ export function compareRows(expected, actual, mode) {
     const skipped = /^(SARIT|EROARE)/.test(a.v ?? '') || /^EROARE/.test(a.k);
     if ('v' in e) {
       rows.push({ status: a.v === e.v ? 'OK' : 'FAIL', k: a.k, actual: a.v, expected: e.v });
+    } else if ('re' in e) {
+      rows.push({ status: new RegExp(e.re).test(a.v ?? '') ? 'OK' : 'FAIL', k: a.k, actual: a.v, expected: `/${e.re}/` });
     } else if ('info' in e) {
       rows.push({ status: skipped ? 'FAIL' : 'INFO', k: a.k, actual: a.v, expected: '', why: e.info });
     } else if (mode === 'ci') {
-      const fits = !('ci' in e) || a.v === e.ci;
+      const fits = !skipped && (!('ci' in e) || a.v === e.ci);
       rows.push({ status: fits ? 'NERULABIL' : 'FAIL', k: a.k, actual: a.v, expected: 'ci' in e ? e.ci : '', prod: e.prod, why: e.why });
     } else if ('prod' in e) {
       rows.push({ status: a.v === e.prod ? 'OK' : 'FAIL', k: a.k, actual: a.v, expected: e.prod });
@@ -361,7 +375,12 @@ function writePackage(pkg, dir) {
 }
 
 function parseOutput(path) {
-  const parsed = JSON.parse(readLf(path));
+  let parsed;
+  try {
+    parsed = JSON.parse(readLf(path));
+  } catch {
+    throw new Error(`${path}: nu e JSON (aștept ieșirea lui \`supabase db query\`, cu cheia „rows”)`);
+  }
   if (!Array.isArray(parsed.rows)) throw new Error(`${path}: nu are cheia „rows” (ieșirea \`supabase db query\`)`);
   return parsed.rows.map((r) => ({ k: String(r.k), v: r.v === null || r.v === undefined ? '' : String(r.v) }));
 }

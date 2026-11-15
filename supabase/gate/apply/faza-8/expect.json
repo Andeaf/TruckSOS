@@ -84,7 +84,7 @@
     },
     {
       "k": "retentie DRY-RUN (consent_log_deleted asteptat 0 la aplicare)",
-      "info": "contoarele retenției în dry-run: depind de datele din bază"
+      "re": "\"consent_log_deleted\": 0[,}]"
     }
   ]
 }
