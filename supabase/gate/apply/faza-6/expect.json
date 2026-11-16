@@ -1,0 +1,85 @@
+{
+  "05-post-apply-check": [
+    {
+      "k": "CHECK-ul de status al anunturilor contine draft (asteptat true)",
+      "v": "true"
+    },
+    {
+      "k": "garda accepta draft la INSERT (asteptat true)",
+      "v": "true"
+    },
+    {
+      "k": "politica announcements_update_publish (asteptat 1)",
+      "v": "1"
+    },
+    {
+      "k": "triggere de push pe app.announcements (asteptat announcements_notify, announcements_notify_publish)",
+      "v": "announcements_notify, announcements_notify_publish"
+    },
+    {
+      "k": "default market_push_enabled tabel|view (asteptat false|false)",
+      "v": "false|false"
+    },
+    {
+      "k": "conturi cu market_push_enabled = true (informativ: conturile vechi raman true)",
+      "info": "numărul conturilor existente cu opțiunea pornită (conturile vechi rămân pe true)"
+    },
+    {
+      "k": "tabelele noi in app (asteptat 2/2: apple_tokens,storage_gc_queue)",
+      "v": "apple_tokens,storage_gc_queue"
+    },
+    {
+      "k": "RLS + fara drepturi anon/authenticated pe cele 2 tabele (asteptat 2 rls, 0 drepturi)",
+      "v": "2 rls, 0 drepturi"
+    },
+    {
+      "k": "RPC-urile service_role (asteptat 5: read_apple_token,record_account_deletion,storage_gc_claim,storage_gc_finish,store_apple_token)",
+      "v": "read_apple_token,record_account_deletion,storage_gc_claim,storage_gc_finish,store_apple_token"
+    },
+    {
+      "k": "EXECUTE anon/authenticated pe RPC-urile service_role (asteptat 0)",
+      "v": "0"
+    },
+    {
+      "k": "export_my_data: EXECUTE authenticated|anon (asteptat true|false)",
+      "v": "true|false"
+    },
+    {
+      "k": "cota export (asteptat 2/24h in sursa)",
+      "v": "true"
+    },
+    {
+      "k": "joburi cron noi (asteptat 2: apply-retention-daily[5 4 * * *] storage-gc-daily[50 4 * * *])",
+      "v": "apply-retention-daily[5 4 * * *] storage-gc-daily[50 4 * * *]"
+    },
+    {
+      "k": "admin_update_profile mascheaza auditul (asteptat true)",
+      "v": "true"
+    },
+    {
+      "k": "secretul apple_token_key in Vault (asteptat 64; LIPSESTE = pasul Apple amanat, store refuza, read NULL)",
+      "ci": "LIPSESTE",
+      "why": "secretul apple_token_key din Vault se creează de mână pe producție (pasul Apple, amânabil: 64 sau LIPSESTE); în CI nu există"
+    },
+    {
+      "k": "secretul push_kick_secret in Vault (asteptat 64; il foloseste si kick_storage_gc)",
+      "prod": "64",
+      "ci": "LIPSESTE",
+      "why": "secretul push_kick_secret din Vault se creează de mână pe producție (faza 3); în CI nu există"
+    },
+    {
+      "k": "coada storage_gc (asteptat 0 inainte de prima scanare)",
+      "v": "0"
+    },
+    {
+      "k": "retentie DRY-RUN (contoarele a ceea ce AR face prima rulare; de citit inainte de prima rulare a cronului)",
+      "info": "contoarele retenției în dry-run: depind de datele din bază; pe producție se citesc înainte de prima rulare reală"
+    },
+    {
+      "k": "istoric migrari (ultimele 8 versiuni)",
+      "prod": "20261102000200,20261103000100,20261109000100,20261109000200,20261109000300,20261109000400,20261109000500,20261109000600",
+      "ci": "20261031000300",
+      "why": "istoricul migrărilor: pe producție îl scrie `supabase migration repair` după 04; în CI migrările se aplică cu psql, deci istoricul local are doar baseline-ul"
+    }
+  ]
+}

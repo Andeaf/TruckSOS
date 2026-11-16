@@ -1,0 +1,44 @@
+{
+  "05-post-apply-check": [
+    {
+      "k": "app.client_errors: rls|drepturi anon+authenticated|randuri (asteptat true|0|0)",
+      "v": "true|0|0"
+    },
+    {
+      "k": "report_client_error: EXECUTE authenticated|anon (asteptat true|false)",
+      "v": "true|false"
+    },
+    {
+      "k": "admin_client_errors + admin_health: EXECUTE authenticated|anon (asteptat true|false)",
+      "v": "true|false"
+    },
+    {
+      "k": "scrub_client_text: interna (asteptat false)",
+      "v": "false"
+    },
+    {
+      "k": "scrub: e-mail + id + telefon (asteptat a [email] b [id] c [phone] d)",
+      "v": "a [email] b [id] c [phone] d"
+    },
+    {
+      "k": "scrub: tokenuri (asteptat [token] x [token] y)",
+      "v": "[token] x [token] y"
+    },
+    {
+      "k": "cron cleanup-client-errors-daily: schedule|active (asteptat 44 3 * * *|true)",
+      "v": "44 3 * * *|true"
+    },
+    {
+      "k": "admin_health ca postgres (fara JWT) e refuzat cu not_admin - se verifica din panoul admin, nu de aici (informativ)",
+      "v": "vezi pasul A3"
+    },
+    {
+      "k": "coada Storage: randuri|mai vechi de 48 h (informativ; al doilea numar = precondiția 9.3, trebuie 0)",
+      "info": "starea cozii Storage în momentul rulării; al doilea număr trebuie 0 înainte de 9.3"
+    },
+    {
+      "k": "joburi cron esuate in 24 h (informativ; ce va arata cardul Sanatate)",
+      "why": "depinde de rulările cron din ultimele 24 h de pe producție (cron.job_run_details)"
+    }
+  ]
+}

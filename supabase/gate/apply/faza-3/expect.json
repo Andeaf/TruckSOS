@@ -1,0 +1,84 @@
+{
+  "05-post-apply-check": [
+    {
+      "k": "tabelele fazei 3 in app (asteptat 4/4: channel_events,moderation_notices,push_queue,push_tickets)",
+      "v": "channel_events,moderation_notices,push_queue,push_tickets"
+    },
+    {
+      "k": "RLS pornit pe cele 4 tabele (asteptat 4)",
+      "v": "4"
+    },
+    {
+      "k": "anon/authenticated fara niciun drept pe push_queue/push_tickets/channel_events (asteptat 0)",
+      "v": "0"
+    },
+    {
+      "k": "view public.moderation_notices security_invoker (asteptat security_invoker=true)",
+      "v": "security_invoker=true"
+    },
+    {
+      "k": "drepturi authenticated pe view-ul moderation_notices (asteptat SELECT + UPDATE doar read_at)",
+      "v": "SELECT | coloane UPDATE: read_at"
+    },
+    {
+      "k": "joburi cron ale fazei (asteptat 5: channel-digests,cleanup-cron-run-details-daily,cleanup-push-queue-daily,push-dispatch,push-receipts)",
+      "v": "channel-digests[* * * * *] cleanup-cron-run-details-daily[37 4 * * *] cleanup-push-queue-daily[23 4 * * *] push-dispatch[5 seconds] push-receipts[*/15 * * * *]"
+    },
+    {
+      "k": "functii-trigger care mai contin net.http_post (asteptat 0)",
+      "v": "0"
+    },
+    {
+      "k": "notify_push scrie in coada, fara net.http_post (asteptat true)",
+      "v": "true"
+    },
+    {
+      "k": "RPC-urile EF (asteptat 4: claim_push_batch,finish_push_batch,finish_push_receipts,pending_push_receipts)",
+      "v": "claim_push_batch,finish_push_batch,finish_push_receipts,pending_push_receipts"
+    },
+    {
+      "k": "EXECUTE anon/authenticated pe RPC-urile EF (asteptat 0)",
+      "v": "0"
+    },
+    {
+      "k": "EXECUTE service_role pe RPC-urile EF (asteptat 4)",
+      "v": "4"
+    },
+    {
+      "k": "admin_delete_* / admin_ban_user cu p_reason (asteptat 5)",
+      "v": "5"
+    },
+    {
+      "k": "semnaturi vechi admin_delete_* fara p_reason ramase (asteptat 0)",
+      "v": "0"
+    },
+    {
+      "k": "trigger reports_notify_admins pe public.reports (asteptat 1)",
+      "v": "1"
+    },
+    {
+      "k": "secretul push_kick_secret in Vault (asteptat 64 = hex de 32 octeti)",
+      "prod": "64",
+      "ci": "LIPSESTE",
+      "why": "secretul push_kick_secret din Vault se creează de mână pe producție (faza 3); în CI nu există"
+    },
+    {
+      "k": "net._http_response lizibil (push_stats are nevoie)",
+      "info": "numărul de răspunsuri pg_net păstrate; contează doar că tabelul se poate citi"
+    },
+    {
+      "k": "push_stats() ruleaza (queued|sending|oldest_queued_at|channel_events_pending|expired_48h)",
+      "info": "starea cozii de push în momentul rulării"
+    },
+    {
+      "k": "extversion pg_cron (asteptat >= 1.5 pentru '5 seconds')",
+      "why": "versiunea pg_cron e a platformei (producția și imaginea locală pot diferi); condiția e >= 1.5"
+    },
+    {
+      "k": "istoric migrari (ultimele 5 versiuni)",
+      "prod": "20261101000200,20261101000300,20261102000100,20261102000200,20261103000100",
+      "ci": "20261031000300",
+      "why": "istoricul migrărilor: pe producție îl scrie `supabase migration repair` după 04; în CI migrările se aplică cu psql, deci istoricul local are doar baseline-ul"
+    }
+  ]
+}

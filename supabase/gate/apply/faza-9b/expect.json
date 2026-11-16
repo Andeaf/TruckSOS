@@ -1,0 +1,55 @@
+{
+  "05-post-apply-check": [
+    {
+      "k": "cron cleanup-announcements-hourly: schedule|comanda cu kick|fara Authorization (asteptat 17 * * * *|true|true)",
+      "v": "17 * * * *|true|true"
+    },
+    {
+      "k": "cron storage-gc-hourly: schedule|active (asteptat 35 * * * *|true)",
+      "v": "35 * * * *|true"
+    },
+    {
+      "k": "cron storage-gc-daily: schedule|scanare doar duminica (asteptat 50 4 * * *|true)",
+      "v": "50 4 * * *|true"
+    },
+    {
+      "k": "functii din TOATE schemele care mai contin service_role_key (asteptat gol)",
+      "v": ""
+    },
+    {
+      "k": "comenzi cron cu service_role_key / Authorization (asteptat 0)",
+      "v": "0"
+    },
+    {
+      "k": "storage_api_delete: fara http_delete|fara vault|pune in coada (asteptat true|true|true)",
+      "v": "true|true|true"
+    },
+    {
+      "k": "storage_api_delete: EXECUTE service_role|authenticated|anon (asteptat true|false|false)",
+      "v": "true|false|false"
+    },
+    {
+      "k": "kick_storage_gc: forma veche disparuta|forma noua exista (asteptat true|true)",
+      "v": "true|true"
+    },
+    {
+      "k": "kick-urile: EXECUTE anon / authenticated (asteptat false)",
+      "v": "false"
+    },
+    {
+      "k": "Vault: push_kick_secret exista (asteptat 64)",
+      "prod": "64",
+      "ci": "LIPSA",
+      "why": "secretul push_kick_secret din Vault se creează de mână pe producție (faza 3); în CI nu există"
+    },
+    {
+      "k": "Vault: service_role_key inca exista (informativ; se sterge de mana dupa cateva zile fara Authorization in net.http_request_queue)",
+      "ci": "false",
+      "why": "secretul service_role_key din Vault există doar pe producție (se șterge de mână la câteva zile după 9.3)"
+    },
+    {
+      "k": "coada Storage: randuri|mai vechi de 48 h (al doilea trebuie 0)",
+      "re": "^[0-9]+[|]0$"
+    }
+  ]
+}

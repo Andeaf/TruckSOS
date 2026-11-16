@@ -1,0 +1,51 @@
+{
+  "packages": [
+    {
+      "id": "faza-3",
+      "title": "Faza 3 (push prin coadă, moderare)",
+      "migrations": ["20261102000100_push_queue", "20261102000200_reports_moderation"]
+    },
+    {
+      "id": "faza-6",
+      "title": "Faza 6 (ciorne, opt-in Market, Apple, storage-gc, retenție, export)",
+      "migrations": [
+        "20261109000100_announcement_drafts",
+        "20261109000200_market_push_optin",
+        "20261109000300_apple_tokens",
+        "20261109000400_storage_gc",
+        "20261109000500_retention",
+        "20261109000600_export_my_data"
+      ]
+    },
+    {
+      "id": "faza-8",
+      "title": "Faza 8 (consimțământ, sesizări publice)",
+      "migrations": ["20261110000100_terms_consent", "20261110000200_public_reports"]
+    },
+    {
+      "id": "faza-9a",
+      "title": "Faza 9, pachetul A: 9.1 + 9.4 (erori client, health)",
+      "migrations": ["20261111000100_client_errors", "20261111000300_health"]
+    },
+    {
+      "id": "export-sesizari",
+      "title": "20261112000100_export_reports_filed (exportul include sesizările depuse)",
+      "migrations": ["20261112000100_export_reports_filed"]
+    },
+    {
+      "id": "faza-9b",
+      "title": "Faza 9, pachetul B: 9.3 (kick-urile pe x-push-secret)",
+      "migrations": ["20261111000200_kicks_push_secret"]
+    },
+    {
+      "id": "created-at",
+      "title": "20261112000200_messages_created_at_server (created_at al mesajelor pus de server)",
+      "migrations": ["20261112000200_messages_created_at_server"]
+    },
+    {
+      "id": "faza-5",
+      "title": "Faza 5, varianta B: 20261113000100_unread_counts_mark_read",
+      "migrations": ["20261113000100_unread_counts_mark_read"]
+    }
+  ]
+}
